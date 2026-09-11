@@ -1,34 +1,62 @@
 # PokeNexus — Agent Launching
 
-## Lead Developer — Aider + GitHub Copilot
+## Lead Developer — GitHub Copilot CLI
 
-Default:
+Repository custom agent:
+
+`.github/agents/lead-developer.agent.md`
+
+### Recommended interactive flow
+
+From repository root:
 
 ```powershell
-aider --config .aider.copilot.conf.yml
+copilot
 ```
 
-Model:
+Then:
 
 ```text
-github_copilot/claude-sonnet-4.5
+/instructions
 ```
 
-Role:
+Verify that repository instructions are loaded.
 
-`docs/agents/claude-lead.md`
+Select the model:
 
-Escalate only when necessary:
+```text
+/model
+```
+
+Preferred: current Claude Sonnet model available in Copilot CLI.
+If unavailable or rate-limited, use `Auto`.
+
+Use a current Claude Opus model only as an escalation for unusually difficult
+debugging/refactoring. Model choice does not change project authority.
+
+Select the role:
+
+```text
+/agent
+```
+
+Choose:
+
+```text
+lead-developer
+```
+
+Then ask for a pre-implementation review of the active task before edits.
+
+### Programmatic / robust launch
 
 ```powershell
-aider --config .aider.copilot.conf.yml --model github_copilot/claude-opus-4.6-fast
+copilot --agent lead-developer --model auto
 ```
 
-The provider/model does not change the Lead Developer authority.
+This avoids hard-coding a model name that may later be retired.
 
 ## Mechanical Worker — DeepSeek + Aider
-
-Default:
 
 ```powershell
 aider --config .aider.deepseek.conf.yml
@@ -38,13 +66,9 @@ Role:
 
 `docs/agents/deepseek-worker.md`
 
-Escalate only while the task remains Class C:
+Use only for Class C work.
 
-```powershell
-aider --config .aider.deepseek.conf.yml --model deepseek/deepseek-v4-pro
-```
-
-If the work stops being mechanical/Class C, escalate the task to the Lead Developer instead.
+If the work stops being mechanical/Class C, escalate the task to the Lead Developer.
 
 ## Secondary Developer — Codex
 
@@ -92,13 +116,7 @@ Use for scoped React, PixiJS, CSS/layout, frontend state and isolated client int
 
 Cursor must not review/approve a task it implemented.
 
-## Local Pair Programmer — GitHub Copilot IDE
+## Local Pair Programmer — GitHub Copilot
 
-Follows:
-
-```text
-.github/copilot-instructions.md
-.github/instructions/
-```
-
-Use for local assistance only. It does not gain architectural authority.
+When Copilot is used without an explicit custom project role, it is only a local
+pair programmer and follows `.github/copilot-instructions.md`.

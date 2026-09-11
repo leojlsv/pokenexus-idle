@@ -17,3 +17,4 @@ See:
 - `docs/architecture/system.md`
 - `AGENTS.md`
 - `CONTRIBUTING.md`
+- `docs/agents/launching.md`

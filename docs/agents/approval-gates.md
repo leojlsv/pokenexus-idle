@@ -13,7 +13,7 @@ Examples:
 
 Required:
 1. ChatGPT prepares recommendation/spec/ADR.
-2. Claude may provide technical feasibility feedback.
+2. The Lead Developer may provide technical feasibility feedback.
 3. Codex QA reviews implementation impact when applicable.
 4. Gemini audit is required for security, concurrency, economy/trading, or destructive migration risk.
 5. Human Owner approves the decision before implementation/merge.

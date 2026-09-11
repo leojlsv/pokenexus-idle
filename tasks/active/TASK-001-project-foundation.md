@@ -5,7 +5,7 @@
 - State: READY
 - Class: B
 - Owner: Lead Developer
-- Execution profile: `.aider.copilot.conf.yml`
+- Execution profile: GitHub Copilot CLI custom agent `lead-developer`
 - Reviewer: Codex QA
 - Spec: N/A
 - ADR:

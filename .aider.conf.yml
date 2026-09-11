@@ -1,5 +1,5 @@
 # Safe fallback profile.
-# Explicit role profiles should normally be used instead.
+# Aider is currently approved only for explicitly configured worker roles.
 
 git: true
 gitignore: false

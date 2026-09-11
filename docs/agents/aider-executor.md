@@ -1,17 +1,17 @@
 # Role — Aider Repository Executor
 
-Aider is a tool, not an authority role.
+Aider is an execution interface, not a project authority.
 
-Authority is inherited from the role/model using it.
+Current approved use:
+- DeepSeek + Aider → Mechanical Worker.
 
-Examples:
-- Claude + Aider → Lead Developer
-- DeepSeek + Aider → Mechanical Worker
+Aider does not define architecture, product scope, review authority, or acceptance.
 
 Safeguards:
-- respect task scope;
+- respect the assigned role and active task;
 - show/review diffs;
 - avoid unrelated edits;
-- run required validation;
-- no automatic architecture decisions;
-- no automatic commits unless explicitly enabled later by project policy.
+- run only applicable validation;
+- do not make architecture decisions;
+- do not create ad-hoc changelog/progress/report files;
+- do not auto-commit unless project policy is explicitly changed.

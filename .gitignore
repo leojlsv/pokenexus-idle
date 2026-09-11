@@ -23,3 +23,6 @@ CLAUDE.local.md
 .aider.chat.history.md
 .aider.llm.history
 .aider.tags.cache.v*/
+
+# Local Copilot CLI state
+.copilot/

@@ -8,7 +8,7 @@ Legend:
 - ASSIST — local assistance
 - NO — must escalate
 
-| Area | Human | ChatGPT | Claude | Codex Dev | Cursor Dev | Codex QA | Gemini | DeepSeek | Copilot |
+| Area | Human | ChatGPT | Lead Dev | Codex Dev | Cursor Dev | Codex QA | Gemini | DeepSeek | Copilot Pair |
 |---|---|---|---|---|---|---|---|---|---|
 | Product vision/scope | OWNER | COORDINATE | NO | NO | NO | REVIEW | REVIEW | NO | NO |
 | Architecture / ADR | OWNER | COORDINATE | REVIEW/EXECUTE approved | NO | NO | REVIEW | REVIEW | NO | NO |
