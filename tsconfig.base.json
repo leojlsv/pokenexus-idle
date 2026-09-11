@@ -8,6 +8,10 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@pokenexus/game-types": ["packages/game-types/src/index.ts"]
+    }
   }
 }
