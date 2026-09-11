@@ -1,0 +1,12 @@
+---
+description: "PokeNexus default Cursor implementation role"
+alwaysApply: true
+---
+
+Follow `AGENTS.md`.
+
+Default role: Secondary / Frontend Developer.
+Read `docs/agents/cursor-developer.md`.
+
+Only implement READY tasks explicitly assigned to Cursor.
+Do not act as merge-gate QA for a task you implemented.

@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+.wrangler/
+.cache/
+.tmp/
+.DS_Store
+Thumbs.db
+*.log
+
+# Local IDE/tool state
+.idea/
+.vscode/
+CLAUDE.local.md
+.claude/settings.local.json

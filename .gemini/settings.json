@@ -1,0 +1,9 @@
+{
+  "general": {
+    "defaultApprovalMode": "plan"
+  },
+  "context": {
+    "fileName": "GEMINI_AUDITOR.md",
+    "includeDirectoryTree": true
+  }
+}
