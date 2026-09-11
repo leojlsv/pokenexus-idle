@@ -9,5 +9,8 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

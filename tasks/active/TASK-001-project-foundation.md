@@ -4,7 +4,8 @@
 
 - State: READY
 - Class: B
-- Owner: Claude Lead Developer
+- Owner: Lead Developer
+- Execution profile: `.aider.copilot.conf.yml`
 - Reviewer: Codex QA
 - Spec: N/A
 - ADR:
@@ -12,7 +13,7 @@
   - `docs/decisions/ADR-002-solo-hunts.md`
   - `docs/decisions/ADR-003-hub-and-duo-realtime.md`
 - Branch: `chore/TASK-001-project-foundation`
-- Worktree: `worktrees/TASK-001-project-foundation`
+- Worktree: N/A — current task branch uses the primary working tree
 
 ## Objective
 
@@ -32,6 +33,7 @@ PokeNexus will use:
 - Hono + Cloudflare Workers for HTTP API;
 - Durable Objects for realtime HUB / Duo coordination;
 - pnpm workspaces;
+- Node.js 24 LTS;
 - Vitest for tests.
 
 The repository already contains architecture, governance and agent policies.
@@ -49,6 +51,7 @@ All implementation must follow:
 
 - configure pnpm workspace correctly;
 - define package-level `package.json` files;
+- declare Node.js 24 LTS as the repository runtime baseline;
 - define shared TypeScript configuration;
 - ensure workspace package imports resolve correctly;
 - maintain strict TypeScript.
@@ -177,6 +180,7 @@ Do not create speculative abstractions for future systems.
 
 - [ ] `pnpm install` completes successfully.
 - [ ] workspace packages are recognized by pnpm.
+- [ ] repository runtime is explicitly declared as Node.js 24 LTS.
 - [ ] `apps/web` starts with Vite.
 - [ ] `apps/web` compiles with React + TypeScript.
 - [ ] PixiJS can be imported without configuration/type errors.

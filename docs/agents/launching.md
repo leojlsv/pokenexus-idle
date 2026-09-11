@@ -1,37 +1,54 @@
 # PokeNexus — Agent Launching
 
-## Claude Code
+## Lead Developer — Aider + GitHub Copilot
 
-Run from repository root.
-
-Claude loads shared context from `.claude/CLAUDE.md` and its role from
-`.claude/rules/00-role.md`.
-
-Verify loaded memory/rules with Claude Code context inspection.
-
-## Claude via Aider
+Default:
 
 ```powershell
-aider --config .aider.claude.conf.yml --model <claude-model>
+aider --config .aider.copilot.conf.yml
 ```
 
-## DeepSeek via Aider
+Model:
+
+```text
+github_copilot/claude-sonnet-4.5
+```
+
+Role:
+
+`docs/agents/claude-lead.md`
+
+Escalate only when necessary:
 
 ```powershell
-aider --config .aider.deepseek.conf.yml --model <deepseek-model>
+aider --config .aider.copilot.conf.yml --model github_copilot/claude-opus-4.6-fast
 ```
 
-## Gemini CLI
+The provider/model does not change the Lead Developer authority.
+
+## Mechanical Worker — DeepSeek + Aider
+
+Default:
 
 ```powershell
-gemini
+aider --config .aider.deepseek.conf.yml
 ```
 
-Workspace config loads `GEMINI_AUDITOR.md` and starts in plan/read-only mode.
+Role:
 
-## Codex — implementation
+`docs/agents/deepseek-worker.md`
 
-Use a separate implementation session:
+Escalate only while the task remains Class C:
+
+```powershell
+aider --config .aider.deepseek.conf.yml --model deepseek/deepseek-v4-pro
+```
+
+If the work stops being mechanical/Class C, escalate the task to the Lead Developer instead.
+
+## Secondary Developer — Codex
+
+Use a dedicated implementation session:
 
 ```text
 Role: Codex Secondary Developer.
@@ -39,23 +56,49 @@ Read AGENTS.md and docs/agents/codex-developer.md.
 Implement TASK-XXX only.
 ```
 
-## Codex — QA
+## QA Reviewer — Codex
 
-Use a fresh/separate review session:
+Use a fresh review session:
 
 ```text
 Role: Codex QA Reviewer.
 Read AGENTS.md and docs/agents/codex-qa.md.
-Review TASK-XXX and the branch diff. Do not modify code.
+Review TASK-XXX and the branch diff.
+Do not modify code.
 ```
 
-## Cursor
+Codex must not implement and approve the same task.
 
-Default scoped implementation role:
-`docs/agents/cursor-developer.md`.
+## Independent Auditor — Gemini CLI
 
-Do not use the same Cursor implementation session as merge-gate QA.
+```powershell
+gemini
+```
 
-## Copilot
+Role:
 
-Copilot assists the current task owner and follows `.github/` instructions.
+`docs/agents/gemini-auditor.md`
+
+Default mode is read-only. Use for the high-risk cases defined in
+`docs/agents/approval-gates.md`.
+
+## Secondary / Frontend Developer — Cursor
+
+Role:
+
+`docs/agents/cursor-developer.md`
+
+Use for scoped React, PixiJS, CSS/layout, frontend state and isolated client integration.
+
+Cursor must not review/approve a task it implemented.
+
+## Local Pair Programmer — GitHub Copilot IDE
+
+Follows:
+
+```text
+.github/copilot-instructions.md
+.github/instructions/
+```
+
+Use for local assistance only. It does not gain architectural authority.

@@ -5,6 +5,7 @@
 - State: DRAFT
 - Class: A | B | C
 - Owner: UNASSIGNED
+- Execution profile: UNASSIGNED
 - Reviewer: Codex QA
 - Spec:
 - ADR:

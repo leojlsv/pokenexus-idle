@@ -1,7 +1,7 @@
-# Mechanical Worker profile.
+# Lead Developer profile.
+# GitHub Copilot is the provider; the model performs the Claude Lead role.
 
-model: deepseek/deepseek-v4-flash
-env-file: .env.aider
+model: github_copilot/claude-sonnet-4.5
 
 git: true
 gitignore: false
@@ -22,7 +22,8 @@ analytics-disable: true
 
 read:
   - AGENTS.md
-  - docs/agents/deepseek-worker.md
+  - docs/agents/claude-lead.md
+  - docs/architecture/system.md
   - docs/agents/workflow.md
   - docs/agents/authority-matrix.md
   - docs/agents/approval-gates.md
