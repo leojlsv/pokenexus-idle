@@ -1,0 +1,11 @@
+name = "pokenexus-realtime"
+main = "src/index.ts"
+compatibility_date = "2025-01-09"
+
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["Room"]
