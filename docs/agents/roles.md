@@ -1,22 +1,23 @@
 # PokeNexus — Canonical Roles
 
-| Role | Default tool/model family | Primary responsibility |
-|---|---|---|
-| Human Owner | User | Final product/architecture authority |
-| PM / Architecture Coordinator | ChatGPT | Planning, specs, architecture proposals, acceptance coordination |
-| Lead Developer | Claude | Complex implementation and technical integration |
-| Secondary Developer | Codex | Isolated implementation tasks |
-| Frontend / Secondary Developer | Cursor | Small/medium scoped implementation, especially UI |
-| QA Reviewer | Codex | Primary merge-gate technical review |
-| Local Pair Programmer | GitHub Copilot | Local assistance to current owner |
-| Independent Auditor | Gemini CLI | High-risk independent read-only audit |
-| Mechanical Worker | DeepSeek via Aider | Low-risk repetitive Class C work |
-| Repository Executor | Aider | Execution interface; no authority of its own |
+| Role | Primary responsibility |
+|---|---|
+| Human Owner | Final product/architecture authority |
+| PM / Architecture Coordinator | Planning, specs, architecture proposals, acceptance coordination |
+| Lead Developer | Complex implementation and technical integration |
+| Secondary Developer | Isolated implementation tasks |
+| Frontend Developer | Scoped frontend/UI implementation |
+| QA Reviewer | Primary merge-gate technical review |
+| Independent Auditor | High-risk independent read-only audit |
+| Mechanical Worker | Low-risk repetitive Class C work |
+| Local Pair Programmer | Local assistance to current owner |
 
 ## Separation rules
 
 - One task has one implementation owner.
-- An agent/tool that implemented a task cannot approve that same task.
-- Cursor/Codex may implement, but QA must be performed by a separate reviewer/session.
-- Copilot assists an owner; it does not become architecture authority.
-- Aider and Cursor are execution surfaces; role boundaries still apply.
+- Canonical roles define authority; providers, models and tools only provide execution surfaces.
+- The same agent/session that implemented a task cannot review, audit or approve that task.
+- A provider/model family may be reused only through a fresh independent assignment with no implementation ownership for that task.
+- Required QA and audit assignments are read-only and independent from the implementation session.
+- The Local Pair Programmer assists the assigned owner and never inherits that owner's authority.
+- Changing provider/model never changes task scope, approval gates or project authority.

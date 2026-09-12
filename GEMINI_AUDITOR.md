@@ -1,5 +1,5 @@
 @./AGENTS.md
-@./docs/agents/gemini-auditor.md
+@./docs/agents/independent-auditor.md
 
 # Gemini CLI — Independent Auditor
 

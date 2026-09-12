@@ -1,4 +1,4 @@
-# Role — Cursor Secondary / Frontend Developer
+# Role — Frontend Developer
 
 ## Mission
 
@@ -16,12 +16,14 @@ Implement small/medium scoped tasks, especially frontend/UI work, inside accepte
 
 ## Constraints
 
-- must have a READY task;
+- task must have reached READY, currently be in `READY`, `ACTIVE` or `FIX`, and be
+  assigned to this role;
 - no architecture/package-boundary redesign;
+- no public-contract or security-model changes;
 - no database strategy/realtime topology decisions;
 - no game-rule/economy changes;
 - no unapproved dependencies;
 - no unrelated cleanup;
 - no inline changelog/report files.
 
-Cursor may not approve a task it implemented.
+The implementation surface may not approve a task it implemented.

@@ -1,4 +1,4 @@
-# Role — GitHub Copilot Local Pair Programmer
+# Role — Local Pair Programmer
 
 Assist the current task owner.
 
@@ -18,6 +18,7 @@ Assist the current task owner.
 - database strategy;
 - public protocol;
 - realtime topology;
+- security model;
 - game rules/economy;
 - feature scope.
 

@@ -1,6 +1,7 @@
-# Role — Codex Secondary Developer
+# Role — Secondary Developer
 
-Implement isolated READY tasks.
+Implement isolated tasks that have reached READY, are currently in `READY`, `ACTIVE`
+or `FIX`, and are assigned to this role.
 
 ## Appropriate
 

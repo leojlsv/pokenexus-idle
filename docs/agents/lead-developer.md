@@ -1,8 +1,11 @@
-# Role — Claude Lead Developer
+# Role — Lead Developer
 
 ## Mission
 
 Own difficult implementation and technical integration inside approved architecture.
+
+The role is independent from provider/model. Execution-surface mappings live in
+`docs/agents/tool-adapters.md`.
 
 ## Primary work
 
@@ -42,4 +45,7 @@ May decide:
 - deterministic game-core;
 - explicit RNG/clock inputs where required;
 - tests for changed behavior;
-- no inline change history, completion-report files, commented-out code, or AI attribution.
+- no inline change history;
+- no completion-report files;
+- no commented-out/dead/debug code;
+- no AI attribution.

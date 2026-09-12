@@ -46,6 +46,9 @@ Rules:
 
 ## Safety
 
+- Creating, publishing or rewriting Git history (`commit`, `push`, `merge`, `rebase`,
+  `force-push`) requires explicit Human Owner authorization. Authorization may be
+  task-scoped and remains valid only within that approved scope.
 - No force-push to `main`.
 - No destructive Git operations without explicit instruction.
 - Never commit `.env`, tokens, credentials, private keys or local tool state.
