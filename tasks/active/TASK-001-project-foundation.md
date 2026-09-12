@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: REVIEW
+- State: ACCEPTANCE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: Claude implementation session (historical)
@@ -232,6 +232,7 @@ Validated on the rebased branch:
 - `pnpm build` → PASS; Wrangler 3.114.17 emits the recorded v4 upgrade warning only;
 - `apps/web` local startup → HTTP 200 at Vite dev server;
 - `apps/api` local startup → HTTP 200 with `PokeNexus API`.
+- QA Reviewer → PASS WITH P2; Wrangler 4 remains the explicit non-blocking deferral.
 
 ## Dependencies
 
