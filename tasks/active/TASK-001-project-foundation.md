@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: READY
+- State: REVIEW
 - Class: B
 - Owner: Claude Lead Developer
 - Reviewer: Codex QA
