@@ -231,6 +231,7 @@ Do not claim runtime validation for components that were not actually started.
 - Adding dependencies modifies the lockfile and manifests.
 - No destructive operations are expected.
 - No database/infrastructure provisioning is allowed in this task.
+- P2 deferral: Wrangler 3.114.17 reports an available Wrangler 4 upgrade, but the current API/realtime dry-run builds and API local startup pass. The major upgrade is deferred to a dedicated follow-up task so dependency/runtime compatibility can be reviewed independently from the project foundation.
 
 ## Expected files / boundaries
 
