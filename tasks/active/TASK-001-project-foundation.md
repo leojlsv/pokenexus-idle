@@ -4,8 +4,12 @@
 
 - State: REVIEW
 - Class: B
-- Owner: Claude Lead Developer
-- Reviewer: Codex QA
+- Owner: Lead Developer
+- Owner execution surface: Claude implementation session (historical)
+- Reviewer: QA Reviewer
+- Reviewer execution surface: ChatGPT worker (independent)
+- Auditor: N/A
+- Auditor execution surface: N/A
 - Spec: N/A
 - ADR:
   - `docs/decisions/ADR-001-runtime-and-language.md`
@@ -177,26 +181,26 @@ Do not create speculative abstractions for future systems.
 
 ## Acceptance criteria
 
-- [ ] `pnpm install` completes successfully.
-- [ ] workspace packages are recognized by pnpm.
-- [ ] repository runtime is explicitly declared as Node.js 24 LTS.
-- [ ] `apps/web` starts with Vite.
-- [ ] `apps/web` compiles with React + TypeScript.
-- [ ] PixiJS can be imported without configuration/type errors.
-- [ ] `apps/api` builds as a Cloudflare Worker using Hono.
-- [ ] `apps/realtime` has a valid Durable Objects-compatible foundation.
-- [ ] all shared packages expose valid TypeScript entrypoints.
-- [ ] `pnpm lint` passes.
-- [ ] `pnpm typecheck` passes.
-- [ ] `pnpm test` passes.
-- [ ] `pnpm build` passes.
-- [ ] GitHub Actions workflow reflects the same validation pipeline.
-- [ ] no gameplay/business logic was introduced.
-- [ ] no database dependency was introduced.
-- [ ] no unrelated refactor occurred.
-- [ ] no inline changelog/history was added.
-- [ ] no ad-hoc implementation/progress/report files were created.
-- [ ] no debug/dead/commented-out code remains.
+- [x] `pnpm install` completes successfully.
+- [x] workspace packages are recognized by pnpm.
+- [x] repository runtime is explicitly declared as Node.js 24 LTS.
+- [x] `apps/web` starts with Vite.
+- [x] `apps/web` compiles with React + TypeScript.
+- [x] PixiJS can be imported without configuration/type errors.
+- [x] `apps/api` builds as a Cloudflare Worker using Hono.
+- [x] `apps/realtime` has a valid Durable Objects-compatible foundation.
+- [x] all shared packages expose valid TypeScript entrypoints.
+- [x] `pnpm lint` passes.
+- [x] `pnpm typecheck` passes.
+- [x] `pnpm test` passes.
+- [x] `pnpm build` passes.
+- [x] GitHub Actions workflow reflects the same validation pipeline.
+- [x] no gameplay/business logic was introduced.
+- [x] no database dependency was introduced.
+- [x] no unrelated refactor occurred.
+- [x] no inline changelog/history was added.
+- [x] no ad-hoc implementation/progress/report files were created.
+- [x] no debug/dead/commented-out code remains.
 
 ## Validation / tests
 
@@ -218,6 +222,16 @@ apps/api
 ```
 
 Do not claim runtime validation for components that were not actually started.
+
+Validated on the rebased branch:
+
+- `pnpm install --frozen-lockfile` → PASS (9 workspace projects recognized);
+- `pnpm lint` → PASS;
+- `pnpm typecheck` → PASS;
+- `pnpm test` → PASS (8 test files, 9 tests);
+- `pnpm build` → PASS; Wrangler 3.114.17 emits the recorded v4 upgrade warning only;
+- `apps/web` local startup → HTTP 200 at Vite dev server;
+- `apps/api` local startup → HTTP 200 with `PokeNexus API`.
 
 ## Dependencies
 
