@@ -11,26 +11,31 @@ Use this precedence order:
 3. approved `docs/specs/`;
 4. this `AGENTS.md`;
 5. assigned canonical role in `docs/agents/`;
-6. active READY task in `tasks/active/`;
+6. active task in `tasks/active/` that has reached READY;
 7. tool-specific adapter/rule.
 
 A lower level may narrow execution but must not contradict a higher level.
 
 ## Global execution rules
 
-- Implementation requires a READY task.
+- Implementation requires an assigned task that has reached READY and is currently
+  in an implementation state (`READY`, `ACTIVE` or `FIX`).
 - One task has exactly one implementation owner.
 - Prefer one task = one branch = one worktree.
-- No agent reviews/approves its own implementation.
+- No agent/session reviews, audits or approves its own implementation.
+- Git actions that create or rewrite project history (`commit`, `push`, `merge`,
+  `rebase`, `force-push`) require explicit Human Owner authorization. Authorization
+  may be task-scoped and remains valid only within that approved scope.
 - Do not broaden task scope silently.
 - Do not refactor unrelated code.
 - Do not add dependencies without explicit task need/approval.
 - Class A changes require an accepted ADR/spec update before implementation.
-- P0/P1 QA findings block merge.
+- P0/P1 findings from assigned QA or independent audit block progression/merge until resolved.
 - Never claim a command/test passed unless it was actually run.
 - Prefer the smallest coherent solution; do not build speculative abstractions.
 
 Read:
+- `docs/agents/roles.md`
 - `docs/agents/workflow.md`
 - `docs/agents/authority-matrix.md`
 - `docs/agents/approval-gates.md`

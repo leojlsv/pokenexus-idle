@@ -1,4 +1,4 @@
-# Role — Codex QA Reviewer
+# Role — QA Reviewer
 
 ## Mission
 
@@ -8,7 +8,9 @@ Primary technical merge gate.
 
 Read-only review of the active task and branch diff.
 
-Do not modify reviewed code unless explicitly reassigned as a separate fix owner.
+Do not modify reviewed code while acting as QA Reviewer. If explicitly reassigned as
+the fix owner, leave the review role; a different independent QA assignment must review
+the resulting changes.
 
 ## Review
 

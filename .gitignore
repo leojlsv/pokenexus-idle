@@ -15,5 +15,12 @@ Thumbs.db
 # Local IDE/tool state
 .idea/
 .vscode/
-CLAUDE.local.md
-.claude/settings.local.json
+
+# Aider local runtime state (configs remain versioned)
+.aider.input.history
+.aider.chat.history.md
+.aider.llm.history
+.aider.tags.cache.v*/
+
+# Local Copilot CLI state
+.copilot/

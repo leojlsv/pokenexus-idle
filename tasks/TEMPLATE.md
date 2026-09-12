@@ -5,7 +5,11 @@
 - State: DRAFT
 - Class: A | B | C
 - Owner: UNASSIGNED
-- Reviewer: Codex QA
+- Owner execution surface: DEFAULT
+- Reviewer: QA Reviewer
+- Reviewer execution surface: DEFAULT
+- Auditor: N/A
+- Auditor execution surface: N/A
 - Spec:
 - ADR:
 - Branch:

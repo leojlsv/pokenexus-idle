@@ -3,7 +3,7 @@
 ## Before coding
 
 1. Read `AGENTS.md`.
-2. Work from a READY task.
+2. Work from an assigned task that has reached READY and is in an implementation state.
 3. Confirm owner/reviewer and task class.
 4. Read referenced specs/ADRs.
 
@@ -25,5 +25,6 @@
 
 ## Review
 
-Codex QA is the default merge gate.
+The QA Reviewer is the default merge gate. The default execution surface is documented in
+`docs/agents/tool-adapters.md`.
 High-risk changes follow `docs/agents/approval-gates.md`.

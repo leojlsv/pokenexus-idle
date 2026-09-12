@@ -25,11 +25,12 @@ RISKS / FOLLOW-UP:
 - ...
 ```
 
-## QA handoff
+## Review / audit handoff
 
 ```text
 TASK:
 REVIEWER:
+ROLE: QA Reviewer | Independent Auditor
 VERDICT: PASS | FAIL | PASS WITH P2/P3
 
 FINDINGS:

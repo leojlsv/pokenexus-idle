@@ -1,23 +1,38 @@
+# Safe fallback profile.
+# Aider is currently approved only for explicitly configured worker roles.
+
 git: true
-gitignore: true
+gitignore: false
 aiderignore: .aiderignore
+
+dry-run: true
+
 auto-commits: false
 dirty-commits: false
+attribute-author: false
+attribute-committer: false
+attribute-commit-message-author: false
+attribute-commit-message-committer: false
+attribute-co-authored-by: false
+git-commit-verify: true
+
+auto-accept-architect: false
 show-diffs: true
+analytics-disable: true
 
 read:
   - AGENTS.md
   - docs/architecture/system.md
   - docs/agents/workflow.md
   - docs/agents/authority-matrix.md
+  - docs/agents/approval-gates.md
   - docs/agents/handoff-protocol.md
   - docs/engineering/code-quality.md
   - docs/engineering/documentation-policy.md
   - docs/engineering/git-policy.md
+  - docs/engineering/dependency-policy.md
 
-lint-cmd: pnpm lint
-test-cmd: pnpm test
-
-# Enable after foundation tooling is verified.
+lint-cmd: corepack pnpm lint
+test-cmd: corepack pnpm test
 auto-lint: false
 auto-test: false

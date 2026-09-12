@@ -5,8 +5,10 @@ alwaysApply: true
 
 Follow `AGENTS.md`.
 
-Default role: Secondary / Frontend Developer.
-Read `docs/agents/cursor-developer.md`.
+Default role: Frontend Developer.
+Read `docs/agents/frontend-developer.md`.
 
-Only implement READY tasks explicitly assigned to Cursor.
+Only implement tasks that have reached READY, are currently in `READY`, `ACTIVE` or
+`FIX`, are assigned to the Frontend Developer role, and name Cursor as the execution
+surface for the owner.
 Do not act as merge-gate QA for a task you implemented.

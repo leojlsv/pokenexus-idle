@@ -1,20 +1,35 @@
 # PokeNexus — Tool Adapter Map
 
-| Tool | Adapter | Default role |
+| Tool / workflow | Adapter | Role |
 |---|---|---|
-| Claude Code | `.claude/CLAUDE.md` + `.claude/rules/` | Lead Developer |
+| ChatGPT project coordination | `AGENTS.md` + `docs/agents/pm-architecture-coordinator.md` | PM / Architecture Coordinator |
+| GitHub Copilot CLI Lead | `.github/agents/lead-developer.agent.md` | Lead Developer |
 | Codex implementation | `AGENTS.md` + explicit assignment | Secondary Developer |
 | Codex review | `AGENTS.md` + separate review assignment | QA Reviewer |
-| Cursor | `AGENTS.md` + `.cursor/rules/` | Secondary / Frontend Developer |
-| GitHub Copilot | `.github/copilot-instructions.md` + path instructions | Pair Programmer |
+| Cursor | `AGENTS.md` + `.cursor/rules/` | Frontend Developer |
+| GitHub Copilot default mode | `.github/copilot-instructions.md` + path instructions | Local Pair Programmer |
 | Gemini CLI | `.gemini/settings.json` + `GEMINI_AUDITOR.md` | Independent Auditor |
-| Claude via Aider | `.aider.claude.conf.yml` | Lead Developer |
 | DeepSeek via Aider | `.aider.deepseek.conf.yml` | Mechanical Worker |
 
-## Important
+Aider is an execution interface, not a canonical role. Its configured model/provider
+inherits only the authority of the explicitly assigned role.
 
-Some Copilot modes also discover agent instruction files such as `AGENTS.md`,
-root `CLAUDE.md`/`GEMINI.md`, and Copilot CLI can read `.claude/CLAUDE.md`.
+## Lead model policy
 
-Therefore `.claude/CLAUDE.md` must remain role-neutral; Claude's Lead role is
-defined in `.claude/rules/00-role.md`.
+The Lead custom agent does not hard-code a model.
+
+Default:
+- Copilot `Auto`, so the CLI can select from currently available supported models.
+
+An explicit model may be selected per session when a task has a concrete reason for
+it. Do not encode model choice into role authority or canonical governance.
+
+Model/provider availability changes over time; role authority does not.
+
+## Instruction collision rule
+
+Copilot CLI may merge `AGENTS.md`, `.github/copilot-instructions.md`, path-specific
+instructions and custom-agent instructions.
+
+Therefore repository-wide Copilot instructions are role-neutral. Role-specific
+authority lives in the selected custom agent or explicit assignment.

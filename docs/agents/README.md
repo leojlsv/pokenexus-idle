@@ -1,6 +1,10 @@
 # PokeNexus — Multi-Agent Governance
 
-This directory defines canonical AI-agent roles and workflow.
+This directory defines canonical project roles and the multi-agent workflow.
+
+Canonical authority is defined by `roles.md` and `authority-matrix.md`.
+Provider/tool mappings are defined separately in `tool-adapters.md` and must not
+redefine role authority.
 
 ## Principles
 
@@ -20,7 +24,7 @@ This directory defines canonical AI-agent roles and workflow.
 3. Approved specification
 4. `AGENTS.md`
 5. Assigned role
-6. Active READY task
+6. Active task that has reached READY
 7. Tool adapter
 
 A lower level may narrow execution but cannot override a higher level.
