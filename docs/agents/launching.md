@@ -124,7 +124,17 @@ Role:
 Default mode is read-only. Use for the high-risk cases defined in
 `docs/agents/approval-gates.md`.
 
-## Frontend Developer — Cursor
+## Frontend Developer — Claude Code
+
+From the repository root:
+
+```powershell
+claude
+```
+
+Project adapter:
+
+`CLAUDE.md`
 
 Role:
 
@@ -132,7 +142,7 @@ Role:
 
 Use for scoped React, PixiJS, CSS/layout, frontend state and isolated client integration.
 
-The Cursor implementation session must not review/approve a task it implemented.
+The Claude Code implementation session must not review/approve a task it implemented.
 
 ## Local Pair Programmer — GitHub Copilot
 

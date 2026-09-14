@@ -6,7 +6,7 @@
 | GitHub Copilot CLI Lead | `.github/agents/lead-developer.agent.md` | Lead Developer |
 | Codex implementation | `AGENTS.md` + explicit assignment | Secondary Developer |
 | Codex review | `AGENTS.md` + separate review assignment | QA Reviewer |
-| Cursor | `AGENTS.md` + `.cursor/rules/` | Frontend Developer |
+| Claude Code | `AGENTS.md` + `CLAUDE.md` | Frontend Developer |
 | GitHub Copilot default mode | `.github/copilot-instructions.md` + path instructions | Local Pair Programmer |
 | Gemini CLI | `.gemini/settings.json` + `GEMINI_AUDITOR.md` | Independent Auditor |
 | DeepSeek via Aider | `.aider.deepseek.conf.yml` | Mechanical Worker |
@@ -33,3 +33,7 @@ instructions and custom-agent instructions.
 
 Therefore repository-wide Copilot instructions are role-neutral. Role-specific
 authority lives in the selected custom agent or explicit assignment.
+
+Claude Code uses the repository `CLAUDE.md` as its project adapter. That file narrows
+the default execution role to Frontend Developer and must not override `AGENTS.md`, an
+accepted ADR/spec, or the active task.
