@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, project-control baseline, the core domain specification/type skeleton and the static game-data/versioning architecture are complete; the next planning step is the Universal Combat Engine architecture.
+**Project phase:** Foundation, project-control baseline, core domain/static-data contracts and the Universal Combat Engine architecture are complete; the next planning step is Combat Rules v1.
 
-**Current work:** no implementation task is active. `TASK-006 — Static Game Data Schema & Rules Versioning` is DONE; `SPEC-002` is APPROVED by the Human Owner and both independent corrected-snapshot QA re-reviews reported P0/P1/P2/P3 = 0/0/0/0. Production crawler/game-data implementation requires a separately materialized implementation task/owner before code is written.
+**Current work:** no implementation task is active. `TASK-007 — ADR-004 Universal Combat Engine Architecture` is DONE; `ADR-004` is accepted by the Human Owner and independent architecture QA plus determinism/replay audit both reported P0/P1/P2/P3 = 0/0/0/0.
 
-**Current action:** materialize `TASK-007 — ADR-004 Universal Combat Engine Architecture` through its Class A planning/review flow.
+**Current action:** materialize `TASK-008 — Combat Rules Spec v1` through its Class A planning/review flow without reopening accepted ADR-004 architecture unless a genuine architectural conflict is discovered.
 
-**Next task after TASK-003 acceptance:** `TASK-007 — ADR-004 Universal Combat Engine Architecture` (next planning task after completed TASK-006).
+**Next task after TASK-003 acceptance:** `TASK-008 — Combat Rules Spec v1` (next planning task after completed TASK-007).
 
 **Portfolio status snapshot:**
 
@@ -27,15 +27,16 @@
 | `TASK-004` Domain Glossary & Core Model Spec | DONE — independent QA READY; Human Owner accepted |
 | `TASK-005` Core Domain Type Skeleton | DONE — QA READY; PM accepted; no semantic drift |
 | `TASK-006` Static Game Data Schema & Rules Versioning | DONE — independent QA clear; Human Owner accepted SPEC-002 |
+| `TASK-007` ADR-004 Universal Combat Engine Architecture | DONE — ADR-004 accepted; QA/audit clear |
 
 **Next product milestone:** establish the core domain contracts and universal deterministic Combat Engine foundation before implementing content modes.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 7.
-- PLANNED: 80.
-- Task-count completion: **7 / 87 = 8.0%**.
+- DONE: 8.
+- PLANNED: 79.
+- Task-count completion: **8 / 87 = 9.2%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -155,7 +156,7 @@ Skills are **advisory procedural knowledge**, not authority. A skill never grant
 3. Content may configure, constrain and orchestrate combat; content must not implement an independent damage/action/effect resolution path.
 4. Action selection and opponent AI are external policies/orchestrators. The engine validates and resolves supplied actions; it does not decide which move an actor should choose.
 5. `packages/game-core` remains pure deterministic TypeScript with explicit RNG/time inputs and no React/HTTP/database/Cloudflare dependency.
-6. Arithmetic/rounding semantics and combat-event schemas are versioned contracts. Same initial state + immutable rules/data identity + seed + explicit time inputs + identical supplied `ActionIntent` stream must produce the same event sequence and outcome. If an offline deterministic decision policy generates intents, its version/configuration and inputs are part of that immutable identity.
+6. Arithmetic/rounding semantics and combat-event schemas are versioned contracts. Same initial Battle input/state, including frozen/pinned resolution-affecting generic config, + pinned `{ gameDataVersion, rulesVersion, combatEventSchemaVersion }` + explicit combat RNG seed/state + identical ordered normalized `CombatStimulus` stream (including exact ActionIntent/time-advance interleaving) must produce the same event sequence, final battle state and outcome. If an offline deterministic decision policy regenerates intents instead of replaying the stored normalized stream, its immutable version/configuration/inputs/seed and, for midstream checkpoint resume, deterministic continuation state are additionally part of replay identity.
 7. A published game-data/rules version referenced by replay, checkpoint, claim or persisted combat evidence is immutable. Corrections create a new version; they never mutate the referenced version in place.
 8. Solo Hunts remain event/elapsed-time driven; no persistent server tick.
 9. Realtime remains scoped to HUB and synchronous Duo/other explicitly accepted realtime content.
@@ -321,10 +322,10 @@ implementation Task before code is written.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-007` ADR-004 Universal Combat Engine Architecture | A | PLANNED | PM → ChatGPT | QA; IA recommended | `SK-GAME-ARCH` | **HUMAN accepts ADR** | TASK-004/005 | Engine boundary; deterministic state-transition model; versioned event contract; player/AI/orchestrator produces ActionIntent outside resolver; engine validates legality/targets and is the only combat-state mutator/resolver; no mode awareness; policy RNG/clock/version inputs explicit |
+| `TASK-007` ADR-004 Universal Combat Engine Architecture | A | DONE | PM → ChatGPT | QA + IA | `SK-GAME-ARCH` | Completed — Human Owner accepted ADR-004 | TASK-004/005/006 | One mode-agnostic resolver; deterministic state-transition + explicit time advancement; player/AI/orchestrator produces ActionIntent outside resolver; engine validates legality/targets; explicit combat RNG isolated from policy RNG; pinned data/rules/event-schema context; ordered versioned Combat Events; logical combat time deterministic while infrastructure timestamps remain non-authoritative; no persistence/network/presentation authority leakage |
 | `TASK-008` Combat Rules Spec v1 | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts game rules** | TASK-007 | Damage; timing/cooldowns; target/valid-action rules; STAB/type effectiveness; crit/accuracy; KO/switch; move/Ability/effect semantics; exact arithmetic/rounding policy; victory conditions |
 | `TASK-009` Deterministic Combat Engine v1 | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH` | PM acceptance; Human sample-result validation | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; versioned event log; outcome; no mode-specific branches or AI decision policy |
-| `TASK-010` Combat Fixtures, Replay & Property Harness | B | PLANNED | SD → Codex | QA | `SK-TDD` | No unless fixture semantics expose rule ambiguity | TASK-009 | Golden deterministic cases; same snapshot/seed/time/ActionIntent stream = same event sequence; historical immutable-snapshot replay; replay independent of current AI; event ordering; HP/domain bounds; terminal KO/victory invariants; serialization round-trip; cross-mode math equivalence; regression corpus |
+| `TASK-010` Combat Fixtures, Replay & Property Harness | B | PLANNED | SD → Codex | QA | `SK-TDD` | No unless fixture semantics expose rule ambiguity | TASK-009 | Golden deterministic cases; same initial state + pinned data/rules/event-schema identity + combat RNG state + ordered CombatStimulus stream = same event sequence/final state/outcome; historical immutable-version replay; policy-independent replay when intents are stored; event ordering; time-partition invariance; HP/domain bounds; terminal KO/victory invariants; serialization round-trip; cross-mode math equivalence; regression corpus |
 | `TASK-011` Combat Performance Baseline | B | PLANNED | LD → Copilot CLI | QA; IA optional | `SK-GAME-PERF` | **HUMAN accepts performance budget** | TASK-009/010 | Combats/sec; p95 CPU/memory; 1h/8h simulation benchmark; allocation profiling; optimization decision record |
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable for expected workloads.
