@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, project-control baseline, the first approved core domain specification and the shared core-domain type skeleton are complete; the next step is static game-data schema and rules versioning before combat architecture/rules implementation.
+**Project phase:** Foundation, project-control baseline, the core domain specification/type skeleton and the static game-data/versioning architecture are complete; the next planning step is the Universal Combat Engine architecture.
 
-**Current work:** no implementation task is active. `TASK-005 — Core Domain Type Skeleton` is DONE after implementation validation, independent QA returned no P0/P1/P2/P3 findings, PM / Architecture Coordinator acceptance found no semantic drift, and the Human Owner authorized repository completion.
+**Current work:** no implementation task is active. `TASK-006 — Static Game Data Schema & Rules Versioning` is DONE; `SPEC-002` is APPROVED by the Human Owner and both independent corrected-snapshot QA re-reviews reported P0/P1/P2/P3 = 0/0/0/0. Production crawler/game-data implementation requires a separately materialized implementation task/owner before code is written.
 
-**Current action:** prepare/materialize `TASK-006 — Static Game Data Schema & Rules Versioning` through its Class A Definition of Ready, including the required Human Owner acceptance before implementation may begin.
+**Current action:** materialize `TASK-007 — ADR-004 Universal Combat Engine Architecture` through its Class A planning/review flow.
 
-**Next task after TASK-003 acceptance:** `TASK-006 — Static Game Data Schema & Rules Versioning` (next planning/spec task; it must satisfy its Class A Human Owner gate before reaching READY).
+**Next task after TASK-003 acceptance:** `TASK-007 — ADR-004 Universal Combat Engine Architecture` (next planning task after completed TASK-006).
 
 **Portfolio status snapshot:**
 
@@ -26,15 +26,16 @@
 | `TASK-003` Project Control Roadmap | DONE — independent QA READY; Human Owner accepted |
 | `TASK-004` Domain Glossary & Core Model Spec | DONE — independent QA READY; Human Owner accepted |
 | `TASK-005` Core Domain Type Skeleton | DONE — QA READY; PM accepted; no semantic drift |
+| `TASK-006` Static Game Data Schema & Rules Versioning | DONE — independent QA clear; Human Owner accepted SPEC-002 |
 
 **Next product milestone:** establish the core domain contracts and universal deterministic Combat Engine foundation before implementing content modes.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 6.
-- PLANNED: 81.
-- Task-count completion: **6 / 87 = 6.9%**.
+- DONE: 7.
+- PLANNED: 80.
+- Task-count completion: **7 / 87 = 8.0%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -229,7 +230,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 |---|---|---|---|---|---|---|---|---|
 | `TASK-004` Domain Glossary & Core Model Spec | A | DONE | PM → ChatGPT | QA; IA optional | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted spec | TASK-003 | Pokémon/combatant identity; stats; moves; types; abilities; items; effects; teams; PvE world/map/zone/encounter vocabulary; invariants; frontend execution-surface alignment; upstream Pokémon data-source policy alignment; Pokémon reference-skill policy |
 | `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
-| `TASK-006` Static Game Data Schema & Rules Versioning | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts schema/version semantics** | TASK-004/005 | PokémonDB factual-source policy and approved field whitelist; compliant PokémonDB DATA-only snapshot crawler/exporter; adapt the existing historical-moves crawler pattern; extracted-data + normalized snapshots with source URL/fetchedAt/parser version/content hash; no images/assets/editorial copy/layout capture; no alternate factual provider for canonical Pokémon fields; no runtime web dependency; source/provenance policy; immutable published rules+game-data bundle covering canonical and derived deterministic content inputs; species/moves/types/abilities/items/zones/encounter-definition catalog foundations plus type chart; rulesVersion/gameDataVersion + checksum/compiler identity; activation/deprecation; canonical fixture dataset; retention of referenced versions; schema/data validation; corrections publish a new version |
+| `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; PokémonDB DATA-only extraction whitelist vs local normalized fields; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset v1 schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or alternate-provider fallback |
 
 **Pokémon data-source policy for TASK-006:** PokémonDB (`pokemondb.net`) is the project's
 primary **external factual source of truth** for Pokémon reference data selected by the
@@ -264,13 +265,13 @@ The TASK-006 crawler/exporter sub-task must:
 - never silently fall back to another upstream source when PokémonDB disagrees or is
   unavailable; discrepancies must be escalated for explicit Human Owner/PM decision.
 
-**Candidate TASK-006 DATA whitelist v1 (to be ratified by the Human Owner during TASK-006):**
+**Accepted TASK-006 DATA whitelist v1:**
 
-The initial ingestion profile should be deliberately narrow. A field belongs in the baseline only when an
+The approved initial ingestion profile is deliberately narrow. A field belongs in the baseline only when an
 already-planned PokeNexus system needs the factual input. Additional PokémonDB data can be added later by
 publishing a new immutable snapshot/schema version; "available upstream" is not sufficient justification.
 
-**Baseline v1 candidates:**
+**Approved baseline v1:**
 
 - **Species/form identity:** `SpeciesId` remains the canonical PokeNexus identity for the exact accepted
   static definition; National Dex number is non-unique source/reference data, with source slug/name,
