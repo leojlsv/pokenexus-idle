@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, project-control baseline, core domain/static-data contracts and the Universal Combat Engine architecture are complete; the next planning step is Combat Rules v1.
+**Project phase:** Foundation, project-control baseline, core domain/static-data contracts, the Universal Combat Engine architecture and Combat Rules v1 are accepted; TASK-008 is complete.
 
-**Current work:** no implementation task is active. `TASK-007 — ADR-004 Universal Combat Engine Architecture` is DONE; `ADR-004` is accepted by the Human Owner and independent architecture QA plus determinism/replay audit both reported P0/P1/P2/P3 = 0/0/0/0.
+**Current work:** `TASK-008 — Combat Rules Spec v1` is DONE with `SPEC-003` approved by the Human Owner and repository completion authorized. The accepted model uses a `2000 ms` actor GCD plus immutable per-Move cooldowns; allowlisted simple-damage Moves resolve cooldown from pinned Power + PP through the exact rulesVersion curve, while Status/complex Moves use authored cooldowns. Move Loadout capacity is `1..4` with player-defined sequential order and deterministic cyclic/skip automation outside the resolver. Timed effects explicitly choose `battle/cadence`: cadence-scoped DoT/HoT/Buff/Debuff/locks continue across chained Battles, consume inter-Battle elapsed time and may KO a continuing Pokémon before the next encounter; Solo Hunt current HP also continues with no automatic Battle-boundary heal, while stat stages remain Battle-local. Final architecture/determinism and game-rules/balance/performance QA both report P0/P1/P2/P3 = 0/0/0/0. No production Combat Engine code is authorized by this acceptance alone.
 
-**Current action:** materialize `TASK-008 — Combat Rules Spec v1` through its Class A planning/review flow without reopening accepted ADR-004 architecture unless a genuine architectural conflict is discovered.
+**Current action:** TASK-008 is complete. `TASK-009 — Deterministic Combat Engine v1` remains PLANNED and must advance through the normal lifecycle before implementation.
 
-**Next task after TASK-003 acceptance:** `TASK-008 — Combat Rules Spec v1` (next planning task after completed TASK-007).
+**Next task after TASK-003 acceptance:** `TASK-009 — Deterministic Combat Engine v1`, to be separately prepared/advanced under the normal task lifecycle before implementation.
 
 **Portfolio status snapshot:**
 
@@ -28,15 +28,16 @@
 | `TASK-005` Core Domain Type Skeleton | DONE — QA READY; PM accepted; no semantic drift |
 | `TASK-006` Static Game Data Schema & Rules Versioning | DONE — independent QA clear; Human Owner accepted SPEC-002 |
 | `TASK-007` ADR-004 Universal Combat Engine Architecture | DONE — ADR-004 accepted; QA/audit clear |
+| `TASK-008` Combat Rules Spec v1 | DONE — SPEC-003 approved; QA clear; repository completion authorized |
 
 **Next product milestone:** establish the core domain contracts and universal deterministic Combat Engine foundation before implementing content modes.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 8.
-- PLANNED: 79.
-- Task-count completion: **8 / 87 = 9.2%**.
+- DONE: 9.
+- PLANNED: 78.
+- Task-count completion: **9 / 87 = 10.3%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -323,14 +324,20 @@ implementation Task before code is written.
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
 | `TASK-007` ADR-004 Universal Combat Engine Architecture | A | DONE | PM → ChatGPT | QA + IA | `SK-GAME-ARCH` | Completed — Human Owner accepted ADR-004 | TASK-004/005/006 | One mode-agnostic resolver; deterministic state-transition + explicit time advancement; player/AI/orchestrator produces ActionIntent outside resolver; engine validates legality/targets; explicit combat RNG isolated from policy RNG; pinned data/rules/event-schema context; ordered versioned Combat Events; logical combat time deterministic while infrastructure timestamps remain non-authoritative; no persistence/network/presentation authority leakage |
-| `TASK-008` Combat Rules Spec v1 | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts game rules** | TASK-007 | Damage; timing/cooldowns; target/valid-action rules; STAB/type effectiveness; crit/accuracy; KO/switch; move/Ability/effect semantics; exact arithmetic/rounding policy; victory conditions |
-| `TASK-009` Deterministic Combat Engine v1 | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH` | PM acceptance; Human sample-result validation | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; versioned event log; outcome; no mode-specific branches or AI decision policy |
+| `TASK-008` Combat Rules Spec v1 | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-003 | TASK-007 | IV/derived stats; player/content-defined ordered 1–4 Move loadout; deterministic cyclic/skip automatic sequence policy outside resolver; 2000ms actor GCD + immutable per-Move cooldowns with deterministic cross-Battle carry; explicit `battle/cadence` timed-effect lifetime; cadence DoT/HoT/Buff/Debuff/locks can advance between Battles and KO before next encounter; simple-Move cooldown resolution from pinned Power+PP + rules curve; Speed same-time initiative only; exact damage/effect ordering; KO/forced replacement; authoritative event semantics |
+| `TASK-009` Deterministic Combat Engine v1 | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH` | PM acceptance; Human sample-result validation | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; shared deterministic effect-rule evaluator reusable for active-Battle and cadence advancement; versioned event/consequence output; outcome; no mode-specific branches, AI decision policy or parallel Hunt effect resolver |
 | `TASK-010` Combat Fixtures, Replay & Property Harness | B | PLANNED | SD → Codex | QA | `SK-TDD` | No unless fixture semantics expose rule ambiguity | TASK-009 | Golden deterministic cases; same initial state + pinned data/rules/event-schema identity + combat RNG state + ordered CombatStimulus stream = same event sequence/final state/outcome; historical immutable-version replay; policy-independent replay when intents are stored; event ordering; time-partition invariance; HP/domain bounds; terminal KO/victory invariants; serialization round-trip; cross-mode math equivalence; regression corpus |
-| `TASK-011` Combat Performance Baseline | B | PLANNED | LD → Copilot CLI | QA; IA optional | `SK-GAME-PERF` | **HUMAN accepts performance budget** | TASK-009/010 | Combats/sec; p95 CPU/memory; 1h/8h simulation benchmark; allocation profiling; optimization decision record |
+| `TASK-011` Combat Performance Baseline | B | PLANNED | LD → Copilot CLI | QA; IA optional | `SK-GAME-PERF` | **HUMAN accepts performance budget** | TASK-009/010 | Combats/sec; p95 CPU/memory; cadence-effect boundary throughput; realistic and pathological periodic-schedule cases; 1h/8h simulation benchmark; allocation profiling; optimization/content-publication limit decision record |
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable for expected workloads.
 
 **Safe parallelization:** after TASK-008 is accepted, TASK-009 is the primary owner. TASK-010 can begin only after stable public engine interfaces exist. Client design exploration may run in parallel, but must not invent combat semantics.
+
+**Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
+fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. Before Solo/Duo/PvP
+or other production content relies on those mechanics, materialize a separately owned versioned
+combat-rule content/catalog task (or an explicit accepted Class A extension) that publishes rule
+content under the SPEC-002 rulesVersion envelope.
 
 ---
 
@@ -374,18 +381,18 @@ implementation Task before code is written.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-019` Pokémon Instance / Collection / Team Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts product rules** | TASK-004/006/013 | Instance identity; level/stats/Ability snapshot and selection rules; ownership; roster/team constraints; mutation rules |
-| `TASK-020` Collection & Team Domain/Persistence Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG` | PM acceptance | TASK-019/014 | Domain services; repositories; team validation; atomic updates; tests |
+| `TASK-019` Pokémon Instance / Collection / Team Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts product rules** | TASK-004/006/008/013 | Instance identity; level/stats/Ability snapshot and selection rules; ownership; persistent selected Move Loadout/order + mutation rules constrained by SPEC-003; roster/team constraints |
+| `TASK-020` Collection & Team Domain/Persistence Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG` | PM acceptance | TASK-019/014 | Domain services; repositories; persist/validate ordered selected Move Loadout; team validation; atomic updates; tests |
 
 #### STORY-03.2 — Progression, inventory and reward integrity
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
 | `TASK-021` XP / Level / Progression Rules Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH` | **HUMAN accepts progression rules** | TASK-019 | XP sources; level curves; caps; evolution hooks if applicable; versioning |
-| `TASK-022` Inventory / Item Model Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts item semantics** | TASK-006/013/019 | Item-definition semantics over the TASK-006 catalog; stackability/quantity vs per-copy identity; consumables; capture items such as Poké Balls; equipment/TMs if in scope; inventory limits; use/consume/mutation contracts |
+| `TASK-022` Inventory / Item Model Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts item semantics** | TASK-006/013/019 | Item-definition semantics over the TASK-006 catalog; stackability/quantity vs per-copy identity; consumables; Potion/healing semantics and explicit revival semantics only if accepted; capture items such as Poké Balls; equipment/TMs if in scope; inventory limits; use/consume/mutation contracts |
 | `TASK-023` Reward Ledger & Integrity Model | A | PLANNED | PM → ChatGPT | QA + IA recommended | `SK-THREAT`, `SK-PG` | **HUMAN accepts reward authority model** | TASK-013/021/022 | Idempotent grants; source attribution; immutable rules/game-data snapshot identity; replay/duplicate protection; audit trail; rollback semantics |
 | `TASK-024` Progression / Inventory / Reward Implementation | B | PLANNED | LD → Copilot CLI | QA; IA for reward-integrity paths | `SK-TDD`, `SK-PG` | PM acceptance | TASK-018/021/022/023 | XP grants; item mutations; reward transactions; emit reward audit events on the TASK-018 substrate; integration tests |
-| `TASK-025` Player State API Integration | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-CF-WBP` reference-only | PM acceptance | TASK-020/024 | Collection/team/inventory/progression endpoints; authz; optimistic/idempotent command handling |
+| `TASK-025` Player State API Integration | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-CF-WBP` reference-only | PM acceptance | TASK-020/024 | Collection/team/inventory/progression endpoints, including ordered Move-loadout mutation when accepted by TASK-019; authz; optimistic/idempotent command handling |
 
 **Exit criteria:** authenticated players have authoritative collection/team/inventory/progression state suitable for gameplay rewards and team selection.
 
@@ -400,7 +407,7 @@ implementation Task before code is written.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | B | PLANNED | PM → ChatGPT | QA | `SK-UI`, `SK-A11Y`, `SK-REACT` | **HUMAN visual/UX approval** | TASK-003; domain vocabulary from TASK-004 | FE feasibility input; information architecture; responsive targets; design tokens; states; accessibility bar; Card vs Visual responsibilities |
+| `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | B | PLANNED | PM → ChatGPT | QA | `SK-UI`, `SK-A11Y`, `SK-REACT` | **HUMAN visual/UX approval** | TASK-003; domain vocabulary from TASK-004 | FE feasibility input; information architecture including Pokémon/Team/ordered Move-loadout management surfaces; responsive targets; design tokens; states; accessibility bar; Card vs Visual responsibilities; materialize a dedicated feature implementation task before Move-loadout editing UI code if no later task already owns it |
 | `TASK-027` React App Shell & Navigation | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-TDD`, `SK-FE-TEST` | **HUMAN live UI validation** | TASK-026 | Shell; routes/views; loading/error/empty states; keyboard/focus; responsive layout; behavior/E2E baseline |
 | `TASK-028` Combat Event Presentation Contract | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH` | PM acceptance | TASK-007/009 | Read-model/events consumed by UI; no authority leakage; versioned payload boundaries |
 
@@ -428,19 +435,19 @@ implementation Task before code is written.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-033` PvE World/Map, Zone & Solo Hunt Rules/Lifecycle Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts PvE/Hunt rules** | TASK-008/019/021/023 | Define World/Map → Zone → Hunt navigation/progression model; zone availability/unlocks at rule level; selecting/entering a Zone/Hunt; Hunt start/end; encounters; Pokémon Team/lineup behavior; KO/recovery; respawn; capture hooks; reward/drop rules and cadence; checkpoint/claim semantics; no combat-engine mode fork |
+| `TASK-033` PvE World/Map, Zone & Solo Hunt Rules/Lifecycle Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts PvE/Hunt rules** | TASK-008/019/021/023 | Define World/Map → Zone → Hunt navigation/progression model; zone availability/unlocks at rule level; selecting/entering a Zone/Hunt; Hunt start/end/cancel/restart including reset-abuse policy; one Hunt = one combat-cadence continuity scope; continuing player Pokémon HP across encounters with no automatic Battle-boundary heal; deterministic inter-Battle time; cadence-effect continuation/ticks/KO between encounters; when item/Potion commands may occur and their ordering against due effect boundaries using TASK-022 semantics; encounters; Pokémon Team/lineup continuation after KO, including automatic activation of the next living eligible Pokémon and a mandatory intervention state before any new Battle when no living eligible Pokémon remains; accepted intervention choices such as Revive/item action or return to city; KO/recovery; respawn; capture hooks; reward/drop rules and cadence; checkpoint/claim semantics; no combat-engine mode fork |
 | `TASK-034` PvE World/Zone, Encounter & Hunt Data | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD` | **HUMAN content sample validation** | TASK-006/033 | Implement accepted world/map-zone content structure; Zone definitions; map/zone relationships; encounter tables; versioned Hunt/Zone reward and item-drop tables/content inputs where approved; all deterministic content published through TASK-006 immutable version/provenance envelope; deterministic selection; level/rule inputs; data validation |
-| `TASK-035` Solo Hunt Simulation Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-009/033/034 | Event-driven encounter loop; Hunt orchestration/AI policy supplies versioned ActionIntents to shared Combat Engine; no realtime tick; deterministic advancement |
+| `TASK-035` Solo Hunt Simulation Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-009/033/034 | Event-driven encounter loop; Hunt orchestration/AI policy executes the accepted ordered Move-sequence policy, carries actor GCD/per-Move readiness/sequence cursor and cadence-scoped effect state across encounters, advances inter-Battle effects through the shared TASK-009 rule evaluator, handles pre-next-Battle KO, deterministically continues with the next living eligible Pokémon when available or blocks before Battle creation in the accepted no-living intervention state, and supplies versioned ActionIntents to shared Combat Engine; no realtime tick or parallel effect math |
 | `TASK-036` Capture & Reward Resolution | B | PLANNED | LD → Copilot CLI | QA + IA reward-integrity spot-check | `SK-TDD`, `SK-THREAT` | **HUMAN validates rule outcomes** | TASK-023/024/033/034/035 | Capture rolls/rules; resolve XP/item drops/currency-if-approved from accepted versioned rules/content; idempotent grants through the reward/inventory authority path; event output |
-| `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-035/036 | `startedAt`/checkpoint/rulesVersion/gameDataVersion or content checksum/seed; referenced-version retention; 1h/8h advancement; safe caps; replay equality |
+| `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-035/036 | `startedAt`/checkpoint/rulesVersion/gameDataVersion or content checksum/seed; referenced-version retention; cadence cooldown/effect continuation state; 1h/8h advancement; safe caps; replay equality |
 
 #### STORY-05.2 — Authoritative Hunt integration and presentation
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-038` Hunt API & Persistence Orchestration | B | PLANNED | LD → Copilot CLI | QA | `SK-CF-WBP` reference-only, `SK-PG`, `SK-TDD` | PM acceptance | TASK-017/025/037 | Start/checkpoint/claim/cancel commands; authz; transactions; idempotency; recovery |
-| `TASK-039` Solo Hunt Card Mode Integration | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-029/038 | PvE world/map/Zone selection in Card/Low-Spec presentation; team selection; Hunt state; event playback; rewards/result states; errors/reconnect; behavior/E2E coverage |
-| `TASK-040` Solo Hunt Visual/Pixi Integration | B | PLANNED | FE → Claude Code | QA | `SK-GAME-PERF`, `SK-UI`, `SK-FE-TEST` | **HUMAN visual/live validation** | TASK-030/038 | Visual/Pixi presentation of the accepted PvE world/map/Zone navigation and the same Hunt/event source as Card; animations; scene transitions; performance/fallback; behavior/E2E coverage |
+| `TASK-038` Hunt API & Persistence Orchestration | B | PLANNED | LD → Copilot CLI | QA | `SK-CF-WBP` reference-only, `SK-PG`, `SK-TDD` | PM acceptance | TASK-017/025/037 | Start/checkpoint/claim/cancel commands; commands for accepted Hunt intervention actions such as item/revive use and return-to-city/terminate flow; authz; transactions; idempotency; recovery |
+| `TASK-039` Solo Hunt Card Mode Integration | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-029/038 | PvE world/map/Zone selection in Card/Low-Spec presentation; team selection; Hunt state; event playback; mandatory no-living-Pokémon intervention state with accepted actions such as Revive/item use or return to city; rewards/result states; errors/reconnect; behavior/E2E coverage |
+| `TASK-040` Solo Hunt Visual/Pixi Integration | B | PLANNED | FE → Claude Code | QA | `SK-GAME-PERF`, `SK-UI`, `SK-FE-TEST` | **HUMAN visual/live validation** | TASK-030/038 | Visual/Pixi presentation of the accepted PvE world/map/Zone navigation and the same Hunt/event source as Card; animations; scene transitions; mandatory no-living-Pokémon intervention state/action presentation; performance/fallback; behavior/E2E coverage |
 | `TASK-041` Solo Hunt End-to-End, Offline & Performance Harness | B | PLANNED | SD → Codex | QA + IA reward-integrity review | `SK-GAME-PERF`, `SK-TDD` | **HUMAN MVP acceptance** | TASK-034–040 | Implement E2E/regression harness; fresh/returning flows; offline 1h/8h; deterministic replay; duplicate-claim defense; Card/Visual parity; load/CPU budget |
 
 **Exit / MVP gate:** Solo Hunt is a complete server-authoritative playable loop. Human Owner explicitly approves MVP behavior and presentation before the project expands into realtime multiplayer content.
