@@ -10,11 +10,11 @@
 
 **Project phase:** Foundation, project-control baseline, core domain/static-data contracts, the Universal Combat Engine architecture and Combat Rules v1 are accepted; TASK-008 is complete.
 
-**Current work:** `TASK-009 — Deterministic Combat Engine v1` is in ACCEPTANCE after fresh independent determinism and gameplay QA both reported P0/P1/P2/P3 = 0/0/0/0 READY and PM / Architecture Coordinator acceptance passed on the exact current snapshot. Its implementation boundary is `@pokenexus/game-core`: pure deterministic Battle initialization/transitions, explicit RNG/time, exact SPEC-003 combat/effect semantics, cadence-effect advancement through the same rule evaluator, KO/replacement/outcome and authoritative event output. Move selection, Hunt lifecycle, persistence, network and presentation remain outside the resolver.
+**Current work:** `TASK-009 — Deterministic Combat Engine v1` is DONE. Independent determinism and gameplay QA both reported P0/P1/P2/P3 = 0/0/0/0 READY; PM / Architecture Coordinator accepted the exact implementation snapshot; Human Owner sample-result validation passed; and the authorized feature integration completed by fast-forward on `main` at `11e28a1c9275488d62221e135179cb5f7cd182e6`.
 
-**Current action:** Human Owner sample-result validation is complete and repository completion/history operations are explicitly authorized. Lead Developer is completing the accepted feature through feature-branch publication and fast-forward main integration; TASK-009 remains in ACCEPTANCE until that integration/push succeeds. Force-push and rebase are not required.
+**Current action:** TASK-009 repository completion is complete. `TASK-010 — Combat Fixtures, Replay & Property Harness` remains PLANNED and must advance through the normal task lifecycle before implementation.
 
-**Next task after TASK-003 acceptance:** `TASK-009 — Deterministic Combat Engine v1`, to be separately prepared/advanced under the normal task lifecycle before implementation.
+**Next task after TASK-003 acceptance:** `TASK-010 — Combat Fixtures, Replay & Property Harness`, to be separately prepared/advanced under the normal task lifecycle before implementation.
 
 **Portfolio status snapshot:**
 
@@ -29,17 +29,16 @@
 | `TASK-006` Static Game Data Schema & Rules Versioning | DONE — independent QA clear; Human Owner accepted SPEC-002 |
 | `TASK-007` ADR-004 Universal Combat Engine Architecture | DONE — ADR-004 accepted; QA/audit clear |
 | `TASK-008` Combat Rules Spec v1 | DONE — SPEC-003 approved; QA clear; repository completion authorized |
-| `TASK-009` Deterministic Combat Engine v1 | ACCEPTANCE — independent QA clear; PM / Architecture Coordinator accepted exact current snapshot; Human Owner sample-result validation complete; repository completion explicitly authorized and in progress |
+| `TASK-009` Deterministic Combat Engine v1 | DONE — independent QA clear; PM / Architecture Coordinator accepted exact snapshot; Human Owner sample-result validation complete; repository completion authorized and completed |
 
 **Next product milestone:** establish the core domain contracts and universal deterministic Combat Engine foundation before implementing content modes.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 9.
-- ACCEPTANCE: 1.
+- DONE: 10.
 - PLANNED: 77.
-- Task-count completion: **9 / 87 = 10.3%**.
+- Task-count completion: **10 / 87 = 11.5%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -327,7 +326,7 @@ implementation Task before code is written.
 |---|---|---|---|---|---|---|---|---|
 | `TASK-007` ADR-004 Universal Combat Engine Architecture | A | DONE | PM → ChatGPT | QA + IA | `SK-GAME-ARCH` | Completed — Human Owner accepted ADR-004 | TASK-004/005/006 | One mode-agnostic resolver; deterministic state-transition + explicit time advancement; player/AI/orchestrator produces ActionIntent outside resolver; engine validates legality/targets; explicit combat RNG isolated from policy RNG; pinned data/rules/event-schema context; ordered versioned Combat Events; logical combat time deterministic while infrastructure timestamps remain non-authoritative; no persistence/network/presentation authority leakage |
 | `TASK-008` Combat Rules Spec v1 | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-003 | TASK-007 | IV/derived stats; player/content-defined ordered 1–4 Move loadout; deterministic cyclic/skip automatic sequence policy outside resolver; 2000ms actor GCD + immutable per-Move cooldowns with deterministic cross-Battle carry; explicit `battle/cadence` timed-effect lifetime; cadence DoT/HoT/Buff/Debuff/locks can advance between Battles and KO before next encounter; simple-Move cooldown resolution from pinned Power+PP + rules curve; Speed same-time initiative only; exact damage/effect ordering; KO/forced replacement; authoritative event semantics |
-| `TASK-009` Deterministic Combat Engine v1 | B | ACCEPTANCE | LD → ChatGPT delegated worker | QA | `SK-TDD`, `SK-GAME-ARCH` | PM accepted; Human sample-result validation complete; repository completion authorized/in progress | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; shared deterministic effect-rule evaluator reusable for active-Battle and cadence advancement; versioned event/consequence output; outcome; no mode-specific branches, AI decision policy or parallel Hunt effect resolver |
+| `TASK-009` Deterministic Combat Engine v1 | B | DONE | LD → ChatGPT delegated worker | QA | `SK-TDD`, `SK-GAME-ARCH` | Completed — PM accepted; Human sample-result validation complete; repository completion authorized/completed | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; shared deterministic effect-rule evaluator reusable for active-Battle and cadence advancement; versioned event/consequence output; outcome; no mode-specific branches, AI decision policy or parallel Hunt effect resolver |
 | `TASK-010` Combat Fixtures, Replay & Property Harness | B | PLANNED | SD → Codex | QA | `SK-TDD` | No unless fixture semantics expose rule ambiguity | TASK-009 | Golden deterministic cases; same initial state + pinned data/rules/event-schema identity + combat RNG state + ordered CombatStimulus stream = same event sequence/final state/outcome; historical immutable-version replay; policy-independent replay when intents are stored; event ordering; time-partition invariance; HP/domain bounds; terminal KO/victory invariants; serialization round-trip; cross-mode math equivalence; regression corpus |
 | `TASK-011` Combat Performance Baseline | B | PLANNED | LD → Copilot CLI | QA; IA optional | `SK-GAME-PERF` | **HUMAN accepts performance budget** | TASK-009/010 | Combats/sec; p95 CPU/memory; cadence-effect boundary throughput; realistic and pathological periodic-schedule cases; 1h/8h simulation benchmark; allocation profiling; optimization/content-publication limit decision record |
 

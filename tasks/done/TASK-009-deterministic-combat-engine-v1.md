@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer assignment)
@@ -276,9 +276,10 @@ TASK-009 is complete only after implementation validation, independent QA, deleg
 Human Owner sample-result validation and separately authorized repository completion.
 
 Human Owner sample-result validation is complete. On 2026-09-15, the Human Owner explicitly
-authorized TASK-009 repository completion/history operations. State remains `ACCEPTANCE` until the
-authorized feature integration and main push complete successfully; `DONE` is recorded only after
-that repository completion succeeds.
+authorized TASK-009 repository completion/history operations. The accepted feature was integrated
+into `main` by fast-forward and pushed successfully at
+`11e28a1c9275488d62221e135179cb5f7cd182e6`. TASK-009 is now recorded `DONE`; this completion-only
+metadata update is the final repository closure step.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.
