@@ -1,9 +1,12 @@
-/**
- * Package identity marker.
- *
- * Placeholder entrypoint validating workspace build/type-resolution wiring.
- * game-core must remain pure and deterministic: no React, HTTP, database
- * client or Cloudflare runtime dependency may be introduced here.
- * Real domain logic is introduced by future scoped tasks.
- */
+export {
+  createCadenceCarry,
+  initializeBattle,
+  resolveCombatStimulus,
+} from "./battle";
+export { deriveSimpleDamageMoveCooldownMs } from "./cooldown";
+export { advanceCadence } from "./effects";
+export { createRngState, nextRngState } from "./rng";
+export { cadenceParticipantKey } from "./types";
+export type * from "./types";
+
 export const PACKAGE_NAME = "@pokenexus/game-core" as const;

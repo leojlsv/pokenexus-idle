@@ -12,8 +12,13 @@
     }
   },
   "files": ["dist"],
+  "dependencies": {
+    "@pokenexus/game-types": "workspace:*"
+  },
   "scripts": {
+    "prebuild": "corepack pnpm --filter @pokenexus/game-types build",
     "build": "tsc -p tsconfig.json",
+    "pretypecheck": "corepack pnpm --filter @pokenexus/game-types build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint": "eslint ."

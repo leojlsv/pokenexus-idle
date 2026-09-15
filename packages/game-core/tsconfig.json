@@ -4,7 +4,10 @@
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
-    "noEmit": false
+    "noEmit": false,
+    "paths": {
+      "@pokenexus/game-types": ["packages/game-types/dist/index.d.ts"]
+    }
   },
   "include": ["src"]
 }

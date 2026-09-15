@@ -19,11 +19,13 @@ and by immutable rule artifacts published under the accepted `rulesVersion` enve
 
 ### 2.1 Level
 
-Combat receives `level` as a positive integer `>= 1` in the Combatant Snapshot.
+Combat receives `level` as an integer in the inclusive range `1..200` in the Combatant Snapshot.
 
-TASK-008 does not impose the account/progression level cap. TASK-021 or another owning progression
-spec may restrict which levels can exist, but the combat formulas below remain defined for every
-accepted positive integer level.
+`200` is the global Pokémon hard Level Cap for the accepted PokeNexus product direction. Adding a
+new region or generation does not automatically raise this cap. Progression beyond Level 200 belongs
+to separate endgame/progression systems owned by TASK-021 or later accepted rules. Any future change
+to the Level Cap requires an explicit Human Owner product/rules decision; it is never inferred from
+generation count, region progression or content expansion.
 
 ### 2.2 Individual Values
 
@@ -649,12 +651,13 @@ EffectRule content may compose these primitives:
 
 - instant HP healing by exact integer amount or exact positive rational fraction of `maxHp`;
 - stat-stage delta for one of `atk/def/spa/spd/spe`;
-- timed action lock until an explicit logical `expiresAtMs`;
+- timed action lock with explicit `battle | cadence` lifetime scope until an explicit logical
+  `expiresAtMs`;
 - periodic HP consequence with explicit `damage` or `healing` kind, first tick, integer interval,
   exact integer or positive rational max-HP magnitude and expiry;
 - apply/remove one identified Active Effect whose stacking policy is explicit.
 
-Every finite-duration EffectRule/timed effect declares an immutable `lifetimeScope` under
+Every finite-duration EffectRule/timed action lock declares an immutable `lifetimeScope` under
 `rulesVersion`:
 
 - `battle`: the effect exists only in the Battle where it was applied. Battle end terminates any
@@ -700,18 +703,20 @@ Every persistent executable effect resolves from an immutable EffectRule under `
 Effect identity uses the target identity appropriate to its lifetime scope:
 
 - `battle` state is keyed at least by `(targetCombatantId, effectId)`;
-- `cadence` carry state is keyed at least by `(targetCadenceIdentity, effectId)`, where
-  `targetCadenceIdentity` is an explicit stable orchestration identity that does **not** derive from
-  or reuse a Battle-scoped `CombatantId`. For a continuing player-owned Pokémon this identity binds
-  exactly to its `PokemonInstanceId`. If a later mode needs a non-player participant to continue
-  across Battles, that mode must supply an equally stable accepted identity; absent such an identity,
-  the participant cannot receive cross-Battle cadence carry.
+- `cadence` carry state is keyed at least by `(targetCadenceParticipant, effectId)`, where
+  `targetCadenceParticipant` is the complete stable pair `{ kind, identity }`. `kind` is
+  `pokemonInstance` for a continuing player-owned Pokémon and its `identity` is exactly that
+  `PokemonInstanceId`; a continuing non-player participant uses `kind = nonPlayer` and an explicit
+  equally stable accepted non-player identity. The pair does **not** derive from or reuse a
+  Battle-scoped `CombatantId`. The same raw identity string under two different kinds denotes two
+  different cadence participants. Absent a stable accepted participant pair, cross-Battle cadence
+  carry is unavailable.
 
 When a cadence participant enters a new Battle, orchestration supplies an explicit one-to-one
-`targetCadenceIdentity -> CombatantId` binding as Battle initialization input. The engine validates
-the binding before applying cadence carry. Missing, duplicate, conflicting or mismatched bindings
-fail initialization; the engine never guesses continuity from SpeciesId, slot, team position,
-display name or a reused CombatantId.
+`targetCadenceParticipant { kind, identity } -> CombatantId` binding as Battle initialization input.
+The engine validates the complete participant pair before applying cadence carry. Missing, duplicate,
+conflicting or mismatched bindings fail initialization; the engine never guesses continuity from
+SpeciesId, slot, team position, display name or a reused CombatantId.
 
 Persistent effect state also carries a monotonically increasing `applicationSequence` within its
 lifetime scope. Battle-scoped sequences are Battle-local; cadence-scoped sequences remain stable/
@@ -773,8 +778,9 @@ At Battle end:
 - if the target does not continue in the cadence scope, the effect terminates with that target's
   participation and cannot later resolve against an unrelated Combatant with a reused Battle ID.
 
-Cross-Battle replay/checkpoint identity therefore includes the exact stable cadence-participant
-identity and its deterministic Battle binding wherever cadence effects/readiness/cursor are carried.
+Cross-Battle replay/checkpoint identity therefore includes the exact stable cadence participant
+`{ kind, identity }` pair and its deterministic Battle binding wherever cadence effects/readiness/
+cursor are carried.
 
 Inter-Battle elapsed time **counts** for cadence-scoped effects. The same deterministic cadence
 advancement that reduces remaining GCD/Move cooldown delay also advances cadence effects and resolves
@@ -849,6 +855,17 @@ flattened events/final state/RNG position as required by ADR-004.
 An action-locked Combatant remains active/alive but cannot legally use a Move until the lock
 expires. Action lock does not itself move `nextActionAtMs` or any `moveReadyAtMs`; global readiness,
 individual Move readiness and lock state must all permit action.
+
+`actionLock` is the v1 hard-control primitive, not a type-erased framework for future control
+mechanics. Each MoveRule/AbilityRule action-lock instruction declares `lifetimeScope: battle |
+cadence`; omitted or unsupported scope fails validation. A Combatant stores at most one deadline
+per scope. Reapplication within a scope is extend-only:
+`max(currentDeadline, applicationTimeMs + durationMs)`. Battle and cadence deadlines are
+independent gates, and either unexpired deadline blocks action. Battle locks are discarded at Battle
+end. A cadence lock requires a stable cadence participant, carries its exact remaining duration,
+and decreases by explicit inter-Battle `gapMs` before deterministic rebinding. Future concrete
+control mechanics may apply duration resistance, immunity, or diminishing returns before their own
+deadline mutation; v1 implements none of those mechanics.
 
 ## 17. Ability semantics v1
 
@@ -959,9 +976,10 @@ Battle-local effect initialization is split by lifetime scope:
 - no `battle`-scoped Active Effect, periodic schedule or timed action lock from a prior Battle is
   accepted as initialization input;
 - cadence-scoped Active Effects for a continuing participant are accepted only from validated
-  deterministic cadence carry-in produced by the same rulesVersion evaluator. Their target identity,
+  deterministic cadence carry-in produced by the same rulesVersion evaluator. Their target
+  `{ kind, identity }` participant pair,
   lifetime scope, remaining duration, next-boundary delay, stacks and schedule identity must all be
-  valid for the pinned loadout/rules context, and their stable cadence identity must have exactly one
+  valid for the pinned loadout/rules context, and their stable cadence participant must have exactly one
   validated binding to the intended new-Battle `CombatantId`; malformed or foreign carry-in fails
   initialization.
 
@@ -1214,8 +1232,9 @@ Implementation must make it possible to fixture at least:
 - battle-scoped effect teardown at Battle end with no future tick/carry;
 - cadence-scoped DoT/HoT/effect carry across Battle boundaries, including due tick/expiry processing
   during deterministic inter-Battle elapsed time and KO before next-Battle initialization;
-- cadence effect keyed by stable continuing `PokemonInstanceId`/accepted cadence identity, rebinding
-  deterministically to a different `CombatantId` in the next Battle and rejecting ambiguous mapping;
+- cadence effect keyed by the full stable continuing `{ kind, identity }` participant pair (with
+  `pokemonInstance` bound exactly to `PokemonInstanceId`), rebinding deterministically to a different
+  `CombatantId` in the next Battle and rejecting ambiguous or kind-mismatched mapping;
 - KO with living reserve and externally selected forced replacement;
 - winning KO and simultaneous-effect draw;
 - unsupported status Move/Ability failing closed;
@@ -1306,7 +1325,9 @@ behavior:
 Accepting SPEC-003 ratifies at least these product/game-rule decisions:
 
 1. IV domain `0..31`; no EV/Nature mechanics in combat v1.
-2. Derived stat formulas in section 2, with level cap owned elsewhere.
+2. Derived stat formulas in section 2, with global Pokémon hard Level Cap `200`; new generations or
+   regions do not automatically raise the cap, and post-cap progression is owned by separate
+   progression/endgame rules.
 3. Player/content-defined ordered distinct `1..4` Move loadout; populated slots use the deterministic
    cyclic sequential policy in section 5.2; no PP consumption or Struggle fallback.
 4. Integer-millisecond continuous logical time; no turns/ticks/cast time.
