@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, project-control baseline and the first approved core domain specification are complete; the next step is the shared core-domain type skeleton before gameplay implementation.
+**Project phase:** Foundation, project-control baseline, the first approved core domain specification and the shared core-domain type skeleton are complete; the next step is static game-data schema and rules versioning before combat architecture/rules implementation.
 
-**Current work:** no implementation task is active. `TASK-004 — Domain Glossary & Core Model Spec` is DONE after independent QA returned no P0/P1/P2/P3 findings, the Human Owner accepted `SPEC-001`, and the authorized repository completion was performed.
+**Current work:** no implementation task is active. `TASK-005 — Core Domain Type Skeleton` is DONE after implementation validation, independent QA returned no P0/P1/P2/P3 findings, PM / Architecture Coordinator acceptance found no semantic drift, and the Human Owner authorized repository completion.
 
-**Current action:** prepare/materialize `TASK-005 — Core Domain Type Skeleton` through normal Definition of Ready; roadmap status alone does not authorize implementation.
+**Current action:** prepare/materialize `TASK-006 — Static Game Data Schema & Rules Versioning` through its Class A Definition of Ready, including the required Human Owner acceptance before implementation may begin.
 
-**Next task after TASK-003 acceptance:** `TASK-005 — Core Domain Type Skeleton` (not yet started; must be materialized and reach READY before implementation).
+**Next task after TASK-003 acceptance:** `TASK-006 — Static Game Data Schema & Rules Versioning` (next planning/spec task; it must satisfy its Class A Human Owner gate before reaching READY).
 
 **Portfolio status snapshot:**
 
@@ -25,15 +25,16 @@
 | `TASK-002` Cloudflare Runtime Modernization | DONE |
 | `TASK-003` Project Control Roadmap | DONE — independent QA READY; Human Owner accepted |
 | `TASK-004` Domain Glossary & Core Model Spec | DONE — independent QA READY; Human Owner accepted |
+| `TASK-005` Core Domain Type Skeleton | DONE — QA READY; PM accepted; no semantic drift |
 
 **Next product milestone:** establish the core domain contracts and universal deterministic Combat Engine foundation before implementing content modes.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 5.
-- PLANNED: 82.
-- Task-count completion: **5 / 87 = 5.7%**.
+- DONE: 6.
+- PLANNED: 81.
+- Task-count completion: **6 / 87 = 6.9%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -227,7 +228,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
 | `TASK-004` Domain Glossary & Core Model Spec | A | DONE | PM → ChatGPT | QA; IA optional | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted spec | TASK-003 | Pokémon/combatant identity; stats; moves; types; abilities; items; effects; teams; PvE world/map/zone/encounter vocabulary; invariants; frontend execution-surface alignment; upstream Pokémon data-source policy alignment; Pokémon reference-skill policy |
-| `TASK-005` Core Domain Type Skeleton | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD` | PM acceptance; Human only if semantics drift | TASK-004 | Implement shared IDs/types; discriminated unions; no game logic; compiler guards |
+| `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
 | `TASK-006` Static Game Data Schema & Rules Versioning | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts schema/version semantics** | TASK-004/005 | PokémonDB factual-source policy and approved field whitelist; compliant PokémonDB DATA-only snapshot crawler/exporter; adapt the existing historical-moves crawler pattern; extracted-data + normalized snapshots with source URL/fetchedAt/parser version/content hash; no images/assets/editorial copy/layout capture; no alternate factual provider for canonical Pokémon fields; no runtime web dependency; source/provenance policy; immutable published rules+game-data bundle covering canonical and derived deterministic content inputs; species/moves/types/abilities/items/zones/encounter-definition catalog foundations plus type chart; rulesVersion/gameDataVersion + checksum/compiler identity; activation/deprecation; canonical fixture dataset; retention of referenced versions; schema/data validation; corrections publish a new version |
 
 **Pokémon data-source policy for TASK-006:** PokémonDB (`pokemondb.net`) is the project's
