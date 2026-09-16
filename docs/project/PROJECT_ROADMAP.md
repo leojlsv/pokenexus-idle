@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, core domain/combat foundation and the PostgreSQL v1 persistence model are complete; database adapter and migration foundation is complete, and authentication architecture is next.
+**Project phase:** Foundation, core domain/combat foundation, PostgreSQL persistence foundation and the v1 authentication architecture are complete.
 
-**Current work:** `TASK-003 — Project Control Roadmap` is DONE again after a narrow ESLint environment correction removed seven false-positive `no-undef` findings, independent QA returned P0/P1/P2/P3 = 0/0/0/0, and repository completion was authorized.
+**Current work:** `TASK-015 — ADR-006 Authentication / Authorization / Session Model` is DONE. Independent QA and Independent Auditor are clear, the Human Owner accepted ADR-006, and repository completion/history was authorized on 2026-09-16.
 
-**Current action:** materialize `TASK-015 — ADR-006 Authentication / Authorization / Session Model` under its Class A governance flow.
+**Current action:** TASK-015 completion is being integrated into canonical `main`. TASK-016 remains PLANNED and unstarted.
 
-**Next task after TASK-003 acceptance:** `TASK-015 — ADR-006 Authentication / Authorization / Session Model`.
+**Next task after TASK-003 acceptance:** `TASK-016 — Authentication & Session Implementation`.
 
 **Portfolio status snapshot:**
 
@@ -34,15 +34,17 @@
 | `TASK-011` Combat Performance Baseline | DONE — independent QA clear; PM / Architecture Coordinator accepted; Human Owner accepted budget/publication guidance; repository completion authorized and completed |
 | `TASK-012` ADR-005 Persistence & Data Access Strategy | DONE — independent QA/audit clear; Human Owner accepted ADR-005; repository completion authorized and completed |
 | `TASK-013` PostgreSQL Schema v1 | DONE — feasibility/QA/audit clear; Human Owner accepted SPEC-004; repository completion authorized and completed |
+| `TASK-014` Database Adapter & Migration Foundation | DONE — independent QA clear; PM / Architecture Coordinator accepted; repository completion authorized and completed |
+| `TASK-015` ADR-006 Authentication / Authorization / Session Model | DONE — QA + IA clear; Human Owner accepted ADR-006 and authorized repository completion/history on 2026-09-16 |
 
 **Next product milestone:** establish persistence, identity and security foundations on PostgreSQL before persistent trainer/gameplay systems are implemented.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 15.
-- PLANNED: 72.
-- Task-count completion: **15 / 87 = 17.2%**.
+- DONE: 16.
+- PLANNED: 71.
+- Task-count completion: **16 / 87 = 18.4%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -364,7 +366,7 @@ content under the SPEC-002 rulesVersion envelope.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-015` ADR-006 Authentication / Authorization / Session Model | A | PLANNED | PM → ChatGPT | QA + **IA required** | `SK-THREAT`, `SK-API-SEC` manual-review | **HUMAN accepts ADR** | TASK-012 | Threat model; account states including active/disabled/deleted/recovered; session issuance/rotation/expiry/revoke-all; recovery/credential-change invalidation; authorization matrix; rate/abuse boundaries; audit-event taxonomy with secret/token exclusion; retention/privacy; account deletion/export expectations |
+| `TASK-015` ADR-006 Authentication / Authorization / Session Model | A | DONE | PM → ChatGPT | QA + **IA required** — clear | `SK-THREAT`, `SK-API-SEC` manual-review | Completed — Human Owner accepted ADR-006 and authorized repository completion/history on 2026-09-16 | TASK-012 | Passkey-first discoverable WebAuthn v1; exact credential/userHandle/AccountId binding; canonical unique recovery email; digest-stored restricted enrollment/recovery capability; old-credential quarantine/revocation + 24h post-recovery security hold; opaque revocable sessions; recent-auth + CSRF; deny-by-default ownership authorization; authoritative per-target abuse cooldown + coarse edge limits; security notifications; secret-free bounded audit/retention; deletion/export expectations |
 | `TASK-016` Authentication & Session Implementation | B | PLANNED | LD → Copilot CLI | QA + **IA required** | `SK-TDD`, `SK-THREAT`, `SK-SECRETS` | **HUMAN security acceptance** | TASK-015 | Auth endpoints/middleware; session issuance/persistence/rotation/expiry/revoke-all; recovery/credential-change invalidation; account-state enforcement; rate/error handling; security tests and audit emission without secrets/tokens |
 | `TASK-017` Player Profile API & Persistence | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG`, `SK-CF-WBP` reference-only | PM acceptance | TASK-014/016 | Create/load player; profile contract; ownership authorization; idempotency; integration tests |
 | `TASK-018` Persistence/Auth Recovery, Contract & Baseline Auditability Suite | B | PLANNED | SD → Codex | QA; IA spot-check | `SK-TDD`, `SK-PG`, `SK-SECRETS` | No unless recovery/auditability policy changes | TASK-014/016/017 | Failure/retry cases; authorization matrix; migration test; issuance/rotation/expiry/revoke-all/recovery-invalidation cases; correlation IDs; auth/security audit-event substrate and retention/privacy checks; no-secret/token evidence; prove baseline exists before reward-bearing/realtime features |
