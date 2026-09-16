@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT
@@ -296,7 +296,7 @@ Current approval-preparation result:
 
 ```text
 docs/decisions/ADR-005-persistence-data-access-strategy.md
-tasks/active/TASK-012-persistence-data-access-strategy.md
+tasks/done/TASK-012-persistence-data-access-strategy.md
 docs/project/PROJECT_ROADMAP.md
 docs/project/PROJECT_ROADMAP.html
 ```
@@ -307,8 +307,9 @@ authorized by this task.
 ## Completion
 
 Independent QA and the required Independent Auditor review cleared the proposal, and the Human Owner
-explicitly accepted ADR-005 on 2026-09-15. All architecture/semantic gates are complete. TASK-012
-remains in `ACCEPTANCE` only because repository completion/history requires separate authorization.
+explicitly accepted ADR-005 on 2026-09-15. Repository completion/history was separately authorized.
+The accepted architecture was integrated into `main` by fast-forward and pushed successfully at
+`71afe6b96dd14061ba4c7cdb5017be949492e590`. TASK-012 is now recorded `DONE`.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.

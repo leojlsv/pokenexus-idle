@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, project-control baseline, core domain/static-data contracts, the Universal Combat Engine architecture, Combat Rules v1, the first deterministic Combat Engine implementation and its measured performance baseline are complete.
+**Project phase:** Foundation, core domain/combat foundation and the first persistence/data-access architecture decision are complete; persistence schema design is next.
 
-**Current work:** `TASK-012 — ADR-005 Persistence & Data Access Strategy` is in ACCEPTANCE with all architecture gates complete. Independent QA and Independent Auditor both returned P0/P1/P2/P3 = 0/0/0/0, and the Human Owner accepted ADR-005.
+**Current work:** `TASK-012 — ADR-005 Persistence & Data Access Strategy` is DONE. Independent QA and Independent Auditor both returned P0/P1/P2/P3 = 0/0/0/0, the Human Owner accepted ADR-005, and the authorized repository integration completed by fast-forward on `main` at `71afe6b96dd14061ba4c7cdb5017be949492e590`.
 
-**Current action:** repository completion/history is the only remaining TASK-012 gate. ADR-005 is accepted and may govern later TASK-013/014 planning, but commit/push/merge/rebase remain separately governed.
+**Current action:** TASK-012 repository completion is complete. `TASK-013 — PostgreSQL Schema v1` remains PLANNED and must advance through the normal Class A lifecycle before schema implementation.
 
-**Next task after TASK-003 acceptance:** `TASK-012 — ADR-005 Persistence & Data Access Strategy`, now in ACCEPTANCE pending separate repository completion/history authorization.
+**Next task after TASK-003 acceptance:** `TASK-013 — PostgreSQL Schema v1`, to be separately prepared and advanced through the normal lifecycle.
 
 **Portfolio status snapshot:**
 
@@ -32,16 +32,16 @@
 | `TASK-009` Deterministic Combat Engine v1 | DONE — independent QA clear; PM / Architecture Coordinator accepted exact snapshot; Human Owner sample-result validation complete; repository completion authorized and completed |
 | `TASK-010` Combat Fixtures, Replay & Property Harness | DONE — independent QA clear; PM / Architecture Coordinator accepted; repository completion authorized and completed |
 | `TASK-011` Combat Performance Baseline | DONE — independent QA clear; PM / Architecture Coordinator accepted; Human Owner accepted budget/publication guidance; repository completion authorized and completed |
+| `TASK-012` ADR-005 Persistence & Data Access Strategy | DONE — independent QA/audit clear; Human Owner accepted ADR-005; repository completion authorized and completed |
 
 **Next product milestone:** establish persistence, identity and security foundations on PostgreSQL before persistent trainer/gameplay systems are implemented.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 12.
-- ACCEPTANCE: 1.
+- DONE: 13.
 - PLANNED: 74.
-- Task-count completion: **12 / 87 = 13.8%**.
+- Task-count completion: **13 / 87 = 14.9%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -347,7 +347,7 @@ content under the SPEC-002 rulesVersion envelope.
 
 ### EPIC-02 — Persistence, Identity & Security Foundation
 
-**Status:** ACTIVE — TASK-012 at Human architecture acceptance
+**Status:** ACTIVE — persistence architecture accepted; TASK-013 next
 **Outcome:** server-authoritative player identity/state on PostgreSQL with an accepted security model.
 **High-risk areas:** database strategy, authentication and security are Class A; independent audit is mandatory where governance requires it.
 
@@ -355,7 +355,7 @@ content under the SPEC-002 rulesVersion envelope.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-012` ADR-005 Persistence & Data Access Strategy | A | ACCEPTANCE | PM → ChatGPT | QA + IA | `SK-PG` | Completed — Human Owner accepted ADR-005 | TASK-005/006 | Managed PostgreSQL; PostgreSQL 17 SQL-feature baseline; cache-disabled Hyperdrive authoritative access; invocation-local pg client over transaction-mode pooling; SQL-first adapters/migrations; UUIDv7 durable IDs; command concurrency boundaries; direct migration path; game-core isolation |
+| `TASK-012` ADR-005 Persistence & Data Access Strategy | A | DONE | PM → ChatGPT | QA + IA | `SK-PG` | Completed — Human Owner accepted ADR-005; repository completion authorized/completed | TASK-005/006 | Managed PostgreSQL; PostgreSQL 17 SQL-feature baseline; cache-disabled Hyperdrive authoritative access; invocation-local pg client over transaction-mode pooling; SQL-first adapters/migrations; UUIDv7 durable IDs; command concurrency boundaries; direct migration path; game-core isolation |
 | `TASK-013` PostgreSQL Schema v1 | A | PLANNED | PM → ChatGPT | QA; IA if migration risk | `SK-PG` | **HUMAN accepts persistence model** | TASK-012 | LD feasibility input; account/player; Pokémon instances; teams; inventory; progression envelopes; hunt checkpoints; audit/reward ledger foundations |
 | `TASK-014` Database Adapter & Migration Foundation | B | PLANNED | LD → Copilot CLI | QA | `SK-PG`, `SK-TDD` | PM acceptance | TASK-013 | Package adapter; migrations; transaction helpers; test DB strategy; rollback/recovery tests |
 
