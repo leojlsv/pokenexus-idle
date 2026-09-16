@@ -10,7 +10,7 @@
 
 **Project phase:** Foundation, core domain/combat foundation and the PostgreSQL v1 persistence model are complete; database adapter and migration foundation is complete, and authentication architecture is next.
 
-**Current work:** `TASK-014 — Database Adapter & Migration Foundation` is DONE after independent QA returned P0/P1/P2/P3 = 0/0/0/0, PM / Architecture Coordinator acceptance, and Human Owner repository-completion authorization.
+**Current work:** `TASK-003 — Project Control Roadmap` is DONE again after a narrow ESLint environment correction removed seven false-positive `no-undef` findings, independent QA returned P0/P1/P2/P3 = 0/0/0/0, and repository completion was authorized.
 
 **Current action:** materialize `TASK-015 — ADR-006 Authentication / Authorization / Session Model` under its Class A governance flow.
 
@@ -23,7 +23,7 @@
 | `TASK-000` Agent Governance Baseline | DONE |
 | `TASK-001` Project Foundation | DONE |
 | `TASK-002` Cloudflare Runtime Modernization | DONE |
-| `TASK-003` Project Control Roadmap | DONE — independent QA READY; Human Owner accepted |
+| `TASK-003` Project Control Roadmap | DONE — corrective Node-script ESLint environment cycle QA clear; repository completion authorized |
 | `TASK-004` Domain Glossary & Core Model Spec | DONE — independent QA READY; Human Owner accepted |
 | `TASK-005` Core Domain Type Skeleton | DONE — QA READY; PM accepted; no semantic drift |
 | `TASK-006` Static Game Data Schema & Rules Versioning | DONE — independent QA clear; Human Owner accepted SPEC-002 |
@@ -219,9 +219,9 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-003` Project Control Roadmap | B | DONE | PM → ChatGPT | QA | external-skill discovery only | Completed | TASK-000/001/002 | Hierarchy; sequencing; roles/agents/skills; Markdown truth; deterministic HTML generator/check; dashboard |
+| `TASK-003` Project Control Roadmap | B | DONE | PM → ChatGPT | QA | external-skill discovery only | Completed — original Human acceptance preserved; corrective lint QA clear; repository completion authorized/completed | TASK-000/001/002 | Hierarchy; sequencing; roles/agents/skills; Markdown truth; deterministic HTML generator/check; dashboard; Node-script ESLint environment correction |
 
-**Exit:** Human Owner accepted TASK-003; the two roadmap artifacts are the project tracking baseline.
+**Exit:** original Human acceptance remains valid; corrective lint QA is clear and TASK-003 is DONE again.
 
 ---
 

@@ -15,8 +15,8 @@
   - `docs/decisions/ADR-001-runtime-and-language.md`
   - `docs/decisions/ADR-002-solo-hunts.md`
   - `docs/decisions/ADR-003-hub-and-duo-realtime.md`
-- Branch: `docs/TASK-003-project-control-roadmap`
-- Worktree: `.worktrees/TASK-003-project-control-roadmap`
+- Branch: `fix/TASK-003-roadmap-lint-node-globals`
+- Worktree: `.worktrees/TASK-003-roadmap-lint-node-globals`
 
 ## Objective
 
@@ -35,6 +35,12 @@ The Human Owner requires full visibility into what is complete, what is current,
 
 The roadmap must extend existing governance rather than redefine it. `AGENTS.md` and `docs/agents/**` remain authoritative for role authority and approval gates.
 
+On 2026-09-16 the Human Owner requested correction of the pre-existing root ESLint failures in
+`scripts/project-roadmap.mjs`. The script is an explicit Node.js `.mjs` tool, but the flat ESLint config
+did not declare Node globals for repository scripts, causing `no-undef` false positives for `Buffer`,
+`console` and `process`. This corrective cycle reopens TASK-003 in `FIX` without changing roadmap/runtime
+semantics.
+
 ## Scope
 
 - define hierarchy semantics for Epic, Story, Task and Sub-task;
@@ -49,6 +55,8 @@ The roadmap must extend existing governance rather than redefine it. `AGENTS.md`
 - define roadmap progress/status update rules;
 - create a readable standalone HTML dashboard derived from the Markdown roadmap.
 - provide deterministic local generation/check tooling so the HTML cannot silently drift from the Markdown source.
+- make the repository ESLint environment accurately model Node.js globals for `scripts/**/*.mjs`
+  without weakening lint rules for browser/Worker/application code.
 
 ## Out of scope
 
@@ -58,6 +66,8 @@ The roadmap must extend existing governance rather than redefine it. `AGENTS.md`
 - changing accepted architecture/ADRs;
 - creating commits, pushes or merges without separate Human Owner authorization;
 - treating planned task IDs as implementation authorization before each task reaches READY.
+- changing roadmap generation behavior, application/runtime code or package dependencies as part of this
+  lint-environment correction.
 
 ## Acceptance criteria
 
@@ -79,6 +89,17 @@ The roadmap must extend existing governance rather than redefine it. `AGENTS.md`
 - [x] Independent QA reviews both artifacts for consistency and scope.
 - [x] Human Owner performs final acceptance because the PM / Architecture Coordinator authored the artifacts.
 
+### Corrective maintenance cycle — Node script lint environment
+
+- [x] `scripts/**/*.mjs` receives a narrowly scoped ESLint Node-global declaration.
+- [x] No application, Worker or browser source gains Node globals implicitly.
+- [x] No dependency or lockfile change is introduced.
+- [x] `corepack pnpm lint` passes with zero errors.
+- [x] `corepack pnpm roadmap:check` and `git diff --check` pass.
+- [x] Independent QA confirms the fix is scoped and does not weaken unrelated lint coverage.
+
+Corrective-cycle QA on 2026-09-16: P0/P1/P2/P3 = 0/0/0/0 — READY to close the cycle.
+
 ## Validation / tests
 
 - validate roadmap IDs and status counts;
@@ -90,6 +111,9 @@ The roadmap must extend existing governance rather than redefine it. `AGENTS.md`
 - validate task dependency references and dependency cycles;
 - run `git diff --check`;
 - independent read-only QA review.
+- run `corepack pnpm lint` and prove the previous seven `no-undef` findings are eliminated without
+  disabling `no-undef` or globally declaring Node for non-script code;
+- run `corepack pnpm roadmap:check` after lifecycle/roadmap updates.
 
 ## Dependencies
 
@@ -111,12 +135,16 @@ docs/project/PROJECT_ROADMAP.md
 docs/project/PROJECT_ROADMAP.html
 scripts/project-roadmap.mjs
 package.json
+eslint.config.js
 ```
 
 `PROJECT_ROADMAP.md` and `PROJECT_ROADMAP.html` remain the only canonical user-facing artifacts. The script and package commands are supporting project-control tooling only. No production/runtime package may change.
 
 ## Completion
 
-Completed after independent QA and explicit Human Owner acceptance on 2026-09-14.
+The original TASK-003 baseline completed after independent QA and explicit Human Owner acceptance on
+2026-09-14. The 2026-09-16 corrective cycle passed independent QA with P0/P1/P2/P3 = 0/0/0/0; the Human
+Owner then authorized repository completion/history. TASK-003 is `DONE` again. The correction changes no
+roadmap/runtime semantics and introduces no dependency.
 Use `docs/agents/handoff-protocol.md`.
 Do not create additional progress/status/changelog artifacts.
