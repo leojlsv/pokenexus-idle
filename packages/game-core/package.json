@@ -21,7 +21,10 @@
     "pretypecheck": "corepack pnpm --filter @pokenexus/game-types build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "benchmark:preflight": "node benchmarks/preflight.mjs",
+    "benchmark": "node benchmarks/run.mjs",
+    "benchmark:memory": "node benchmarks/run-memory.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.3",
