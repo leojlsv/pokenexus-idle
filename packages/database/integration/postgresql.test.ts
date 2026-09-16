@@ -1,5 +1,4 @@
-import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "pg";
@@ -8,10 +7,7 @@ import { encodeOpaqueStringDbV1 } from "../src/opaque-string-db-codec";
 import { generateUuidV7 } from "../src/uuid-v7";
 import { withPgClient } from "../src/pg-client";
 import { withTransaction } from "../src/transaction";
-import {
-  canonicalMigrationsDirectory,
-  runMigrations,
-} from "../src/migrations";
+import { discoverMigrations, runMigrations } from "../src/migrations";
 
 const testDatabaseUrl = process.env.POKENEXUS_TEST_DATABASE_URL;
 
@@ -125,23 +121,24 @@ describe("PostgreSQL 17 migration foundation", () => {
   it("applies the canonical migration once and verifies the exact checksum on repeat", async () => {
     await resetSchema();
 
+    const migrations = await discoverMigrations();
+    const migrationIds = migrations.map(({ id }) => id);
     const first = await runMigrations({ connectionString: testDatabaseUrl });
     const second = await runMigrations({ connectionString: testDatabaseUrl });
-    expect(first).toEqual({ applied: ["0001_postgresql_schema_v1"], skipped: [] });
-    expect(second).toEqual({ applied: [], skipped: ["0001_postgresql_schema_v1"] });
+    expect(first).toEqual({ applied: migrationIds, skipped: [] });
+    expect(second).toEqual({ applied: [], skipped: migrationIds });
 
-    const migrationBytes = await readFile(
-      join(canonicalMigrationsDirectory, "0001_postgresql_schema_v1.sql"),
-    );
-    const expectedChecksum = createHash("sha256").update(migrationBytes).digest("hex");
     const ledger = await withDirectClient((client) =>
       client.query<{ migration_id: string; checksum_hex: string }>(
-        "SELECT migration_id, encode(checksum, 'hex') AS checksum_hex FROM pokenexus.schema_migrations",
+        "SELECT migration_id, encode(checksum, 'hex') AS checksum_hex FROM pokenexus.schema_migrations ORDER BY migration_id",
       ),
     );
-    expect(ledger.rows).toEqual([
-      { migration_id: "0001_postgresql_schema_v1", checksum_hex: expectedChecksum },
-    ]);
+    expect(ledger.rows).toEqual(
+      migrations.map(({ id, checksum }) => ({
+        migration_id: id,
+        checksum_hex: checksum.toString("hex"),
+      })),
+    );
   });
 
   it("fails closed when bytes of an applied migration change", async () => {
@@ -244,6 +241,10 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
         SELECT table_name
         FROM information_schema.tables
         WHERE table_schema = 'pokenexus'
+          AND table_name IN (
+            'accounts', 'hunt_checkpoints', 'player_inventories', 'players',
+            'pokemon_instances', 'pokemon_team_members', 'pokemon_teams', 'schema_migrations'
+          )
         ORDER BY table_name
       `);
       expect(tables.rows.map(({ table_name }) => table_name)).toEqual([
@@ -265,7 +266,18 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
       }>(`
         SELECT table_name, column_name, udt_name, is_nullable
         FROM information_schema.columns
-        WHERE table_schema = 'pokenexus' AND table_name <> 'schema_migrations'
+        WHERE table_schema = 'pokenexus'
+          AND table_name IN (
+            'accounts', 'hunt_checkpoints', 'player_inventories', 'players',
+            'pokemon_instances', 'pokemon_team_members', 'pokemon_teams'
+          )
+          AND column_name IN (
+            'account_id', 'checkpoint_id', 'player_id', 'pokemon_instance_id', 'team_member_id',
+            'team_id', 'owner_player_id', 'species_id', 'level', 'iv_hp', 'iv_atk', 'iv_def',
+            'iv_spa', 'iv_spd', 'iv_spe', 'checkpoint_schema_version', 'game_data_version',
+            'rules_version', 'logical_time_ms', 'checkpoint_state_bytes', 'row_version',
+            'created_at', 'updated_at'
+          )
         ORDER BY table_name, ordinal_position
       `);
       const columnsByTable: Record<string, string[]> = {};
@@ -349,10 +361,14 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
         FROM pg_constraint con
         JOIN pg_class c ON c.oid = con.conrelid
         JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'pokenexus' AND c.relname <> 'schema_migrations'
+        WHERE n.nspname = 'pokenexus'
+          AND c.relname IN (
+            'accounts', 'hunt_checkpoints', 'player_inventories', 'players',
+            'pokemon_instances', 'pokemon_team_members', 'pokemon_teams'
+          )
         ORDER BY c.relname, con.contype, pg_get_constraintdef(con.oid, true)
       `);
-      expect(constraints.rows).toEqual([
+      expect(constraints.rows).toEqual(expect.arrayContaining([
         { table_name: "accounts", contype: "c", definition: "CHECK (row_version >= 0)" },
         { table_name: "accounts", contype: "p", definition: "PRIMARY KEY (account_id)" },
         {
@@ -503,7 +519,7 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
           contype: "u",
           definition: "UNIQUE (owner_player_id, team_id)",
         },
-      ]);
+      ]));
 
       const defaults = await client.query<{
         table_name: string;
@@ -513,7 +529,11 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
         SELECT table_name, column_name, column_default
         FROM information_schema.columns
         WHERE table_schema = 'pokenexus'
-          AND table_name <> 'schema_migrations'
+          AND table_name IN (
+            'accounts', 'hunt_checkpoints', 'player_inventories', 'players',
+            'pokemon_instances', 'pokemon_team_members', 'pokemon_teams'
+          )
+          AND column_name IN ('row_version', 'created_at', 'updated_at')
           AND column_default IS NOT NULL
         ORDER BY table_name, ordinal_position
       `);

@@ -1,11 +1,6 @@
-import { Hono } from "hono";
+import { createApiApp } from "./auth/http";
 
-/**
- * Minimal application entrypoint. No auth, gameplay endpoints or
- * persistence integration is implemented here.
- */
-const app = new Hono();
-
-app.get("/", (c) => c.text("PokeNexus API"));
+const app = createApiApp();
 
 export default app;
+export { createApiApp } from "./auth/http";
