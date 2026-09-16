@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, core domain/combat foundation and the PostgreSQL v1 persistence model are complete; database adapter and migration implementation is next.
+**Project phase:** Foundation, core domain/combat foundation and the PostgreSQL v1 persistence model are complete; database adapter and migration foundation is complete, and authentication architecture is next.
 
-**Current work:** `TASK-013 — PostgreSQL Schema v1` is DONE. Lead Developer feasibility, independent QA and Independent Auditor all returned P0/P1/P2/P3 = 0/0/0/0, the Human Owner accepted and approved SPEC-004, and repository completion was authorized.
+**Current work:** `TASK-014 — Database Adapter & Migration Foundation` is DONE after independent QA returned P0/P1/P2/P3 = 0/0/0/0, PM / Architecture Coordinator acceptance, and Human Owner repository-completion authorization.
 
-**Current action:** advance `TASK-014 — Database Adapter & Migration Foundation` through the normal lifecycle against approved SPEC-004.
+**Current action:** materialize `TASK-015 — ADR-006 Authentication / Authorization / Session Model` under its Class A governance flow.
 
-**Next task after TASK-003 acceptance:** `TASK-014 — Database Adapter & Migration Foundation`.
+**Next task after TASK-003 acceptance:** `TASK-015 — ADR-006 Authentication / Authorization / Session Model`.
 
 **Portfolio status snapshot:**
 
@@ -40,9 +40,9 @@
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 14.
-- PLANNED: 73.
-- Task-count completion: **14 / 87 = 16.1%**.
+- DONE: 15.
+- PLANNED: 72.
+- Task-count completion: **15 / 87 = 17.2%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -348,7 +348,7 @@ content under the SPEC-002 rulesVersion envelope.
 
 ### EPIC-02 — Persistence, Identity & Security Foundation
 
-**Status:** ACTIVE — persistence model approved; TASK-014 next
+**Status:** ACTIVE — TASK-014 database foundation complete; TASK-015 authentication architecture next
 **Outcome:** server-authoritative player identity/state on PostgreSQL with an accepted security model.
 **High-risk areas:** database strategy, authentication and security are Class A; independent audit is mandatory where governance requires it.
 
@@ -358,7 +358,7 @@ content under the SPEC-002 rulesVersion envelope.
 |---|---|---|---|---|---|---|---|---|
 | `TASK-012` ADR-005 Persistence & Data Access Strategy | A | DONE | PM → ChatGPT | QA + IA | `SK-PG` | Completed — Human Owner accepted ADR-005; repository completion authorized/completed | TASK-005/006 | Managed PostgreSQL; PostgreSQL 17 SQL-feature baseline; cache-disabled Hyperdrive authoritative access; invocation-local pg client over transaction-mode pooling; SQL-first adapters/migrations; UUIDv7 durable IDs; command concurrency boundaries; direct migration path; game-core isolation |
 | `TASK-013` PostgreSQL Schema v1 | A | DONE | PM → ChatGPT | QA + IA | `SK-PG` | Completed — Human Owner accepted SPEC-004; repository completion authorized/completed | TASK-012 | PostgreSQL 17 `pokenexus` schema; AccountId/PlayerId identity; reversible bytea codec for opaque strings; Pokémon ownership + stable SpeciesId + Level/IV; Team aggregate + ownership-safe membership; inventory aggregate root; versioned binary Hunt checkpoint + OCC; reward/audit ledger foundation; downstream rule deferrals |
-| `TASK-014` Database Adapter & Migration Foundation | B | PLANNED | LD → Copilot CLI | QA | `SK-PG`, `SK-TDD` | PM acceptance | TASK-013 | Package adapter; migrations; transaction helpers; test DB strategy; rollback/recovery tests |
+| `TASK-014` Database Adapter & Migration Foundation | B | DONE | LD → ChatGPT delegated worker | QA | `SK-PG`, `SK-TDD` | Completed — PM / Architecture Coordinator accepted; Human Owner repository completion authorized/completed | TASK-013 | SQL-first PostgreSQL 17 migration; direct migration runner + immutable checksum ledger; invocation-local pg client; transaction helper; OpaqueStringDbCodec v1; UUIDv7; API nodejs_compat; real PostgreSQL constraint/OCC/migration recovery tests |
 
 #### STORY-02.2 — Authentication and sessions
 
