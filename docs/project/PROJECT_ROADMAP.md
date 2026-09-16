@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, project-control baseline, core domain/static-data contracts, the Universal Combat Engine architecture, Combat Rules v1 and the first deterministic Combat Engine implementation are complete.
+**Project phase:** Foundation, project-control baseline, core domain/static-data contracts, the Universal Combat Engine architecture, Combat Rules v1, the first deterministic Combat Engine implementation and its measured performance baseline are complete.
 
-**Current work:** `TASK-011 — Combat Performance Baseline` is in ACCEPTANCE with all semantic gates complete: independent QA returned P0/P1/P2/P3 = 0/0/0/0, PM / Architecture Coordinator accepted the measured budget/methodology/scope, and the Human Owner accepted the performance budget plus periodic-schedule/content-publication recommendation.
+**Current work:** `TASK-011 — Combat Performance Baseline` is DONE. Independent QA returned P0/P1/P2/P3 = 0/0/0/0, PM / Architecture Coordinator accepted the measured budget/methodology/scope, the Human Owner accepted the performance budget plus periodic-schedule/content-publication recommendation, and the authorized repository integration completed by fast-forward on `main` at `b0bb30de4167f1d3754e15546d68aba306286235`.
 
-**Current action:** repository completion/history for TASK-011 is explicitly authorized and in progress; use fast-forward integration without rebase/force and mark DONE only after completion actions finish.
+**Current action:** TASK-011 repository completion is complete. `TASK-012 — ADR-005 Persistence & Data Access Strategy` remains PLANNED and must advance through the normal task lifecycle before implementation.
 
-**Next task after TASK-003 acceptance:** `TASK-011 — Combat Performance Baseline`, now in ACCEPTANCE during authorized repository completion/history.
+**Next task after TASK-003 acceptance:** `TASK-012 — ADR-005 Persistence & Data Access Strategy`, to be separately prepared and advanced through the normal task lifecycle.
 
 **Portfolio status snapshot:**
 
@@ -31,16 +31,16 @@
 | `TASK-008` Combat Rules Spec v1 | DONE — SPEC-003 approved; QA clear; repository completion authorized |
 | `TASK-009` Deterministic Combat Engine v1 | DONE — independent QA clear; PM / Architecture Coordinator accepted exact snapshot; Human Owner sample-result validation complete; repository completion authorized and completed |
 | `TASK-010` Combat Fixtures, Replay & Property Harness | DONE — independent QA clear; PM / Architecture Coordinator accepted; repository completion authorized and completed |
+| `TASK-011` Combat Performance Baseline | DONE — independent QA clear; PM / Architecture Coordinator accepted; Human Owner accepted budget/publication guidance; repository completion authorized and completed |
 
 **Next product milestone:** establish the core domain contracts and universal deterministic Combat Engine foundation before implementing content modes.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 11.
-- ACCEPTANCE: 1.
+- DONE: 12.
 - PLANNED: 75.
-- Task-count completion: **11 / 87 = 12.6%**.
+- Task-count completion: **12 / 87 = 13.8%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -330,7 +330,7 @@ implementation Task before code is written.
 | `TASK-008` Combat Rules Spec v1 | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-003 | TASK-007 | IV/derived stats; player/content-defined ordered 1–4 Move loadout; deterministic cyclic/skip automatic sequence policy outside resolver; 2000ms actor GCD + immutable per-Move cooldowns with deterministic cross-Battle carry; explicit `battle/cadence` timed-effect lifetime; cadence DoT/HoT/Buff/Debuff/locks can advance between Battles and KO before next encounter; simple-Move cooldown resolution from pinned Power+PP + rules curve; Speed same-time initiative only; exact damage/effect ordering; KO/forced replacement; authoritative event semantics |
 | `TASK-009` Deterministic Combat Engine v1 | B | DONE | LD → ChatGPT delegated worker | QA | `SK-TDD`, `SK-GAME-ARCH` | Completed — PM accepted; Human sample-result validation complete; repository completion authorized/completed | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; shared deterministic effect-rule evaluator reusable for active-Battle and cadence advancement; versioned event/consequence output; outcome; no mode-specific branches, AI decision policy or parallel Hunt effect resolver |
 | `TASK-010` Combat Fixtures, Replay & Property Harness | B | DONE | SD → Codex | QA | `SK-TDD` | Completed — independent QA clear; PM accepted; repository completion authorized/completed | TASK-009 | Golden deterministic cases; same initial state + pinned data/rules/event-schema identity + combat RNG state + ordered CombatStimulus stream = same event sequence/final state/outcome; historical immutable-version replay; policy-independent replay when intents are stored; event ordering; time-partition invariance; HP/domain bounds; terminal KO/victory/draw invariants; serialization round-trip; metadata-only cross-orchestrator equivalence for identical normalized combat inputs; regression corpus |
-| `TASK-011` Combat Performance Baseline | B | ACCEPTANCE | LD → ChatGPT delegated worker | QA; IA optional | `SK-GAME-PERF` | Completed — Human Owner accepted performance budget + periodic-content recommendation; repository completion authorized/in progress | TASK-009/010 | Combats/sec; p95 wall/CPU; retained heap/RSS/GC evidence; cadence-effect boundary throughput; realistic and pathological periodic-schedule cases; 1h/8h simulation benchmark; allocation profiling when materially constrained; measured performance-budget + content-publication limit decision record |
+| `TASK-011` Combat Performance Baseline | B | DONE | LD → ChatGPT delegated worker | QA; IA optional | `SK-GAME-PERF` | Completed — Human Owner accepted performance budget + periodic-content recommendation; repository completion authorized/completed | TASK-009/010 | Combats/sec; p95 wall/CPU; retained heap/RSS/GC evidence; cadence-effect boundary throughput; realistic and pathological periodic-schedule cases; 1h/8h simulation benchmark; allocation profiling when materially constrained; measured performance-budget + content-publication limit decision record |
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable for expected workloads.
 

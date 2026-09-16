@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer assignment; Copilot CLI unavailable due account quota during task preparation)
@@ -335,8 +335,9 @@ performance budget/content-publication recommendation. Repository completion/his
 separately governed by Git policy.
 
 Human Owner acceptance of the performance budget and periodic-schedule/content-publication
-recommendation was received on 2026-09-15. All semantic/acceptance gates are therefore complete;
-repository completion/history authorization was also received on 2026-09-15. The task remains in `ACCEPTANCE` until the authorized merge/completion actions finish.
+recommendation was received on 2026-09-15. Repository completion/history authorization was also
+received on 2026-09-15. The accepted feature was integrated into `main` by fast-forward and pushed
+successfully at `b0bb30de4167f1d3754e15546d68aba306286235`. TASK-011 is now recorded `DONE`.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.
