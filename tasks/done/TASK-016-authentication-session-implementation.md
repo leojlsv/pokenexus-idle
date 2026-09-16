@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer assignment; Copilot CLI unavailable due account quota at task start)
@@ -389,7 +389,8 @@ review verdicts do not carry forward automatically.
   blocker.
 - `@simplewebauthn/server` handles cryptographic WebAuthn parsing/verification but does not replace the
   ADR-required account/state/epoch/challenge/authorization checks owned by PokeNexus.
-- Repository completion/history remains separately governed and is not authorized by starting TASK-016.
+- Repository completion/history was explicitly authorized by the Human Owner on 2026-09-16 and completed
+  through the governed feature-commit, fast-forward main integration and final DONE metadata sequence.
 
 ## Expected files / boundaries
 
@@ -404,7 +405,7 @@ apps/api/src/**                                  # auth/session API, middleware,
 apps/api/package.json                            # @pokenexus/database workspace + @simplewebauthn/server 14.0.2
 apps/api/wrangler.toml                           # no production resource IDs/secrets; compatibility-only if proven necessary
 pnpm-lock.yaml                                   # exact authorized dependency resolution
-tasks/active/TASK-016-authentication-session-implementation.md
+tasks/done/TASK-016-authentication-session-implementation.md
 docs/project/PROJECT_ROADMAP.md
 docs/project/PROJECT_ROADMAP.html
 ```
@@ -414,11 +415,11 @@ and unrelated domain packages are not TASK-016 write targets.
 
 ## Completion
 
-TASK-016 is in ACCEPTANCE. Owner validation, fresh independent QA, mandatory Independent Auditor review
-and PM / Architecture Coordinator acceptance are clear on the exact corrected snapshot. Technical and
-acceptance gates are complete. Repository completion/history remains separately governed and requires
-explicit Human Owner authorization; this transition does not authorize commit, push, merge or marking the
-task DONE.
+TASK-016 is DONE. Owner validation, fresh independent QA, mandatory Independent Auditor review and PM /
+Architecture Coordinator acceptance are clear on the exact corrected snapshot. The Human Owner explicitly
+authorized repository completion/history on 2026-09-16. The accepted feature snapshot was committed and
+fast-forward integrated into canonical `main`; this DONE metadata records completion of the governed task
+closure without introducing post-acceptance production changes.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.
