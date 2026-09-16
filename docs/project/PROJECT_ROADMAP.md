@@ -12,7 +12,7 @@
 
 **Current work:** `TASK-015 — ADR-006 Authentication / Authorization / Session Model` is DONE. Independent QA and Independent Auditor are clear, the Human Owner accepted ADR-006, and repository completion/history was authorized on 2026-09-16.
 
-**Current action:** TASK-015 completion is being integrated into canonical `main`. TASK-016 remains PLANNED and unstarted.
+**Current action:** TASK-015 repository completion is complete. TASK-016 remains PLANNED and unstarted.
 
 **Next task after TASK-003 acceptance:** `TASK-016 — Authentication & Session Implementation`.
 

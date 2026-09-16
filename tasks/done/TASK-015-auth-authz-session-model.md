@@ -202,8 +202,9 @@ change is authorized by TASK-015.
 
 Independent QA and the required Independent Auditor review are clear. The Human Owner explicitly
 accepted ADR-006 and separately authorized TASK-015 repository completion/history on 2026-09-16.
-This completion snapshot is `DONE` once integrated into canonical `main`. TASK-016 may rely on ADR-006
-as accepted architecture, but no TASK-016 implementation has started.
+TASK-015 repository completion/history is authorized and this `DONE` snapshot is the canonical
+integration target. TASK-016 may rely on ADR-006 as accepted architecture, but no TASK-016
+implementation has started.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.
