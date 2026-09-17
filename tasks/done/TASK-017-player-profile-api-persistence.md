@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: DEFAULT
@@ -231,7 +231,8 @@ Real database tests must require an explicit disposable database named `pokenexu
   redefine, ADR-006 authority.
 - No destructive migration is planned. If an approved contract adds schema fields, the change must be a new
   forward PostgreSQL-17-compatible migration and its bytes become immutable once applied to shared state.
-- Repository history operations remain separately Human Owner gated.
+- Repository completion/history was explicitly authorized by the Human Owner on 2026-09-17 and completed
+  through the governed feature-commit, fast-forward main integration and final DONE metadata sequence.
 
 ## Expected files / boundaries
 
@@ -244,7 +245,7 @@ apps/api/src/player/**                           # Player application/HTTP imple
 apps/api/src/auth/http.ts                        # narrow reusable guard/CORS composition only if needed
 apps/api/src/index.ts                            # API composition/export only if needed
 apps/api/integration/**                          # authenticated Player API + PG evidence
-tasks/active/TASK-017-player-profile-api-persistence.md
+tasks/done/TASK-017-player-profile-api-persistence.md
 docs/project/PROJECT_ROADMAP.md
 docs/project/PROJECT_ROADMAP.html
 ```
@@ -254,11 +255,11 @@ resources and unrelated domain packages are not TASK-017 write targets.
 
 ## Completion
 
-The Human Owner approved the exact minimal public API/profile contract on 2026-09-17. TASK-017 satisfied
-Definition of Ready, advanced through READY and ACTIVE, completed owner implementation/validation, passed
-independent QA with no P0/P1 findings, and received independent PM / Architecture Coordinator acceptance. The
-candidate is now in ACCEPTANCE. Repository completion/history remains separately Human Owner gated; the task is
-not DONE.
+TASK-017 is DONE. The Human Owner approved the exact minimal public API/profile contract on 2026-09-17.
+Owner implementation/validation, fresh independent QA and PM / Architecture Coordinator acceptance are clear
+on the accepted snapshot. The Human Owner explicitly authorized repository completion/history on 2026-09-17.
+The accepted feature snapshot was committed and fast-forward integrated into canonical `main`; this DONE
+metadata records completion of the governed task closure without introducing post-acceptance production changes.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.
