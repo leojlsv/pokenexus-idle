@@ -15,16 +15,19 @@ import {
   createUnavailableEmailActionSender,
   type EmailActionSender,
 } from "./email-sender";
+import { PlayerApplication, type PlayerHttpApplication } from "../player/application";
+import { registerPlayerRoutes } from "../player/http";
 
 export const SESSION_COOKIE_NAME = "__Host-pokenexus_session";
 export const RESTRICTED_COOKIE_NAME = "__Host-pokenexus_restricted";
 export const CSRF_HEADER_NAME = "X-CSRF-Token";
 
-type ApiBindings = AuthEnvironment;
-interface ApiVariables {
+export type ApiBindings = AuthEnvironment;
+export interface ApiVariables {
   securityAuditCorrelationId: string;
 }
-type ApiContext = Context<{ Bindings: ApiBindings; Variables: ApiVariables }>;
+export type ApiContext = Context<{ Bindings: ApiBindings; Variables: ApiVariables }>;
+export type ApiApp = Hono<{ Bindings: ApiBindings; Variables: ApiVariables }>;
 
 export interface AuthHttpApplication {
   requestEnrollment(rawEmail: string, correlationId?: string | null): Promise<void>;
@@ -66,6 +69,7 @@ export interface AuthHttpRuntime {
 
 export interface CreateApiAppOptions {
   readonly resolveAuthRuntime?: (env: AuthEnvironment) => AuthHttpRuntime;
+  readonly resolvePlayerApplication?: (env: AuthEnvironment) => PlayerHttpApplication;
   readonly emailSender?: EmailActionSender;
   readonly deferPublicWork?: (work: Promise<void>) => void;
   readonly createSecurityAuditCorrelationId?: () => string;
@@ -299,35 +303,71 @@ function defaultRuntimeResolver(emailSender: EmailActionSender) {
   };
 }
 
+function defaultPlayerApplicationResolver(env: AuthEnvironment): PlayerHttpApplication {
+  const connectionString = env.HYPERDRIVE?.connectionString;
+  if (!connectionString) {
+    throw new Error("HYPERDRIVE connectionString is required");
+  }
+  return new PlayerApplication(connectionString);
+}
+
+function applyCredentialedCors(
+  c: ApiContext,
+  runtime: AuthHttpRuntime,
+  allowedMethods: string,
+): Response | null {
+  const origin = c.req.header("Origin");
+  if (!origin || !runtime.allowedOrigins.includes(origin)) {
+    return null;
+  }
+  c.header("Access-Control-Allow-Origin", origin);
+  c.header("Access-Control-Allow-Credentials", "true");
+  c.header("Vary", "Origin");
+  if (c.req.method === "OPTIONS") {
+    c.header("Access-Control-Allow-Methods", allowedMethods);
+    c.header("Access-Control-Allow-Headers", `Content-Type, ${CSRF_HEADER_NAME}`);
+    return c.body(null, 204);
+  }
+  return null;
+}
+
 export function createApiApp(options: CreateApiAppOptions = {}) {
   const resolveAuthRuntime =
     options.resolveAuthRuntime ??
     defaultRuntimeResolver(options.emailSender ?? createUnavailableEmailActionSender());
+  const resolvePlayerApplication =
+    options.resolvePlayerApplication ?? defaultPlayerApplicationResolver;
   const app = new Hono<{ Bindings: ApiBindings; Variables: ApiVariables }>();
   const createSecurityAuditCorrelationId =
     options.createSecurityAuditCorrelationId ?? (() => crypto.randomUUID());
   const resolveNetworkSignal = options.resolveNetworkSignal ?? defaultNetworkSignal;
 
   const runtimeFor = (c: ApiContext): AuthHttpRuntime => resolveAuthRuntime(c.env);
+  const playerFor = (c: ApiContext): PlayerHttpApplication => resolvePlayerApplication(c.env);
 
   app.use("/auth/*", async (c, next) => {
     c.set("securityAuditCorrelationId", createSecurityAuditCorrelationId());
     const runtime = runtimeFor(c);
-    const origin = c.req.header("Origin");
-    if (origin && runtime.allowedOrigins.includes(origin)) {
-      c.header("Access-Control-Allow-Origin", origin);
-      c.header("Access-Control-Allow-Credentials", "true");
-      c.header("Vary", "Origin");
-      if (c.req.method === "OPTIONS") {
-        c.header("Access-Control-Allow-Methods", "GET, POST, DELETE");
-        c.header("Access-Control-Allow-Headers", `Content-Type, ${CSRF_HEADER_NAME}`);
-        return c.body(null, 204);
-      }
-    }
+    const preflight = applyCredentialedCors(c, runtime, "GET, POST, DELETE");
+    if (preflight) return preflight;
+    await next();
+  });
+
+  app.use("/player/*", async (c, next) => {
+    const preflight = applyCredentialedCors(c, runtimeFor(c), "GET, PUT");
+    if (preflight) return preflight;
     await next();
   });
 
   app.get("/", (c) => c.text("PokeNexus API"));
+
+  registerPlayerRoutes(app, {
+    playerFor,
+    security: {
+      requireSession: (c) => requireSession(c, runtimeFor(c), false),
+      requireSessionMutation: (c) => requireSessionMutation(c, runtimeFor(c), false),
+    },
+  });
 
   app.post("/auth/enrollment/request", async (c) => {
     const runtime = runtimeFor(c);

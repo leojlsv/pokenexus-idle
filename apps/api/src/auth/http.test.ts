@@ -244,13 +244,27 @@ describe("authentication HTTP boundary", () => {
   let auth: FakeAuthApplication;
   let app: ReturnType<typeof createApiApp>;
   let deferredWork: Promise<void>[];
+  let playerLoads: string[];
+  let playerCreates: string[];
   const env = {} as AuthEnvironment;
 
   beforeEach(() => {
     auth = new FakeAuthApplication();
     deferredWork = [];
+    playerLoads = [];
+    playerCreates = [];
     app = createApiApp({
       resolveAuthRuntime: () => ({ auth, allowedOrigins: [allowedOrigin] }),
+      resolvePlayerApplication: () => ({
+        loadProfile: async (accountId) => {
+          playerLoads.push(accountId);
+          return null;
+        },
+        createOrLoadProfile: async (accountId) => {
+          playerCreates.push(accountId);
+          return { playerId: "0199472a-0000-7000-8000-000000000010" };
+        },
+      }),
       deferPublicWork: (work) => deferredWork.push(work),
       createSecurityAuditCorrelationId: () => "0199472a-0000-7000-8000-000000000099",
     });
@@ -553,6 +567,127 @@ describe("authentication HTTP boundary", () => {
     );
     expect(reauth.status).toBe(200);
     expect(auth.sessionTouches).toEqual([false, true]);
+  });
+
+  it("keeps self-profile reads non-activity and resolves only the authenticated account", async () => {
+    const response = await app.request(
+      "/player/profile",
+      {
+        headers: {
+          Cookie: `${SESSION_COOKIE_NAME}=bearer`,
+          "X-User-Activity": "true",
+        },
+      },
+      env,
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({ error: "not_found" });
+    expect(auth.sessionTouches).toEqual([false]);
+    expect(playerLoads).toEqual([sessionPrincipal.accountId]);
+  });
+
+  it("protects self-profile creation with exact Origin and session CSRF without touching activity", async () => {
+    const missingCsrf = await app.request(
+      "/player/profile",
+      {
+        method: "PUT",
+        headers: requestHeaders({ Cookie: `${SESSION_COOKIE_NAME}=bearer` }),
+      },
+      env,
+    );
+    expect(missingCsrf.status).toBe(403);
+    expect(playerCreates).toEqual([]);
+
+    const badOrigin = await app.request(
+      "/player/profile",
+      {
+        method: "PUT",
+        headers: {
+          Origin: "https://evil.example",
+          Cookie: `${SESSION_COOKIE_NAME}=bearer`,
+          [CSRF_HEADER_NAME]: "session-csrf",
+        },
+      },
+      env,
+    );
+    expect(badOrigin.status).toBe(403);
+    expect(playerCreates).toEqual([]);
+
+    const ok = await app.request(
+      "/player/profile",
+      {
+        method: "PUT",
+        headers: requestHeaders({
+          Cookie: `${SESSION_COOKIE_NAME}=bearer`,
+          [CSRF_HEADER_NAME]: "session-csrf",
+        }),
+      },
+      env,
+    );
+    expect(ok.status).toBe(200);
+    await expect(ok.json()).resolves.toEqual({
+      playerId: "0199472a-0000-7000-8000-000000000010",
+    });
+    expect(playerCreates).toEqual([sessionPrincipal.accountId]);
+    expect(auth.sessionTouches).toEqual([false, false]);
+  });
+
+  it("does not let client-supplied profile selectors or fields influence authority", async () => {
+    const selected = await app.request(
+      "/player/profile?playerId=0199472a-0000-7000-8000-000000000098",
+      { headers: { Cookie: `${SESSION_COOKIE_NAME}=bearer` } },
+      env,
+    );
+    expect(selected.status).toBe(404);
+
+    const payload = await app.request(
+      "/player/profile",
+      {
+        method: "PUT",
+        headers: requestHeaders({
+          Cookie: `${SESSION_COOKIE_NAME}=bearer`,
+          [CSRF_HEADER_NAME]: "session-csrf",
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({ accountId: sessionPrincipal.accountId }),
+      },
+      env,
+    );
+    expect(payload.status).toBe(200);
+    expect(playerLoads).toEqual([sessionPrincipal.accountId]);
+    expect(playerCreates).toEqual([sessionPrincipal.accountId]);
+  });
+
+  it("applies exact credentialed CORS to the player route family", async () => {
+    const preflight = await app.request(
+      "/player/profile",
+      {
+        method: "OPTIONS",
+        headers: { Origin: allowedOrigin },
+      },
+      env,
+    );
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("access-control-allow-origin")).toBe(allowedOrigin);
+    expect(preflight.headers.get("access-control-allow-credentials")).toBe("true");
+    expect(preflight.headers.get("access-control-allow-methods")).toBe("GET, PUT");
+    expect(preflight.headers.get("access-control-allow-headers")).toContain(CSRF_HEADER_NAME);
+  });
+
+  it("rejects invalid profile sessions before persistence", async () => {
+    auth.sessionAuthenticationSucceeds = false;
+
+    const response = await app.request(
+      "/player/profile",
+      { headers: { Cookie: `${SESSION_COOKIE_NAME}=invalid` } },
+      env,
+    );
+
+    expect(response.status).toBe(401);
+    expect(playerLoads).toEqual([]);
+    expect(playerCreates).toEqual([]);
   });
 
   it("enforces Origin and session-bound CSRF on every cookie-authenticated unsafe route", async () => {

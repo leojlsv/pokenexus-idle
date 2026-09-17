@@ -9,3 +9,4 @@ export {
 } from "./opaque-string-db-codec.js";
 export { generateUuidV7 } from "./uuid-v7.js";
 export * from "./auth-repository.js";
+export * from "./player-repository.js";
