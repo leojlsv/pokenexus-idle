@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "pg";
@@ -7,7 +7,11 @@ import { encodeOpaqueStringDbV1 } from "../src/opaque-string-db-codec";
 import { generateUuidV7 } from "../src/uuid-v7";
 import { withPgClient } from "../src/pg-client";
 import { withTransaction } from "../src/transaction";
-import { discoverMigrations, runMigrations } from "../src/migrations";
+import {
+  canonicalMigrationsDirectory,
+  discoverMigrations,
+  runMigrations,
+} from "../src/migrations";
 
 const testDatabaseUrl = process.env.POKENEXUS_TEST_DATABASE_URL;
 
@@ -139,6 +143,76 @@ describe("PostgreSQL 17 migration foundation", () => {
         checksum_hex: checksum.toString("hex"),
       })),
     );
+  });
+
+  it("upgrades pre-auth canonical persistence data through the auth migration and remains idempotent", async () => {
+    await resetSchema();
+    const directory = await makeMigrationDirectory();
+    const canonical = await discoverMigrations();
+    expect(canonical.map(({ fileName }) => fileName)).toEqual([
+      "0001_postgresql_schema_v1.sql",
+      "0002_authentication_session_foundation.sql",
+    ]);
+    const [persistenceMigration, authMigration] = canonical;
+
+    await writeFile(
+      join(directory, persistenceMigration.fileName),
+      await readFile(join(canonicalMigrationsDirectory, persistenceMigration.fileName)),
+    );
+    await expect(
+      runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: directory }),
+    ).resolves.toEqual({ applied: [persistenceMigration.id], skipped: [] });
+
+    const accountId = generateUuidV7();
+    const playerId = generateUuidV7();
+    await withDirectClient(async (client) => {
+      await client.query("INSERT INTO pokenexus.accounts (account_id) VALUES ($1)", [accountId]);
+      await client.query(
+        "INSERT INTO pokenexus.players (player_id, account_id) VALUES ($1, $2)",
+        [playerId, accountId],
+      );
+    });
+
+    await writeFile(
+      join(directory, authMigration.fileName),
+      await readFile(join(canonicalMigrationsDirectory, authMigration.fileName)),
+    );
+    await expect(
+      runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: directory }),
+    ).resolves.toEqual({
+      applied: [authMigration.id],
+      skipped: [persistenceMigration.id],
+    });
+
+    await withDirectClient(async (client) => {
+      const account = await client.query<{
+        account_id: string;
+        auth_state: string;
+        security_epoch: string;
+      }>(
+        "SELECT account_id, auth_state, security_epoch FROM pokenexus.accounts WHERE account_id = $1",
+        [accountId],
+      );
+      expect(account.rows).toEqual([
+        {
+          account_id: accountId,
+          auth_state: "pending_activation",
+          security_epoch: "0",
+        },
+      ]);
+      const player = await client.query<{ player_id: string; account_id: string }>(
+        "SELECT player_id, account_id FROM pokenexus.players WHERE player_id = $1",
+        [playerId],
+      );
+      expect(player.rows).toEqual([{ player_id: playerId, account_id: accountId }]);
+    });
+
+    await expect(
+      runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: directory }),
+    ).resolves.toEqual({
+      applied: [],
+      skipped: canonical.map(({ id }) => id),
+    });
   });
 
   it("fails closed when bytes of an applied migration change", async () => {

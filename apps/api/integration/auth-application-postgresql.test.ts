@@ -144,6 +144,184 @@ describe("AuthenticationApplication PostgreSQL + email port", () => {
     });
   });
 
+  it("issues recovery only for active or recovery-pending accounts", async () => {
+    const sender = new FakeEmailActionSender();
+    const auth = application(sender);
+    const now = new Date("2026-09-16T14:00:00.000Z");
+    const accountIds = {
+      active: generateUuidV7(),
+      recovering: generateUuidV7(),
+      pending: generateUuidV7(),
+      disabled: generateUuidV7(),
+      deleted: generateUuidV7(),
+    };
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      await client.query(
+        `INSERT INTO pokenexus.accounts (
+           account_id, auth_state, security_epoch,
+           recovery_email_canonical, recovery_email_delivery, recovery_email_verified_at,
+           activated_at, deleted_at, created_at, updated_at
+         ) VALUES
+           ($1, 'active', 0, 'active-recovery@example.com', 'active-recovery@example.com', $6, $6, NULL, $6, $6),
+           ($2, 'recovery_pending', 2, 'pending-recovery@example.com', 'pending-recovery@example.com', $6, $6, NULL, $6, $6),
+           ($3, 'pending_activation', 0, 'activation@example.com', 'activation@example.com', $6, NULL, NULL, $6, $6),
+           ($4, 'disabled', 1, 'disabled@example.com', 'disabled@example.com', $6, $6, NULL, $6, $6),
+           ($5, 'deleted', 1, NULL, NULL, NULL, NULL, $6, $6, $6)`,
+        [
+          accountIds.active,
+          accountIds.recovering,
+          accountIds.pending,
+          accountIds.disabled,
+          accountIds.deleted,
+          now,
+        ],
+      );
+    });
+
+    const recoveryRequests = [
+      {
+        email: "active-recovery@example.com",
+        correlationId: "0199472a-0000-7000-8000-000000000201",
+      },
+      {
+        email: "pending-recovery@example.com",
+        correlationId: "0199472a-0000-7000-8000-000000000202",
+      },
+      {
+        email: "activation@example.com",
+        correlationId: "0199472a-0000-7000-8000-000000000203",
+      },
+      {
+        email: "disabled@example.com",
+        correlationId: "0199472a-0000-7000-8000-000000000204",
+      },
+      {
+        email: "deleted@example.com",
+        correlationId: "0199472a-0000-7000-8000-000000000205",
+      },
+    ] as const;
+    for (const request of recoveryRequests) {
+      await auth.requestRecovery(request.email, request.correlationId);
+    }
+
+    expect(sender.actions.map(({ kind, recipient }) => ({ kind, recipient }))).toEqual([
+      { kind: "recovery", recipient: "active-recovery@example.com" },
+      { kind: "recovery", recipient: "pending-recovery@example.com" },
+    ]);
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const actions = await client.query<{
+        account_id: string;
+        issued_security_epoch: string;
+        expected_account_state: string;
+      }>(
+        `SELECT account_id, issued_security_epoch, expected_account_state
+         FROM pokenexus.auth_email_actions
+         WHERE purpose = 'recovery'
+         ORDER BY expected_account_state, account_id`,
+      );
+      expect(actions.rows).toEqual(
+        expect.arrayContaining([
+          {
+            account_id: accountIds.active,
+            issued_security_epoch: "0",
+            expected_account_state: "active",
+          },
+          {
+            account_id: accountIds.recovering,
+            issued_security_epoch: "2",
+            expected_account_state: "recovery_pending",
+          },
+        ]),
+      );
+      expect(actions.rows).toHaveLength(2);
+      const events = await client.query<{
+        account_id: string | null;
+        result: string;
+        correlation_id: string | null;
+      }>(
+        `SELECT account_id, result, correlation_id
+         FROM pokenexus.auth_security_events
+         WHERE event_type = 'recovery_requested'
+         ORDER BY account_id`,
+      );
+      expect(events.rows).toEqual(
+        expect.arrayContaining([
+          {
+            account_id: accountIds.active,
+            result: "issued",
+            correlation_id: "0199472a-0000-7000-8000-000000000201",
+          },
+          {
+            account_id: accountIds.recovering,
+            result: "issued",
+            correlation_id: "0199472a-0000-7000-8000-000000000202",
+          },
+        ]),
+      );
+      expect(events.rows).toHaveLength(2);
+      const accountLinkedEvidence = await client.query<{ evidence: string }>(
+        `SELECT row_to_json(e)::text AS evidence
+         FROM pokenexus.auth_security_events e
+         WHERE event_type = 'recovery_requested' AND account_id IS NOT NULL
+         ORDER BY account_id`,
+      );
+      expect(accountLinkedEvidence.rows).toHaveLength(2);
+      const serializedEvents = accountLinkedEvidence.rows.map(({ evidence }) => evidence).join("\n");
+      for (const request of recoveryRequests) {
+        expect(serializedEvents).not.toContain(request.email);
+      }
+    });
+  });
+
+  it("records recovery delivery failure as correlated failure evidence without raw recovery email", async () => {
+    const sender = new FakeEmailActionSender();
+    sender.failActions = true;
+    const auth = application(sender);
+    const now = new Date("2026-09-16T14:00:00.000Z");
+    const accountId = generateUuidV7();
+    const recoveryEmail = "recovery-failure@example.com";
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      await client.query(
+        `INSERT INTO pokenexus.accounts (
+           account_id, auth_state, security_epoch,
+           recovery_email_canonical, recovery_email_delivery, recovery_email_verified_at,
+           activated_at, created_at, updated_at
+         ) VALUES ($1, 'active', 0, $2, $2, $3, $3, $3, $3)`,
+        [accountId, recoveryEmail, now],
+      );
+    });
+
+    await expect(auth.requestRecovery(recoveryEmail, "recovery-failure-correlation")).resolves.toBeUndefined();
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const events = await client.query<{
+        event_type: string;
+        result: string;
+        correlation_id: string | null;
+        account_id: string | null;
+        target_key: Buffer | null;
+      }>(
+        `SELECT event_type, result, correlation_id, account_id, target_key
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1`,
+        [accountId],
+      );
+      expect(events.rows).toEqual([
+        {
+          event_type: "recovery_requested",
+          result: "delivery_failed",
+          correlation_id: "recovery-failure-correlation",
+          account_id: accountId,
+          target_key: null,
+        },
+      ]);
+      expect(JSON.stringify(events.rows)).not.toContain(recoveryEmail);
+    });
+  });
+
   it("does not roll back a committed passkey removal when security notification delivery fails", async () => {
     const sender = new FakeEmailActionSender();
     sender.failNotifications = true;

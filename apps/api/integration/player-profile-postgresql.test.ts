@@ -242,4 +242,74 @@ describe("Player profile API with PostgreSQL", () => {
       expect(players.rows[0]?.count).toBe("0");
     });
   });
+
+  it("rejects revoked, expired, stale-epoch and recovery-invalidated sessions before Player persistence", async () => {
+    const cases: Array<{
+      label: string;
+      mutate: (session: SessionFixture) => Promise<void>;
+    }> = [
+      {
+        label: "revoked",
+        mutate: async (session) =>
+          withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+            await client.query(
+              "UPDATE pokenexus.auth_sessions SET revoked_at = $2 WHERE session_id = $1",
+              [session.sessionId, now],
+            );
+          }),
+      },
+      {
+        label: "expired",
+        mutate: async (session) =>
+          withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+            await client.query(
+              "UPDATE pokenexus.auth_sessions SET absolute_expires_at = $2 WHERE session_id = $1",
+              [session.sessionId, now],
+            );
+          }),
+      },
+      {
+        label: "stale-epoch",
+        mutate: async (session) =>
+          withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+            await client.query(
+              "UPDATE pokenexus.accounts SET security_epoch = security_epoch + 1 WHERE account_id = $1",
+              [session.accountId],
+            );
+          }),
+      },
+      {
+        label: "recovery-invalidated",
+        mutate: async (session) =>
+          withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+            await client.query(
+              `UPDATE pokenexus.accounts
+               SET auth_state = 'recovery_pending',
+                   security_epoch = security_epoch + 1,
+                   recovery_started_at = $2
+               WHERE account_id = $1`,
+              [session.accountId, now],
+            );
+          }),
+      },
+    ];
+
+    for (const testCase of cases) {
+      const session = await createActiveSession(testCase.label);
+      await testCase.mutate(session);
+      const response = await app.request(
+        "/player/profile",
+        { headers: { Cookie: cookie(session) } },
+        {} as never,
+      );
+      expect(response.status, testCase.label).toBe(401);
+    }
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const players = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.players",
+      );
+      expect(players.rows[0]?.count).toBe("0");
+    });
+  });
 });

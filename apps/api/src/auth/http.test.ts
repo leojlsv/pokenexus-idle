@@ -720,6 +720,108 @@ describe("authentication HTTP boundary", () => {
     }
   });
 
+  it("covers representative authorization categories with one table-driven route matrix", async () => {
+    const cases: Array<{
+      name: string;
+      path: string;
+      init?: RequestInit;
+      expectedStatus: number;
+    }> = [
+      {
+        name: "public generic recovery",
+        path: "/auth/recovery/request",
+        init: {
+          method: "POST",
+          headers: requestHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ email: "matrix@example.com" }),
+        },
+        expectedStatus: 202,
+      },
+      {
+        name: "restricted authority missing",
+        path: "/auth/restricted/passkey/options",
+        init: {
+          method: "POST",
+          headers: requestHeaders({ [CSRF_HEADER_NAME]: "restricted-csrf" }),
+        },
+        expectedStatus: 401,
+      },
+      {
+        name: "restricted authority valid",
+        path: "/auth/restricted/passkey/options",
+        init: {
+          method: "POST",
+          headers: requestHeaders({
+            Cookie: `${RESTRICTED_COOKIE_NAME}=restricted-bearer`,
+            [CSRF_HEADER_NAME]: "restricted-csrf",
+          }),
+        },
+        expectedStatus: 200,
+      },
+      {
+        name: "normal session missing",
+        path: "/auth/session",
+        expectedStatus: 401,
+      },
+      {
+        name: "normal session valid",
+        path: "/auth/session",
+        init: { headers: { Cookie: `${SESSION_COOKIE_NAME}=bearer` } },
+        expectedStatus: 200,
+      },
+      {
+        name: "sensitive session route",
+        path: "/auth/sessions",
+        init: { headers: { Cookie: `${SESSION_COOKIE_NAME}=bearer` } },
+        expectedStatus: 200,
+      },
+      {
+        name: "self profile missing session",
+        path: "/player/profile",
+        expectedStatus: 401,
+      },
+      {
+        name: "self profile authenticated",
+        path: "/player/profile?accountId=attacker-controlled",
+        init: { headers: { Cookie: `${SESSION_COOKIE_NAME}=bearer` } },
+        expectedStatus: 404,
+      },
+      {
+        name: "self profile mutation missing csrf",
+        path: "/player/profile",
+        init: {
+          method: "PUT",
+          headers: requestHeaders({ Cookie: `${SESSION_COOKIE_NAME}=bearer` }),
+        },
+        expectedStatus: 403,
+      },
+      {
+        name: "self profile mutation authorized",
+        path: "/player/profile",
+        init: {
+          method: "PUT",
+          headers: requestHeaders({
+            Cookie: `${SESSION_COOKIE_NAME}=bearer`,
+            [CSRF_HEADER_NAME]: "session-csrf",
+          }),
+        },
+        expectedStatus: 200,
+      },
+      {
+        name: "uncategorized auth path",
+        path: "/auth/not-a-real-operation",
+        init: { method: "POST", headers: requestHeaders() },
+        expectedStatus: 404,
+      },
+    ];
+
+    for (const testCase of cases) {
+      const response = await app.request(testCase.path, testCase.init, env);
+      expect(response.status, testCase.name).toBe(testCase.expectedStatus);
+    }
+    await Promise.all(deferredWork);
+  });
+
   it("requires explicit account-delete confirmation and the reusable security-operation gate", async () => {
     const headers = requestHeaders({
       Cookie: `${SESSION_COOKIE_NAME}=bearer`,

@@ -587,6 +587,7 @@ export async function redeemEmailActionToRestrictedFlow(
     let resultingState: "pending_activation" | "recovery_pending";
     let resultingEpoch: bigint;
     let account: AccountAuthRecord;
+    let recoveryStarted = false;
     if (action.purpose === "enrollment") {
       if (
         action.accountId !== null ||
@@ -661,6 +662,7 @@ export async function redeemEmailActionToRestrictedFlow(
       resultingState = "recovery_pending";
       resultingEpoch = account.securityEpoch;
       if (account.state === "active") {
+        recoveryStarted = true;
         resultingEpoch = account.securityEpoch + 1n;
         await transaction.query(
           `UPDATE pokenexus.accounts
@@ -704,13 +706,15 @@ export async function redeemEmailActionToRestrictedFlow(
         input.now,
       ],
     );
-    await insertSecurityEvent(transaction, {
-      accountId: account.accountId,
-      eventType: purpose === "recovery" ? "recovery_started" : "enrollment_verified",
-      result: "success",
-      correlationId: input.correlationId,
-      now: input.now,
-    });
+    if (purpose === "activation" || recoveryStarted) {
+      await insertSecurityEvent(transaction, {
+        accountId: account.accountId,
+        eventType: purpose === "recovery" ? "recovery_started" : "enrollment_verified",
+        result: "success",
+        correlationId: input.correlationId,
+        now: input.now,
+      });
+    }
     return {
       flowId: input.flowId,
       accountId: account.accountId,

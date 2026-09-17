@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { Client } from "pg";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
+  addPasskey,
   authorizeSensitiveSession,
   completeReauthentication,
   completeRestrictedRegistration,
@@ -12,10 +13,12 @@ import {
   issueEmailAction,
   issueWebAuthnChallenge,
   loadSessionByDigest,
+  recordSecurityEvent,
   redeemEmailActionToRestrictedFlow,
   removePasskey,
   replaceRecoveryEmail,
   reserveIssuance,
+  revokeAllSessions,
   revokeOneSession,
   setAccountDisabled,
   touchSessionActivity,
@@ -299,6 +302,183 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
     });
   });
 
+  it("fails closed at email-action, restricted-flow and challenge expiry while superseding older recovery authority", async () => {
+    const now = new Date("2026-09-16T14:00:00.000Z");
+    await withClient(async (client) => {
+      const accountId = await createActiveAccount(client, "expiry@example.com", now);
+      const expiredSecret = digest("recovery-expired");
+      const expiredAt = new Date(now.getTime() + 60_000);
+
+      await issueEmailAction(client, {
+        emailActionId: generateUuidV7(),
+        purpose: "recovery",
+        accountId,
+        bearerDigest: expiredSecret,
+        targetKey: digest("recovery-expired-target"),
+        issuedSecurityEpoch: 0n,
+        expectedAccountState: "active",
+        expiresAt: expiredAt,
+        now,
+      });
+      await expect(
+        redeemEmailActionToRestrictedFlow(client, {
+          bearerDigest: expiredSecret,
+          enrollmentAccountId: generateUuidV7(),
+          flowId: generateUuidV7(),
+          flowBearerDigest: digest("expired-flow"),
+          flowExpiresAt: new Date(expiredAt.getTime() + 60_000),
+          now: expiredAt,
+        }),
+      ).resolves.toBeNull();
+
+      const firstSecret = digest("recovery-superseded");
+      const secondSecret = digest("recovery-current");
+      const issuedAt = new Date(expiredAt.getTime() + 1);
+      await issueEmailAction(client, {
+        emailActionId: generateUuidV7(),
+        purpose: "recovery",
+        accountId,
+        bearerDigest: firstSecret,
+        targetKey: digest("recovery-superseded-target"),
+        issuedSecurityEpoch: 0n,
+        expectedAccountState: "active",
+        expiresAt: new Date(issuedAt.getTime() + 15 * 60_000),
+        now: issuedAt,
+      });
+      await issueEmailAction(client, {
+        emailActionId: generateUuidV7(),
+        purpose: "recovery",
+        accountId,
+        bearerDigest: secondSecret,
+        targetKey: digest("recovery-current-target"),
+        issuedSecurityEpoch: 0n,
+        expectedAccountState: "active",
+        expiresAt: new Date(issuedAt.getTime() + 15 * 60_000),
+        now: new Date(issuedAt.getTime() + 1),
+      });
+
+      await expect(
+        redeemEmailActionToRestrictedFlow(client, {
+          bearerDigest: firstSecret,
+          enrollmentAccountId: generateUuidV7(),
+          flowId: generateUuidV7(),
+          flowBearerDigest: digest("superseded-flow"),
+          flowExpiresAt: new Date(issuedAt.getTime() + 60_000),
+          now: new Date(issuedAt.getTime() + 2),
+        }),
+      ).resolves.toBeNull();
+
+      const flowBearerDigest = digest("current-flow");
+      const flowExpiresAt = new Date(issuedAt.getTime() + 60_000);
+      const flow = await redeemEmailActionToRestrictedFlow(client, {
+        bearerDigest: secondSecret,
+        enrollmentAccountId: generateUuidV7(),
+        flowId: generateUuidV7(),
+        flowBearerDigest,
+        flowExpiresAt,
+        now: new Date(issuedAt.getTime() + 2),
+      });
+      expect(flow).toMatchObject({
+        accountId,
+        purpose: "recovery",
+        securityEpoch: 1n,
+        expectedAccountState: "recovery_pending",
+      });
+      await expect(
+        getRestrictedFlowByDigest(client, flowBearerDigest, flowExpiresAt),
+      ).resolves.toBeNull();
+
+      const challengeId = generateUuidV7();
+      const challengeIssuedAt = new Date(issuedAt.getTime() + 3);
+      const challengeExpiresAt = new Date(challengeIssuedAt.getTime() + 30_000);
+      await issueWebAuthnChallenge(client, {
+        challengeId,
+        purpose: "restricted_registration",
+        challengeDigest: digest("expiry-challenge"),
+        accountId,
+        flowId: flow!.flowId,
+        securityEpoch: flow!.securityEpoch,
+        expectedAccountState: "recovery_pending",
+        expiresAt: challengeExpiresAt,
+        now: challengeIssuedAt,
+      });
+      await expect(
+        getWebAuthnChallenge(client, challengeId, challengeExpiresAt),
+      ).resolves.toBeNull();
+    });
+  });
+
+  it("keeps enrollment, recovery and email-change issuance single-current", async () => {
+    const now = new Date("2026-09-16T14:00:00.000Z");
+    await withClient(async (client) => {
+      const accountId = await createActiveAccount(client, "single-current@example.com", now);
+      const targetKey = digest("single-current-enrollment-target");
+
+      const issueEnrollment = async (label: string, offset: number) =>
+        issueEmailAction(client, {
+          emailActionId: generateUuidV7(),
+          purpose: "enrollment",
+          bearerDigest: digest(`single-current-enrollment-${label}`),
+          targetKey,
+          candidateEmailCanonical: "candidate@example.com",
+          candidateEmailDelivery: "candidate@example.com",
+          expiresAt: new Date(now.getTime() + 15 * 60_000 + offset),
+          now: new Date(now.getTime() + offset),
+        });
+      const issueRecovery = async (label: string, offset: number) =>
+        issueEmailAction(client, {
+          emailActionId: generateUuidV7(),
+          purpose: "recovery",
+          accountId,
+          bearerDigest: digest(`single-current-recovery-${label}`),
+          targetKey: digest("single-current-recovery-target"),
+          issuedSecurityEpoch: 0n,
+          expectedAccountState: "active",
+          expiresAt: new Date(now.getTime() + 15 * 60_000 + offset),
+          now: new Date(now.getTime() + offset),
+        });
+      const issueEmailChange = async (label: string, offset: number) =>
+        issueEmailAction(client, {
+          emailActionId: generateUuidV7(),
+          purpose: "email_change",
+          accountId,
+          bearerDigest: digest(`single-current-email-change-${label}`),
+          targetKey: digest(`single-current-email-change-target-${label}`),
+          candidateEmailCanonical: `${label}@example.com`,
+          candidateEmailDelivery: `${label}@example.com`,
+          issuedSecurityEpoch: 0n,
+          expectedAccountState: "active",
+          expiresAt: new Date(now.getTime() + 15 * 60_000 + offset),
+          now: new Date(now.getTime() + offset),
+        });
+
+      await issueEnrollment("first", 0);
+      await issueEnrollment("second", 1);
+      await issueRecovery("first", 2);
+      await issueRecovery("second", 3);
+      await issueEmailChange("first", 4);
+      await issueEmailChange("second", 5);
+
+      const rows = await client.query<{
+        purpose: string;
+        current_count: string;
+        superseded_count: string;
+      }>(
+        `SELECT purpose,
+                count(*) FILTER (WHERE superseded_at IS NULL AND consumed_at IS NULL)::text AS current_count,
+                count(*) FILTER (WHERE superseded_at IS NOT NULL)::text AS superseded_count
+         FROM pokenexus.auth_email_actions
+         GROUP BY purpose
+         ORDER BY purpose`,
+      );
+      expect(rows.rows).toEqual([
+        { purpose: "email_change", current_count: "1", superseded_count: "1" },
+        { purpose: "enrollment", current_count: "1", superseded_count: "1" },
+        { purpose: "recovery", current_count: "1", superseded_count: "1" },
+      ]);
+    });
+  });
+
   it("does not reserve an account/email before enrollment proof and consumes redemption once", async () => {
     const now = new Date("2026-09-16T14:00:00.000Z");
     await withClient(async (client) => {
@@ -474,6 +654,17 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
       ).resolves.toBe(false);
       await expect(getWebAuthnChallenge(client, challengeId, now)).resolves.toBeNull();
       await expect(getRestrictedFlowByDigest(client, digest("once-flow"), now)).resolves.toBeNull();
+      const activationEvents = await client.query<{ event_type: string; result: string }>(
+        `SELECT event_type, result
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND event_type IN ('account_activated', 'session_created')
+         ORDER BY event_type`,
+        [flow!.accountId],
+      );
+      expect(activationEvents.rows).toEqual([
+        { event_type: "account_activated", result: "success" },
+        { event_type: "session_created", result: "success" },
+      ]);
     });
   });
 
@@ -506,6 +697,7 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
         flowBearerDigest: digest("recovery-flow"),
         flowExpiresAt: new Date(now.getTime() + 15 * 60 * 1000),
         now,
+        correlationId: "task018-recovery-start",
       });
       expect(recoveryFlow).toMatchObject({
         accountId,
@@ -568,6 +760,7 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
         flowBearerDigest: digest("recovery-flow-resume"),
         flowExpiresAt: new Date(now.getTime() + 15 * 60 * 1000),
         now: new Date(now.getTime() + 1000),
+        correlationId: "task018-recovery-resume",
       });
       expect(resumed?.securityEpoch).toBe(1n);
       await expect(
@@ -623,6 +816,27 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
           now: new Date(now.getTime() + 3000),
         }),
       ).resolves.toBeNull();
+      const recoveryEvents = await client.query<{
+        event_type: string;
+        count: string;
+        correlation_ids: string[];
+      }>(
+        `SELECT event_type, count(*)::text AS count,
+                array_agg(correlation_id ORDER BY created_at)::text[] AS correlation_ids
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND event_type IN ('recovery_started', 'recovery_completed')
+         GROUP BY event_type
+         ORDER BY event_type`,
+        [accountId],
+      );
+      expect(recoveryEvents.rows).toEqual([
+        { event_type: "recovery_completed", count: "1", correlation_ids: [null] },
+        {
+          event_type: "recovery_started",
+          count: "1",
+          correlation_ids: ["task018-recovery-start"],
+        },
+      ]);
     });
   });
 
@@ -663,6 +877,84 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
         [accountId],
       );
       expect(sessionCreatedEvents.rows[0].count).toBe("3");
+      const authenticationEvents = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.auth_security_events WHERE account_id = $1 AND event_type = 'authentication_success'",
+        [accountId],
+      );
+      expect(authenticationEvents.rows[0].count).toBe("3");
+    });
+  });
+
+  it("persists passkey add/remove audit families at the accepted security boundary", async () => {
+    const now = new Date("2026-09-16T14:00:00.000Z");
+    await withClient(async (client) => {
+      const accountId = await createActiveAccount(client, "passkey-audit@example.com", now);
+      const existingCredential = credential(accountId, "passkey-audit-existing");
+      const addedCredential = credential(accountId, "passkey-audit-added");
+      await insertCredential(client, accountId, existingCredential, now);
+      const authorizingSession = session("passkey-audit", now);
+      await insertSession(client, accountId, authorizingSession, now, now);
+
+      const challengeId = generateUuidV7();
+      await issueWebAuthnChallenge(client, {
+        challengeId,
+        purpose: "add_passkey",
+        challengeDigest: digest("passkey-audit-challenge"),
+        accountId,
+        securityEpoch: 0n,
+        expectedAccountState: "active",
+        expiresAt: new Date(now.getTime() + 5 * 60_000),
+        now,
+      });
+      await expect(
+        addPasskey(client, {
+          accountId,
+          authorizingSessionId: authorizingSession.sessionId,
+          authorizingBearerDigest: authorizingSession.bearerDigest,
+          challengeId,
+          credential: addedCredential,
+          now,
+          inactivityLifetimeMs: 7 * 24 * 60 * 60_000,
+          recentAuthLifetimeMs: 10 * 60_000,
+          correlationId: "passkey-add-correlation",
+        }),
+      ).resolves.toBe(true);
+      await expect(
+        removePasskey(client, {
+          accountId,
+          authorizingSessionId: authorizingSession.sessionId,
+          authorizingBearerDigest: authorizingSession.bearerDigest,
+          credentialId: addedCredential.credentialId,
+          now: new Date(now.getTime() + 1),
+          inactivityLifetimeMs: 7 * 24 * 60 * 60_000,
+          recentAuthLifetimeMs: 10 * 60_000,
+          correlationId: "passkey-remove-correlation",
+        }),
+      ).resolves.toBe(true);
+
+      const events = await client.query<{
+        event_type: string;
+        result: string;
+        correlation_id: string | null;
+      }>(
+        `SELECT event_type, result, correlation_id
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND event_type IN ('passkey_added', 'passkey_removed')
+         ORDER BY event_type`,
+        [accountId],
+      );
+      expect(events.rows).toEqual([
+        {
+          event_type: "passkey_added",
+          result: "success",
+          correlation_id: "passkey-add-correlation",
+        },
+        {
+          event_type: "passkey_removed",
+          result: "success",
+          correlation_id: "passkey-remove-correlation",
+        },
+      ]);
     });
   });
 
@@ -774,6 +1066,141 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
     });
   });
 
+  it("revokes every session, invalidates outstanding authority, and makes revoke-all retry fail closed", async () => {
+    const now = new Date("2026-09-16T14:00:00.000Z");
+    await withClient(async (client) => {
+      const accountId = await createActiveAccount(client, "revoke-all@example.com", now);
+      const authorizingSession = session("revoke-all-authorizer", now);
+      const otherSession = session("revoke-all-other", now);
+      await insertSession(client, accountId, authorizingSession, now, now);
+      await insertSession(client, accountId, otherSession, now, now);
+
+      const recoverySecret = digest("revoke-all-recovery");
+      await issueEmailAction(client, {
+        emailActionId: generateUuidV7(),
+        purpose: "recovery",
+        accountId,
+        bearerDigest: recoverySecret,
+        targetKey: digest("revoke-all-recovery-target"),
+        issuedSecurityEpoch: 0n,
+        expectedAccountState: "active",
+        expiresAt: new Date(now.getTime() + 15 * 60_000),
+        now,
+      });
+
+      const challengeId = generateUuidV7();
+      await issueWebAuthnChallenge(client, {
+        challengeId,
+        purpose: "add_passkey",
+        challengeDigest: digest("revoke-all-challenge"),
+        accountId,
+        securityEpoch: 0n,
+        expectedAccountState: "active",
+        expiresAt: new Date(now.getTime() + 5 * 60_000),
+        now,
+      });
+
+      const policy = {
+        accountId,
+        sessionId: authorizingSession.sessionId,
+        expectedBearerDigest: authorizingSession.bearerDigest,
+        now,
+        inactivityLifetimeMs: 7 * 24 * 60 * 60_000,
+        recentAuthLifetimeMs: 10 * 60_000,
+        correlationId: "revoke-all-correlation",
+      } as const;
+      await expect(revokeAllSessions(client, policy)).resolves.toBe(1n);
+
+      const account = await client.query<{ security_epoch: string }>(
+        "SELECT security_epoch FROM pokenexus.accounts WHERE account_id = $1",
+        [accountId],
+      );
+      expect(account.rows[0]?.security_epoch).toBe("1");
+      const sessions = await client.query<{ revoked_at: Date | null }>(
+        "SELECT revoked_at FROM pokenexus.auth_sessions WHERE account_id = $1 ORDER BY session_id",
+        [accountId],
+      );
+      expect(sessions.rows).toHaveLength(2);
+      expect(sessions.rows.every(({ revoked_at }) => revoked_at !== null)).toBe(true);
+      await expect(getWebAuthnChallenge(client, challengeId, new Date(now.getTime() + 1))).resolves.toBeNull();
+      await expect(
+        redeemEmailActionToRestrictedFlow(client, {
+          bearerDigest: recoverySecret,
+          enrollmentAccountId: generateUuidV7(),
+          flowId: generateUuidV7(),
+          flowBearerDigest: digest("revoke-all-illegal-flow"),
+          flowExpiresAt: new Date(now.getTime() + 60_000),
+          now: new Date(now.getTime() + 1),
+        }),
+      ).resolves.toBeNull();
+
+      const events = await client.query<{
+        event_type: string;
+        result: string;
+        correlation_id: string | null;
+      }>(
+        `SELECT event_type, result, correlation_id
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND event_type = 'sessions_revoked_all'`,
+        [accountId],
+      );
+      expect(events.rows).toEqual([
+        {
+          event_type: "sessions_revoked_all",
+          result: "success",
+          correlation_id: "revoke-all-correlation",
+        },
+      ]);
+
+      await expect(
+        revokeAllSessions(client, { ...policy, now: new Date(now.getTime() + 1) }),
+      ).resolves.toBeNull();
+      const afterRetry = await client.query<{ security_epoch: string; event_count: string }>(
+        `SELECT a.security_epoch,
+                (SELECT count(*)::text FROM pokenexus.auth_security_events
+                 WHERE account_id = a.account_id AND event_type = 'sessions_revoked_all') AS event_count
+         FROM pokenexus.accounts a WHERE a.account_id = $1`,
+        [accountId],
+      );
+      expect(afterRetry.rows[0]).toEqual({ security_epoch: "1", event_count: "1" });
+    });
+  });
+
+  it("rolls back a security mutation when its transactional audit insert fails", async () => {
+    const now = new Date("2026-09-16T14:00:00.000Z");
+    await withClient(async (client) => {
+      const accountId = await createActiveAccount(client, "audit-rollback@example.com", now);
+      const authorizingSession = session("audit-rollback-authorizer", now);
+      const targetSession = session("audit-rollback-target", now);
+      await insertSession(client, accountId, authorizingSession, now, now);
+      await insertSession(client, accountId, targetSession, now, now);
+
+      await expect(
+        revokeOneSession(client, {
+          accountId,
+          sessionId: authorizingSession.sessionId,
+          expectedBearerDigest: authorizingSession.bearerDigest,
+          targetSessionId: targetSession.sessionId,
+          now,
+          inactivityLifetimeMs: 7 * 24 * 60 * 60_000,
+          recentAuthLifetimeMs: 10 * 60_000,
+          correlationId: "x".repeat(129),
+        }),
+      ).rejects.toMatchObject({ code: "23514" });
+
+      const target = await client.query<{ revoked_at: Date | null }>(
+        "SELECT revoked_at FROM pokenexus.auth_sessions WHERE session_id = $1",
+        [targetSession.sessionId],
+      );
+      expect(target.rows[0]?.revoked_at).toBeNull();
+      const eventCount = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.auth_security_events WHERE session_id = $1",
+        [targetSession.sessionId],
+      );
+      expect(eventCount.rows[0]?.count).toBe("0");
+    });
+  });
+
   it("revalidates recent-auth and post-recovery hold inside sensitive transactions", async () => {
     const now = new Date("2026-09-16T14:00:00.000Z");
     await withClient(async (client) => {
@@ -824,6 +1251,13 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
           targetSessionId: authSession.sessionId,
         }),
       ).resolves.toBe(true);
+      const revokedEvent = await client.query<{ event_type: string; result: string }>(
+        `SELECT event_type, result
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND session_id = $2 AND event_type = 'session_revoked'`,
+        [accountId, authSession.sessionId],
+      );
+      expect(revokedEvent.rows).toEqual([{ event_type: "session_revoked", result: "success" }]);
       await expect(
         removePasskey(client, {
           accountId,
@@ -1024,8 +1458,90 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
       expect(updated.rows[0].recovery_email_canonical).toBe("new@example.com");
       expect(updated.rows[0].security_epoch).toBe("1");
       expect(updated.rows[0].revoked_at).not.toBeNull();
+      const recoveryEmailEvent = await client.query<{ event_type: string; result: string }>(
+        `SELECT event_type, result
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND event_type = 'recovery_email_changed'`,
+        [accountId],
+      );
+      expect(recoveryEmailEvent.rows).toEqual([
+        { event_type: "recovery_email_changed", result: "success" },
+      ]);
 
       await expect(createActiveAccount(client, "old@example.com", now)).resolves.toEqual(expect.any(String));
+    });
+  });
+
+  it("keeps security-event metadata bounded and makes the 180-day account-event cutoff deterministic", async () => {
+    const referenceNow = new Date("2026-09-16T14:00:00.000Z");
+    const dayMs = 24 * 60 * 60_000;
+    const cutoff = new Date(referenceNow.getTime() - 180 * dayMs);
+    await withClient(async (client) => {
+      const accountId = await createActiveAccount(
+        client,
+        "retention@example.com",
+        new Date(referenceNow.getTime() - 200 * dayMs),
+      );
+      await recordSecurityEvent(client, {
+        accountId,
+        eventType: "authentication_success",
+        result: "success",
+        correlationId: "retention-stale",
+        now: new Date(cutoff.getTime() - 1),
+      });
+      await recordSecurityEvent(client, {
+        accountId,
+        eventType: "authentication_success",
+        result: "success",
+        correlationId: "retention-boundary",
+        now: cutoff,
+      });
+      await recordSecurityEvent(client, {
+        accountId,
+        eventType: "authentication_success",
+        result: "success",
+        correlationId: "retention-recent",
+        now: new Date(cutoff.getTime() + 1),
+      });
+
+      const columns = await client.query<{ column_name: string }>(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_schema = 'pokenexus' AND table_name = 'auth_security_events'
+         ORDER BY ordinal_position`,
+      );
+      expect(columns.rows.map(({ column_name }) => column_name)).toEqual([
+        "event_id",
+        "account_id",
+        "session_id",
+        "event_type",
+        "result",
+        "reason_code",
+        "correlation_id",
+        "target_key",
+        "created_at",
+      ]);
+
+      const eligible = await client.query<{ correlation_id: string | null }>(
+        `SELECT correlation_id
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND created_at < $2
+         ORDER BY created_at`,
+        [accountId, cutoff],
+      );
+      expect(eligible.rows).toEqual([{ correlation_id: "retention-stale" }]);
+
+      const retained = await client.query<{ correlation_id: string | null }>(
+        `SELECT correlation_id
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1 AND created_at >= $2
+         ORDER BY created_at`,
+        [accountId, cutoff],
+      );
+      expect(retained.rows).toEqual([
+        { correlation_id: "retention-boundary" },
+        { correlation_id: "retention-recent" },
+      ]);
     });
   });
 
@@ -1060,6 +1576,17 @@ describe("ADR-006 PostgreSQL authentication foundation", () => {
         [recovering]: "recovery_pending",
         [active]: "active",
       });
+      const events = await client.query<{ event_type: string; result: string }>(
+        `SELECT event_type, result
+         FROM pokenexus.auth_security_events
+         WHERE account_id = $1
+         ORDER BY created_at, event_type`,
+        [active],
+      );
+      expect(events.rows).toEqual([
+        { event_type: "account_disabled", result: "success" },
+        { event_type: "account_reenabled", result: "success" },
+      ]);
     });
   });
 });
