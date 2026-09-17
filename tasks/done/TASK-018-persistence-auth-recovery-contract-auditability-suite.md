@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Secondary Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Secondary Developer assignment; Codex CLI unavailable at task start)
@@ -300,16 +300,18 @@ production deployment resources and unrelated domain packages are not TASK-018 w
 
 ## Completion
 
-TASK-018 is ACCEPTANCE. Owner implementation and validation are complete on the bounded verification/hardening
-scope. A narrow production conformance fix in `packages/database/src/auth-repository.ts` makes `recovery_started`
-audit evidence correspond only to the actual active→recovery_pending start transition; same-epoch recovery resume
-retains its existing behavior without emitting a second start event. No public protocol, policy, schema, migration,
+TASK-018 is DONE. Owner implementation and validation are complete on the bounded verification/hardening scope.
+A narrow production conformance fix in `packages/database/src/auth-repository.ts` makes `recovery_started` audit
+evidence correspond only to the actual active→recovery_pending start transition; same-epoch recovery resume retains
+its existing behavior without emitting a second start event. No public protocol, policy, schema, migration,
 dependency or recovery-flow change was introduced.
 
 Fresh corrected-snapshot independent review is complete: QA returned READY with P0/P1/P2/P3 = 0/0/0/0;
 Independent Auditor spot-check returned PASS with P0/P1/P2/P3 = 0/0/0/0; PM / Architecture Coordinator returned
-ACCEPT for the exact corrected REVIEW snapshot. No technical or acceptance blocker remains. Repository-history
-completion is not yet authorized and remains the next explicit Human Owner gate.
+ACCEPT for the exact corrected REVIEW snapshot. The Human Owner explicitly authorized repository completion/history
+on 2026-09-17. The accepted feature snapshot was committed as
+`bf327c6344d64459331f1c0031803db325a71633`, pushed on the TASK-018 branch, fast-forward integrated into canonical
+`main`, and pushed. This DONE metadata records governed closure without post-acceptance production/test changes.
 
 ### Owner validation evidence
 
@@ -321,7 +323,7 @@ completion is not yet authorized and remains the next explicit Human Owner gate.
 - API focused: lint PASS; typecheck PASS; unit 52/52 PASS; PostgreSQL integration 13/13 PASS; Worker build dry-run
   PASS.
 - Workspace: lint PASS; recursive typecheck PASS; recursive tests PASS; recursive build PASS.
-- Roadmap generate/check PASS; current roadmap source SHA-256
+- Roadmap generate/check PASS; corrected REVIEW roadmap source SHA-256
   `ffcafe43e32f00507e2b1a48f122376db830b6869b7610b91b95fe7c6af4fd9f`; `git diff --check` PASS;
   diff-focused high-confidence secret scan clean.
 - Production delta is limited to the recovery-start audit conformance guard above. Canonical migration bytes,
