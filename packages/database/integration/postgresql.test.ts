@@ -152,6 +152,7 @@ describe("PostgreSQL 17 migration foundation", () => {
     expect(canonical.map(({ fileName }) => fileName)).toEqual([
       "0001_postgresql_schema_v1.sql",
       "0002_authentication_session_foundation.sql",
+      "0003_collection_team_spec005.sql",
     ]);
     const [persistenceMigration, authMigration] = canonical;
 
@@ -211,7 +212,7 @@ describe("PostgreSQL 17 migration foundation", () => {
       runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: directory }),
     ).resolves.toEqual({
       applied: [],
-      skipped: canonical.map(({ id }) => id),
+      skipped: [persistenceMigration.id, authMigration.id],
     });
   });
 
@@ -741,18 +742,18 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
       await expect(
         client.query(
           `INSERT INTO pokenexus.pokemon_team_members
-            (team_member_id, team_id, pokemon_instance_id, owner_player_id)
-           VALUES ($1, $2, $3, $4)`,
-          [generateUuidV7(), teamA, pokemonB, ownerA.playerId],
+            (team_member_id, team_id, pokemon_instance_id, owner_player_id, slot)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [generateUuidV7(), teamA, pokemonB, ownerA.playerId, 1],
         ),
       ).rejects.toMatchObject({ code: "23503" });
 
       await expect(
         client.query(
           `INSERT INTO pokenexus.pokemon_team_members
-            (team_member_id, team_id, pokemon_instance_id, owner_player_id)
-           VALUES ($1, $2, $3, $4)`,
-          [generateUuidV7(), teamA, pokemonB, ownerB.playerId],
+            (team_member_id, team_id, pokemon_instance_id, owner_player_id, slot)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [generateUuidV7(), teamA, pokemonB, ownerB.playerId, 1],
         ),
       ).rejects.toMatchObject({ code: "23503" });
 

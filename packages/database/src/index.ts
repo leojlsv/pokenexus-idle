@@ -10,3 +10,4 @@ export {
 export { generateUuidV7 } from "./uuid-v7.js";
 export * from "./auth-repository.js";
 export * from "./player-repository.js";
+export * from "./collection-team-repository.js";
