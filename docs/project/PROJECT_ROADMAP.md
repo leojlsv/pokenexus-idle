@@ -10,9 +10,9 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, and the PostgreSQL persistence, identity and security foundation are complete. Canonical static game-data catalog implementation is now explicitly scheduled before reward/content implementation consumes it.
 
-**Current work:** `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` is in **ACCEPTANCE** with SPEC-008 **APPROVED** after the Human Owner approved option 1 and both the focused Pokémon-domain re-review and final independent QA cleared the exact semantic snapshot at P0/P1/P2/P3 `0/0/0/0`. Battle-only transformation profiles are excluded/deferred from `SpeciesDefinitionV2` and left to a future owning transformation/rules task. `TASK-022 — Inventory / Item Model Spec` proceeds independently on its own branch.
+**Current work:** `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` is **DONE** and SPEC-008 is **APPROVED** and integrated. Battle-only transformation profiles are excluded/deferred from `SpeciesDefinitionV2` and left to a future owning transformation/rules task. `TASK-022 — Inventory / Item Model Spec` remains a separate branch/history lane.
 
-**Current action:** TASK-092 semantic/product acceptance is complete. Await separate explicit Human Owner repository-history authorization before commit/push/fast-forward integration; do not bundle TASK-022 history. TASK-087 remains blocked until TASK-092 is integrated.
+**Current action:** TASK-087 — Static Game Data Catalog & Ingestion Implementation is now unblocked by integrated TASK-092/SPEC-008 and may proceed through its own lifecycle. TASK-022 remains separate and must not be bundled into TASK-092 history.
 
 **Next task after TASK-003 acceptance:** `TASK-022 — Inventory / Item Model Spec`.
 
@@ -49,17 +49,17 @@
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-093`.
-- DONE: 23.
+- DONE: 24.
 - DRAFT: 0.
 - READY: 1.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 1.
+- ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 69.
-- Task-count completion: **23 / 94 = 24.5%**.
+- Task-count completion: **24 / 94 = 25.5%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -289,7 +289,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 
 ### EPIC-01 — Core Domain & Universal Combat Foundation
 
-**Status:** IN PROGRESS — accepted domain/data/combat contracts and Combat Engine are complete; TASK-092 extends intrinsic Species reference facts, TASK-087 materializes canonical static data, and TASK-090/091 close production Move/Ability rule content
+**Status:** IN PROGRESS — accepted domain/data/combat contracts and Combat Engine are complete; TASK-092/SPEC-008 are integrated, TASK-087 materializes canonical static data, and TASK-090/091 close production Move/Ability rule content
 **Outcome:** stable domain vocabulary/data contracts and the single deterministic Combat Engine used by all battle content.
 **Why first:** every later battle mode depends on this layer; building content before it would duplicate rules and create migration debt.
 
@@ -300,7 +300,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 | `TASK-004` Domain Glossary & Core Model Spec | A | DONE | PM → ChatGPT | QA; IA optional | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted spec | TASK-003 | Pokémon/combatant identity; stats; moves; types; abilities; items; effects; teams; PvE world/map/zone/encounter vocabulary; invariants; frontend execution-surface alignment; upstream Pokémon data-source policy alignment; Pokémon reference-skill policy |
 | `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
 | `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; PokémonDB DATA-only extraction whitelist vs local normalized fields; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset v1 schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or alternate-provider fallback |
-| `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | ACCEPTANCE | PM → ChatGPT | DoR QA READY `0/0/0/0`; original final QA NOT READY `0/1/0/0`; corrected option-1 Pokémon-domain review PASS advisory `0/0/0/0`; final independent QA READY `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Human Owner accepted SPEC-008 v2 direction and on 2026-09-18 approved **option 1**; semantic acceptance complete, repository history separately gated | TASK-006/093 | SPEC-008 APPROVED. Persistent Species/forms keep the applicable v2 contract and genuine SourceFact states. Mega/Eternamax/battle-only transformations are explicit excluded/deferred source inventory, not separately captured/persisted SpeciesDefinition identities and do not force fake availability wrappers. No transformation-profile catalog is added in schema v2; activation/reversion and the future transformed profile remain future rulesVersion/schema-extension work |
+| `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | DONE | PM → ChatGPT | DoR QA READY `0/0/0/0`; original final QA NOT READY `0/1/0/0`; corrected option-1 Pokémon-domain review PASS advisory `0/0/0/0`; final independent QA READY `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human Owner accepted SPEC-008 v2 direction, approved **option 1**, and authorized repository history/completion on 2026-09-18 | TASK-006/093 | SPEC-008 APPROVED and integrated. Persistent Species/forms keep the applicable v2 contract and genuine SourceFact states. Mega/Eternamax/battle-only transformations are explicit excluded/deferred source inventory, not separately captured/persisted SpeciesDefinition identities and do not force fake availability wrappers. No transformation-profile catalog is added in schema v2; activation/reversion and the future transformed profile remain future rulesVersion/schema-extension work |
 | `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | **HUMAN canonical-data sample validation** | TASK-005/006/092 | Implement `packages/game-data` schemas/loaders plus controlled PokémonDB DATA-only extractor/normalizer; canonical Species/form including all TASK-092 accepted static facts, Move, Type, Ability, Item and Learnset artifacts; accepted mapping roster; completeness reconciliation; deterministic serialization/hashes/provenance; immutable `gameDataVersion` publication; no runtime web fetch, assets/prose or alternate-provider fallback |
 
 **Pokémon data-source policy for TASK-006:** PokémonDB (`pokemondb.net`) is the project's
@@ -376,15 +376,13 @@ publishing a new immutable snapshot/schema version; "available upstream" is not 
   PokeNexus content; official encounter data never automatically becomes PokeNexus Hunt data;
 - any additional franchise field without an accepted owning product/rules task.
 
-**Planned schema correction:** TASK-092 is the complete pre-publication audit of the Species/form
-static-fact boundary. The Human Owner approved the direction that height, weight, egg-group
-membership, gender ratio, egg cycles, EV yield and base friendship belong in canonical static data
-even when their mechanics are not active. TASK-092 must still define the exact schema details and
-form/source/provenance normalization before changing SPEC-002. This does **not** adopt breeding,
-hatching, actual instance gender, EV training/accumulation, friendship progression, evolution or
-other executable mechanics. Until TASK-092 itself is accepted through its Class A gate, SPEC-002's
-currently approved deferred classification remains authoritative and TASK-087 must not publish
-those fields canonically.
+**Accepted schema extension:** TASK-092/SPEC-008 completed the pre-publication audit of the
+Species/form static-fact boundary. Height, weight, egg-group membership, gender ratio, egg cycles,
+EV yield and base friendship are accepted canonical static data under the exact v2
+form/source/provenance normalization. This does **not** adopt breeding, hatching, actual instance
+gender, EV training/accumulation, friendship progression, evolution or other executable mechanics.
+TASK-087 must implement the integrated SPEC-008 contract rather than the superseded deferred
+classification.
 
 **Explicitly excluded by default:** images/sprites/icons/audio, flavor/Pokédex text, game-description prose,
 editorial effect prose, languages/translations, page layout/CSS, min/max stat calculators, competitive
@@ -412,7 +410,7 @@ implementation Task before code is written.
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092 may proceed in parallel with TASK-022. TASK-087 implementation follows TASK-092 acceptance so the first canonical catalog does not immediately require a schema republish for intrinsic Species facts. TASK-090 follows TASK-087 plus the accepted combat rules/performance constraints; TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092 is integrated and no longer blocks TASK-087; TASK-022 remains independent. TASK-087 may now implement the accepted static-data contract so the first canonical catalog does not immediately require a schema republish for intrinsic Species facts. TASK-090 follows TASK-087 plus the accepted combat rules/performance constraints; TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the

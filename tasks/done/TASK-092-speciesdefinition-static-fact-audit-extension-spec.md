@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -248,6 +248,8 @@ inheritance.
 - Treating factual fields as executable rules could accidentally adopt breeding/EV/friendship/
   evolution mechanics; this task must keep those boundaries explicit.
 - No irreversible runtime/database/Git action is authorized by this specification task.
+- Repository-history/completion was explicitly authorized by the Human Owner on 2026-09-18 after
+  TASK-092 reached ACCEPTANCE.
 
 ## Expected files / boundaries
 
@@ -260,5 +262,15 @@ No production TypeScript, SQL migration, dependency, lockfile or runtime binding
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`.
-Do not create an implementation-summary/changelog file.
+TASK-092 is DONE. SPEC-008 is APPROVED after the Human Owner accepted the v2 direction, clarified
+the persistent Species versus battle-only transformation boundary, approved option 1 to defer
+battle-only transformation profiles, and the exact semantic snapshot cleared focused
+Pokémon-domain review plus final independent QA at P0/P1/P2/P3 `0/0/0/0`.
+
+The accepted snapshot was committed as
+`0bc696d709bb36b67f7ebb7abdd70d7cbe66d07a`, pushed on
+`spec/TASK-092-speciesdefinition-static-fact-audit`, and fast-forward integrated into canonical
+`main` after explicit Human Owner repository-history/completion authorization on 2026-09-18.
+
+This DONE metadata records governed closure only. TASK-022 remains a separate branch/history lane
+and was not bundled into TASK-092 completion.
