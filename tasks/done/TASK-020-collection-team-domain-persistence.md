@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer assignment; GitHub Copilot CLI unavailable due account quota at task start)
@@ -389,11 +389,14 @@ configuration change is authorized.
 
 ## Completion
 
-TASK-020 is ACCEPTANCE after the delegated Lead Developer owner completed implementation and owner validation on the
-approved SPEC-005 boundary, independent QA returned READY with `P0/P1/P2/P3 = 0/0/0/0`, the required
-concurrency/integrity Independent Auditor implementation audit returned PASS with `0/0/0/0`, and a fresh independent
-PM / Architecture Coordinator accepted the exact frozen REVIEW snapshot. Repository-history completion remains
-separately Human Owner gated.
+TASK-020 is DONE. The delegated Lead Developer owner completed implementation and owner validation on the approved
+SPEC-005 boundary, independent QA returned READY with `P0/P1/P2/P3 = 0/0/0/0`, the required concurrency/integrity
+Independent Auditor implementation audit returned PASS with `0/0/0/0`, and a fresh independent PM / Architecture
+Coordinator accepted the exact frozen REVIEW snapshot. The Human Owner explicitly authorized repository-history
+completion on 2026-09-17. The accepted implementation was committed as
+`1a23740ddf54a7aba91836bb5300ebe2cbba9c78`, pushed on the TASK-020 feature branch, fast-forward integrated into
+canonical `main`, and pushed. This DONE transition records governed closure only; TASK-021 remains planned and has not
+started.
 
 Owner implementation evidence:
 
@@ -447,9 +450,9 @@ Independent REVIEW gates on the exact frozen production snapshot:
   proportional to SPEC-005/SPEC-004/ADR-005, with no API/product/dependency/game-core/runtime scope drift;
 - all three review roles were read-only and performed no Git mutation.
 
-The ACCEPTANCE transition changes task/roadmap metadata only. The reviewed production migration/repository/test files
-remain byte-identical to the frozen REVIEW anchors above. No commit, push, merge, rebase, reset or force operation is
-authorized until the Human Owner explicitly authorizes repository-history completion.
+The ACCEPTANCE transition changed task/roadmap metadata only; the reviewed production migration/repository/test files
+remained byte-identical to the frozen REVIEW anchors above. Repository-history completion was subsequently explicitly
+authorized by the Human Owner on 2026-09-17 and executed by fast-forward history only, with no rebase/reset/force.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.

@@ -10,11 +10,11 @@
 
 **Project phase:** Foundation, core domain/combat foundation, and the PostgreSQL persistence, identity and security foundation are complete.
 
-**Current work:** `TASK-020 — Collection & Team Domain/Persistence Implementation` is in ACCEPTANCE. Owner validation, independent QA, required concurrency/integrity IA, and PM / Architecture Coordinator acceptance are all clear on the frozen implementation snapshot.
+**Current work:** `TASK-020 — Collection & Team Domain/Persistence Implementation` is DONE and integrated. `TASK-021 — XP / Level / Progression Rules Spec` is the next planned task and has not started.
 
-**Current action:** Stop at the explicit Human Owner repository-history authorization gate. Do not commit, push, merge or complete TASK-020 history until that separate authorization is given.
+**Current action:** TASK-020 is closed. Keep TASK-021 PLANNED until its DRAFT is explicitly materialized and reviewed through its Class A specification gates.
 
-**Next task after TASK-003 acceptance:** `TASK-020 — Collection & Team Domain/Persistence Implementation`.
+**Next task after TASK-003 acceptance:** `TASK-021 — XP / Level / Progression Rules Spec`.
 
 **Portfolio status snapshot:**
 
@@ -40,20 +40,21 @@
 | `TASK-017` Player Profile API & Persistence | DONE — owner validation clear; independent QA P0/P1 clear; PM / Architecture Coordinator accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 | `TASK-018` Persistence/Auth Recovery, Contract & Baseline Auditability Suite | DONE — corrected-snapshot QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; PM / Architecture accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 | `TASK-019` Pokémon Instance / Collection / Team Spec | DONE — exact-snapshot QA/IA clear; Human Owner accepted SPEC-005 in full and authorized repository completion/history on 2026-09-17 |
+| `TASK-020` Collection & Team Domain/Persistence Implementation | DONE — owner validation clear; QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; PM / Architecture Coordinator accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 
-**Next product milestone:** implement the approved Pokémon Instance, Collection and Team persistence/domain contract with tested ownership, ordering and OCC integrity.
+**Next product milestone:** define XP, Level and progression rules over the accepted Level Cap `200`, including source authority, curve/versioning and post-cap boundaries before progression implementation.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
-- DONE: 20.
+- DONE: 21.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
-- ACCEPTANCE: 1.
+- ACCEPTANCE: 0.
 - PLANNED: 66.
-- Task-count completion: **20 / 87 = 23.0%**.
+- Task-count completion: **21 / 87 = 24.1%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -390,7 +391,7 @@ content under the SPEC-002 rulesVersion envelope.
 
 ### EPIC-03 — Trainer, Collection, Team, Inventory & Progression
 
-**Status:** ACCEPTANCE — TASK-020 QA/IA clear and PM / Architecture Coordinator accepted; repository-history completion awaiting explicit Human Owner authorization
+**Status:** IN PROGRESS — TASK-020 complete; TASK-021 is the next planned Class A progression-spec task
 **Outcome:** a persistent trainer owns Pokémon/items, builds teams and progresses through server-authoritative rules.
 
 #### STORY-03.1 — Pokémon ownership and team model
@@ -398,7 +399,7 @@ content under the SPEC-002 rulesVersion envelope.
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
 | `TASK-019` Pokémon Instance / Collection / Team Spec | A | DONE | PM → ChatGPT | QA + **IA concurrency/integrity spot-check** | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-005 in full and authorized repository completion/history on 2026-09-17 | TASK-004/006/008/013 | APPROVED SPEC-005: owner-derived private Collection; instance state boundaries; selected Ability cardinality/eligibility; persistent ordered `1..4` Move Loadout + mutation authority; saved Team `0..6` dense ordered slots, duplicate/reuse rules and OCC mutation; persistence handoff for TASK-020 |
-| `TASK-020` Collection & Team Domain/Persistence Implementation | B | ACCEPTANCE | LD → ChatGPT delegated worker (Copilot CLI quota unavailable) | QA READY + **IA PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-TDD`, `SK-PG` | Completed — PM / Architecture Coordinator accepted exact frozen REVIEW snapshot; repository history separately Human Owner gated | TASK-019/014 | Forward SPEC-005 migration; Pokémon selected Ability / ordered Move Loadout persistence; ownership-derived Collection boundary; saved Team `0..6` dense roster; atomic expected-rowVersion roster/config/delete commands; fail-closed unordered legacy Team handoff; snapshot-coherent aggregate reads; real PG17 race/constraint tests |
+| `TASK-020` Collection & Team Domain/Persistence Implementation | B | DONE | LD → ChatGPT delegated worker (Copilot CLI quota unavailable) | QA READY + **IA PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-TDD`, `SK-PG` | Completed — PM / Architecture Coordinator accepted exact frozen REVIEW snapshot; Human Owner authorized repository completion/history on 2026-09-17 | TASK-019/014 | Forward SPEC-005 migration; Pokémon selected Ability / ordered Move Loadout persistence; ownership-derived Collection boundary; saved Team `0..6` dense roster; atomic expected-rowVersion roster/config/delete commands; fail-closed unordered legacy Team handoff; snapshot-coherent aggregate reads; real PG17 race/constraint tests |
 
 #### STORY-03.2 — Progression, inventory and reward integrity
 
