@@ -10,9 +10,9 @@
 
 **Project phase:** Foundation, core domain/combat foundation, and the PostgreSQL persistence, identity and security foundation are complete.
 
-**Current work:** `TASK-020 — Collection & Team Domain/Persistence Implementation` is DONE and integrated. `TASK-021 — XP / Level / Progression Rules Spec` is the next planned task and has not started.
+**Current work:** `TASK-021 — XP / Level / Progression Rules Spec` is READY. SPEC-006 is APPROVED after exact-snapshot QA/IA clearance and full Human Owner acceptance on 2026-09-18.
 
-**Current action:** TASK-020 is closed. Keep TASK-021 PLANNED until its DRAFT is explicitly materialized and reviewed through its Class A specification gates.
+**Current action:** Preserve the accepted READY snapshot and await separate Human Owner repository-history/completion authorization. SPEC acceptance does not authorize commit/push/merge.
 
 **Next task after TASK-003 acceptance:** `TASK-021 — XP / Level / Progression Rules Spec`.
 
@@ -42,18 +42,18 @@
 | `TASK-019` Pokémon Instance / Collection / Team Spec | DONE — exact-snapshot QA/IA clear; Human Owner accepted SPEC-005 in full and authorized repository completion/history on 2026-09-17 |
 | `TASK-020` Collection & Team Domain/Persistence Implementation | DONE — owner validation clear; QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; PM / Architecture Coordinator accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 
-**Next product milestone:** define XP, Level and progression rules over the accepted Level Cap `200`, including source authority, curve/versioning and post-cap boundaries before progression implementation.
+**Next product milestone:** define both progression tracks before implementation: Pokémon XP/Level under the accepted hard cap `200`, and a distinct uncapped Player Level used by later feature-owned gates/semantics.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
 - DONE: 21.
 - DRAFT: 0.
-- READY: 0.
+- READY: 1.
 - ACTIVE: 0.
 - REVIEW: 0.
 - ACCEPTANCE: 0.
-- PLANNED: 66.
+- PLANNED: 65.
 - Task-count completion: **21 / 87 = 24.1%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
@@ -391,7 +391,7 @@ content under the SPEC-002 rulesVersion envelope.
 
 ### EPIC-03 — Trainer, Collection, Team, Inventory & Progression
 
-**Status:** IN PROGRESS — TASK-020 complete; TASK-021 is the next planned Class A progression-spec task
+**Status:** IN PROGRESS — TASK-020 complete; TASK-021 READY and SPEC-006 APPROVED after Human Owner acceptance
 **Outcome:** a persistent trainer owns Pokémon/items, builds teams and progresses through server-authoritative rules.
 
 #### STORY-03.1 — Pokémon ownership and team model
@@ -405,7 +405,7 @@ content under the SPEC-002 rulesVersion envelope.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-021` XP / Level / Progression Rules Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH` | **HUMAN accepts progression rules** | TASK-019 | XP sources; level curves; preserve accepted global Pokémon hard Level Cap `200` unless Human Owner explicitly changes it; new generations/regions do not automatically raise the cap; define post-cap/endgame progression outside Level; evolution hooks if applicable; versioning |
+| `TASK-021` XP / Level / Progression Rules Spec | A | READY | PM → ChatGPT | QA READY + **IA PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`, `SK-GAME-BAL` | Completed — Human Owner accepted SPEC-006 in full on 2026-09-18; repository history remains separately gated | TASK-019/020 | APPROVED SPEC-006: Pokémon hard Level Cap `200` + species-independent cubic cumulative XP curve; separate **uncapped Player Level** with Level 1/0 XP baseline and cumulative `50*L*(L-1)` curve (`100*L` next-Level cost); server-authoritative grants, Player/Pokémon OCC/idempotency/versioning handoff; feature thresholds/effects remain separately owned |
 | `TASK-022` Inventory / Item Model Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts item semantics** | TASK-006/013/019 | Item-definition semantics over the TASK-006 catalog; stackability/quantity vs per-copy identity; consumables; Potion/healing semantics and explicit revival semantics only if accepted; capture items such as Poké Balls; equipment/TMs if in scope; inventory limits; use/consume/mutation contracts |
 | `TASK-023` Reward Ledger & Integrity Model | A | PLANNED | PM → ChatGPT | QA + IA recommended | `SK-THREAT`, `SK-PG` | **HUMAN accepts reward authority model** | TASK-013/021/022 | Idempotent grants; source attribution; immutable rules/game-data snapshot identity; replay/duplicate protection; audit trail; rollback semantics |
 | `TASK-024` Progression / Inventory / Reward Implementation | B | PLANNED | LD → Copilot CLI | QA; IA for reward-integrity paths | `SK-TDD`, `SK-PG` | PM acceptance | TASK-018/021/022/023 | XP grants; item mutations; reward transactions; emit reward audit events on the TASK-018 substrate; integration tests |
