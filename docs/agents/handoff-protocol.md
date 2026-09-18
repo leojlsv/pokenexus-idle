@@ -46,6 +46,40 @@ RECOMMENDATION:
 - merge / fix required / independent audit required
 ```
 
+## Consultation handoff
+
+```text
+TASK / DECISION:
+CONSULTANT:
+ROLE: Gameplay Systems Consultant | Player Experience & Economy Consultant
+SCOPE:
+
+FACTS / CONSTRAINTS:
+- ...
+
+ASSUMPTIONS / UNCERTAINTY:
+- ...
+
+FORECASTS / EXPECTED PLAYER OR SYSTEM RESPONSE:
+- ...
+
+OPTIONS / TRADE-OFFS:
+1. ...
+2. ...
+
+PLAYER / SYSTEM RISKS:
+- ...
+
+RECOMMENDATION:
+- ...
+
+HUMAN OWNER DECISIONS REQUIRED:
+- ...
+```
+
+Consultation evidence is advisory. It does not use `PASS/FAIL`, does not replace QA/audit and
+does not authorize implementation or merge.
+
 ## Escalation handoff
 
 ```text

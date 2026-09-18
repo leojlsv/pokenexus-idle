@@ -22,6 +22,9 @@ A lower level may narrow execution but must not contradict a higher level.
   in an implementation state (`READY`, `ACTIVE` or `FIX`).
 - One task has exactly one implementation owner.
 - Prefer one task = one branch = one worktree.
+- Canonical consultants (`GSC`, `PXE`) are advisory `RECOMMEND` roles only. Required consultation
+  must be recorded before the applicable Human Owner product/rules decision and never substitutes
+  for implementation ownership, QA review, IA audit or Human approval.
 - No agent/session reviews, audits or approves its own implementation.
 - Git actions that create or rewrite project history (`commit`, `push`, `merge`,
   `rebase`, `force-push`) require explicit Human Owner authorization. Authorization

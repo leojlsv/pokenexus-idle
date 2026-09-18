@@ -3,6 +3,8 @@
 | Tool / workflow | Adapter | Role |
 |---|---|---|
 | ChatGPT project coordination | `AGENTS.md` + `docs/agents/pm-architecture-coordinator.md` | PM / Architecture Coordinator |
+| Fresh ChatGPT advisory worker — gameplay systems | `AGENTS.md` + `docs/agents/gameplay-systems-consultant.md` + scoped consultation assignment | Gameplay Systems Consultant |
+| Fresh ChatGPT advisory worker — player experience/economy | `AGENTS.md` + `docs/agents/player-experience-economy-consultant.md` + scoped consultation assignment | Player Experience & Economy Consultant |
 | GitHub Copilot CLI Lead | `.github/agents/lead-developer.agent.md` | Lead Developer |
 | Codex implementation | `AGENTS.md` + explicit assignment | Secondary Developer |
 | Codex review | `AGENTS.md` + separate review assignment | QA Reviewer |

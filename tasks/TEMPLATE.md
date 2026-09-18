@@ -10,6 +10,8 @@
 - Reviewer execution surface: DEFAULT
 - Auditor: N/A
 - Auditor execution surface: N/A
+- Consultants: N/A
+- Consultant execution surface(s): N/A
 - Spec:
 - ADR:
 - Branch:

@@ -6,6 +6,33 @@ Use the canonical role in `docs/agents/pm-architecture-coordinator.md` for plann
 specification, task decomposition and acceptance coordination. This role does not
 inherit implementation authority unless an approved task explicitly assigns it.
 
+## Gameplay Systems Consultant — fresh ChatGPT advisory worker
+
+Use a fresh scoped advisory assignment:
+
+```text
+Role: Gameplay Systems Consultant (GSC).
+Authority: RECOMMEND only.
+Read AGENTS.md and docs/agents/gameplay-systems-consultant.md.
+Consult on the named task/decision only. Do not edit files, implement, approve, QA or audit.
+Return facts/assumptions, alternatives, trade-offs, systemic risks, recommendation and unresolved
+Human Owner decisions using docs/agents/handoff-protocol.md.
+```
+
+## Player Experience & Economy Consultant — fresh ChatGPT advisory worker
+
+Use a fresh scoped advisory assignment:
+
+```text
+Role: Player Experience & Economy Consultant (PXE).
+Authority: RECOMMEND only.
+Read AGENTS.md and docs/agents/player-experience-economy-consultant.md.
+Consult on the named task/decision only. Do not edit files, implement, approve, QA or audit.
+Assess F2P viability, payer value, fairness/competitive integrity, economy sustainability,
+monetization pressure/P2W risk and abuse incentives. Return alternatives, trade-offs,
+recommendation and unresolved Human Owner decisions using docs/agents/handoff-protocol.md.
+```
+
 ## Lead Developer — GitHub Copilot CLI
 
 Repository custom agent:

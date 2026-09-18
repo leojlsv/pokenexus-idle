@@ -26,6 +26,37 @@ Required:
    cases.
 7. Human Owner approves merge for the implemented Class A change.
 
+### Class A specialist consultation
+
+Consultation is an advisory input gate, not an approval/review/audit authority. When a trigger
+below is present, PM records the assigned consultant and material findings before the Human Owner
+accepts the Class A product/rules decision.
+
+`GSC` consultation is required when a Class A decision materially defines or changes:
+- core gameplay, Idle/offline or session loops;
+- progression/meta-progression or team-building/acquisition loops;
+- reward cadence or content longevity/exhaustion behavior;
+- PvE/PvP/co-op/social gameplay interactions;
+- Gacha/randomized acquisition mechanics if explicitly proposed.
+
+`PXE` consultation is required when a Class A decision materially defines or changes:
+- currencies, reward sources/sinks, scarcity, fees or player-to-player value transfer;
+- F2P/payer asymmetry, paid convenience/progression/power or monetization pressure;
+- P2W/competitive-fairness consequences;
+- retention/comeback mechanics with material reward/economy consequences;
+- paid randomized rewards or other monetized chance-based acquisition if explicitly proposed.
+
+Both consultations are required when the same decision materially crosses both trigger sets,
+including examples such as Gacha, battle passes, premium currency, paid stamina/energy, paid XP or
+item multipliers, monetized offline-progression limits, power-relevant storage/inventory
+monetization, PvP progression rewards with paid advantages, seasonal progression tracks or
+exclusive paid gameplay power.
+
+Consultant findings must surface material disagreements, alternatives and unresolved Human Owner
+choices. Consultant disagreement is not a veto: PM records the conflict and the Human Owner makes
+the product decision. Required QA and IA gates remain unchanged and cannot be satisfied by a
+consultant.
+
 ## Class B — Normal feature
 
 Examples:

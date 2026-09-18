@@ -15,24 +15,25 @@ Qualifiers:
 - `isolated` — execute only the explicitly assigned isolated slice;
 - `scoped Class C` — execute only the exact mechanical Class C files/operation/result;
 - `GATE` — formal required review gate;
+- `scoped` — recommendation applies only when the documented consultation trigger is present;
 - `approved` — execution is allowed only after the governing decision/scope is approved.
 
-| Area | Human Owner | PM / Architecture Coordinator | Lead Developer | Secondary Developer | Frontend Developer | QA Reviewer | Independent Auditor | Mechanical Worker | Local Pair Programmer |
-|---|---|---|---|---|---|---|---|---|---|
-| Product vision/scope | OWNER | COORDINATE | NO | NO | NO | REVIEW | REVIEW | NO | NO |
-| Architecture / ADR | OWNER | COORDINATE | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
-| Public API/protocol semantics | OWNER | COORDINATE | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
-| Database/persistence strategy | OWNER | COORDINATE | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
-| Game rules/economy | OWNER | COORDINATE | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
-| Security model | OWNER | COORDINATE | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
-| Game-core implementation | REVIEW | REVIEW | EXECUTE/TECH LEAD | EXECUTE isolated | NO | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
-| API/persistence implementation | REVIEW | REVIEW | EXECUTE/TECH LEAD | EXECUTE isolated | NO | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
-| Realtime implementation | REVIEW | REVIEW | EXECUTE/TECH LEAD | EXECUTE isolated | ASSIST | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
-| Frontend implementation | REVIEW | REVIEW | EXECUTE/TECH LEAD | EXECUTE isolated | EXECUTE | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
-| Tests | REVIEW | REVIEW | EXECUTE | EXECUTE | EXECUTE | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
-| Agent governance / role policy | OWNER | COORDINATE/EXECUTE approved | REVIEW | NO | NO | REVIEW/GATE | REVIEW | NO | NO |
-| Final Class A approval | OWNER | RECOMMEND | NO | NO | NO | REVIEW | REVIEW | NO | NO |
-| Class B functional acceptance | DELEGATE/OVERRIDE | COORDINATE/GATE | NO | NO | NO | REVIEW | REVIEW | NO | NO |
+| Area | Human Owner | PM / Architecture Coordinator | Gameplay Systems Consultant | Player Experience & Economy Consultant | Lead Developer | Secondary Developer | Frontend Developer | QA Reviewer | Independent Auditor | Mechanical Worker | Local Pair Programmer |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Product vision/scope | OWNER | COORDINATE | RECOMMEND scoped | RECOMMEND scoped | NO | NO | NO | REVIEW | REVIEW | NO | NO |
+| Architecture / ADR | OWNER | COORDINATE | RECOMMEND scoped gameplay consequences | RECOMMEND scoped player/economy consequences | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
+| Public API/protocol semantics | OWNER | COORDINATE | RECOMMEND scoped player-rule semantics | RECOMMEND scoped player/economy semantics | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
+| Database/persistence strategy | OWNER | COORDINATE | NO | NO | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
+| Game rules/economy | OWNER | COORDINATE | RECOMMEND gameplay systems | RECOMMEND player/economy | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
+| Security model | OWNER | COORDINATE | NO | RECOMMEND abuse/economy consequences only | REVIEW | NO | NO | REVIEW | REVIEW | NO | NO |
+| Game-core implementation | REVIEW | REVIEW | NO | NO | EXECUTE/TECH LEAD | EXECUTE isolated | NO | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
+| API/persistence implementation | REVIEW | REVIEW | NO | NO | EXECUTE/TECH LEAD | EXECUTE isolated | NO | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
+| Realtime implementation | REVIEW | REVIEW | NO | NO | EXECUTE/TECH LEAD | EXECUTE isolated | ASSIST | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
+| Frontend implementation | REVIEW | REVIEW | NO | NO | EXECUTE/TECH LEAD | EXECUTE isolated | EXECUTE | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
+| Tests | REVIEW | REVIEW | RECOMMEND scenarios scoped | RECOMMEND scenarios scoped | EXECUTE | EXECUTE | EXECUTE | REVIEW/GATE | REVIEW | EXECUTE scoped Class C | ASSIST |
+| Agent governance / role policy | OWNER | COORDINATE/EXECUTE approved | RECOMMEND own consultation policy only | RECOMMEND own consultation policy only | REVIEW | NO | NO | REVIEW/GATE | REVIEW | NO | NO |
+| Final Class A approval | OWNER | RECOMMEND | RECOMMEND when consulted | RECOMMEND when consulted | NO | NO | NO | REVIEW | REVIEW | NO | NO |
+| Class B functional acceptance | DELEGATE/OVERRIDE | COORDINATE/GATE | NO | NO | NO | NO | NO | REVIEW | REVIEW | NO | NO |
 
 ## Mandatory escalation
 
