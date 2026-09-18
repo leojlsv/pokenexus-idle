@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -186,8 +186,8 @@ acceptance under the accepted consultation policy.
 - [x] Cross-spec ownership audit against SPEC-001/002/003/004/005/006.
 - [x] Fresh independent QA re-review of corrected FIX candidate.
 - [x] Fresh independent IA concurrency/integrity re-audit of corrected FIX candidate.
-- [ ] `corepack pnpm roadmap:check` after roadmap lifecycle metadata changes.
-- [ ] `git diff --check`.
+- [x] `corepack pnpm roadmap:check` after roadmap lifecycle metadata changes.
+- [x] `git diff --check`.
 
 ## Dependencies
 
@@ -208,8 +208,9 @@ acceptance under the accepted consultation policy.
   atomicity. If the scope later expands into player-to-player economy/trading, paid systems,
   security-sensitive reward authority or destructive migration policy, the IA scope must expand
   accordingly before acceptance.
-- No irreversible runtime/database action is authorized by this spec task. Git history remains a
-  separate Human Owner authorization gate.
+- No irreversible runtime/database action is authorized by this spec task.
+- Repository history/completion was explicitly authorized by the Human Owner on 2026-09-18 after
+  TASK-022 reached ACCEPTANCE.
 
 ## Expected files / boundaries
 
@@ -222,5 +223,16 @@ No production TypeScript, SQL migration, dependency, lockfile or runtime binding
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`.
-Do not create an implementation-summary/changelog file.
+TASK-022 is DONE. SPEC-007 is APPROVED after the Human Owner accepted the v1 Inventory / Item
+semantics, including the rule that every valid accepted capture attempt consumes exactly one
+capture item whether the capture succeeds or fails, and the corrected replay/idempotency contract
+cleared fresh independent QA and IA at P0/P1/P2/P3 `0/0/0/0`.
+
+The accepted current-main reconciliation snapshot was committed as
+`da7cdae4f0f857a7e24c88a111d610d732b1cc29`, pushed on
+`spec/TASK-022-inventory-item-model-integration`, and fast-forward integrated into canonical
+`main` after explicit Human Owner repository-history/completion authorization on 2026-09-18.
+
+This DONE metadata records governed closure only. TASK-023 owns durable reward/idempotency design,
+TASK-024 owns production Inventory/reward implementation, TASK-033 owns Hunt-use timing,
+TASK-036 owns capture eligibility/probability/outcome, and TASK-088 owns TM/Move acquisition.
