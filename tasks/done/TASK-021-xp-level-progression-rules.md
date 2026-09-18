@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: READY
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT
@@ -178,12 +178,12 @@ Final pre-implementation gate evidence:
 - Multi-target reward atomicity must not be inferred by TASK-024 before TASK-023/source contracts define it.
 - A progression grant must never drift to a latest/current curve outside its pinned `rulesVersion`.
 - Automatic evolution would cascade Species/Ability/Move semantics and is not adopted here.
-- Repository history remains separately Human Owner gated.
+- Repository-history/completion was explicitly authorized by the Human Owner on 2026-09-18.
 
 ## Expected files
 
 ```text
-tasks/active/TASK-021-xp-level-progression-rules.md
+tasks/done/TASK-021-xp-level-progression-rules.md
 docs/specs/SPEC-006-xp-level-progression-rules.md
 docs/project/PROJECT_ROADMAP.md
 docs/project/PROJECT_ROADMAP.html
@@ -191,6 +191,6 @@ docs/project/PROJECT_ROADMAP.html
 
 ## Completion
 
-TASK-021 is READY. SPEC-006 is APPROVED after independent QA and IA cleared the exact pre-acceptance snapshot and the Human Owner explicitly accepted the specification in full on 2026-09-18.
+TASK-021 is DONE. SPEC-006 is APPROVED after independent QA and IA cleared the exact pre-acceptance snapshot and the Human Owner explicitly accepted the specification in full on 2026-09-18. The accepted READY snapshot was committed as `b838320e3453381943d3afc3a4ec250503f467e4`, pushed on the TASK-021 spec branch, and fast-forward integrated into canonical `main` after explicit Human Owner repository-history/completion authorization.
 
-This READY transition is metadata-only. Repository history remains separately Human Owner gated; no commit, push, merge, rebase or other history operation is authorized by SPEC acceptance alone.
+This DONE metadata records governed closure only. TASK-022 remains a separate planned Class A specification task and must follow its own materialization, review and Human Owner acceptance gates.
