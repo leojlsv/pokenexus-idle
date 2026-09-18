@@ -1,6 +1,6 @@
 # SPEC-007 — Inventory / Item Model v1
 
-- Status: DRAFT
+- Status: APPROVED
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
 - Required consultants:
@@ -251,6 +251,37 @@ SPEC-004.
 
 TASK-024/033/038 own the concrete repository/orchestration implementation for their paths.
 
+### 6.6 Durable command correlation and replay safety
+
+Inventory OCC prevents lost updates and simultaneous double-consume, but `rowVersion` is **not** a
+durable idempotency identity for a logical item-use/capture attempt. A response can be lost after a
+transaction commits; a later retry after reloading fresh versions must not be mistaken for a new
+logical use and debit the same action again.
+
+Every durable item-use command that can consume Inventory and produce an authoritative consequence
+must therefore participate in the owning TASK-023/source-contract idempotency envelope with a
+server-authoritative correlation identity sufficient to distinguish one logical command/attempt
+from a genuinely new one. SPEC-007 does not define the database table, public key format or ledger
+schema; TASK-023 owns those details.
+
+For one logical item-use/capture attempt:
+
+1. completion evidence, required Inventory debit and authoritative consequence/outcome compose under
+   the owning source contract's accepted atomicity semantics;
+2. if the correlation is already durably completed, a replay returns/reuses that prior completion
+   and outcome as applicable and performs **no additional Inventory debit or consequence**;
+3. if a conditional write is stale, that attempt commits neither partial debit nor partial
+   consequence/completion evidence; all results derived from the stale snapshot are invalidated;
+4. only if the correlated attempt is not completed and remains eligible may the orchestrator reload
+   current Inventory/target/context state, recompute/revalidate the **same logical attempt**, and
+   retry against fresh versions;
+5. a retry must never silently mint a new correlation identity merely to bypass a completed or stale
+   command;
+6. a genuinely new player action uses a distinct authoritative correlation identity.
+
+These rules are the item-use analogue of SPEC-006 progression retry semantics and preserve
+TASK-023 ownership of durable idempotency design.
+
 ## 7. Item-use command semantics
 
 ### 7.1 Validate before consume
@@ -354,20 +385,24 @@ TASK-033/036 own capture opportunity/eligibility/probability/outcome.
 SPEC-007 fixes the Inventory safety boundary:
 
 - invalid/stale/ineligible capture command → no item consumed;
-- item consumption and any accepted attempt outcome must compose atomically under the capture/reward
-  orchestration contract: when the accepted policy requires a debit for that attempt outcome, the
-  outcome cannot commit without the debit, and no capture-item debit may commit without an accepted
-  attempt.
+- once the authoritative capture resolver accepts a valid attempt, exactly **one** configured
+  capture-item unit is consumed whether the capture succeeds or fails;
+- item consumption and the accepted attempt outcome compose atomically under the capture/reward
+  orchestration contract: the outcome cannot commit without its required one-unit debit, and no
+  capture-item debit may commit without an accepted attempt.
 
-Whether a **valid accepted attempt that fails to capture** consumes one unit is deliberately left
-as a Human Owner decision coordinated with TASK-036:
+In addition, the capture resolver/source contract must bind exactly one durable logical capture
+attempt correlation to exactly one accepted outcome and exactly one required one-unit debit. A
+replay of a completed attempt reuses the prior completion/outcome and never throws/debits a second
+Poké Ball. A stale/uncommitted retry may reload and re-evaluate the same correlated attempt only
+under section 6.6; it cannot become a second attempt by retry mechanics alone.
 
-- GSC recommends consume-on-accepted-attempt regardless of success/failure to preserve attempt cost
-  and avoid retry-until-success resource-free loops;
-- PXE recommends leaving unsuccessful-attempt consumption to the owning capture-rule decision so
-  TASK-022 does not hard-code scarcity/economy pressure before capture cadence/faucets are known.
+Human Owner clarification for the normative product rule:
 
-Until resolved, TASK-036 may not infer either policy from this DRAFT.
+> A Poké Ball that is thrown is lost regardless of whether the capture succeeds or fails.
+
+TASK-036 remains responsible for capture eligibility, probability, outcome and Pokémon grant
+resolution. It does not own a second consumption policy.
 
 No capture probability can be inferred from Item source text/category.
 
@@ -461,6 +496,12 @@ PXE governance. This spec does not pre-approve any such system.
 
 - duplicate/retried authoritative grants must rely on TASK-023/source idempotency and cannot use
   Inventory rowVersion alone as deduplication evidence;
+- duplicate/retried durable item-use and capture commands likewise rely on their TASK-023/owning
+  source-contract correlation; Inventory rowVersion alone is never proof that a logical use has or
+  has not already completed;
+- response uncertainty after a committed item use must not create a second debit/effect on replay;
+- one logical capture attempt maps to exactly one accepted outcome and, under the accepted capture
+  rule, exactly one debit, even if the completion response is retried;
 - stale simultaneous use of the last item must result in at most one accepted debit/use;
 - quantity arithmetic is exact and overflow-checked before persistence;
 - invalid use never decrements first and "refunds" later as normal control flow;
@@ -523,19 +564,21 @@ GSC and PXE both recommend:
 - Reusable TMs reduce friction but may create dead duplicate rewards; consumable TMs create a sink
   but can add grind/power scarcity. TASK-088 must decide with its own full acquisition context.
 
-### 17.4 Recorded disagreement
+### 17.4 Resolved consultation disagreement
 
-Capture failure consumption is unresolved:
+The consultants differed on capture-failure consumption:
 
 - **GSC:** consume one unit on every valid accepted capture attempt, even when capture fails.
 - **PXE:** leave failed-attempt consumption to TASK-036 because it materially sets scarcity/attempt
   pressure and cannot be evaluated fully before capture sources/cadence are defined.
 
-PM does not collapse this disagreement into an implicit default. Human Owner resolves it.
+The Human Owner resolved this on 2026-09-18 in favor of the GSC rule: one unit is consumed for every
+valid accepted capture attempt, including an unsuccessful capture. The PXE concern remains useful
+context for later source/sink tuning but does not change the accepted Inventory semantic.
 
-## 18. Open Human Owner decisions
+## 18. Human Owner accepted v1 direction
 
-The current draft recommends, but does not yet treat as accepted:
+The Human Owner accepted the complete proposed baseline on 2026-09-18:
 
 1. all baseline v1 owned items are quantity-based/fungible; no per-copy identities;
 2. no gameplay Inventory capacity/stack-slot limit in v1;
@@ -545,21 +588,28 @@ The current draft recommends, but does not yet treat as accepted:
 6. Potion/healing uses SPEC-003 shared deterministic healing primitives;
 7. revival items are deferred from v1;
 8. equipment/held-item mechanics are deferred from v1;
-9. decide capture-failure consumption: GSC recommends consume-on-valid-attempt; PXE recommends
-   deferring the failed-attempt rule to TASK-036;
-10. TM/machine usability/consumption remains entirely TASK-088-owned; GSC recommends
-    consume-on-success if TASK-088 adopts consumable TMs, while PXE keeps the choice with TASK-088;
-11. exact Hunt item-use window remains TASK-033-owned; GSC recommends explicit inter-Battle use for
-    baseline v1 rather than active-Battle click pressure;
+9. a valid accepted capture attempt consumes exactly one capture item regardless of capture success
+   or failure — in practical terms, a Poké Ball that is thrown is lost;
+10. TM/machine usability/consumption remains entirely TASK-088-owned;
+11. exact Hunt item-use window remains TASK-033-owned;
 12. executable ItemRule content is rulesVersion-owned rather than inferred from static source data.
+
+This Human decision fixes the product semantics. A later independent integrity audit found an
+implementation-contract gap around replay after response uncertainty; section 6.6 closed that gap
+without altering the accepted player-facing semantics, and the exact corrected artifact subsequently
+cleared fresh QA and IA with P0/P1/P2/P3 `0/0/0/0`.
 
 ## 19. Acceptance
 
-This specification becomes authoritative only after:
+Approval evidence:
 
-1. GSC consultation is completed and recorded;
-2. PXE consultation is completed and recorded;
-3. fresh independent QA reports no unresolved P0/P1;
-4. fresh independent IA concurrency/integrity spot-check reports no unresolved P0/P1;
-5. the Human Owner explicitly resolves/accepts the complete v1 item/inventory semantics;
-6. repository history is separately authorized and the accepted spec is integrated.
+1. GSC consultation completed and recorded;
+2. PXE consultation completed and recorded;
+3. Human Owner accepted the complete v1 item/inventory product semantics on 2026-09-18, including
+   the explicit capture-item rule in section 10;
+4. a redundant independent IA found a replay/idempotency gap in the first REVIEW snapshot; section
+   6.6 corrected it without changing product semantics;
+5. fresh independent QA on the corrected exact snapshot: READY, P0/P1/P2/P3 `0/0/0/0`;
+6. fresh independent IA concurrency/integrity re-audit on the corrected exact snapshot: PASS,
+   P0/P1/P2/P3 `0/0/0/0`;
+7. repository history/integration remains a separately authorized operational action.

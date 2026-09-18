@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: READY
+- State: ACCEPTANCE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -77,6 +77,8 @@ acceptance under the accepted consultation policy.
   identify any required follow-up persistence/rules work without inventing combat effects here.
 - Define authoritative grant/remove/use command semantics and Inventory `rowVersion` mutation rules
   sufficient for TASK-024 implementation.
+- Define durable item-use/capture correlation and replay/idempotency handoff so response uncertainty
+  cannot double-consume or duplicate an already completed authoritative consequence.
 - Define static-data handoff if accepted item semantics require a SPEC-002 `ItemDefinition` schema
   extension or machine/item relation artifact under a new `schemaVersion`.
 - Define correction/versioning behavior so static-data changes do not silently rewrite durable
@@ -101,26 +103,32 @@ acceptance under the accepted consultation policy.
 
 ## Acceptance criteria
 
-- [ ] SPEC-007 defines quantity/stack versus per-copy ownership semantics without ambiguity.
-- [ ] Inventory capacity/limit policy and over-cap grant behavior are explicit, including the
+- [x] SPEC-007 defines quantity/stack versus per-copy ownership semantics without ambiguity.
+- [x] Inventory capacity/limit policy and over-cap grant behavior are explicit, including the
       explicit absence of capacity if that is the accepted v1 choice.
-- [ ] Consumable use is server-authoritative, atomic and explicit about failure/no-op consumption.
-- [ ] Inventory `rowVersion`/transaction boundary is sufficient for TASK-024 without guessing.
-- [ ] Potion/healing semantics are bounded and composable with TASK-033/Combat rules rather than
+- [x] Consumable use is server-authoritative, atomic and explicit about failure/no-op consumption.
+- [x] Inventory `rowVersion`/transaction boundary is sufficient for TASK-024 without guessing.
+- [x] Durable item-use/capture replay semantics bind one logical command/attempt to one completion
+      and cannot double-debit/reapply after response uncertainty; TASK-023 retains ledger/key-format
+      ownership.
+- [x] Potion/healing semantics are bounded and composable with TASK-033/Combat rules rather than
       creating a parallel effect engine.
-- [ ] Revival is either fully bounded for v1 or explicitly deferred; no implicit franchise rule.
-- [ ] Capture items are modeled without defining capture probability/resolution prematurely.
-- [ ] TM/machine and equipment boundaries do not leak into TASK-088/combat ownership.
-- [ ] Any required `ItemDefinition`/relation schema extension is explicitly versioned through
+- [x] Revival is either fully bounded for v1 or explicitly deferred; no implicit franchise rule.
+- [x] Capture items are modeled without defining capture probability/resolution prematurely.
+- [x] TM/machine and equipment boundaries do not leak into TASK-088/combat ownership.
+- [x] Any required `ItemDefinition`/relation schema extension is explicitly versioned through
       SPEC-002's `schemaVersion`/`gameDataVersion` model.
-- [ ] Static-data corrections do not silently mutate or reinterpret existing owned state.
-- [ ] GSC consultation evidence covers loop/pacing/progression/system-interaction consequences.
-- [ ] PXE consultation evidence separately covers F2P viability, payer value, scarcity/fairness,
+- [x] Static-data corrections do not silently mutate or reinterpret existing owned state.
+- [x] GSC consultation evidence covers loop/pacing/progression/system-interaction consequences.
+- [x] PXE consultation evidence separately covers F2P viability, payer value, scarcity/fairness,
       economy sustainability, monetization-pressure/P2W risk and abuse incentives.
-- [ ] No monetization mechanic is adopted merely because PXE evaluated the space.
-- [ ] QA reports no unresolved P0/P1 before Human acceptance.
-- [ ] IA concurrency/integrity spot-check reports no unresolved P0/P1 before Human acceptance.
-- [ ] Human Owner explicitly accepts the complete item/inventory semantics before implementation.
+- [x] No monetization mechanic is adopted merely because PXE evaluated the space.
+- [x] Fresh QA re-review of the corrected exact artifact reports no unresolved P0/P1 before
+      authoritative APPROVED metadata/history integration.
+- [x] Fresh IA concurrency/integrity re-audit of the corrected exact artifact reports no unresolved
+      P0/P1 before authoritative
+      APPROVED metadata/history integration.
+- [x] Human Owner explicitly accepted the complete item/inventory semantics on 2026-09-18.
 
 ## Consultation evidence
 
@@ -132,7 +140,9 @@ acceptance under the accepted consultation policy.
   P2W/segment risk.
 - Recorded disagreement: GSC recommends capture-item consumption on every valid accepted capture
   attempt regardless of outcome; PXE recommends leaving failed-attempt consumption to TASK-036
-  until capture scarcity/cadence is known. SPEC-007 surfaces this for Human Owner resolution.
+  until capture scarcity/cadence is known. Human Owner resolved this on 2026-09-18: every valid
+  accepted attempt consumes one capture item regardless of success/failure; in practical terms,
+  a Poké Ball that is thrown is lost.
 - TM permanence/consumption remains TASK-088-owned. GSC recommends consume-on-success if a
   consumable TM model is later adopted; PXE keeps that economic choice with TASK-088.
 
@@ -140,16 +150,42 @@ acceptance under the accepted consultation policy.
 
 - Formal independent QA Definition-of-Ready review: **READY**.
 - P0/P1/P2/P3: `0/0/0/0`.
-- This readiness result authorizes the Class A specification work to proceed. It does **not**
-  accept unresolved SPEC-007 product decisions or replace the required IA/Human gates.
+- This readiness result authorized the Class A specification work to proceed; it did not itself
+  accept product semantics. The Human Owner subsequently resolved/accepted the proposed direction
+  on 2026-09-18; QA/IA still gate authoritative APPROVED metadata and history integration.
+
+## Human Owner decision
+
+- On 2026-09-18 the Human Owner accepted the complete proposed SPEC-007 baseline.
+- Capture clarification: **one Poké Ball is consumed when a valid capture attempt is accepted,
+  regardless of whether capture succeeds or fails**.
+- Independent QA + IA still gate authoritative APPROVED status. If either gate requires a material
+  semantic correction, that delta must return to the Human Owner rather than being treated as
+  covered by this acceptance.
+
+## Final review evidence
+
+- Independent QA on the initial accepted REVIEW snapshot: **READY**, P0/P1/P2/P3 `0/0/0/0`.
+- One Independent Auditor pass was **PASS**, P0/P1/P2/P3 `0/0/0/0`.
+- A redundant independent IA then found a **P1 replay/idempotency gap**: OCC alone does not prevent a
+  completed item-use/capture command from being replayed after response uncertainty once fresh
+  versions are loaded.
+- FIX correction adds TASK-023/source-contract durable correlation semantics and the invariant
+  `one logical capture attempt ↔ one outcome ↔ one required debit`, without changing the Human
+  Owner's accepted product rule.
+- Fresh QA re-review on the corrected exact snapshot: **READY**, P0/P1/P2/P3 `0/0/0/0`.
+- Fresh IA concurrency/integrity re-audit on the corrected exact snapshot: **PASS**,
+  P0/P1/P2/P3 `0/0/0/0`.
+- No material product semantic changed; the Human Owner's 2026-09-18 acceptance still matches the
+  exact APPROVED SPEC-007 direction.
 
 ## Validation / tests
 
 - [x] GSC consultation handoff completed read-only.
 - [x] PXE consultation handoff completed read-only.
-- [ ] Cross-spec ownership audit against SPEC-001/002/003/004/005/006.
-- [ ] Fresh independent QA review of exact DRAFT/REVIEW spec candidate.
-- [ ] Fresh independent IA concurrency/integrity spot-check of exact spec candidate.
+- [x] Cross-spec ownership audit against SPEC-001/002/003/004/005/006.
+- [x] Fresh independent QA re-review of corrected FIX candidate.
+- [x] Fresh independent IA concurrency/integrity re-audit of corrected FIX candidate.
 - [ ] `corepack pnpm roadmap:check` after roadmap lifecycle metadata changes.
 - [ ] `git diff --check`.
 
@@ -167,12 +203,13 @@ acceptance under the accepted consultation policy.
 - Item use can couple Inventory and Pokémon/Hunt state. Cross-aggregate atomicity must be explicit
   and must not be inferred from one aggregate's `rowVersion`.
 - Scarcity/capacity choices can become de facto monetization pressure even without a paid feature;
-  PXE must evaluate this before Human acceptance.
+  PXE consultation covered that risk before the Human decision.
 - IA is already required because the spec defines Inventory OCC and cross-aggregate consume/effect
   atomicity. If the scope later expands into player-to-player economy/trading, paid systems,
   security-sensitive reward authority or destructive migration policy, the IA scope must expand
   accordingly before acceptance.
-- No irreversible runtime/database/Git action is authorized by this DRAFT.
+- No irreversible runtime/database action is authorized by this spec task. Git history remains a
+  separate Human Owner authorization gate.
 
 ## Expected files / boundaries
 

@@ -10,9 +10,9 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, and the PostgreSQL persistence, identity and security foundation are complete. Canonical static game-data catalog implementation is now explicitly scheduled before reward/content implementation consumes it.
 
-**Current work:** `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` is **DONE** and SPEC-008 is **APPROVED** and integrated. Battle-only transformation profiles are excluded/deferred from `SpeciesDefinitionV2` and left to a future owning transformation/rules task. `TASK-022 — Inventory / Item Model Spec` remains a separate branch/history lane.
+**Current work:** `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` is **DONE** and integrated. `TASK-022 — Inventory / Item Model Spec` is in **ACCEPTANCE** with SPEC-007 **APPROVED**: the Human Owner accepted the v1 item/inventory semantics, and the corrected replay/idempotency snapshot cleared fresh QA + IA at P0/P1/P2/P3 `0/0/0/0`.
 
-**Current action:** TASK-087 — Static Game Data Catalog & Ingestion Implementation is now unblocked by integrated TASK-092/SPEC-008 and may proceed through its own lifecycle. TASK-022 remains separate and must not be bundled into TASK-092 history.
+**Current action:** TASK-022 is semantically complete and its accepted task/spec bytes have been reconciled onto the current `main` baseline without changing product semantics; repository-history integration remains a separate Human Owner gate. TASK-087 is independently unblocked by integrated TASK-092/SPEC-008 and may proceed through its own lifecycle.
 
 **Next task after TASK-003 acceptance:** `TASK-022 — Inventory / Item Model Spec`.
 
@@ -51,11 +51,11 @@
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-093`.
 - DONE: 24.
 - DRAFT: 0.
-- READY: 1.
+- READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 0.
+- ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 69.
@@ -468,7 +468,7 @@ content relies on those mechanics.
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
 | `TASK-021` XP / Level / Progression Rules Spec | A | DONE | PM → ChatGPT | QA READY + **IA PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`, `SK-GAME-BAL` | Completed — Human Owner accepted SPEC-006 in full and authorized repository completion/history on 2026-09-18 | TASK-019/020 | APPROVED SPEC-006: Pokémon hard Level Cap `200` + species-independent cubic cumulative XP curve; separate **uncapped Player Level** with Level 1/0 XP baseline and cumulative `50*L*(L-1)` curve (`100*L` next-Level cost); server-authoritative grants, Player/Pokémon OCC/idempotency/versioning handoff; feature thresholds/effects remain separately owned |
-| `TASK-022` Inventory / Item Model Spec | A | READY | PM → ChatGPT | QA DoR READY `0/0/0/0` + **IA concurrency/integrity spot-check required before Human acceptance** | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts item semantics** | TASK-006/013/019/093 | **GSC + PXE consultation completed and recorded.** Produce SPEC-007 covering quantity/per-copy ownership, capacity, consumable/Potion/revival boundary, capture-item boundary, TM/equipment deferrals or adoption, authoritative use/consume mutation and rules/data-version handoff; final spec QA + IA remain before Human acceptance |
+| `TASK-022` Inventory / Item Model Spec | A | ACCEPTANCE | PM → ChatGPT | Fresh QA READY + **IA PASS** after replay/idempotency fix; P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Product gate completed — Human Owner accepted SPEC-007 semantics on 2026-09-18; repository history authorization remains separate | TASK-006/013/019/093 | **APPROVED SPEC-007:** fungible quantity ownership; no gameplay capacity/stack cap; fail-closed overflow; atomic consume/effect; durable source/command correlation prevents replay double-consume; shared Potion evaluator; revival/equipment deferred; TM TASK-088-owned; every valid accepted capture attempt consumes one item whether success or failure |
 | `TASK-023` Reward Ledger & Integrity Model | A | PLANNED | PM → ChatGPT | QA + IA recommended | `SK-THREAT`, `SK-PG` | **HUMAN accepts reward authority model** | TASK-013/021/022 | Idempotent grants; source attribution; immutable rules/game-data snapshot identity; replay/duplicate protection; audit trail; rollback semantics; **PXE consultation becomes required if this task defines reward/economic semantics beyond ledger authority/integrity** |
 | `TASK-024` Progression / Inventory / Reward Implementation | B | PLANNED | LD → Copilot CLI | QA; IA for reward-integrity paths | `SK-TDD`, `SK-PG` | PM acceptance | TASK-018/021/022/023/087 | XP grants; item mutations; reward transactions; canonical static item/data consumption through TASK-087 loaders; emit reward audit events on the TASK-018 substrate; integration tests |
 | `TASK-088` Move Acquisition / Eligibility Rules Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | **HUMAN accepts Move acquisition/eligibility rules** | TASK-006/019/021/022 | **Required advisory consultation: GSC; add PXE if economic/paid/scarcity acquisition channels are proposed.** Define authoritative learned/available-Move semantics distinct from raw Learnset facts; initial Pokémon loadout/bootstrap; level-based availability; TM/machine/tutor/egg/evolution/transfer methods if adopted; permanence/replacement rules; generation/game Learnset interpretation; static-data correction behavior; exact server authority consumed by loadout mutation |
