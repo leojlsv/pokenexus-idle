@@ -43,6 +43,30 @@ For the scoped decision, distinguish:
    implementation ownership;
 9. recommendation(s) and unresolved Human Owner decisions.
 
+## Reference-source policy
+
+For Pokémon/gameplay-domain consultations, GSC may use multiple external reference sources to
+cross-check factual context and avoid over-relying on one site's presentation:
+
+- PokémonDB (`pokemondb.net`) — general Pokémon reference data and the project's existing
+  canonical external factual source for static-data ingestion where an approved spec assigns it;
+- Bulbapedia (`bulbapedia.bulbagarden.net`) — parallel general-reference source for Pokémon,
+  forms, mechanics, terminology and franchise context;
+- Smogon (`smogon.com`) — PvP/competitive reference source for metagame context, competitive
+  roles, common sets, usage/tiering context and battle-format considerations.
+
+These sources expand consultant evidence; they do **not** change canonical data-ingestion
+authority. In particular:
+
+- Bulbapedia does not silently replace PokémonDB for fields governed by the accepted PokémonDB
+  ingestion contract;
+- Smogon is an advisory PvP/competitive source, not canonical authority for PokeNexus rules,
+  balance values, Species data or implementation;
+- conflicting source claims must be surfaced to PM/Human Owner rather than silently resolved by
+  choosing whichever source is convenient;
+- source-derived facts, community/metagame observations and consultant recommendations must remain
+  distinguishable in the consultation handoff.
+
 ## Must not
 
 - implement production work while acting as GSC;

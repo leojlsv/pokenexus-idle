@@ -46,6 +46,27 @@ Every material economy/monetization consultation must separately assess:
 8. affected player segments and likely asymmetries;
 9. alternatives and unresolved Human Owner decisions.
 
+## Reference-source policy
+
+For Pokémon/gameplay-domain consultations, PXE may use multiple external reference sources when
+evaluating player impact, fairness and competitive consequences:
+
+- PokémonDB (`pokemondb.net`) — general Pokémon reference data and the project's existing
+  canonical external factual source for static-data ingestion where an approved spec assigns it;
+- Bulbapedia (`bulbapedia.bulbagarden.net`) — parallel general-reference source for Pokémon,
+  forms, mechanics, terminology and franchise context;
+- Smogon (`smogon.com`) — PvP/competitive reference source for metagame context, competitive
+  roles, common sets, usage/tiering context and battle-format considerations.
+
+These sources are advisory evidence only:
+
+- they do not redefine canonical static-data ingestion or accepted PokeNexus rules;
+- Smogon usage, tiers and competitive conventions must not be treated as automatic PokeNexus
+  balance policy;
+- conflicting source claims must be surfaced to PM/Human Owner rather than silently resolved;
+- source-derived facts, community/metagame observations and PXE forecasts/recommendations must
+  remain distinguishable.
+
 ## Policy guardrails
 
 - Revenue is never a sufficient optimization objective by itself.

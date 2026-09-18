@@ -57,6 +57,9 @@ SCOPE:
 FACTS / CONSTRAINTS:
 - ...
 
+SOURCES / EVIDENCE:
+- ...
+
 ASSUMPTIONS / UNCERTAINTY:
 - ...
 
@@ -78,7 +81,9 @@ HUMAN OWNER DECISIONS REQUIRED:
 ```
 
 Consultation evidence is advisory. It does not use `PASS/FAIL`, does not replace QA/audit and
-does not authorize implementation or merge.
+does not authorize implementation or merge. When external reference sources materially inform a
+consultation, record which source supports the fact/context and keep source facts distinct from
+community/metagame observations, assumptions and recommendations.
 
 ## Escalation handoff
 
