@@ -5,10 +5,10 @@
   "type": "module",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "build": "pnpm -r build",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
+    "dev": "corepack pnpm -r --parallel dev",
+    "build": "corepack pnpm -r build",
+    "test": "corepack pnpm -r test",
+    "typecheck": "corepack pnpm -r typecheck",
     "lint": "eslint .",
     "roadmap:generate": "node scripts/project-roadmap.mjs generate",
     "roadmap:check": "node scripts/project-roadmap.mjs check"

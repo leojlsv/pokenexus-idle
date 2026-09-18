@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "wrangler deploy --dry-run --outdir dist",
+    "pretypecheck": "corepack pnpm --filter @pokenexus/database build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "corepack pnpm --filter @pokenexus/database build",
     "test": "vitest run --config vitest.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "lint": "eslint ."

@@ -8,11 +8,11 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, core domain/combat foundation, and the PostgreSQL persistence, identity and security foundation are complete.
+**Project phase:** Foundation, core domain/combat-engine contracts, and the PostgreSQL persistence, identity and security foundation are complete. Canonical static game-data catalog implementation is now explicitly scheduled before reward/content implementation consumes it.
 
-**Current work:** `TASK-021 — XP / Level / Progression Rules Spec` is DONE and integrated. SPEC-006 is APPROVED. `TASK-022 — Inventory / Item Model Spec` is the next planned Class A task and has not started.
+**Current work:** `TASK-021 — XP / Level / Progression Rules Spec` is DONE and integrated. SPEC-006 is APPROVED. `TASK-022 — Inventory / Item Model Spec` is the next planned Class A task; previously implicit static-data, Move-acquisition and production Move/Ability-rule content work is now explicitly owned by TASK-087 through TASK-092.
 
-**Current action:** Materialize TASK-022 as a DRAFT and run its Definition of Ready against the approved item/static-data/persistence foundations before proposing item semantics for Human Owner acceptance.
+**Current action:** Materialize TASK-022 as a DRAFT and, in a separate data-contract lane, materialize TASK-092 as the complete SpeciesDefinition static-fact audit/extension before first canonical catalog publication. The accepted TASK-092 direction covers height, weight, egg groups, gender ratio, egg cycles, EV yield and base friendship as factual/non-executable Species/form data, while keeping their gameplay mechanics separate. After TASK-092 acceptance, TASK-087 implements the canonical catalog. TASK-022 rule design does not require a fully populated catalog, but TASK-087 must complete before TASK-024/034 and before authoritative Move-acquisition implementation consumes canonical Species/Move/Learnset data.
 
 **Next task after TASK-003 acceptance:** `TASK-022 — Inventory / Item Model Spec`.
 
@@ -43,19 +43,22 @@
 | `TASK-020` Collection & Team Domain/Persistence Implementation | DONE — owner validation clear; QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; PM / Architecture Coordinator accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 | `TASK-021` XP / Level / Progression Rules Spec | DONE — exact-snapshot QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; Human Owner accepted SPEC-006 in full and authorized repository completion/history on 2026-09-18 |
 
-**Next product milestone:** define the v1 Inventory / Item Model semantics required before the reward ledger and progression/inventory implementation can proceed.
+**Next product milestone:** define v1 Inventory / Item semantics while accepting the intrinsic Species reference-data extension and materializing the canonical Species/Move/Learnset catalog; then close authoritative Move acquisition/eligibility and production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-092`.
 - DONE: 22.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
+- FIX: 0.
 - ACCEPTANCE: 0.
-- PLANNED: 65.
-- Task-count completion: **22 / 87 = 25.3%**.
+- BLOCKED: 0.
+- DEFERRED: 0.
+- PLANNED: 71.
+- Task-count completion: **22 / 93 = 23.7%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -240,7 +243,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 
 ### EPIC-01 — Core Domain & Universal Combat Foundation
 
-**Status:** DONE
+**Status:** IN PROGRESS — accepted domain/data/combat contracts and Combat Engine are complete; TASK-092 extends intrinsic Species reference facts, TASK-087 materializes canonical static data, and TASK-090/091 close production Move/Ability rule content
 **Outcome:** stable domain vocabulary/data contracts and the single deterministic Combat Engine used by all battle content.
 **Why first:** every later battle mode depends on this layer; building content before it would duplicate rules and create migration debt.
 
@@ -251,6 +254,8 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 | `TASK-004` Domain Glossary & Core Model Spec | A | DONE | PM → ChatGPT | QA; IA optional | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted spec | TASK-003 | Pokémon/combatant identity; stats; moves; types; abilities; items; effects; teams; PvE world/map/zone/encounter vocabulary; invariants; frontend execution-surface alignment; upstream Pokémon data-source policy alignment; Pokémon reference-skill policy |
 | `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
 | `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; PokémonDB DATA-only extraction whitelist vs local normalized fields; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset v1 schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or alternate-provider fallback |
+| `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | **HUMAN accepts complete Species/form static-fact boundary** | TASK-006 | Perform a complete SpeciesDefinition audit before first canonical publication and extend SPEC-002 through a new accepted schemaVersion with factual/non-executable Species/form fields: normalized height, normalized weight, structured egg-group membership, exact gender ratio/genderless representation, egg cycles, EV yield and base friendship. Define exact units/precision/nullability/cardinality/form behavior/source normalization/provenance; preserve form-specific values on the exact `SpeciesId`. Storing these facts does not adopt breeding/hatching, gender-instance assignment, EV training, friendship, evolution or other gameplay mechanics. Keep contextual relations such as Learnsets/evolution/local Dex/locations/held-item drops out of scalar Species fields |
+| `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | **HUMAN canonical-data sample validation** | TASK-005/006/092 | Implement `packages/game-data` schemas/loaders plus controlled PokémonDB DATA-only extractor/normalizer; canonical Species/form including all TASK-092 accepted static facts, Move, Type, Ability, Item and Learnset artifacts; accepted mapping roster; completeness reconciliation; deterministic serialization/hashes/provenance; immutable `gameDataVersion` publication; no runtime web fetch, assets/prose or alternate-provider fallback |
 
 **Pokémon data-source policy for TASK-006:** PokémonDB (`pokemondb.net`) is the project's
 primary **external factual source of truth** for Pokémon reference data selected by the
@@ -312,7 +317,7 @@ publishing a new immutable snapshot/schema version; "available upstream" is not 
   added only when an accepted TASK-021/022 rule requires them; item-effect prose and behavior remain
   TASK-022/TASK-036-owned rules rather than imported executable behavior.
 
-**Deferred/conditional fields — excluded from the baseline until an owning task adopts a concrete need:**
+**Original SPEC-002 deferred/conditional fields — accepted baseline at TASK-006 time:**
 
 - height and weight, unless an accepted UI/game rule explicitly consumes them;
 - historical species types and generation-scoped type-effectiveness matrices, unless TASK-008 explicitly
@@ -324,6 +329,16 @@ publishing a new immutable snapshot/schema version; "available upstream" is not 
 - PokémonDB locations/encounter rates, unless TASK-033/034 explicitly adopts them as factual input for
   PokeNexus content; official encounter data never automatically becomes PokeNexus Hunt data;
 - any additional franchise field without an accepted owning product/rules task.
+
+**Planned schema correction:** TASK-092 is the complete pre-publication audit of the Species/form
+static-fact boundary. The Human Owner approved the direction that height, weight, egg-group
+membership, gender ratio, egg cycles, EV yield and base friendship belong in canonical static data
+even when their mechanics are not active. TASK-092 must still define the exact schema details and
+form/source/provenance normalization before changing SPEC-002. This does **not** adopt breeding,
+hatching, actual instance gender, EV training/accumulation, friendship progression, evolution or
+other executable mechanics. Until TASK-092 itself is accepted through its Class A gate, SPEC-002's
+currently approved deferred classification remains authoritative and TASK-087 must not publish
+those fields canonically.
 
 **Explicitly excluded by default:** images/sprites/icons/audio, flavor/Pokédex text, game-description prose,
 editorial effect prose, languages/translations, page layout/CSS, min/max stat calculators, competitive
@@ -346,16 +361,18 @@ implementation Task before code is written.
 | `TASK-009` Deterministic Combat Engine v1 | B | DONE | LD → ChatGPT delegated worker | QA | `SK-TDD`, `SK-GAME-ARCH` | Completed — PM accepted; Human sample-result validation complete; repository completion authorized/completed | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; shared deterministic effect-rule evaluator reusable for active-Battle and cadence advancement; versioned event/consequence output; outcome; no mode-specific branches, AI decision policy or parallel Hunt effect resolver |
 | `TASK-010` Combat Fixtures, Replay & Property Harness | B | DONE | SD → Codex | QA | `SK-TDD` | Completed — independent QA clear; PM accepted; repository completion authorized/completed | TASK-009 | Golden deterministic cases; same initial state + pinned data/rules/event-schema identity + combat RNG state + ordered CombatStimulus stream = same event sequence/final state/outcome; historical immutable-version replay; policy-independent replay when intents are stored; event ordering; time-partition invariance; HP/domain bounds; terminal KO/victory/draw invariants; serialization round-trip; metadata-only cross-orchestrator equivalence for identical normalized combat inputs; regression corpus |
 | `TASK-011` Combat Performance Baseline | B | DONE | LD → ChatGPT delegated worker | QA; IA optional | `SK-GAME-PERF` | Completed — Human Owner accepted performance budget + periodic-content recommendation; repository completion authorized/completed | TASK-009/010 | Combats/sec; p95 wall/CPU; retained heap/RSS/GC evidence; cadence-effect boundary throughput; realistic and pathological periodic-schedule cases; 1h/8h simulation benchmark; allocation profiling when materially constrained; measured performance-budget + content-publication limit decision record |
+| `TASK-090` Production Move & Ability Rule Content Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | **HUMAN accepts executable Move/Ability coverage** | TASK-006/008/011/087 | Define the production rule-content subset required by MVP: exact MoveId/AbilityId → immutable rule-artifact mapping; simple/status/complex Move coverage; accepted buffs/debuffs/DoT/HoT/control/targeting semantics; unsupported-content fail-closed policy; no compilation of source prose; publication/performance limits under `rulesVersion` |
+| `TASK-091` Production Combat Rule Catalog Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH`, `SK-GAME-PERF` | **HUMAN content sample validation** | TASK-090 | Implement immutable versioned Move/Ability rule artifacts/compiler/configuration accepted by TASK-090; deterministic MoveId/AbilityId resolution; coverage/validation fixtures; replay compatibility and content-budget tests; fail closed for unsupported/missing rule content |
 
-**Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable for expected workloads.
+**Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** after TASK-008 is accepted, TASK-009 is the primary owner. TASK-010 can begin only after stable public engine interfaces exist. Client design exploration may run in parallel, but must not invent combat semantics.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092 may proceed in parallel with TASK-022. TASK-087 implementation follows TASK-092 acceptance so the first canonical catalog does not immediately require a schema republish for intrinsic Species facts. TASK-090 follows TASK-087 plus the accepted combat rules/performance constraints; TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
-fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. Before Solo/Duo/PvP
-or other production content relies on those mechanics, materialize a separately owned versioned
-combat-rule content/catalog task (or an explicit accepted Class A extension) that publishes rule
-content under the SPEC-002 rulesVersion envelope.
+fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
+Human-accepted production coverage/rule-content contract and TASK-091 publishes its immutable
+implementation under the SPEC-002 `rulesVersion` envelope before Solo/Duo/PvP or other production
+content relies on those mechanics.
 
 ---
 
@@ -409,10 +426,14 @@ content under the SPEC-002 rulesVersion envelope.
 | `TASK-021` XP / Level / Progression Rules Spec | A | DONE | PM → ChatGPT | QA READY + **IA PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`, `SK-GAME-BAL` | Completed — Human Owner accepted SPEC-006 in full and authorized repository completion/history on 2026-09-18 | TASK-019/020 | APPROVED SPEC-006: Pokémon hard Level Cap `200` + species-independent cubic cumulative XP curve; separate **uncapped Player Level** with Level 1/0 XP baseline and cumulative `50*L*(L-1)` curve (`100*L` next-Level cost); server-authoritative grants, Player/Pokémon OCC/idempotency/versioning handoff; feature thresholds/effects remain separately owned |
 | `TASK-022` Inventory / Item Model Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts item semantics** | TASK-006/013/019 | Item-definition semantics over the TASK-006 catalog; stackability/quantity vs per-copy identity; consumables; Potion/healing semantics and explicit revival semantics only if accepted; capture items such as Poké Balls; equipment/TMs if in scope; inventory limits; use/consume/mutation contracts |
 | `TASK-023` Reward Ledger & Integrity Model | A | PLANNED | PM → ChatGPT | QA + IA recommended | `SK-THREAT`, `SK-PG` | **HUMAN accepts reward authority model** | TASK-013/021/022 | Idempotent grants; source attribution; immutable rules/game-data snapshot identity; replay/duplicate protection; audit trail; rollback semantics |
-| `TASK-024` Progression / Inventory / Reward Implementation | B | PLANNED | LD → Copilot CLI | QA; IA for reward-integrity paths | `SK-TDD`, `SK-PG` | PM acceptance | TASK-018/021/022/023 | XP grants; item mutations; reward transactions; emit reward audit events on the TASK-018 substrate; integration tests |
-| `TASK-025` Player State API Integration | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-CF-WBP` reference-only | PM acceptance | TASK-020/024 | Collection/team/inventory/progression endpoints, including ordered Move-loadout mutation when accepted by TASK-019; authz; optimistic/idempotent command handling |
+| `TASK-024` Progression / Inventory / Reward Implementation | B | PLANNED | LD → Copilot CLI | QA; IA for reward-integrity paths | `SK-TDD`, `SK-PG` | PM acceptance | TASK-018/021/022/023/087 | XP grants; item mutations; reward transactions; canonical static item/data consumption through TASK-087 loaders; emit reward audit events on the TASK-018 substrate; integration tests |
+| `TASK-088` Move Acquisition / Eligibility Rules Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | **HUMAN accepts Move acquisition/eligibility rules** | TASK-006/019/021/022 | Define authoritative learned/available-Move semantics distinct from raw Learnset facts; initial Pokémon loadout/bootstrap; level-based availability; TM/machine/tutor/egg/evolution/transfer methods if adopted; permanence/replacement rules; generation/game Learnset interpretation; static-data correction behavior; exact server authority consumed by loadout mutation |
+| `TASK-089` Move Acquisition / Eligibility Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG`, `SK-GAME-ARCH` | PM acceptance | TASK-020/024/087/088 | Implement authoritative eligible/learned-Move source from accepted rules + canonical Learnset/catalog data; persist acquired state only if SPEC requires it; compose level/item acquisition hooks; validate loadout replacement against server authority; bootstrap existing/uninitialized Pokémon deterministically; integration tests |
+| `TASK-025` Player State API Integration | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-CF-WBP` reference-only | PM acceptance | TASK-020/024/089 | Collection/team/inventory/progression endpoints; expose ordered Move-loadout mutation only through TASK-089 authoritative Move eligibility; authz; optimistic/idempotent command handling |
 
 **Exit criteria:** authenticated players have authoritative collection/team/inventory/progression state suitable for gameplay rewards and team selection.
+
+**Explicit deferred product domains:** Evolution and post-Level-200 Mastery/Prestige remain BACKLOG concepts, not accidental unowned implementation work. Neither is required for the baseline through TASK-025/Solo Hunt MVP. If prioritized, PM must materialize separate Class A rules tasks (and any required static-data schema extension) before implementation; level-up alone never implies evolution or post-cap state.
 
 ---
 
@@ -454,8 +475,8 @@ content under the SPEC-002 rulesVersion envelope.
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
 | `TASK-033` PvE World/Map, Zone & Solo Hunt Rules/Lifecycle Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts PvE/Hunt rules** | TASK-008/019/021/023 | Define World/Map → Zone → Hunt navigation/progression model; zone availability/unlocks at rule level; selecting/entering a Zone/Hunt; Hunt start/end/cancel/restart including reset-abuse policy; one Hunt = one combat-cadence continuity scope; continuing player Pokémon HP across encounters with no automatic Battle-boundary heal; deterministic inter-Battle time; cadence-effect continuation/ticks/KO between encounters; when item/Potion commands may occur and their ordering against due effect boundaries using TASK-022 semantics; encounters; Pokémon Team/lineup continuation after KO, including automatic activation of the next living eligible Pokémon and a mandatory intervention state before any new Battle when no living eligible Pokémon remains; accepted intervention choices such as Revive/item action or return to city; KO/recovery; respawn; capture hooks; reward/drop rules and cadence; checkpoint/claim semantics; no combat-engine mode fork |
-| `TASK-034` PvE World/Zone, Encounter & Hunt Data | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD` | **HUMAN content sample validation** | TASK-006/033 | Implement accepted world/map-zone content structure; Zone definitions; map/zone relationships; encounter tables; versioned Hunt/Zone reward and item-drop tables/content inputs where approved; all deterministic content published through TASK-006 immutable version/provenance envelope; deterministic selection; level/rule inputs; data validation |
-| `TASK-035` Solo Hunt Simulation Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-009/033/034 | Event-driven encounter loop; Hunt orchestration/AI policy executes the accepted ordered Move-sequence policy, carries actor GCD/per-Move readiness/sequence cursor and cadence-scoped effect state across encounters, advances inter-Battle effects through the shared TASK-009 rule evaluator, handles pre-next-Battle KO, deterministically continues with the next living eligible Pokémon when available or blocks before Battle creation in the accepted no-living intervention state, and supplies versioned ActionIntents to shared Combat Engine; no realtime tick or parallel effect math |
+| `TASK-034` PvE World/Zone, Encounter & Hunt Data | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD` | **HUMAN content sample validation** | TASK-006/033/087 | Implement accepted world/map-zone content structure; Zone definitions; map/zone relationships; encounter tables referencing canonical Species/content definitions from TASK-087; versioned Hunt/Zone reward and item-drop tables/content inputs where approved; all deterministic content published through TASK-006 immutable version/provenance envelope; deterministic selection; level/rule inputs; data validation |
+| `TASK-035` Solo Hunt Simulation Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-009/033/034/091 | Event-driven encounter loop; Hunt orchestration/AI policy executes the accepted ordered Move-sequence policy using production Move/Ability rule content from TASK-091, carries actor GCD/per-Move readiness/sequence cursor and cadence-scoped effect state across encounters, advances inter-Battle effects through the shared TASK-009 rule evaluator, handles pre-next-Battle KO, deterministically continues with the next living eligible Pokémon when available or blocks before Battle creation in the accepted no-living intervention state, and supplies versioned ActionIntents to shared Combat Engine; no realtime tick or parallel effect math |
 | `TASK-036` Capture & Reward Resolution | B | PLANNED | LD → Copilot CLI | QA + IA reward-integrity spot-check | `SK-TDD`, `SK-THREAT` | **HUMAN validates rule outcomes** | TASK-023/024/033/034/035 | Capture rolls/rules; resolve XP/item drops/currency-if-approved from accepted versioned rules/content; idempotent grants through the reward/inventory authority path; event output |
 | `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-035/036 | `startedAt`/checkpoint/rulesVersion/gameDataVersion or content checksum/seed; referenced-version retention; cadence cooldown/effect continuation state; 1h/8h advancement; safe caps; replay equality |
 
@@ -732,7 +753,7 @@ Update it when:
 
 Do **not** use it as a changelog. Current truth only. Git/tasks preserve history.
 
-When this file changes, run `pnpm roadmap:generate` in the same documentation task. The generator parses this Markdown, validates roadmap invariants and writes the standalone HTML with the Markdown SHA-256 embedded in the page. `pnpm roadmap:check` must fail if task IDs/metadata/dependencies are invalid or if the checked-in HTML is stale. The HTML is a derived snapshot; if it disagrees with this Markdown file, **Markdown wins**.
+When this file changes, run `corepack pnpm roadmap:generate` in the same documentation task. The generator parses this Markdown, validates roadmap invariants and writes the standalone HTML with the Markdown SHA-256 embedded in the page. `corepack pnpm roadmap:check` must fail if task IDs/metadata/dependencies are invalid or if the checked-in HTML is stale. The HTML is a derived snapshot; if it disagrees with this Markdown file, **Markdown wins**.
 
 ## 12. Definition of visibility-complete
 

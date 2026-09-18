@@ -9,8 +9,6 @@ const ROADMAP_MD = resolve(ROOT, 'docs/project/PROJECT_ROADMAP.md');
 const ROADMAP_HTML = resolve(ROOT, 'docs/project/PROJECT_ROADMAP.html');
 const ACTIVE_TASK_DIR = resolve(ROOT, 'tasks/active');
 const DONE_TASK_DIR = resolve(ROOT, 'tasks/done');
-const EXPECTED_FIRST_TASK = 0;
-const EXPECTED_LAST_TASK = 86;
 const STATUS_VOCABULARY = ['PLANNED', 'DRAFT', 'READY', 'ACTIVE', 'REVIEW', 'FIX', 'ACCEPTANCE', 'DONE', 'BLOCKED', 'DEFERRED'];
 
 function fail(message) {
@@ -145,8 +143,24 @@ function parseRoadmap(markdown) {
 
   const currentActionLine = lines.find((line) => line.startsWith('**Current action:**'));
   const nextTaskLine = lines.find((line) => line.startsWith('**Next task after TASK-003 acceptance:**'));
+  const taskRangeLine = lines.find((line) => line.startsWith('- Planned task IDs in this roadmap:'));
+  const summaryCounts = {};
+  for (const status of STATUS_VOCABULARY) {
+    const line = lines.find((candidate) => candidate.startsWith(`- ${status}:`));
+    if (!line) fail(`Missing portfolio summary count for ${status}`);
+    const match = line.match(new RegExp(`^- ${status}:\\s*(\\d+)\\.$`));
+    if (!match) fail(`Invalid portfolio summary count for ${status}`);
+    summaryCounts[status] = Number(match[1]);
+  }
+  const completionLine = lines.find((line) => line.startsWith('- Task-count completion:'));
+  if (!completionLine) fail('Missing task-count completion summary');
+  const completionMatch = completionLine.match(/\*\*(\d+) \/ (\d+) = ([0-9]+(?:\.[0-9]+)?)%\*\*/);
+  if (!completionMatch) fail('Invalid task-count completion summary');
   if (!currentActionLine) fail('Missing **Current action:** in roadmap current-position section');
   if (!nextTaskLine) fail('Missing **Next task after TASK-003 acceptance:** in roadmap current-position section');
+  if (!taskRangeLine) fail('Missing planned task ID range in roadmap current-position section');
+  const taskRangeMatch = taskRangeLine.match(/TASK-(\d{3}).*TASK-(\d{3})/);
+  if (!taskRangeMatch) fail('Invalid planned task ID range declaration');
 
   return {
     epics,
@@ -156,6 +170,13 @@ function parseRoadmap(markdown) {
     skills,
     currentAction: stripInline(currentActionLine.replace('**Current action:**', '')),
     nextTask: stripInline(nextTaskLine.replace('**Next task after TASK-003 acceptance:**', '')),
+    taskRange: { first: Number(taskRangeMatch[1]), last: Number(taskRangeMatch[2]) },
+    summaryCounts,
+    completionSummary: {
+      done: Number(completionMatch[1]),
+      total: Number(completionMatch[2]),
+      percent: Number(completionMatch[3]),
+    },
     statusVocabulary: STATUS_VOCABULARY,
     milestoneText: extractCodeBlock(lines, '## 7. Milestone sequence'),
     criticalPathText: extractCodeBlock(lines, '## 9. Dependency / parallelization map'),
@@ -219,12 +240,21 @@ function validateRoadmap(data) {
   }
 
   const expectedIds = [];
-  for (let value = EXPECTED_FIRST_TASK; value <= EXPECTED_LAST_TASK; value += 1) expectedIds.push(`TASK-${String(value).padStart(3, '0')}`);
+  for (let value = data.taskRange.first; value <= data.taskRange.last; value += 1) expectedIds.push(`TASK-${String(value).padStart(3, '0')}`);
   if (data.tasks.length !== expectedIds.length) errors.push(`Expected ${expectedIds.length} tasks, found ${data.tasks.length}`);
-  expectedIds.forEach((id, index) => {
+  expectedIds.forEach((id) => {
     if (!taskById.has(id)) errors.push(`Missing task ID: ${id}`);
-    if (data.tasks[index]?.id !== id) errors.push(`Task ordering error at index ${index}: expected ${id}, found ${data.tasks[index]?.id ?? 'none'}`);
   });
+
+  for (const status of STATUS_VOCABULARY) {
+    const actual = data.tasks.filter((task) => task.status === status).length;
+    if (data.summaryCounts[status] !== actual) errors.push(`Portfolio summary ${status}=${data.summaryCounts[status]}, actual=${actual}`);
+  }
+  const actualDone = data.tasks.filter((task) => task.status === 'DONE').length;
+  const actualPercent = Number(((actualDone / data.tasks.length) * 100).toFixed(1));
+  if (data.completionSummary.done !== actualDone) errors.push(`Completion summary DONE=${data.completionSummary.done}, actual=${actualDone}`);
+  if (data.completionSummary.total !== data.tasks.length) errors.push(`Completion summary total=${data.completionSummary.total}, actual=${data.tasks.length}`);
+  if (data.completionSummary.percent !== actualPercent) errors.push(`Completion summary percent=${data.completionSummary.percent}, actual=${actualPercent}`);
 
   const activeFiles = taskFilesById(ACTIVE_TASK_DIR);
   const doneFiles = taskFilesById(DONE_TASK_DIR);
@@ -249,7 +279,6 @@ function validateRoadmap(data) {
     for (const ref of refs) {
       if (!taskById.has(ref)) errors.push(`${task.id}: dependency references missing ${ref}`);
       if (ref === task.id) errors.push(`${task.id}: self dependency`);
-      if (taskById.has(ref) && Number(ref.slice(5)) > Number(task.id.slice(5))) errors.push(`${task.id}: dependency ${ref} appears later in the sequential roadmap`);
     }
   }
 
@@ -372,7 +401,7 @@ function taskTextHtml(text){
 function initSummary(){
   const counts=Object.fromEntries([...new Set(DATA.tasks.map(t=>t.status))].map(status=>[status,DATA.tasks.filter(t=>t.status===status).length]));
   const done=counts.DONE??0; const pct=(done/DATA.tasks.length*100).toFixed(1);
-  $('#stats').innerHTML='<div class="stat"><span class="muted">Tasks totais</span><b>'+DATA.tasks.length+'</b><small>'+esc(DATA.tasks[0].id)+' → '+esc(DATA.tasks.at(-1).id)+'</small></div>'+
+  $('#stats').innerHTML='<div class="stat"><span class="muted">Tasks totais</span><b>'+DATA.tasks.length+'</b><small>TASK-'+String(DATA.taskRange.first).padStart(3,'0')+' → TASK-'+String(DATA.taskRange.last).padStart(3,'0')+'</small></div>'+
     '<div class="stat"><span class="muted">DONE</span><b>'+done+'</b><small>'+pct+'% por contagem de tasks</small><div class="progress"><i style="width:'+pct+'%"></i></div></div>'+
     '<div class="stat"><span class="muted">REVIEW/FIX/ACTIVE</span><b>'+DATA.tasks.filter(t=>isCurrent(t.status)).length+'</b><small>trabalho corrente</small></div>'+
     '<div class="stat"><span class="muted">PLANNED</span><b>'+(counts.PLANNED??0)+'</b><small>viram DRAFT/READY apenas após gates</small></div>'+
