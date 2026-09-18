@@ -10,9 +10,9 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, and the PostgreSQL persistence, identity and security foundation are complete. Canonical static game-data catalog implementation is now explicitly scheduled before reward/content implementation consumes it.
 
-**Current work:** `TASK-022 — Inventory / Item Model Spec` and the parallel data-contract lane `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` are **READY** after independent DoR QA with P0/P1/P2/P3 `0/0/0/0` for each. TASK-022 GSC/PXE consultation is complete; TASK-092's focused Pokémon-domain advisory re-review is also clear at `0/0/0/0`. `TASK-093` governance is DONE and integrated.
+**Current work:** `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` is in **ACCEPTANCE** with SPEC-008 **APPROVED** after the Human Owner approved option 1 and both the focused Pokémon-domain re-review and final independent QA cleared the exact semantic snapshot at P0/P1/P2/P3 `0/0/0/0`. Battle-only transformation profiles are excluded/deferred from `SpeciesDefinitionV2` and left to a future owning transformation/rules task. `TASK-022 — Inventory / Item Model Spec` proceeds independently on its own branch.
 
-**Current action:** Integrate this QA-clear planning/materialization snapshot only after explicit Human Owner repository-history authorization, then open TASK-022 and TASK-092 on their declared independent Class A specification branches/worktrees. SPEC-007 and SPEC-008 remain DRAFT product/schema proposals with explicit Human decisions still required; task READY status is readiness to perform the specification work, not spec acceptance. After TASK-092 acceptance, TASK-087 implements the canonical catalog; TASK-022 rule design does not require a populated catalog, but TASK-087 must complete before TASK-024/034 and before authoritative Move-acquisition implementation consumes canonical Species/Move/Learnset data.
+**Current action:** TASK-092 semantic/product acceptance is complete. Await separate explicit Human Owner repository-history authorization before commit/push/fast-forward integration; do not bundle TASK-022 history. TASK-087 remains blocked until TASK-092 is integrated.
 
 **Next task after TASK-003 acceptance:** `TASK-022 — Inventory / Item Model Spec`.
 
@@ -51,11 +51,11 @@
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-093`.
 - DONE: 23.
 - DRAFT: 0.
-- READY: 2.
+- READY: 1.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 0.
+- ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 69.
@@ -300,7 +300,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 | `TASK-004` Domain Glossary & Core Model Spec | A | DONE | PM → ChatGPT | QA; IA optional | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted spec | TASK-003 | Pokémon/combatant identity; stats; moves; types; abilities; items; effects; teams; PvE world/map/zone/encounter vocabulary; invariants; frontend execution-surface alignment; upstream Pokémon data-source policy alignment; Pokémon reference-skill policy |
 | `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
 | `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; PokémonDB DATA-only extraction whitelist vs local normalized fields; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset v1 schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or alternate-provider fallback |
-| `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | READY | PM → ChatGPT | QA DoR READY `0/0/0/0`; final spec QA pending | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | **HUMAN accepts complete Species/form static-fact boundary** | TASK-006/093 | Materialized at `tasks/active/TASK-092-speciesdefinition-static-fact-audit-extension-spec.md`; produce SPEC-008 as the Class A extension to SPEC-002 before first canonical publication; seven intrinsic Species/form facts plus complete source-availability audit, exact-form/no-inheritance and explicit `SourceFact<T>` handling; focused Pokémon-domain advisory re-review READY `0/0/0/0`; no breeding/hatching/gender-instance/EV/friendship/evolution mechanics |
+| `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | ACCEPTANCE | PM → ChatGPT | DoR QA READY `0/0/0/0`; original final QA NOT READY `0/1/0/0`; corrected option-1 Pokémon-domain review PASS advisory `0/0/0/0`; final independent QA READY `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Human Owner accepted SPEC-008 v2 direction and on 2026-09-18 approved **option 1**; semantic acceptance complete, repository history separately gated | TASK-006/093 | SPEC-008 APPROVED. Persistent Species/forms keep the applicable v2 contract and genuine SourceFact states. Mega/Eternamax/battle-only transformations are explicit excluded/deferred source inventory, not separately captured/persisted SpeciesDefinition identities and do not force fake availability wrappers. No transformation-profile catalog is added in schema v2; activation/reversion and the future transformed profile remain future rulesVersion/schema-extension work |
 | `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | **HUMAN canonical-data sample validation** | TASK-005/006/092 | Implement `packages/game-data` schemas/loaders plus controlled PokémonDB DATA-only extractor/normalizer; canonical Species/form including all TASK-092 accepted static facts, Move, Type, Ability, Item and Learnset artifacts; accepted mapping roster; completeness reconciliation; deterministic serialization/hashes/provenance; immutable `gameDataVersion` publication; no runtime web fetch, assets/prose or alternate-provider fallback |
 
 **Pokémon data-source policy for TASK-006:** PokémonDB (`pokemondb.net`) is the project's

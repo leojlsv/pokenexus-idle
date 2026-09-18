@@ -1,6 +1,6 @@
 # SPEC-008 — SpeciesDefinition Static-Fact Extension
 
-- Status: DRAFT
+- Status: APPROVED
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
 - Extends: `SPEC-002 — Static Game Data, Versioning & PokémonDB Ingestion`
@@ -87,7 +87,8 @@ start directly at schema v2. This does not mutate or reuse the v1 contract ident
 
 ## 5. Extended SpeciesDefinition
 
-For every accepted canonical Species/form roster entry, the normalized definition adds:
+For every accepted canonical **persistent Species/form** roster entry represented by
+`SpeciesDefinition`, the normalized definition adds:
 
 ```text
 SpeciesDefinitionV2 = Omit<SpeciesDefinitionV1, "baseExperience"> & {
@@ -131,9 +132,11 @@ source mapping explicitly recognizes that source state.
 
 ### 5.2 Nullability policy
 
-All v2 fields are **required and non-null** for every Species/form accepted into the canonical
-mapping roster. A field whose type is `SourceFact<T>` is still structurally required; explicit
-source unavailability is represented by the tagged variant rather than null.
+All v2 fields are **required and non-null** for every persistent Species/form accepted into the
+`SpeciesDefinition` mapping roster. A field whose type is `SourceFact<T>` is still structurally
+required; explicit source unavailability is represented by the tagged variant rather than null.
+Battle-only transformations excluded/deferred from that roster do not acquire inapplicable fields
+merely to satisfy this shape.
 
 If PokémonDB does not expose an approved fact and the field has no accepted source-unavailable
 variant, or the parser cannot normalize the source unambiguously, candidate validation fails
@@ -321,14 +324,19 @@ source unavailability.
 
 ## 12. Form-specific data rule
 
-Every accepted form has its own complete seven-field v2 fact set on its exact `SpeciesId`.
+Every accepted persistent Species/form has its own complete seven-field v2 fact set on its exact
+`SpeciesId`.
 
 `baseSpeciesId` is a grouping relationship only. It does not authorize inheritance, fallback or
 deduplication of any v2 field.
 
-If two forms have equal values, those equal values are still validated/resolved for each exact
-accepted form. An implementation may internally deduplicate immutable bytes only if logical
-Species records remain complete and deterministic and no consumer must infer inheritance.
+If two persistent forms have equal values, those equal values are still validated/resolved for
+each exact accepted form. An implementation may internally deduplicate immutable bytes only if
+logical Species records remain complete and deterministic and no consumer must infer inheritance.
+
+Battle-only transformation profiles are outside this rule because they are not persistent
+`SpeciesDefinition` identities. Their static combat profile is explicitly deferred by the
+accepted section 18.2 policy to a future owning transformation/rules task.
 
 ## 13. Source extraction and provenance extension
 
@@ -379,6 +387,7 @@ The following boundary is normative for TASK-087 and future schema proposals.
 | Egg cycles | intrinsic Species/form static fact with explicit source availability | **ADD in v2** as `SourceFact`; hatch progress is future instance state |
 | EV yield | intrinsic Species/form static fact | **ADD in v2**; accumulated EVs are future instance state |
 | Base Friendship | intrinsic Species/form static fact with explicit source availability | **ADD in v2** as `SourceFact`; current friendship is future instance state |
+| battle-only transformation profile | transformation-scoped static facts | **DEFERRED** by section 18.2; no separate profile/catalog in schema v2; future owning transformation/rules task defines the static profile and activation/reversion semantics |
 | actual gender | persistent Pokémon-instance fact if adopted | deferred; not SpeciesDefinition |
 | Nature | persistent Pokémon-instance fact if adopted | deferred; Nature rules separate |
 | accumulated EVs | persistent Pokémon-instance fact if adopted | deferred; not SpeciesDefinition |
@@ -419,8 +428,8 @@ SpeciesDefinition fields.
 
 Before TASK-087 can publish a schema-v2 bundle:
 
-1. every accepted Species/form roster entry contains all seven newly added required fields plus the
-   v2 `baseExperience` representation;
+1. every accepted persistent `SpeciesDefinition` roster entry contains all seven newly added
+   required fields plus the v2 `baseExperience` representation;
 2. every numeric field satisfies its exact integer domain;
 3. every `SourceFact` is either a validated known value or an explicitly recognized
    `source-unavailable` source state; parser/mapping failures cannot use that variant;
@@ -433,9 +442,11 @@ Before TASK-087 can publish a schema-v2 bundle:
 10. consumers that do not support `schemaVersion = "2"` fail closed;
 11. no executable breeding/EV/friendship/hatching/evolution behavior is inferred from presence of
     the static facts.
-12. the intended accepted roster has been audited for source availability across **all** required
-    existing + v2 Species fields; any additional legitimate source-unavailable field has an
-    explicit accepted representation before publication.
+12. the intended persistent `SpeciesDefinition` roster has been audited for applicability and
+    source availability across **all** required existing + v2 Species fields; any additional
+    legitimate source-unavailable field has an explicit accepted representation before
+    publication, while battle-only transformations are not used to manufacture inapplicable
+    persistent facts.
 
 ## 17. Implementation handoff to TASK-087
 
@@ -449,25 +460,143 @@ PokémonDB DATA-only normalizer. It must not:
 - compile source prose into executable behavior;
 - persist derived values as new Species facts merely because they are easy to calculate.
 
-## 18. Open Human Owner decisions
+## 18. Human Owner accepted v2 direction
 
-Before approval:
+The Human Owner accepted the proposed v2 boundary then under review on 2026-09-18:
 
-1. accept or change exact `schemaVersion = "2"`;
-2. accept millimeters/grams as canonical integer units;
-3. accept basis points for exact normalized gender ratio representation;
-4. accept the closed EggGroupKey v2 vocabulary/order;
-5. accept explicit `SourceFact<T>` / `source-unavailable` handling for Egg cycles, Base Friendship
-   and existing Base Exp. instead of numeric zero, null, inferred inheritance or roster exclusion;
-6. confirm all v2 fields remain structurally required/non-null and unrecognized missing/ambiguous
-   source data still blocks publication;
-7. confirm the adjacent-field classification table as the pre-publication static-schema boundary.
+1. exact `schemaVersion = "2"`;
+2. millimeters/grams as canonical integer height/weight units;
+3. basis points for exact normalized gender-ratio representation;
+4. the closed/versioned EggGroupKey v2 vocabulary and deterministic order;
+5. explicit `SourceFact<T>` / `source-unavailable` handling for Egg cycles, Base Friendship and
+   existing Base Exp. instead of numeric zero, null, inferred inheritance or roster exclusion;
+6. all v2 fields remain structurally required/non-null; unrecognized missing/ambiguous source data
+   blocks publication;
+7. the adjacent-field classification table is the accepted pre-publication static-schema boundary.
+
+This Human decision fixes the schema direction. SPEC-008 remains non-authoritative until fresh
+independent QA confirms the exact governed artifact and no material correction changes the accepted
+direction.
+
+### 18.1 Post-acceptance applicability finding — resolved
+
+Fresh independent QA of the exact REVIEW candidate returned **NOT READY**,
+P0/P1/P2/P3 `0/1/0/0`, because the promised complete source-availability audit of the existing
+SPEC-002 Species contract had not yet been recorded field by field.
+
+A first focused Pokémon-domain audit returned **NOT READY advisory**,
+P0/P1/P2/P3 `0/1/1/0` and initially treated structured `—` values on Mega/Eternamax source
+blocks as possible source-unavailability inside the `SpeciesDefinition` contract.
+
+The Human Owner subsequently clarified that Mega forms such as Mega Dragonite are temporary battle
+transformations reached through battle criteria/items and are not independently captured or
+persisted Pokémon. A fresh applicability re-audit therefore supersedes that first interpretation.
+
+The relevant distinction is now:
+
+1. **applicable-but-source-unavailable** — the fact semantically belongs to an accepted persistent
+   Species/form, but PokémonDB explicitly has no current value. The existing `SourceFact<T>`
+   mechanism remains appropriate where this state is accepted;
+2. **not applicable to the persistent SpeciesDefinition** — the source block represents a
+   battle-only transformation whose capture/progression/breeding facts do not belong to a durable
+   Species identity. Such a `—` must not create a fake `SourceFact<T>` requirement;
+3. **parser/mapping ambiguity** — neither of the above; validation fails closed.
+
+The corrected field audit for the persistent `SpeciesDefinition` roster is:
+
+| Existing required field | Audit outcome |
+|---|---|
+| `id` | local canonical registry identity; no availability wrapper |
+| `sourceName` / `sourceSlug` | source mapping identity; unresolved mapping means no valid roster mapping |
+| `nationalDexNumber` | source-backed; no unavailable state found in audited current forms |
+| `introducedGeneration` | source-associated normalized mapping; must resolve for the exact form or onboarding fails |
+| `formLabel` | source/mapping metadata; null remains the semantic base-form state |
+| `baseSpeciesId` | local grouping identity; no value-inheritance authority and no availability wrapper |
+| current Types | exact-form source fact; no unavailable state found |
+| complete six Base Stats | exact-form source facts; no unavailable state found |
+| eligible Ability assignments | required for accepted persistent Species/forms; Mega/Eternamax `—` evidence is not applicable because those are battle-only transformations |
+| `catchRate` | required for accepted persistent/capturable Species/forms; Mega/Eternamax `—` evidence is not applicable |
+| `baseExperience` | explicit source-unavailable modeling remains required where this fact applies but PokémonDB has no current value |
+| `growthRate` | required for accepted persistent Species/forms; Mega `—` evidence is not applicable |
+| provenance/source refs | mandatory local provenance metadata; no availability wrapper |
+
+For the seven v2 additions, the same applicability rule holds. Temporary battle transformations do
+not force persistent capture/progression/breeding facts into an availability wrapper. Genuine
+source-unavailability remains a separate source state for accepted persistent Species/forms; current
+audited examples include Base Friendship and Egg cycles on Ogerpon, in addition to Base Exp.
+
+### 18.2 Persistent forms versus battle-only transformations — accepted policy
+
+SPEC-002 already defines the local mapping registry as the explicit accepted form/source roster and
+states that source presence alone does not adopt every transformation form as canonical PokeNexus
+content. SPEC-008 now makes the applicability consequence explicit:
+
+- **persistent Species/form** — an identity that PokeNexus may durably associate with a
+  `PokemonInstance`; ordinary/base Species, regional forms and explicitly adopted persistent
+  alternate forms belong to this category and receive the full applicable `SpeciesDefinitionV2`
+  contract;
+- **battle-only transformation** — a temporary battle state such as a Mega form, Eternamax or an
+  equivalent battle-only transformation. It is not a separately captured/persisted
+  `PokemonInstance` Species identity and therefore does not receive capture/progression/breeding
+  placeholders merely to satisfy `SpeciesDefinitionV2`.
+
+This classification is local roster/provenance policy; it does not require adding a
+`formCategory` field to every normalized `SpeciesDefinition`. A discovered upstream
+battle-transformation key may be explicitly excluded/deferred from the persistent Species roster
+with its policy reason under SPEC-002 coverage reconciliation.
+
+`baseSpeciesId` remains only a persistent Species/form grouping relation. It must not be overloaded
+to represent a live transformation relation.
+
+On 2026-09-18 the Human Owner approved **option 1 / defer the transformation profile**.
+
+Therefore schema v2:
+
+- excludes/defers battle-only transformation records from `SpeciesDefinitionV2`;
+- does **not** add a transformation/static-profile catalog or a new transformation identity;
+- records discovered upstream battle-transformation keys as explicit excluded/deferred inventory
+  entries with a policy reason under SPEC-002 coverage reconciliation;
+- leaves the canonical transformed static-profile schema to a future owning transformation/rules
+  task, which must define the exact source/data boundary before that mechanic becomes executable.
+
+The rejected alternative was to introduce a separate transformation/static-profile catalog in
+schema v2. That alternative is intentionally not adopted here; if a future task later needs such a
+catalog, it is a new accepted schema extension rather than latent SPEC-008 behavior.
+
+Under the accepted policy:
+
+- `PokemonInstance.speciesId` remains the persistent origin Species/form identity;
+- transformation activation must not create or persist a separately owned Mega Pokémon;
+- activation criteria/items, timing, duration, reversion and the live Combatant override semantics
+  are executable rules owned by a later accepted `rulesVersion` task;
+- static transformation data alone does not make Mega Evolution executable under current combat
+  rules.
+
+### 18.3 Source-state invariants
+
+Source `—` must not be represented as:
+
+- numeric zero;
+- null/undefined;
+- an empty known Ability-assignment set;
+- a base-form or sibling value copied because the exact-form block omitted the fact;
+- an alternate-provider fallback.
+
+A page-level/shared fact may be associated with more than one exact-form record only where the
+PokémonDB structure or an accepted mapping unambiguously scopes that fact to those exact forms and
+the provenance directly supports the association. This is exact-form source association, not
+`baseSpeciesId` inheritance. Copying a base/sibling value merely because a form-specific block
+omits it remains forbidden.
+
+Bulbapedia may corroborate form/mechanic semantics during GSC/PXE consultation under the accepted
+consultant reference-source policy, and Smogon may inform PvP-specific consultation. Neither source
+silently replaces PokémonDB as the canonical ingestion provider under SPEC-002.
 
 ## 19. Acceptance
 
 This specification becomes authoritative only after:
 
-1. fresh independent QA reports no unresolved P0/P1;
-2. the Human Owner explicitly accepts the complete Species/form static-fact boundary and the open
-   decisions above;
+1. the Human Owner acceptance recorded in section 18 plus the post-acceptance applicability
+   resolution still matches the exact reviewed artifact;
+2. fresh independent QA reports no unresolved P0/P1 on that corrected exact artifact;
 3. repository history is separately authorized and the accepted spec is integrated.
