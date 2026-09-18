@@ -10,9 +10,9 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, and the PostgreSQL persistence, identity and security foundation are complete. Canonical static game-data catalog implementation is now explicitly scheduled before reward/content implementation consumes it.
 
-**Current work:** `TASK-093 — Gameplay Systems & Player Experience Consultant Governance` is in REVIEW on an isolated governance branch with independent QA READY and P0/P1/P2/P3 `0/0/0/0`. The candidate formalizes advisory-only `GSC`/`PXE` consultation without changing Human Owner, QA, IA or implementation authority. `TASK-022 — Inventory / Item Model Spec` remains the next planned product Class A task; previously implicit static-data, Move-acquisition and production Move/Ability-rule content work remains explicitly owned by TASK-087 through TASK-092.
+**Current work:** `TASK-093 — Gameplay Systems & Player Experience Consultant Governance` is DONE and integrated with independent QA READY and P0/P1/P2/P3 `0/0/0/0`. Canonical `GSC`/`PXE` advisory consultation is now part of governance without changing Human Owner, QA, IA or implementation authority. `TASK-022 — Inventory / Item Model Spec` is the next planned product Class A task; previously implicit static-data, Move-acquisition and production Move/Ability-rule content work remains explicitly owned by TASK-087 through TASK-092.
 
-**Current action:** TASK-093 governance QA is clear; obtain Human Owner acceptance and explicit repository-history authorization before commit/push/integration. After that governance maintenance closes, materialize TASK-022 as a DRAFT and, in a separate data-contract lane, materialize TASK-092 as the complete SpeciesDefinition static-fact audit/extension before first canonical catalog publication. The accepted TASK-092 direction covers height, weight, egg groups, gender ratio, egg cycles, EV yield and base friendship as factual/non-executable Species/form data, while keeping their gameplay mechanics separate. After TASK-092 acceptance, TASK-087 implements the canonical catalog. TASK-022 rule design does not require a fully populated catalog, but TASK-087 must complete before TASK-024/034 and before authoritative Move-acquisition implementation consumes canonical Species/Move/Learnset data.
+**Current action:** Materialize `TASK-022 — Inventory / Item Model Spec` as a DRAFT with required `GSC + PXE` consultation, and in a separate data-contract lane materialize `TASK-092` as the complete SpeciesDefinition static-fact audit/extension before first canonical catalog publication. The accepted TASK-092 direction covers height, weight, egg groups, gender ratio, egg cycles, EV yield and base friendship as factual/non-executable Species/form data, while keeping their gameplay mechanics separate. After TASK-092 acceptance, TASK-087 implements the canonical catalog. TASK-022 rule design does not require a fully populated catalog, but TASK-087 must complete before TASK-024/034 and before authoritative Move-acquisition implementation consumes canonical Species/Move/Learnset data.
 
 **Next task after TASK-003 acceptance:** `TASK-022 — Inventory / Item Model Spec`.
 
@@ -42,24 +42,24 @@
 | `TASK-019` Pokémon Instance / Collection / Team Spec | DONE — exact-snapshot QA/IA clear; Human Owner accepted SPEC-005 in full and authorized repository completion/history on 2026-09-17 |
 | `TASK-020` Collection & Team Domain/Persistence Implementation | DONE — owner validation clear; QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; PM / Architecture Coordinator accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 | `TASK-021` XP / Level / Progression Rules Spec | DONE — exact-snapshot QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; Human Owner accepted SPEC-006 in full and authorized repository completion/history on 2026-09-18 |
-| `TASK-093` Gameplay Systems & Player Experience Consultant Governance | REVIEW — independent QA READY, P0/P1/P2/P3 0/0/0/0; Human Owner acceptance + repository-history authorization pending |
+| `TASK-093` Gameplay Systems & Player Experience Consultant Governance | DONE — independent QA READY, P0/P1/P2/P3 0/0/0/0; Human Owner accepted and authorized repository history; governance integrated on 2026-09-18 |
 
 **Next product milestone:** define v1 Inventory / Item semantics while accepting the intrinsic Species reference-data extension and materializing the canonical Species/Move/Learnset catalog; then close authoritative Move acquisition/eligibility and production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-093`.
-- DONE: 22.
+- DONE: 23.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
-- REVIEW: 1.
+- REVIEW: 0.
 - FIX: 0.
 - ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 71.
-- Task-count completion: **22 / 94 = 23.4%**.
+- Task-count completion: **23 / 94 = 24.5%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -259,16 +259,16 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 
 ### EPIC-00 — Governance, Foundation & Project Control
 
-**Status:** IN PROGRESS — accepted governance baseline remains valid; TASK-093 adds advisory GSC/PXE consultation roles
+**Status:** DONE — accepted governance baseline now includes advisory GSC/PXE consultation roles
 **Outcome:** provider-independent governance, validated monorepo/runtime foundation and a visible project-control plane.
-**Human gate:** TASK-003 baseline acceptance remains valid; Human Owner approved TASK-093 governance direction; independent QA is clear and Human Owner acceptance + repository-history authorization remain pending.
+**Human gate:** completed — TASK-003 baseline acceptance remains valid; Human Owner accepted TASK-093 and authorized repository history on 2026-09-18.
 
 #### STORY-00.1 — Agent governance
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
 | `TASK-000` Agent Governance Baseline | B | DONE | PM → ChatGPT | QA + IA | none | Completed | — | Canonical roles; authority matrix; tool adapters; Git gates |
-| `TASK-093` Gameplay Systems & Player Experience Consultant Governance | B | REVIEW | PM → ChatGPT | **QA READY — P0/P1/P2/P3 0/0/0/0**; IA N/A because advisory-only authority does not alter security-sensitive/irreversible approval paths | none | **HUMAN direction approved; acceptance + history authorization pending** | TASK-000/003 | Add GSC/PXE as `RECOMMEND`-only consultants; trigger policy; role boundaries; task/workflow metadata; consultation handoff; roadmap wiring; no implementation/approval authority |
+| `TASK-093` Gameplay Systems & Player Experience Consultant Governance | B | DONE | PM → ChatGPT | **QA READY — P0/P1/P2/P3 0/0/0/0**; IA N/A because advisory-only authority does not alter security-sensitive/irreversible approval paths | none | Completed — Human Owner accepted and authorized repository history on 2026-09-18 | TASK-000/003 | GSC/PXE added as `RECOMMEND`-only consultants; trigger policy; role boundaries; task/workflow metadata; consultation handoff; roadmap wiring; no implementation/approval authority |
 
 #### STORY-00.2 — Engineering/runtime foundation
 
@@ -283,7 +283,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 |---|---|---|---|---|---|---|---|---|
 | `TASK-003` Project Control Roadmap | B | DONE | PM → ChatGPT | QA | external-skill discovery only | Completed — original Human acceptance preserved; corrective lint QA clear; repository completion authorized/completed | TASK-000/001/002 | Hierarchy; sequencing; roles/agents/skills; Markdown truth; deterministic HTML generator/check; dashboard; Node-script ESLint environment correction |
 
-**Exit:** original Human acceptance remains valid. TASK-093 closes when consultant governance is QA-clear, repository history is explicitly authorized and the change is integrated; no accepted product/game spec is reopened by this maintenance task.
+**Exit:** original Human acceptance remains valid. TASK-093 is integrated and DONE; no accepted product/game spec was reopened by this maintenance task.
 
 ---
 
