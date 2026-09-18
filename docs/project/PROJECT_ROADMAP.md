@@ -10,9 +10,9 @@
 
 **Project phase:** Foundation, core domain/combat foundation, and the PostgreSQL persistence, identity and security foundation are complete.
 
-**Current work:** `TASK-018 — Persistence/Auth Recovery, Contract & Baseline Auditability Suite` is DONE and integrated. `TASK-019 — Pokémon Instance / Collection / Team Spec` is the next planned task and is not implementation-authorized until its Class A Definition of Ready and Human product-rules gate are completed.
+**Current work:** `TASK-019 — Pokémon Instance / Collection / Team Spec` is READY. Exact-snapshot QA and Independent Auditor review are clear, and the Human Owner accepted SPEC-005 in full on 2026-09-17.
 
-**Current action:** Materialize and review TASK-019 for Definition of Ready; resolve its product-rule decisions and required Human acceptance before implementation can become READY.
+**Current action:** Hold the approved TASK-019 / SPEC-005 READY snapshot for the separate Human Owner repository-history/completion authorization gate. Do not commit/push/merge or start TASK-020 from this metadata transition alone.
 
 **Next task after TASK-003 acceptance:** `TASK-019 — Pokémon Instance / Collection / Team Spec`.
 
@@ -46,11 +46,12 @@
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-086`.
 - DONE: 19.
-- READY: 0.
+- DRAFT: 0.
+- READY: 1.
 - ACTIVE: 0.
 - REVIEW: 0.
 - ACCEPTANCE: 0.
-- PLANNED: 68.
+- PLANNED: 67.
 - Task-count completion: **19 / 87 = 21.8%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
@@ -388,15 +389,15 @@ content under the SPEC-002 rulesVersion envelope.
 
 ### EPIC-03 — Trainer, Collection, Team, Inventory & Progression
 
-**Status:** PLANNED
+**Status:** READY — SPEC-005 approved by Human Owner after exact-snapshot QA + IA clearance; repository-history/completion remains separately gated
 **Outcome:** a persistent trainer owns Pokémon/items, builds teams and progresses through server-authoritative rules.
 
 #### STORY-03.1 — Pokémon ownership and team model
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-019` Pokémon Instance / Collection / Team Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepts product rules** | TASK-004/006/008/013 | Instance identity; level/stats/Ability snapshot and selection rules; ownership; persistent selected Move Loadout/order + mutation rules constrained by SPEC-003; roster/team constraints |
-| `TASK-020` Collection & Team Domain/Persistence Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG` | PM acceptance | TASK-019/014 | Domain services; repositories; persist/validate ordered selected Move Loadout; team validation; atomic updates; tests |
+| `TASK-019` Pokémon Instance / Collection / Team Spec | A | READY | PM → ChatGPT | QA + **IA concurrency/integrity spot-check** | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **HUMAN accepted SPEC-005 in full on 2026-09-17** | TASK-004/006/008/013 | APPROVED SPEC-005: owner-derived private Collection; instance state boundaries; selected Ability cardinality/eligibility; persistent ordered `1..4` Move Loadout + mutation authority; saved Team `0..6` dense ordered slots, duplicate/reuse rules and OCC mutation; persistence handoff for TASK-020 |
+| `TASK-020` Collection & Team Domain/Persistence Implementation | B | PLANNED | LD → Copilot CLI | QA + **IA concurrency/integrity implementation audit** | `SK-TDD`, `SK-PG` | PM acceptance | TASK-019/014 | Domain services; repositories; persist/validate ordered selected Move Loadout; team validation; atomic updates; tests |
 
 #### STORY-03.2 — Progression, inventory and reward integrity
 
