@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: READY
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT
@@ -249,17 +249,17 @@ Final pre-implementation gate evidence:
 - Backfilling order into currently unordered Team membership by UUID/timestamp would invent gameplay
   semantics from infrastructure artifacts.
 - Requiring exactly one non-null Ability before broad AbilityRule coverage exists could make otherwise
-  valid Pokémon unusable; the DRAFT therefore recommends zero-or-one selected Ability.
+  valid Pokémon unusable; approved SPEC-005 therefore uses zero-or-one selected Ability.
 - Allowing the same Pokémon in multiple saved Teams simplifies presets but requires later live-mode
   orchestration to pin/validate the chosen Team rather than treating saved membership as an exclusive
   lock.
-- Repository-history operations remain separately Human Owner gated.
+- Repository-history/completion was explicitly authorized by the Human Owner on 2026-09-17.
 
 ## Expected files / boundaries
 
 ```text
 docs/specs/SPEC-005-pokemon-instance-collection-team.md
-tasks/active/TASK-019-pokemon-instance-collection-team-spec.md
+tasks/done/TASK-019-pokemon-instance-collection-team-spec.md
 docs/project/PROJECT_ROADMAP.md
 docs/project/PROJECT_ROADMAP.html
 ```
@@ -269,11 +269,12 @@ is authorized by TASK-019.
 
 ## Completion
 
-TASK-019 is READY. Independent QA and the required Independent Auditor review are clear, and the
-Human Owner explicitly accepted SPEC-005 in full on 2026-09-17. The Class A pre-implementation
-product/rules gate is satisfied. Repository-history/completion operations remain separately Human
-Owner gated; no commit, push, merge or TASK-020 implementation is authorized by this metadata-only
-transition.
+TASK-019 is DONE. Independent QA and the required Independent Auditor review are clear, and the Human
+Owner explicitly accepted SPEC-005 in full on 2026-09-17. The accepted READY snapshot was committed
+as `c49bff40c978f2f0a2cd581dce0d8994afa70013`, pushed on the TASK-019 spec branch, fast-forward
+integrated into canonical `main`, and pushed after explicit Human Owner repository-history/completion
+authorization. This DONE metadata records governed closure only; TASK-020 implementation has not
+started and still requires its own materialized task and Definition of Ready.
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.
