@@ -3,7 +3,7 @@
 - Status: APPROVED
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
-- Extends: `SPEC-002 — Static Game Data, Versioning & PokémonDB Ingestion`
+- Extends: `SPEC-002 — Static Game Data, Versioning & Canonical Pokémon Data Ingestion`
 - Related specs:
   - `SPEC-001 — Core Domain Model`
   - `SPEC-005 — Pokémon Instance, Collection & Team v1`
@@ -84,6 +84,12 @@ schema v1 fail closed on v2; there is no best-effort field omission.
 
 Because TASK-087 depends on TASK-092, the intended first canonical Species catalog publication may
 start directly at schema v2. This does not mutate or reuse the v1 contract identity.
+
+> **2026-09-19 compatibility note:** the Human-approved SpeciesDefinitionV2 field contract remains
+> unchanged, but SPEC-002 later advanced the overall static-bundle `schemaVersion` to `3` when the
+> canonical provenance contract added per-Move fact-source roles. References below to a
+> "schema-v2 bundle" describe the Species extension's original version boundary; TASK-087's current
+> published bundle contract is schemaVersion `3`, carrying the same SpeciesDefinitionV2 shape.
 
 ## 5. Extended SpeciesDefinition
 
@@ -364,7 +370,8 @@ particular, it must not promote:
 - min/max stat calculator outputs shown near Base Stats;
 - evolution/breeding/location text into v2 scalar fields.
 
-No alternate provider fallback is introduced.
+Source selection follows SPEC-002's Human-approved hierarchy: Bulbapedia is primary and PokémonDB
+is complementary. No unapproved-provider or silent cross-provider override is introduced.
 
 ## 14. Adjacent-field classification audit
 
@@ -426,7 +433,7 @@ SpeciesDefinition fields.
 
 ## 16. Validation and publication invariants
 
-Before TASK-087 can publish a schema-v2 bundle:
+Before TASK-087 can publish a bundle carrying this SpeciesDefinitionV2 contract:
 
 1. every accepted persistent `SpeciesDefinition` roster entry contains all seven newly added
    required fields plus the v2 `baseExperience` representation;
@@ -439,7 +446,7 @@ Before TASK-087 can publish a schema-v2 bundle:
 7. all form records resolve their own facts without `baseSpeciesId` fallback;
 8. source discovery/extraction/normalization/provenance inventories reconcile under SPEC-002;
 9. canonical serialization/hash reproducibility tests include the new/refined fields;
-10. consumers that do not support `schemaVersion = "2"` fail closed;
+10. consumers that do not support the bundle's exact current `schemaVersion` fail closed;
 11. no executable breeding/EV/friendship/hatching/evolution behavior is inferred from presence of
     the static facts.
 12. the intended persistent `SpeciesDefinition` roster has been audited for applicability and
@@ -450,8 +457,9 @@ Before TASK-087 can publish a schema-v2 bundle:
 
 ## 17. Implementation handoff to TASK-087
 
-TASK-087 must implement the accepted v2 schema in `packages/game-data` and the controlled
-PokémonDB DATA-only normalizer. It must not:
+TASK-087 must implement the accepted SpeciesDefinitionV2 contract in `packages/game-data` and the
+controlled factual normalizer. The current overall bundle schemaVersion is governed by SPEC-002.
+It must not:
 
 - add a PostgreSQL species catalog as substitute authority;
 - fetch PokémonDB at runtime;
@@ -580,17 +588,20 @@ Source `—` must not be represented as:
 - null/undefined;
 - an empty known Ability-assignment set;
 - a base-form or sibling value copied because the exact-form block omitted the fact;
-- an alternate-provider fallback.
+- an unapproved-provider or unreviewed cross-provider substituted value.
 
 A page-level/shared fact may be associated with more than one exact-form record only where the
-PokémonDB structure or an accepted mapping unambiguously scopes that fact to those exact forms and
+accepted source structure or an accepted mapping unambiguously scopes that fact to those exact forms and
 the provenance directly supports the association. This is exact-form source association, not
 `baseSpeciesId` inheritance. Copying a base/sibling value merely because a form-specific block
 omits it remains forbidden.
 
-Bulbapedia may corroborate form/mechanic semantics during GSC/PXE consultation under the accepted
-consultant reference-source policy, and Smogon may inform PvP-specific consultation. Neither source
-silently replaces PokémonDB as the canonical ingestion provider under SPEC-002.
+Bulbapedia is the primary canonical factual/reference authority under SPEC-002, including historical
+form/mechanic change evidence. PokémonDB may complement it where a fact is absent or materially
+clearer as structured data. Smogon may inform PvP-specific consultation only. The Human Owner's
+2026-09-20 source-policy resolution makes a structured Bulbapedia value authoritative when PokémonDB
+disagrees; only structural identity/binding ambiguity, missing-primary substitution, or ambiguity in
+the Bulbapedia interpretation remains a Human gate.
 
 ## 19. Acceptance
 

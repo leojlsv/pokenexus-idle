@@ -137,6 +137,10 @@ importers:
         version: 3.2.7(@types/node@24.13.4)
 
   packages/game-data:
+    dependencies:
+      '@pokenexus/game-types':
+        specifier: workspace:*
+        version: link:../game-types
     devDependencies:
       typescript:
         specifier: ^5.7.3

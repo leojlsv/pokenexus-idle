@@ -12,7 +12,7 @@
 
 **Current work:** `TASK-022 — Inventory / Item Model Spec` is **DONE** with SPEC-007 **APPROVED** and integrated after Human Owner repository-history authorization. `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` is also **DONE** and integrated.
 
-**Current action:** TASK-087 — Static Game Data Catalog & Ingestion Implementation may proceed through its own lifecycle. TASK-023 — Reward Ledger & Integrity Model and TASK-088 — Move Acquisition / Eligibility Rules Spec are also dependency-clear after TASK-022 completion and may be materialized independently. TASK-024 remains gated on TASK-023 and TASK-087.
+**Current action:** TASK-087 — Static Game Data Catalog & Ingestion Implementation is **ACCEPTANCE** with post-promotion independent QA READY `0/0/0/0` and delegated Class B acceptance **ACCEPTED**. Human-approved `game-data-core-kanto-johto-v1` is permanently published and reloaded; the Human Owner authorized repository-history completion on 2026-09-21, and the commit/push/main-integration sequence is now in progress. TASK-023 and TASK-088 remain independently dependency-clear.
 
 **Next task after TASK-003 acceptance:** `TASK-087 — Static Game Data Catalog & Ingestion Implementation`.
 
@@ -55,10 +55,10 @@
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 0.
+- ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 0.
-- PLANNED: 69.
+- PLANNED: 68.
 - Task-count completion: **25 / 94 = 26.6%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
@@ -299,14 +299,15 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 |---|---|---|---|---|---|---|---|---|
 | `TASK-004` Domain Glossary & Core Model Spec | A | DONE | PM → ChatGPT | QA; IA optional | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted spec | TASK-003 | Pokémon/combatant identity; stats; moves; types; abilities; items; effects; teams; PvE world/map/zone/encounter vocabulary; invariants; frontend execution-surface alignment; upstream Pokémon data-source policy alignment; Pokémon reference-skill policy |
 | `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
-| `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; PokémonDB DATA-only extraction whitelist vs local normalized fields; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset v1 schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or alternate-provider fallback |
+| `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; Bulbapedia-primary / PokémonDB-complementary DATA-only source policy; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or opportunistic provider fallback |
 | `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | DONE | PM → ChatGPT | DoR QA READY `0/0/0/0`; original final QA NOT READY `0/1/0/0`; corrected option-1 Pokémon-domain review PASS advisory `0/0/0/0`; final independent QA READY `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human Owner accepted SPEC-008 v2 direction, approved **option 1**, and authorized repository history/completion on 2026-09-18 | TASK-006/093 | SPEC-008 APPROVED and integrated. Persistent Species/forms keep the applicable v2 contract and genuine SourceFact states. Mega/Eternamax/battle-only transformations are explicit excluded/deferred source inventory, not separately captured/persisted SpeciesDefinition identities and do not force fake availability wrappers. No transformation-profile catalog is added in schema v2; activation/reversion and the future transformed profile remain future rulesVersion/schema-extension work |
-| `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | **HUMAN canonical-data sample validation** | TASK-005/006/092 | Implement `packages/game-data` schemas/loaders plus controlled PokémonDB DATA-only extractor/normalizer; canonical Species/form including all TASK-092 accepted static facts, Move, Type, Ability, Item and Learnset artifacts; accepted mapping roster; completeness reconciliation; deterministic serialization/hashes/provenance; immutable `gameDataVersion` publication; no runtime web fetch, assets/prose or alternate-provider fallback |
+| `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | ACCEPTANCE | LD → ChatGPT delegated worker (Copilot quota-blocked) | Pre-promotion and post-promotion independent QA READY `0/0/0/0`; delegated Class B acceptance **ACCEPTED** | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Human Owner approved exact review seal `sha256:91b646453a56ba1496810e1f55f5bac242dd0ce68790d62ba61ec8b4b0e15377`; canonical promotion completed; repository-history completion authorized 2026-09-21 | TASK-005/006/092 | Canonical schemas/validators/loaders; deterministic hashes/provenance; Bulbapedia-primary + PokémonDB-complementary controlled ingestion; adopted local mapping roster; immutable `game-data-core-kanto-johto-v1` publication; battle-only transformations excluded/deferred; no runtime web fetch or alternate-provider fallback |
 
-**Pokémon data-source policy for TASK-006:** PokémonDB (`pokemondb.net`) is the project's
-primary **external factual source of truth** for Pokémon reference data selected by the
-Human Owner. PokeNexus runtime/game logic must never depend on live PokémonDB requests.
-Instead, an explicit ingestion run produces immutable local snapshots which are validated,
+**Pokémon data-source policy for TASK-006/TASK-087:** the current SPEC-002 hierarchy is
+Bulbapedia-primary with PokémonDB as an approved complementary factual source. A complementary
+source may fill explicitly permitted gaps or support structural cross-checking, but it never
+silently overrides a structured Bulbapedia fact. PokeNexus runtime/game logic must never depend on
+live upstream requests. Controlled ingestion produces immutable local snapshots which are validated,
 normalized and then published through the accepted `gameDataVersion` / checksum model.
 
 The ingestion scope is **DATA only**. It must not collect or publish images, sprites,
@@ -316,11 +317,10 @@ must not be published as game data. "Raw snapshot" in this project means raw **e
 fields**, not a preserved copy of the source page.
 
 The existing `pokemondb_moves_crawler_v2.py` from the Human Owner's prior project is an
-implementation reference for retry/backoff, cache, checkpoint/resume, diagnostics,
-atomic canonical promotion and deterministic fingerprinting. TASK-006 must adapt it to
-the PokeNexus source policy rather than copy it unchanged: canonical Pokémon reference
-fields must not silently fall back to PokeAPI or another provider. Missing/conflicting
-PokémonDB data becomes a validation finding requiring an explicit project decision.
+implementation reference only for operational patterns such as retry/backoff, cache,
+checkpoint/resume, diagnostics, atomic promotion and deterministic fingerprinting. Its source
+fallback behavior is not authoritative for PokeNexus. Provider choice and disagreement handling
+must follow SPEC-002; PokeAPI, Smogon or other opportunistic fallback remains disallowed.
 
 The TASK-006 crawler/exporter sub-task must:
 
@@ -333,20 +333,20 @@ The TASK-006 crawler/exporter sub-task must:
   source URL, retrieval timestamp, parser version and source-content hash;
 - be manually/on-demand or controlled-CI ingestion only, never a production/runtime fetch;
 - require validation before a snapshot can become canonical PokeNexus game data;
-- never silently fall back to another upstream source when PokémonDB disagrees or is
-  unavailable; discrepancies must be escalated for explicit Human Owner/PM decision.
+- never silently substitute an unapproved provider or let a complementary source override a
+  structured primary-source fact; unresolved identity/binding/source gaps fail closed.
 
 **Accepted TASK-006 DATA whitelist v1:**
 
 The approved initial ingestion profile is deliberately narrow. A field belongs in the baseline only when an
-already-planned PokeNexus system needs the factual input. Additional PokémonDB data can be added later by
+already-planned PokeNexus system needs the factual input. Additional upstream data can be added later by
 publishing a new immutable snapshot/schema version; "available upstream" is not sufficient justification.
 
 **Approved baseline v1:**
 
 - **Species/form identity:** `SpeciesId` remains the canonical PokeNexus identity for the exact accepted
   static definition; National Dex number is non-unique source/reference data, with source slug/name,
-  introduced generation, form/variant label and generation/game qualifier captured where PokémonDB exposes
+  introduced generation, form/variant label and generation/game qualifier captured where an approved source exposes
   them. Independently addressable accepted forms receive distinct `SpeciesId` values; no separate `FormId`
   is introduced by TASK-004;
 - **Species battle/progression reference:** current types, six base stats, eligible Abilities and

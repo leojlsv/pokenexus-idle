@@ -1,4 +1,4 @@
-# SPEC-002 — Static Game Data, Versioning & PokémonDB Ingestion
+# SPEC-002 — Static Game Data, Versioning & Canonical Pokémon Data Ingestion
 
 - Status: APPROVED
 - Owner: Human Owner
@@ -39,7 +39,7 @@ produce a new rule identity.
 - define deterministic publication/checksum behavior;
 - define provenance and validation requirements;
 - define species/form normalization without adding `FormId`;
-- define the DATA-only PokémonDB ingestion contract;
+- define the canonical Pokémon factual-source ingestion contract;
 - ensure historical/replayable systems can pin exact accepted interpretation;
 - preserve explicit ownership boundaries for combat, persistence, inventory and PvE content.
 
@@ -52,7 +52,7 @@ produce a new rule identity.
 - define persistence tables or network payloads;
 - define Team/loadout/inventory behavior;
 - define PvE Zone/Hunt/Encounter content;
-- import every PokémonDB field merely because it exists upstream.
+- import every upstream field merely because it exists at a source provider.
 
 ## 1. Version identities
 
@@ -68,6 +68,10 @@ compatibility from string ordering.
 Schema compatibility policy is explicit: a consumer either supports the referenced
 `schemaVersion` or rejects the bundle. There is no best-effort parsing of unsupported schema
 versions in authoritative paths.
+
+**Current implementation contract:** schemaVersion `3`. The v2→v3 transition is the
+Human-approved 2026-09-19 provenance-contract change that adds canonical per-Move fact-source role
+relations without changing `MoveDefinition`.
 
 ### 1.2 `gameDataVersion`
 
@@ -349,37 +353,133 @@ No `FormId` is introduced.
 Generation/game qualifiers describing source facts belong to source/learnset dimensions; they
 do not automatically create another canonical Species identity.
 
-## 6. Move Definition v1
+## 6. Move Definition — Human-approved exact structure
 
-One normalized Move Definition contains at least:
+> **Human capture — 2026-09-18/19:** the MoveDefinition decision sequence is now materially closed.
+> Traditional mainline facts, Core-learnset catalog closure, `power: number | null`,
+> `accuracy: number | null`, inline Type/category/Base PP/target/contact and inline
+> `zaBaseCooldownMs: number | null` are approved.
+>
+> **Target enum capture — 2026-09-19:** exact pre-capture SHA-256
+> `13636DC63FC92776D1F52E080CF3A90643BCE375F449209A4092E18B33270A32`.
+> The Human Owner approved the complete closed `MoveSourceTarget` vocabulary defined below.
+>
+> **Cooldown clarification — 2026-09-18:** the approved Combat Rules v1 already uses per-Move
+> cooldowns rather than PP consumption. The Human Owner then approved **Pokémon Legends: Z-A normal
+> Base Cooldown** as the primary factual reference for PokeNexus cooldown publication whenever the
+> same Move has a clearly mapped usable value there. Base PP remains required because the existing
+> exact **Power + Base PP** curve is the fallback for compatible simple-damage Moves without a
+> usable Z-A Base Cooldown. The resolved `moveCooldownMs` belongs to the immutable MoveRule/rules
+> context, not to factual MoveDefinition. Z-A Speed scaling, wind-up, duration, spatial range,
+> Plus Moves and other real-time semantics are not adopted. Baseline v1 has no PP consumption, no
+> Struggle fallback and no Move Priority.
+>
+> **MoveDefinition checklist capture — 2026-09-18:** the Human Owner selected:
+>
+> - **MAINLINE TRADITIONAL** for non-cooldown Move facts: Scarlet/Violet + DLC first, then the latest
+>   traditional turn-based mainline game where an otherwise unavailable Move has valid data;
+> - **Core-learnset closure** for catalog scope: publish the Moves needed to resolve the approved
+>   Kanto/Johto Core learnsets, regardless of Move introduction generation;
+> - **FIELD-BY-FIELD** approval rather than ratifying the proposed minimal MoveDefinition wholesale;
+> - `power: number | null`, where `null` means no single factual Base Power and never parser
+>   failure/missing required source data;
+> - `accuracy: number | null`, where `null` means no accuracy roll and never parser
+>   failure/missing required source data;
+> - the approved normal Z-A Base Cooldown fact as a **variant field inside MoveDefinition**.
+>
+> **Residual field capture — 2026-09-19:** exact pre-capture SHA-256
+> `9E2D6C8951AEA22851B540552622B267E0F9FB430B0DEFC396C5ABEB51104215`.
+> The Human Owner selected:
+>
+> - `typeId: TypeId` inline;
+> - `category: physical | special | status` inline;
+> - `basePp` inline as a positive integer factual value;
+> - `sourceTarget` inline as a **closed factual turn-based enum**;
+> - `makesContact: boolean` inline;
+> - `zaBaseCooldownMs: number | null` inline, normalized to integer milliseconds; `null` means no
+>   clearly mapped usable normal Z-A Base Cooldown.
+>
+> Exact fact-to-source traceability, including the Z-A source supporting `zaBaseCooldownMs`, remains
+> mandatory under section 11 provenance requirements. Z-A Speed scaling and all other Z-A real-time
+> fields remain excluded.
+
+The accepted MoveDefinition field structure is:
 
 - `id: MoveId`;
-- `sourceName`;
-- `sourceSlug`;
-- `introducedGeneration`;
 - `typeId: TypeId`;
-- `sourceCategory: physical | special | status` as factual upstream reference data;
+- `category: physical | special | status` as the nominal/base factual category;
 - `power: number | null`;
 - `accuracy: number | null`;
-- `pp: number`;
+- `basePp: positive integer`;
+- `sourceTarget: MoveSourceTarget`, using the exact closed factual turn-based enum below;
 - `makesContact: boolean`;
-- structured source target classification;
-- provenance/source references.
+- `zaBaseCooldownMs: number | null`, with non-null values represented as integer milliseconds.
 
-`null` represents a factual source field that is structurally not numeric/applicable (for
-example a status move with no power), not a parser failure. Missing/unparseable required source
-data is a validation error and must not be silently converted to `null`.
+The exact Human-approved `MoveSourceTarget` vocabulary is:
+
+```text
+any-adjacent
+any-other
+self-or-adjacent-ally
+adjacent-ally
+adjacent-foe
+all-adjacent
+all-adjacent-foes
+self-and-allies
+all-allies
+self
+all-pokemon
+random-opponent
+entire-field
+opponents-side
+users-side
+varies
+```
+
+This is factual DATA, not executable targeting semantics. The mapping from `sourceTarget` to the
+accepted `MoveRule.targetScope` set remains immutable/versioned rules content. A factual target
+classification with no accepted executable mapping remains fail-closed/unsupported rather than
+being guessed or coerced.
+
+`sourceName`, `sourceSlug`, `introducedGeneration`, exact source snapshot identity and provenance
+metadata remain governed by the accepted mapping/provenance contracts rather than becoming
+canonical Move identity. Every normalized fact still requires exact source traceability under
+section 11.
+
+For captured fields, `null` is semantic rather than an error sentinel:
+
+- `power = null` means there is no single factual Base Power value for that Move under the accepted
+  snapshot;
+- `accuracy = null` means no accuracy roll;
+- `zaBaseCooldownMs = null` means no clearly mapped usable normal Z-A Base Cooldown, so cooldown
+  publication proceeds to the approved fallback path;
+- missing/unparseable required source data remains a validation error and must never be silently
+  converted to `null`.
 
 Move priority is intentionally not in baseline v1. TASK-008 may explicitly request it if the
 accepted PokeNexus timing/action model needs the factual source field.
 
-`sourceCategory` does not define the executable PokeNexus Move category model. TASK-008 may
-adopt, map or reject the upstream category when defining combat semantics.
+The factual `category` field does not by itself define every executable category behavior. The
+baseline simple-damage compiler may mirror it, while any runtime category override remains explicit
+versioned MoveRule semantics.
 
 Effect prose, Z-Move prose, historical change prose and game-description prose are excluded
 from canonical DATA. TASK-008 owns executable semantics.
 
 ## 7. Learnset v1
+
+> **Human amendment — 2026-09-18:** the Core gameplay policy is **modern baseline + explicitly
+> approved PokeNexus adjustments**. Historical generation/game learnset material may still be
+> retained as source/provenance/review evidence, but it does not automatically become the playable
+> Core learnset.
+>
+> **Human amendment — 2026-09-20 (LEARNSET-BASELINE-01):** for the explicit Kanto/Johto Core
+> (National Dex `1..251`), use the canonical Generation IX Scarlet/Violet learnset page when that
+> surface exists. Only an exact HTTP `404` for that canonical page may activate the approved
+> Generation VIII fallback, and that fallback selects only Brilliant Diamond/Shining Pearl evidence.
+> A successful-but-malformed Generation IX response, access/policy failure, transient/server error or
+> any other non-404 condition fails closed and must not trigger fallback. Sword/Shield, USUM and
+> Sun/Moon are not automatic Learnset fallbacks.
 
 A normalized learnset entry contains:
 
@@ -415,9 +515,10 @@ Type Definition contains at least:
 - `sourceSlug`;
 - provenance/source references.
 
-The baseline stores the **current** PokémonDB type-effectiveness matrix as factual reference
-data. Each ordered attack-type/defense-type pair appears exactly once with one source factual
-multiplier from the accepted current matrix domain.
+The baseline stores the **modern approved** type-effectiveness matrix as factual reference data.
+Bulbapedia is the primary factual authority and PokémonDB may complement/cross-check under the
+source policy in section 10. Each ordered attack-type/defense-type pair appears exactly once with
+one accepted factual multiplier from the modern matrix domain.
 
 This matrix is not automatically executable combat math. TASK-008 must explicitly decide how
 PokeNexus maps/uses type-effectiveness facts, including stacking, STAB, immunities and any
@@ -469,11 +570,24 @@ Machine/item relationships are deferred until an accepted owning task demonstrat
 
 ### 11.1 Source provider
 
-Canonical Pokémon reference fields in v1 use provider identity `pokemondb`.
+Canonical Pokémon reference fields use an explicit ordered source policy:
 
-No silent PokeAPI or alternate-provider fallback is permitted. If PokémonDB is unavailable,
-ambiguous, conflicting or missing an approved field, ingestion produces a validation finding
-and stops canonical promotion pending an explicit PM/Human Owner decision.
+1. `bulbapedia` is the **primary factual/reference authority**, especially for generational
+   history, change logs, historical Move/Species/Type facts, mechanic introduction/removal and
+   other facts whose correct interpretation depends on generation context;
+2. `pokemondb` is an approved **complementary factual source** for fields that are absent,
+   materially less explicit or easier to verify structurally there, and for cross-checking;
+3. a complementary source never silently overrides a Bulbapedia fact;
+4. **Human Owner resolution captured 2026-09-20:** when Bulbapedia provides the structured factual
+   value for an accepted field, that Bulbapedia value is authoritative even if PokémonDB disagrees;
+   PokémonDB disagreement does not veto or replace that value. Structural identity/binding ambiguity,
+   a missing Bulbapedia fact that would require complementary substitution, or an ambiguous Bulbapedia
+   interpretation still fails closed until explicitly resolved;
+5. every normalized fact must remain traceable through provenance to the exact source record(s)
+   that support the accepted value.
+
+This source hierarchy does not authorize automatic adoption of source values. Canonical PokeNexus
+structure, behavior, data selection and accepted values remain Human-gated decisions.
 
 ### 11.2 Source record
 
@@ -491,6 +605,46 @@ The provenance manifest also contains the deterministic source/discovery invento
 in section 13. It is immutable once published and is bound into `bundleHash` through
 `provenanceHash`.
 
+### 11.3 Move fact-source roles
+
+The Human Owner approved a canonical provenance-side relation on 2026-09-19. This relation is part
+of `ProvenanceManifest`; it **does not add fields to MoveDefinition**.
+
+For every canonical Move, `moveFactSources[]` contains exactly one relation:
+
+```text
+MoveFactSourceRelation {
+  moveId
+  mainline {
+    selectedGame
+    sourceRecordId
+  }
+  sourceTargetSourceRecordId
+  makesContactSourceRecordId
+  zaBaseCooldownSourceRecordId
+}
+```
+
+`mainline.selectedGame` is closed to the already-approved traditional snapshot choices:
+
+- `scarlet-violet`;
+- `brilliant-diamond-shining-pearl`;
+- `sword-shield`;
+- `ultra-sun-ultra-moon`;
+- `sun-moon`.
+
+Validation requires every role SourceRecord to exist and also appear in the Move's aggregate
+`sourceRecordIds`. The mainline role identifies the exact accepted snapshot source; target/contact
+roles identify the complementary PokémonDB Move-page source; the Z-A role identifies the exact
+canonical Z-A move-list source. The relation is canonical provenance and therefore participates in
+`provenanceHash`.
+
+Historical fallback does not become valid merely because a generation-level availability page is
+referenced. When BDSP/SwSh/USUM/SM is selected, the mainline role must ultimately point to evidence
+that proves the selected game's Type/category/Base PP/Power/Accuracy facts. If a generation-level
+row cannot prove those facts because of a possible intra-generation delta, publication remains
+fail-closed until selected-game-specific scalar proof is available.
+
 Publishing the source hash does not mean publishing source HTML. HTML remains transient
 working/cache input and may be discarded after validation/promotion according to local tooling
 policy.
@@ -504,17 +658,14 @@ The crawler/exporter is a build/data-maintenance tool, not a runtime dependency.
 - manually/on demand; or
 - in an explicitly controlled CI ingestion workflow.
 
-Web/API/realtime/gameplay runtime must not fetch PokémonDB.
+Web/API/realtime/gameplay runtime must not fetch Bulbapedia, PokémonDB or another external factual
+provider.
 
 ### 12.2 Access-policy gate
 
-Every ingestion run must retrieve/evaluate the current `https://pokemondb.net/robots.txt`
-before crawling approved pages.
-
-As observed during TASK-006 drafting on 2026-09-15, the current public policy includes
-`Crawl-delay: 2` for `User-agent: *` and blocks specific PokéBase search/revision paths. This
-observation is not a permanently hard-coded entitlement: the crawler must honor the policy
-that exists at execution time.
+Every ingestion run must retrieve/evaluate the current access policy/robots rules for every
+provider it will crawl before requesting approved pages. Bulbapedia and PokémonDB are independent
+providers and each provider's current policy must be evaluated separately at execution time.
 
 Rules:
 
@@ -524,7 +675,9 @@ Rules:
 - cache already-fetched pages;
 - exponential backoff with jitter for transient failures/429/5xx;
 - fail closed if robots/access policy cannot be read or interpreted safely;
-- do not bypass blocks through alternate user agents, mirrors or providers.
+- do not bypass provider-specific blocks through alternate user agents or mirrors;
+- using PokémonDB as the approved complementary source is not a bypass for Bulbapedia access
+  policy and must follow the source hierarchy in section 11.1.
 
 ### 12.3 Parser behavior
 
@@ -533,7 +686,9 @@ Rules:
 - structural selector drift that affects required data is a validation/parser failure;
 - image `alt` text must not be used as a canonical DATA fallback;
 - no OCR/screenshot-derived canonical fields;
-- no editorial prose extraction as executable data;
+- prose may be used as factual/historical evidence where Bulbapedia is the accepted authority for
+  a generation change or fact that is not available as a structured field, but prose must never
+  be converted directly into executable game behavior without an accepted PokeNexus rule decision;
 - unknown/unapproved extracted fields are rejected or omitted before raw-extracted snapshot
   publication according to the schema whitelist; they never silently enter normalized data.
 
@@ -551,7 +706,8 @@ Only the normalized validated candidate is eligible for canonical publication.
 Checkpoint/resume, retry/backoff, cache, diagnostics, atomic promotion and deterministic
 fingerprinting patterns from the Human Owner's prior `pokemondb_moves_crawler_v2.py` may be
 adapted. Its historical PokeAPI fallback and image-alt fallback behavior are explicitly
-incompatible with this specification and must not be copied.
+incompatible with this specification and must not be copied. Provider selection must follow the
+approved Bulbapedia-primary / PokémonDB-complementary policy rather than opportunistic fallback.
 
 ## 13. Validation requirements
 
@@ -581,14 +737,28 @@ Before publication, validation must at minimum prove:
 - Ability assignments resolve;
 - base-species references resolve and do not create invalid cycles.
 
-### Moves
+### Moves — Human-approved structure and source selection
 
-- Type reference resolves;
-- category belongs to accepted source factual enum;
-- `power`/`accuracy` nullability follows structural source meaning, not parser failure;
-- PP valid under the factual schema;
-- contact flag present;
-- target classification recognized.
+Canonical Move validation now requires:
+
+- `id` resolves as a canonical MoveId;
+- `typeId` resolves as a canonical TypeId;
+- `category` is exactly `physical | special | status`;
+- `power` is numeric or semantic `null`; malformed/unparseable source data is not `null`;
+- `accuracy` is numeric or semantic `null`; malformed/unparseable source data is not `null`;
+- `basePp` is a positive integer;
+- `sourceTarget` is present and validates against the exact 16-member Human-approved factual enum;
+- `makesContact` is boolean;
+- `zaBaseCooldownMs` is integer milliseconds or semantic `null`; `null` means no clearly mapped
+  usable normal Z-A Base Cooldown and therefore permits the approved fallback path;
+- non-cooldown `typeId/category/basePp/power/accuracy` facts are selected Bulbapedia-primary under
+  `MOVE-01`: latest/final patched Scarlet/Violet + DLC first, then BDSP → Sword/Shield → USUM →
+  Sun/Moon only when SV is unusable; Legends: Arceus and Let's Go are not traditional fallback
+  candidates;
+- `sourceTarget` and `makesContact` may use PokémonDB as structured complementary evidence where the
+  selected Bulbapedia availability surface does not expose those facts; it never overrides the
+  selected Bulbapedia scalar facts;
+- provenance remains sufficient to trace every accepted fact to its exact supporting source record.
 
 ### Learnsets
 
@@ -609,7 +779,7 @@ Before publication, validation must at minimum prove:
 - every normalized source-backed record traces to at least one source record;
 - every source record has URL/fetchedAt/parser version/source-content hash;
 - no forbidden asset/editorial/layout fields in raw extracted or normalized output;
-- no alternate-provider canonical data silently mixed into the bundle.
+- no unapproved-provider data or unresolved cross-provider disagreement silently mixed into the bundle.
 
 Any required validation failure blocks canonical publication.
 
@@ -628,6 +798,23 @@ catalog/source surface:
 - `normalizedSourceKeys` — source keys represented in normalized candidate records;
 - explicit excluded/deferred keys with a policy reason where the approved profile intentionally
   does not publish a discovered upstream entity/form.
+- when an approved primary provider exposes a structured form identity that has no exact
+  complementary-provider source key yet, the review profile may stage that exact provider form
+  label as excluded/deferred only if the label is present in the fetched primary evidence. Such a
+  provider-only disposition receives a deterministic provider-form source key, is bound to the
+  primary source record, is included in `discoveredSourceKeys` and the reconciled inventory hash,
+  and must not create a normalized record or candidate mapping merely to satisfy completeness.
+  If the complementary provider already exposes the exact form identity, the normal discovered
+  source key/disposition path is required instead.
+- for a structured primary Species field, a hidden zero/placeholder row for an exact persistent
+  form is evidence that the primary page does not expose a usable form-specific value for that
+  field, not evidence that the base value is shared. A complementary-provider value may fill that
+  exact field only when the parser records that exact placeholder relationship and no explicit
+  primary fact exists for the form; an explicit primary value always wins.
+- pre-Human review artifacts seal the complete excluded/deferred Species source binding, not only
+  a representative sample. The evidence source-key set must exactly match the reconciled Species
+  excluded/deferred inventory, and each relation is bound to its fetched SourceRecord and included
+  in the deterministic review hash.
 
 Validation reconciles these inventories and blocks publication on unexplained:
 
@@ -644,7 +831,7 @@ The canonical provenance manifest stores the reconciled inventory and its determ
 ## 14. Baseline DATA whitelist v1
 
 The whitelist has two different layers. **Source extraction fields** are factual values the
-crawler is allowed to read from PokémonDB. **Normalized/local fields** are generated by
+ingestion pipeline is allowed to read from approved providers under section 11.1. **Normalized/local fields** are generated by
 PokeNexus from accepted mappings and validated references; they are not claimed to have been
 scraped directly from the source.
 
@@ -655,8 +842,13 @@ scraped directly from the source.
 - current species Type source identities and six base-stat numeric values;
 - source Ability names/links and current first/second/hidden assignment structure;
 - catch rate, base experience and growth rate;
-- Move source name/slug, introduced generation, Type source identity, `sourceCategory`, power,
-  accuracy, PP, contact flag and structured target information;
+- Move source name/slug and introduced-generation metadata; selected traditional-mainline Type
+  source identity, nominal category, Base PP, power and accuracy; complementary contact flag and
+  structured target information;
+- normal **Pokémon Legends: Z-A Base Cooldown** for a clearly mapped canonical Move, as an
+  explicitly approved factual variant used only by the cooldown source-resolution policy; this
+  does not whitelist Z-A Speed scaling, wind-up, duration, spatial range, Plus Move values or
+  other Z-A battle fields;
 - structured Learnset source facts: species/form source key, generation/game grouping, Move
   source key, learn method and method qualifiers such as level/machine identifier;
 - current Type source identities and current type-effectiveness reference matrix;
@@ -682,7 +874,7 @@ These are allowed outputs of the normalizer, not direct crawler fields:
 - EV yield/training;
 - gender/breeding/egg data;
 - evolution graph/triggers;
-- PokémonDB encounter/location data;
+- upstream encounter/location data;
 - machine/item relationships;
 - any unowned franchise field.
 
@@ -728,7 +920,9 @@ Implementation following this specification must include deterministic fixtures 
 - at least two distinct canonical ID kinds;
 - base species plus independently addressable alternate form sharing one National Dex number;
 - complete six-stat block;
-- one numeric-damage Move and one Move with structurally null power or accuracy;
+- Move-specific canonical fixtures must cover the captured field structure and representative
+  `sourceTarget` enum members, including at least one value that does not directly map to every
+  baseline `TargetScope` shape;
 - Ability normal/hidden assignment;
 - one structured Learnset method with a level qualifier and one non-level method;
 - Type matrix validation edge cases;
@@ -758,19 +952,69 @@ The Human Owner approved this specification and ratified the following decisions
 7. **Forms:** accepted forms are explicit mapping-roster entries; distinct accepted forms use
    distinct `SpeciesId`, `baseSpeciesId` groups them, no `FormId`, and source presence alone does
    not adopt every cosmetic/transformation form.
-8. **Whitelist v1:** the exact source-extracted vs normalized/deferred/excluded policy in
-   section 14 is accepted.
-9. **Current type chart only:** current PokémonDB effectiveness is factual reference input;
-   historical charts remain deferred and TASK-008 owns executable math.
-10. **Move priority deferred:** not ingested in baseline until TASK-008 explicitly needs it.
+8. **Whitelist v1:** the non-Move source-extracted vs normalized/deferred/excluded policy in
+   section 14 remains accepted. The Move field structure and exact closed `sourceTarget` vocabulary
+   are Human-approved.
+9. **Modern type chart for the Core:** the accepted modern effectiveness matrix is factual
+   reference input; historical charts remain non-Core unless separately adopted and TASK-008 owns
+   executable math.
+10. **Move priority deferred:** Combat Rules v1 does not use Move Priority and explicitly does not
+    require its ingestion. It remains outside the current baseline unless a later accepted
+    rulesVersion requires it.
 11. **Learnset scope:** retain generation/game grouping in the logical snapshot; use physical
     sharding/lazy loading rather than silently limiting baseline to one generation for size.
-12. **Crawler policy:** DATA-only, sequential/conservative, current-robots-gated, fail closed,
-   no alternate-provider fallback and no runtime web dependency.
+12. **Source/crawler policy:** Bulbapedia is the primary factual authority and PokémonDB is an
+   approved complementary source; ingestion remains controlled, current-access-policy-gated,
+   provenance-bound, fail-closed on unresolved disagreement and absent from runtime web paths.
 13. **Completeness gate:** source discovery/mapping/extraction/normalization inventories are
     reconciled and cryptographically bound so partial omissions cannot silently publish.
 14. **Future content extension:** Zone/Encounter/Hunt concrete schemas remain with TASK-033/034
-    and enter through a later schema version rather than being guessed now.
+   and enter through a later schema version rather than being guessed now.
+15. **Human Owner source-policy amendment (2026-09-18):** this explicitly supersedes the earlier
+   PokémonDB-only provider rule. Bulbapedia is preferred because its generation-by-generation
+   descriptions and change histories are required to reason reliably about Pokémon, Move, Type and
+   related factual evolution across Content Packs. PokémonDB remains an approved complementary
+   source where needed.
+16. **Core factual reference capture (2026-09-18):** Kanto/Johto uses modern approved Species/form
+    typing, modern Base Stats, modern Ability assignments and the modern Type chart. Variant-game
+    factual profiles remain isolated unless separately adopted.
+17. **Move factual family vs schema:** traditional mainline is the accepted non-cooldown factual
+    reference policy. The MoveDefinition field structure and exact closed `sourceTarget` enum are
+    Human-approved and must not be replaced by the previous candidate schema/importer.
+    The already-approved Combat boundary additionally fixes the current cooldown policy: use a
+    clearly mapped normal Z-A Base Cooldown as the primary reference when available; otherwise use
+    the existing Power + Base PP curve as fallback for compatible simple-damage Moves; otherwise
+    author an explicit versioned cooldown. Factual Base PP therefore remains available for the
+    fallback; PP is not consumed at runtime; `moveCooldownMs` is rule content/pair-derived output
+    rather than a source field; there is no Struggle fallback or Move Priority in baseline v1.
+18. **Core Learnset direction:** the playable Core starts from a modern Learnset baseline plus only
+    explicitly approved PokeNexus adjustments. For National Dex `1..251`, the selected source
+    baseline is Generation IX Scarlet/Violet when its canonical learnset page exists; exact
+    structural absence (`HTTP 404`) may fall back only to Generation VIII Brilliant
+    Diamond/Shining Pearl. Historical groupings outside that selected fallback remain source
+    evidence and do not automatically define playable acquisition.
+19. **Evolution direction:** when historical methods are awkward or unavailable, PokeNexus may
+    adapt them, but each concrete adaptation still requires an explicit owning design/rule decision.
+20. **Z-A cooldown adoption (2026-09-18/19):** normal Pokémon Legends: Z-A Base Cooldown is an
+    approved factual variant and the primary external cooldown reference when clearly mapped/usable.
+    Its accepted storage is inline `zaBaseCooldownMs: number | null`, normalized to integer
+    milliseconds; `null` means no usable Z-A Base Cooldown. No other Z-A real-time battle field is
+    adopted by this decision.
+21. **MoveDefinition final structure capture (2026-09-18/19):** non-cooldown Move facts use the
+    traditional mainline snapshot policy; catalog coverage closes the approved Kanto/Johto Core
+    learnsets; Power and Accuracy are `number | null`; Type/category/Base PP/target/contact are
+    inline; `sourceTarget` uses the exact 16-member closed enum in section 6; and Z-A Base Cooldown
+    is inline as `zaBaseCooldownMs: number | null`. No MoveDefinition structure Human gate remains.
+22. **MOVE-01 snapshot/fallback capture (2026-09-19):** `Scarlet/Violet + DLC` means the
+    latest/final patched SV+DLC state represented by the versioned Bulbapedia Generation IX
+    availability surface. A Move unusable in SV does not use stored-but-unusable SV scalars; it
+    falls back to the latest usable traditional turn-based mainline snapshot in this order:
+    BDSP → Sword/Shield → USUM → Sun/Moon. Legends: Arceus and Let's Go remain isolated variants.
+23. **Move provenance-role capture (2026-09-19):** the Human Owner approved required
+    `ProvenanceManifest.moveFactSources[]` relations keyed by MoveId with mainline selected game +
+    SourceRecord, complementary sourceTarget/contact SourceRecords and Z-A Base Cooldown
+    SourceRecord. This leaves the exact MoveDefinition structure unchanged and advances the
+    canonical bundle contract to schemaVersion `3` as required by section 1.1.
 
 ## Acceptance
 

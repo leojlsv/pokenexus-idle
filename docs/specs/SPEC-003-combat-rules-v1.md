@@ -75,9 +75,9 @@ references.
 - every selected move must resolve under the pinned game-data/rules pair;
 - a move that does not resolve to executable v1 semantics makes the snapshot invalid rather than
   silently becoming a generic/no-op move;
-- source `pp` is not consumed by PokeNexus battle rules v1; for allowlisted simple-damage Moves it
-  is a factual balance input from the pinned `gameDataVersion`, used together with source `power`
-  by the pinned `rulesVersion` cooldown curve.
+- source `pp` is not consumed by PokeNexus battle rules v1; it remains a factual fallback balance
+  input from the pinned `gameDataVersion`, used with source `power` only when no usable normal
+  Pokémon Legends: Z-A Base Cooldown is available.
 
 There is no `Struggle`/automatic fallback action in v1. A Combatant with no executable move is not
 battle-eligible.
@@ -122,8 +122,8 @@ v1 defines the baseline simple-damage compilation from the factual source values
 - power equals source `power`;
 - numeric accuracy equals source `accuracy`;
 - `accuracy = null` means no accuracy roll / the accuracy gate automatically passes;
-- cooldown is deterministically resolved from exact source `power` + source `pp` plus the pinned
-  rules curve in section 4.1.1; battle execution never recomputes that curve;
+- cooldown is published through the deterministic source-resolution policy in section 4.1.1;
+  battle execution only consumes the already materialized `moveCooldownMs`;
 - critical-hit policy is `normal`;
 - contact tag mirrors source `makesContact`;
 - no additional effect is inferred from name or prose.
@@ -132,12 +132,29 @@ The source target classification must pass an explicit closed mapping into one o
 target scopes. That mapping is versioned rule content. An unknown/ambiguous source target
 classification is unsupported, not guessed, and TASK-009 may not invent a mapping from prose.
 
-### 4.1.1 Simple-damage Move cooldown derivation
+### 4.1.1 Move cooldown source resolution and Power+PP fallback
 
 PokeNexus does **not** consume PP during combat. Instead, the factual source PP acts as a secondary
-frequency/rarity signal when publishing cooldowns for allowlisted simple-damage Moves.
+frequency/rarity signal for the fallback cooldown curve.
 
-The v1 publication curve is exact and uses integer/rational arithmetic only. It deliberately uses
+Human Owner amendment on 2026-09-18: the normal **Pokémon Legends: Z-A Base Cooldown** is the
+primary external factual reference for PokeNexus Move cooldown publication when a canonical Move
+has a clearly mapped, usable normal Z-A cooldown. This adoption is intentionally narrow: PokeNexus
+does **not** import Z-A Speed-based cooldown scaling, wind-up, execution/effect duration, spatial
+range, Plus Move values or other real-time battle semantics.
+
+Cooldown publication resolves in this order:
+
+1. an explicit immutable PokeNexus cooldown override, when rules content intentionally authors one;
+2. otherwise, the clearly mapped normal Z-A Base Cooldown, when available;
+3. otherwise, for an allowlisted compatible simple-damage Move, the exact Power+PP fallback curve
+   below;
+4. otherwise, the Move is unavailable until rules content authors an explicit immutable cooldown.
+
+An override is exceptional rules content; its presence must be explicit and versioned. The normal
+path therefore uses Z-A first, not the Power+PP curve.
+
+The fallback publication curve is exact and uses integer/rational arithmetic only. It deliberately uses
 continuous formulas rather than coarse Power/PP bands so adjacent factual values cannot create a
 large discontinuous balance jump.
 
@@ -169,33 +186,38 @@ pp >= 30:
 The anchors are therefore PP `30 -> 4/5`, `20 -> 1`, `10 -> 27/20` and `5 -> 17/10`, with exact
 linear interpolation between them and clamping outside the anchor range.
 
-For an allowlisted simple-damage Move:
+For an allowlisted simple-damage Move that has neither an explicit cooldown override nor a usable
+normal Z-A Base Cooldown:
 
 ```text
 rawCooldownMs = powerBaseCooldownMs * ppMultiplier
 moveCooldownMs = max(2000, ceil(rawCooldownMs / 100) * 100)
 ```
 
-The **curve/formula** is immutable `rulesVersion` semantics; source `power`/`pp` are immutable facts
+The **fallback curve/formula** is immutable `rulesVersion` semantics; source `power`/`pp` are immutable facts
 from the pinned `gameDataVersion`. For each accepted compatible `{ gameDataVersion, rulesVersion }`
 pair, rule-context resolution deterministically materializes the resulting integer
 `moveCooldownMs` before Battle execution. The engine then only compares logical timestamps; it does
 not consult source PP or rerun the derivation while resolving battle/offline advancement.
+
+A mapped normal Z-A Base Cooldown is also factual game-data input. The accepted `rulesVersion` owns
+the precedence/mapping semantics that copy that value into the published MoveRule. A factual
+correction to the pinned Z-A cooldown therefore produces a new `gameDataVersion` rather than
+mutating an already published value.
 
 Examples of the curve itself:
 
 - power `60`, PP `20` -> `3500 ms`;
 - power `120`, PP `10` -> raw `8775 ms`, quantized upward to `8800 ms`.
 
-This automatic derivation applies only to allowlisted **simple-damage** Moves. Status Moves and
-complex authored Moves publish an explicit `moveCooldownMs >= 2000` in their immutable MoveRule. Their
-authors may use source power/PP as balance references where meaningful, but any mechanical
-adjustment (charge/recoil/drain/heal/control strength/etc.) must be explicit versioned rule content,
-not runtime inference from prose.
+The Power+PP fallback applies only to allowlisted **simple-damage** Moves. Status Moves and complex
+Moves may use a clearly mapped normal Z-A Base Cooldown under the same primary-source policy. When
+no usable Z-A cooldown exists, they require an explicit `moveCooldownMs >= 2000` in their immutable
+MoveRule. Any mechanical adjustment (charge/recoil/drain/heal/control strength/etc.) remains
+explicit versioned rule content, not runtime inference from prose.
 
-The same authored-rule path is also the explicit balance override for an otherwise mechanically
-simple Move whose automatic Power+PP result is judged unsuitable. In that case the Move is removed
-from the generic simple-damage allowlist and receives an immutable authored MoveRule with an exact
+The authored-rule path is also the explicit balance override when either the mapped Z-A Base
+Cooldown or the Power+PP fallback is judged unsuitable. The Move receives an immutable authored
 `moveCooldownMs >= 2000`. This is a versioned content decision, not an engine special case.
 
 ### 4.2 Moves requiring authored rules
@@ -1155,8 +1177,8 @@ Every executable semantic in this specification that can change authoritative in
 - Move loadout battle constraints;
 - baseline ordered automatic Move-sequence policy semantics, including cursor initialization,
   cyclic scan/skip and cursor advancement/cadence-scope reset rules;
-- global-action cooldown, the per-Move cooldown derivation curve and the exact cross-Battle
-  readiness carry/reset arithmetic;
+- global-action cooldown, the per-Move cooldown source-resolution policy, the Power+PP fallback
+  curve and the exact cross-Battle readiness carry/reset arithmetic;
 - Speed initiative rule;
 - accuracy/crit/variance domains and RNG draw order;
 - damage formula and rounding points;
@@ -1171,12 +1193,14 @@ Every executable semantic in this specification that can change authoritative in
 Changing any of those semantics requires a new immutable `rulesVersion` rather than mutating an
 existing version.
 
-Pair-derived values are different. For an allowlisted simple-damage Move, the resolved
-`moveCooldownMs` is a deterministic output of the pinned compatible
-`{ gameDataVersion, rulesVersion }` pair: `gameDataVersion` supplies factual `power`/`pp`, while
-`rulesVersion` supplies the curve. A factual Power/PP correction may therefore change that resolved
-cooldown in a new compatible `gameDataVersion` without requiring a new `rulesVersion`, exactly as
-SPEC-002 permits. Historical replay remains stable because the Battle pins both versions.
+Pair-derived values are different. The resolved `moveCooldownMs` is a deterministic output of the
+pinned compatible `{ gameDataVersion, rulesVersion }` pair. `gameDataVersion` supplies the accepted
+factual cooldown inputs: normal Z-A Base Cooldown when available, plus `power`/`pp` for the fallback
+path. `rulesVersion` supplies source precedence, the Power+PP fallback curve and any explicit
+authored override. A factual correction to Z-A Base Cooldown, Power or PP may therefore change the
+resolved cooldown in a new compatible `gameDataVersion` without requiring a new `rulesVersion`;
+changing precedence, the fallback curve or an authored override does require a new `rulesVersion`.
+Historical replay remains stable because the Battle pins both versions.
 
 By contrast, an authored Status/complex MoveRule's explicit cooldown is rule content; changing that
 authored value is a semantic rule change and requires a new `rulesVersion`.
@@ -1222,7 +1246,8 @@ Implementation must make it possible to fixture at least:
 - non-zero deterministic readiness carry-in at Battle initialization;
 - cross-Battle carry-out/carry-in preserving actor GCD and a long per-Move cooldown across a new
   Battle, including deterministic subtraction of an explicit inter-Battle `gapMs`;
-- publication examples proving deterministic Power+PP cooldown derivation/quantization;
+- publication examples proving deterministic cooldown source precedence plus Power+PP fallback
+  derivation/quantization;
 - multi-target canonical RNG order;
 - stat-stage increase/decrease/clamp;
 - next-Battle stat stages reset to `0`; battle-scoped effects initialize absent while validated
@@ -1305,13 +1330,14 @@ behavior:
   schedules before production content depends on them; TASK-011 measures the engine budget and the
   future combat-rule content/catalog gate owns concrete content-level limits. The v1 rules do not
   silently aggregate or skip required ticks because that would change replay-visible semantics;
-- source PP is only a rule-context-resolution balance signal. A future mechanic that truly consumes PP,
-  charges or another resource requires an explicit later rulesVersion rather than silently reusing
-  the source PP field as battle state;
-- source PP is a **correlated legacy balance signal**, not an independent physical quantity. Because
+- source PP is only a **fallback** rule-context-resolution balance signal when no usable normal
+  Z-A Base Cooldown is available. A future mechanic that truly consumes PP, charges or another
+  resource requires an explicit later rulesVersion rather than silently reusing the source PP field
+  as battle state;
+- source PP is a **correlated legacy fallback signal**, not an independent physical quantity. Because
   accuracy already affects expected output and a miss still consumes GCD + Move cooldown, using PP
   as an additional cooldown input can intentionally or unintentionally penalize some low-accuracy/
-  low-PP Moves twice. The v1 curve accepts this as a starting heuristic, not as proof of final Move
+  low-PP Moves twice. The fallback curve accepts this as a starting heuristic, not as proof of final Move
   balance; later balance evidence may revise the curve under a new `rulesVersion`;
 - exact equal-Speed ties fall to CombatantId byte order. This is deterministic but is **not** a
   final PvP fairness policy; TASK-055/PvP rules must explicitly accept it or publish a new generic
@@ -1333,10 +1359,13 @@ Accepting SPEC-003 ratifies at least these product/game-rule decisions:
 4. Integer-millisecond continuous logical time; no turns/ticks/cast time.
 5. Global action cooldown is exactly `2000 ms`; each Move also has its own positive immutable
    cooldown and both gates must be ready before use.
-6. Allowlisted simple-damage Move cooldown is published from the exact continuous Power + PP
-   rational curve + 100 ms upward quantization in section 4.1.1; PP is not consumed in battle.
-7. Status/complex Moves publish explicit cooldowns, with any mechanical adjustment versioned rather
-   than inferred at runtime.
+6. Move cooldown publication uses the approved precedence in section 4.1.1: explicit versioned
+   override when intentionally authored; otherwise normal Pokémon Legends: Z-A Base Cooldown when
+   clearly mapped/usable; otherwise the exact continuous Power + PP fallback curve + 100 ms upward
+   quantization for compatible allowlisted simple-damage Moves. PP is not consumed in battle.
+7. Status/complex Moves use a clearly mapped normal Z-A Base Cooldown when available; otherwise
+   they require explicit authored cooldowns, with any mechanical adjustment versioned rather than
+   inferred at runtime.
 8. Speed affects only same-time initiative ordering; it does not scale GCD/Move cooldown/DPS.
 9. No Move priority in v1 and therefore no priority ingestion requirement.
 10. Physical uses atk/def; Special uses spa/spd; Status requires explicit authored effects.
@@ -1375,9 +1404,10 @@ Accepting SPEC-003 ratifies at least these product/game-rule decisions:
     of cooling-down/currently unusable slots; only accepted Move execution advances the cursor. The
     cursor starts at slot 1 only for a fresh cadence-continuity scope and carries across chained
     Battles inside that scope.
-31. Source PP is accepted only as a secondary correlated balance heuristic; accuracy and other
-    mechanics may already encode costs, so the initial Power+PP curve is a v1 calibration subject
-    to later evidence/versioned retuning rather than a claim of mathematically final balance.
+31. Normal Pokémon Legends: Z-A Base Cooldown is the primary external factual cooldown reference
+    when clearly mapped and usable. Source PP is retained only as a secondary correlated fallback
+    balance heuristic for the Power+PP curve; accuracy and other mechanics may already encode
+    costs, so that fallback remains a calibration subject rather than a claim of final balance.
 32. Move loadout size/composition can change achievable action throughput because independently
     cooling Moves may be rotated to fill GCD opportunities; configured slot order can also change
     exact action order. Both are intentional v1 gameplay mechanics, not presentation-only details.

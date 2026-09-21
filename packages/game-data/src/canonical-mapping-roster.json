@@ -1,0 +1,5312 @@
+{
+  "version": "mapping-roster-v1",
+  "mappings": {
+    "abilities": [
+      {
+        "canonicalId": "candidate:ability:adaptability:661559a2e0",
+        "sourceKey": "adaptability",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:aftermath:bf648e3127",
+        "sourceKey": "aftermath",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:analytic:6710e49eeb",
+        "sourceKey": "analytic",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:anger-point:1c6ac58a8a",
+        "sourceKey": "anger-point",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:anticipation:24dfc16f0c",
+        "sourceKey": "anticipation",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:arena-trap:2f56256ba1",
+        "sourceKey": "arena-trap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:battle-armor:e88229141f",
+        "sourceKey": "battle-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:berserk:30282be22e",
+        "sourceKey": "berserk",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:big-pecks:5257844383",
+        "sourceKey": "big-pecks",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:blaze:88a5c49d8c",
+        "sourceKey": "blaze",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:chlorophyll:e883803e27",
+        "sourceKey": "chlorophyll",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:clear-body:40a5b2701d",
+        "sourceKey": "clear-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cloud-nine:34f1d2c776",
+        "sourceKey": "cloud-nine",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:competitive:020dae3832",
+        "sourceKey": "competitive",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:compound-eyes:3e41ec25ae",
+        "sourceKey": "compound-eyes",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:contrary:112d857213",
+        "sourceKey": "contrary",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cud-chew:f3d278083e",
+        "sourceKey": "cud-chew",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:curious-medicine:e814d4745a",
+        "sourceKey": "curious-medicine",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cursed-body:73f89f4417",
+        "sourceKey": "cursed-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cute-charm:f6ad0a5390",
+        "sourceKey": "cute-charm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:damp:1b0cf192c1",
+        "sourceKey": "damp",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:defiant:1cc9ffadf6",
+        "sourceKey": "defiant",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:download:68ff63fb82",
+        "sourceKey": "download",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:drizzle:424f22be65",
+        "sourceKey": "drizzle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:drought:caaed8c4eb",
+        "sourceKey": "drought",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:dry-skin:c31e8a3578",
+        "sourceKey": "dry-skin",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:early-bird:6b845af518",
+        "sourceKey": "early-bird",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:effect-spore:7d1cf8761f",
+        "sourceKey": "effect-spore",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:filter:dfc3376b82",
+        "sourceKey": "filter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:flame-body:593421c987",
+        "sourceKey": "flame-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:flash-fire:44b3b76f5b",
+        "sourceKey": "flash-fire",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:forewarn:3309178b5b",
+        "sourceKey": "forewarn",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:friend-guard:d3dc53a068",
+        "sourceKey": "friend-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:frisk:1949ba43f8",
+        "sourceKey": "frisk",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:fur-coat:2ab3ff6ed9",
+        "sourceKey": "fur-coat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:galvanize:5ef21a7db8",
+        "sourceKey": "galvanize",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:gluttony:133579cb43",
+        "sourceKey": "gluttony",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:guts:36bf28efea",
+        "sourceKey": "guts",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:harvest:d087ee8196",
+        "sourceKey": "harvest",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:healer:44f4ea1dbf",
+        "sourceKey": "healer",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:honey-gather:65c9999b9e",
+        "sourceKey": "honey-gather",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:huge-power:097c8762f3",
+        "sourceKey": "huge-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:hustle:b01928cd61",
+        "sourceKey": "hustle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:hydration:4163fe8dc2",
+        "sourceKey": "hydration",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:hyper-cutter:57c021a89f",
+        "sourceKey": "hyper-cutter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:ice-body:9f942391a0",
+        "sourceKey": "ice-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:illuminate:f63a8387f3",
+        "sourceKey": "illuminate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:immunity:43e63f4a1c",
+        "sourceKey": "immunity",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:imposter:91d0660ed1",
+        "sourceKey": "imposter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:infiltrator:eb1dc8706e",
+        "sourceKey": "infiltrator",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:inner-focus:d1e11cbe3d",
+        "sourceKey": "inner-focus",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:insomnia:75eb93fd0d",
+        "sourceKey": "insomnia",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:intimidate:ffa53c9ada",
+        "sourceKey": "intimidate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:iron-fist:40bb289869",
+        "sourceKey": "iron-fist",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:justified:a4dd766615",
+        "sourceKey": "justified",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:keen-eye:459dbad828",
+        "sourceKey": "keen-eye",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:leaf-guard:ec996395e5",
+        "sourceKey": "leaf-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:levitate:21b41c0332",
+        "sourceKey": "levitate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:light-metal:72966ee97d",
+        "sourceKey": "light-metal",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:lightning-rod:0a688760d8",
+        "sourceKey": "lightning-rod",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:limber:5da180dc7e",
+        "sourceKey": "limber",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:liquid-ooze:c1e5a06395",
+        "sourceKey": "liquid-ooze",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magic-bounce:106126c5fe",
+        "sourceKey": "magic-bounce",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magic-guard:1ff6982228",
+        "sourceKey": "magic-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magma-armor:bd15de9280",
+        "sourceKey": "magma-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magnet-pull:9f4241a24c",
+        "sourceKey": "magnet-pull",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:marvel-scale:53bcae3cbd",
+        "sourceKey": "marvel-scale",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:misty-surge:cbb91d71c2",
+        "sourceKey": "misty-surge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:mold-breaker:fef3f3635b",
+        "sourceKey": "mold-breaker",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:moody:5654179bcb",
+        "sourceKey": "moody",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:moxie:19faf1bb25",
+        "sourceKey": "moxie",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:multiscale:1a644e8fe5",
+        "sourceKey": "multiscale",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:natural-cure:e5b23fc3e0",
+        "sourceKey": "natural-cure",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:neutralizing-gas:c771edba19",
+        "sourceKey": "neutralizing-gas",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:no-guard:d66a417d1d",
+        "sourceKey": "no-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:oblivious:db0f1125da",
+        "sourceKey": "oblivious",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:overcoat:b7524b5d32",
+        "sourceKey": "overcoat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:overgrow:aeaf91a0d6",
+        "sourceKey": "overgrow",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:own-tempo:eb24d00818",
+        "sourceKey": "own-tempo",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pastel-veil:1386374c6d",
+        "sourceKey": "pastel-veil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pickpocket:afc82785f0",
+        "sourceKey": "pickpocket",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pickup:1f64847ea5",
+        "sourceKey": "pickup",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:plus:383ef36928",
+        "sourceKey": "plus",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:poison-point:c46ffc3e2a",
+        "sourceKey": "poison-point",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:poison-touch:3f5bd6ea24",
+        "sourceKey": "poison-touch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:power-of-alchemy:06f20a6d1a",
+        "sourceKey": "power-of-alchemy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:prankster:2c0e0571a2",
+        "sourceKey": "prankster",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pressure:b667446e6e",
+        "sourceKey": "pressure",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:quick-draw:930ff35aab",
+        "sourceKey": "quick-draw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:quick-feet:21a2ef2d53",
+        "sourceKey": "quick-feet",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rain-dish:308a636cd3",
+        "sourceKey": "rain-dish",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rattled:a818cbccc7",
+        "sourceKey": "rattled",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:reckless:d7c5630b7d",
+        "sourceKey": "reckless",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:regenerator:5ba403a393",
+        "sourceKey": "regenerator",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rivalry:204507d4e9",
+        "sourceKey": "rivalry",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rock-head:6b5413a8ea",
+        "sourceKey": "rock-head",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:run-away:8f672c9063",
+        "sourceKey": "run-away",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-force:d7fbbe806d",
+        "sourceKey": "sand-force",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-rush:76a5a54e63",
+        "sourceKey": "sand-rush",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-stream:e9bcf71d6b",
+        "sourceKey": "sand-stream",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-veil:a639c3b5a3",
+        "sourceKey": "sand-veil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sap-sipper:1420bdc0d2",
+        "sourceKey": "sap-sipper",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:scrappy:b73b6cac02",
+        "sourceKey": "scrappy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:screen-cleaner:e1c7db6c49",
+        "sourceKey": "screen-cleaner",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:serene-grace:c9965e386c",
+        "sourceKey": "serene-grace",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shadow-tag:39df69505e",
+        "sourceKey": "shadow-tag",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shed-skin:6b99c835d7",
+        "sourceKey": "shed-skin",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sheer-force:8b7170a62f",
+        "sourceKey": "sheer-force",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shell-armor:f5393780d5",
+        "sourceKey": "shell-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shield-dust:1cc913de1a",
+        "sourceKey": "shield-dust",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:skill-link:532983cbce",
+        "sourceKey": "skill-link",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:slush-rush:9e863f726f",
+        "sourceKey": "slush-rush",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sniper:d1a4be19b3",
+        "sourceKey": "sniper",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:snow-cloak:c98937a7e1",
+        "sourceKey": "snow-cloak",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:snow-warning:00b2fc3646",
+        "sourceKey": "snow-warning",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:solar-power:b1ddd165fe",
+        "sourceKey": "solar-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:soundproof:994a857030",
+        "sourceKey": "soundproof",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:speed-boost:b327e1e14c",
+        "sourceKey": "speed-boost",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:static:2053dbbf6e",
+        "sourceKey": "static",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:steadfast:9fe92c4232",
+        "sourceKey": "steadfast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:stench:f3c7279229",
+        "sourceKey": "stench",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sticky-hold:9e6ce4e631",
+        "sourceKey": "sticky-hold",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sturdy:25a5c452fb",
+        "sourceKey": "sturdy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:suction-cups:41d85977ba",
+        "sourceKey": "suction-cups",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:super-luck:a2f81c1f28",
+        "sourceKey": "super-luck",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:surge-surfer:0bca869159",
+        "sourceKey": "surge-surfer",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:swarm:44eb92b463",
+        "sourceKey": "swarm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:swift-swim:2598b8c27e",
+        "sourceKey": "swift-swim",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:synchronize:2823580ca7",
+        "sourceKey": "synchronize",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tangled-feet:515c6d88e2",
+        "sourceKey": "tangled-feet",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tangling-hair:7c1a10d0fa",
+        "sourceKey": "tangling-hair",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:technician:29ba9d9cef",
+        "sourceKey": "technician",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:telepathy:2f4e79a308",
+        "sourceKey": "telepathy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:thick-fat:2033fffd2d",
+        "sourceKey": "thick-fat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tinted-lens:7774c95bbb",
+        "sourceKey": "tinted-lens",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:torrent:cad4058f8c",
+        "sourceKey": "torrent",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tough-claws:17cc260974",
+        "sourceKey": "tough-claws",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:trace:eafe895eb8",
+        "sourceKey": "trace",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:unaware:a5e7591128",
+        "sourceKey": "unaware",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:unburden:81df5284d2",
+        "sourceKey": "unburden",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:unnerve:1913bc0491",
+        "sourceKey": "unnerve",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:vital-spirit:0d7993076f",
+        "sourceKey": "vital-spirit",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:volt-absorb:e4724713af",
+        "sourceKey": "volt-absorb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:water-absorb:b42496fe36",
+        "sourceKey": "water-absorb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:water-veil:0cdd7b454f",
+        "sourceKey": "water-veil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:weak-armor:3b8dc7f1eb",
+        "sourceKey": "weak-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:wonder-skin:161331e832",
+        "sourceKey": "wonder-skin",
+        "status": "accepted"
+      }
+    ],
+    "items": [
+      {
+        "canonicalId": "candidate:item:lonely-mint:0cd3a6b9df",
+        "sourceKey": "lonely-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:adamant-mint:b66db404d2",
+        "sourceKey": "adamant-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:naughty-mint:c837f65756",
+        "sourceKey": "naughty-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:brave-mint:26b2ccbb74",
+        "sourceKey": "brave-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:bold-mint:5a4b70c1ac",
+        "sourceKey": "bold-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:impish-mint:44459f1b9f",
+        "sourceKey": "impish-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:lax-mint:d1292d1c81",
+        "sourceKey": "lax-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:relaxed-mint:4c1b69c45b",
+        "sourceKey": "relaxed-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:modest-mint:1ba70da13c",
+        "sourceKey": "modest-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:mild-mint:f934df6273",
+        "sourceKey": "mild-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:rash-mint:c1443b2431",
+        "sourceKey": "rash-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:quiet-mint:e75671c081",
+        "sourceKey": "quiet-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:calm-mint:fe217866a0",
+        "sourceKey": "calm-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:gentle-mint:9abffc079b",
+        "sourceKey": "gentle-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:careful-mint:23f4960320",
+        "sourceKey": "careful-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:sassy-mint:83ac900d70",
+        "sourceKey": "sassy-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:timid-mint:33218531ac",
+        "sourceKey": "timid-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:hasty-mint:cae38438d6",
+        "sourceKey": "hasty-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:jolly-mint:e43b80793e",
+        "sourceKey": "jolly-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:naive-mint:adc2dd9cf8",
+        "sourceKey": "naive-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:serious-mint:1510661446",
+        "sourceKey": "serious-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:bottle-cap:6c09a69c91",
+        "sourceKey": "bottle-cap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:gold-bottle-cap:e02d613f7c",
+        "sourceKey": "gold-bottle-cap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:fast-ball:97bc4e9551",
+        "sourceKey": "fast-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:friend-ball:3db37d2041",
+        "sourceKey": "friend-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:heavy-ball:e883eca3f1",
+        "sourceKey": "heavy-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:level-ball:b8cb59288b",
+        "sourceKey": "level-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:love-ball:70b65e8715",
+        "sourceKey": "love-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:lure-ball:8eec17db9c",
+        "sourceKey": "lure-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:moon-ball:bc7a6ff49d",
+        "sourceKey": "moon-ball",
+        "status": "accepted"
+      }
+    ],
+    "moves": [
+      {
+        "canonicalId": "candidate:move:absorb:22b090dd46",
+        "sourceKey": "absorb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:acid:ae5eebff12",
+        "sourceKey": "acid",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:acid-armor:2e142cad36",
+        "sourceKey": "acid-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:acid-spray:05e826df94",
+        "sourceKey": "acid-spray",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:acrobatics:f907f07c87",
+        "sourceKey": "acrobatics",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:acupressure:b8d4ab848a",
+        "sourceKey": "acupressure",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aerial-ace:b3bedf54a1",
+        "sourceKey": "aerial-ace",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aeroblast:8ab9fede97",
+        "sourceKey": "aeroblast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:after-you:5e850b958f",
+        "sourceKey": "after-you",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:agility:b22bacd700",
+        "sourceKey": "agility",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:air-cutter:08040e60b3",
+        "sourceKey": "air-cutter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:air-slash:7ee2e4718c",
+        "sourceKey": "air-slash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ally-switch:aa21c0851a",
+        "sourceKey": "ally-switch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:amnesia:827e335686",
+        "sourceKey": "amnesia",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ancient-power:c44b350990",
+        "sourceKey": "ancient-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aqua-jet:cc7564e9d8",
+        "sourceKey": "aqua-jet",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aqua-ring:f683465faa",
+        "sourceKey": "aqua-ring",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aqua-tail:6d306075a0",
+        "sourceKey": "aqua-tail",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aromatherapy:8e68b70067",
+        "sourceKey": "aromatherapy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:assurance:9b2d53abee",
+        "sourceKey": "assurance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:astonish:6fffebff6f",
+        "sourceKey": "astonish",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:attract:8bec0a29bc",
+        "sourceKey": "attract",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aura-sphere:3304000f69",
+        "sourceKey": "aura-sphere",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aurora-beam:b719419a41",
+        "sourceKey": "aurora-beam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:aurora-veil:551b39424a",
+        "sourceKey": "aurora-veil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:autotomize:6fcd47e251",
+        "sourceKey": "autotomize",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:avalanche:bb93cff885",
+        "sourceKey": "avalanche",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:baby-doll-eyes:99d0132d3a",
+        "sourceKey": "baby-doll-eyes",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:baton-pass:3338040d5e",
+        "sourceKey": "baton-pass",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:beat-up:3d87c1b6e3",
+        "sourceKey": "beat-up",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:belch:3e3f6e5fb6",
+        "sourceKey": "belch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:belly-drum:d7915af44a",
+        "sourceKey": "belly-drum",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bind:f08dd851c4",
+        "sourceKey": "bind",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bite:8420c85c2a",
+        "sourceKey": "bite",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:blast-burn:a360f70ef7",
+        "sourceKey": "blast-burn",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:blaze-kick:b4e57cf95d",
+        "sourceKey": "blaze-kick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:blizzard:793da17aec",
+        "sourceKey": "blizzard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:block:496aca80e4",
+        "sourceKey": "block",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:body-slam:526418da69",
+        "sourceKey": "body-slam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bone-rush:b5e236116d",
+        "sourceKey": "bone-rush",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bonemerang:78f7fe0fa2",
+        "sourceKey": "bonemerang",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bounce:4d6723e5e4",
+        "sourceKey": "bounce",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:brave-bird:0bf9294f73",
+        "sourceKey": "brave-bird",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:brick-break:14e9484bfd",
+        "sourceKey": "brick-break",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:brine:3d73a4af0e",
+        "sourceKey": "brine",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bubble-beam:6992d96d7b",
+        "sourceKey": "bubble-beam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bug-bite:394d7ff544",
+        "sourceKey": "bug-bite",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bug-buzz:20405fe453",
+        "sourceKey": "bug-buzz",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bulk-up:f3bfdd4490",
+        "sourceKey": "bulk-up",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bulldoze:9498e39d31",
+        "sourceKey": "bulldoze",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bullet-punch:f6622b908d",
+        "sourceKey": "bullet-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:bullet-seed:c6e3d18180",
+        "sourceKey": "bullet-seed",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:burn-up:1d80cda8eb",
+        "sourceKey": "burn-up",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:calm-mind:3554740307",
+        "sourceKey": "calm-mind",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:charge:97488fbab3",
+        "sourceKey": "charge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:charge-beam:ed8b4eece0",
+        "sourceKey": "charge-beam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:charm:b3a927cf63",
+        "sourceKey": "charm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:circle-throw:03ec584658",
+        "sourceKey": "circle-throw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:clear-smog:fc60d1a7a8",
+        "sourceKey": "clear-smog",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:close-combat:eda1d07b3b",
+        "sourceKey": "close-combat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:coil:1fe75231d3",
+        "sourceKey": "coil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:confuse-ray:29464ccc26",
+        "sourceKey": "confuse-ray",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:confusion:32c870923f",
+        "sourceKey": "confusion",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:conversion:0b236a7468",
+        "sourceKey": "conversion",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:conversion-2:84085d1b4e",
+        "sourceKey": "conversion-2",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:copycat:3a00bdea12",
+        "sourceKey": "copycat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:cosmic-power:7f49c75a4d",
+        "sourceKey": "cosmic-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:cotton-guard:a77c1bf7f3",
+        "sourceKey": "cotton-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:cotton-spore:63a0b4a779",
+        "sourceKey": "cotton-spore",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:counter:efe899c745",
+        "sourceKey": "counter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:covet:a1e31ed91c",
+        "sourceKey": "covet",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:crabhammer:b383124bb4",
+        "sourceKey": "crabhammer",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:cross-chop:44ebb5d740",
+        "sourceKey": "cross-chop",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:cross-poison:69ed3a160b",
+        "sourceKey": "cross-poison",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:crunch:b12a020b7f",
+        "sourceKey": "crunch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:crush-claw:2ed56ae38b",
+        "sourceKey": "crush-claw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:curse:5342206545",
+        "sourceKey": "curse",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:cut:378bfce5cd",
+        "sourceKey": "cut",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dark-pulse:2b2b462793",
+        "sourceKey": "dark-pulse",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dazzling-gleam:78aee97cd6",
+        "sourceKey": "dazzling-gleam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:defense-curl:a5cf3070fd",
+        "sourceKey": "defense-curl",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:defog:d79eb4b42c",
+        "sourceKey": "defog",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:destiny-bond:3a0b2feb18",
+        "sourceKey": "destiny-bond",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:detect:cfacfd3ec3",
+        "sourceKey": "detect",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dig:ebbde58a4b",
+        "sourceKey": "dig",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:disable:e9d8992f34",
+        "sourceKey": "disable",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:disarming-voice:ac8d57ee8c",
+        "sourceKey": "disarming-voice",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:discharge:a4ac536145",
+        "sourceKey": "discharge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dive:0f8897661f",
+        "sourceKey": "dive",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:double-edge:8b1acaa3bb",
+        "sourceKey": "double-edge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:double-hit:8438732efe",
+        "sourceKey": "double-hit",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:double-kick:00d6963d5c",
+        "sourceKey": "double-kick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:double-team:ffa1e5ad4d",
+        "sourceKey": "double-team",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:draco-meteor:a58a16182e",
+        "sourceKey": "draco-meteor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dragon-breath:3ab8370def",
+        "sourceKey": "dragon-breath",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dragon-claw:a1e4d735b0",
+        "sourceKey": "dragon-claw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dragon-dance:86dd5a2a95",
+        "sourceKey": "dragon-dance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dragon-pulse:54d897ab30",
+        "sourceKey": "dragon-pulse",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dragon-rush:b689eb740e",
+        "sourceKey": "dragon-rush",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dragon-tail:c58ef0bd65",
+        "sourceKey": "dragon-tail",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:drain-punch:39b55d903c",
+        "sourceKey": "drain-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dream-eater:b129a99e2a",
+        "sourceKey": "dream-eater",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:drill-peck:1668507951",
+        "sourceKey": "drill-peck",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:drill-run:39b0dcbff7",
+        "sourceKey": "drill-run",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dual-chop:40a96c39e4",
+        "sourceKey": "dual-chop",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:dynamic-punch:b6b695c77b",
+        "sourceKey": "dynamic-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:earth-power:a4abdb17a3",
+        "sourceKey": "earth-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:earthquake:fa7835fc1c",
+        "sourceKey": "earthquake",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:echoed-voice:ae07e611a0",
+        "sourceKey": "echoed-voice",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:eerie-impulse:dd7b95d135",
+        "sourceKey": "eerie-impulse",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:electric-terrain:84d2df7e99",
+        "sourceKey": "electric-terrain",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:electro-ball:e7243ea635",
+        "sourceKey": "electro-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ember:7cadc15d60",
+        "sourceKey": "ember",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:encore:f7b4ccaa2c",
+        "sourceKey": "encore",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:endeavor:1cd38b20bf",
+        "sourceKey": "endeavor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:endure:93a8039471",
+        "sourceKey": "endure",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:energy-ball:fab82f5467",
+        "sourceKey": "energy-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:entrainment:c502d280e2",
+        "sourceKey": "entrainment",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:eruption:fb725b859f",
+        "sourceKey": "eruption",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:explosion:4e33d57d89",
+        "sourceKey": "explosion",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:extrasensory:628721ed2e",
+        "sourceKey": "extrasensory",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:extreme-speed:424b692437",
+        "sourceKey": "extreme-speed",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:facade:85e8a389c4",
+        "sourceKey": "facade",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fairy-wind:08394b13bd",
+        "sourceKey": "fairy-wind",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fake-out:7e7033b94d",
+        "sourceKey": "fake-out",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fake-tears:53f4fab059",
+        "sourceKey": "fake-tears",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:false-swipe:8f73bc6edc",
+        "sourceKey": "false-swipe",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:feather-dance:3225475f51",
+        "sourceKey": "feather-dance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:feint:49b7e1d6ad",
+        "sourceKey": "feint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fell-stinger:a8e84efec9",
+        "sourceKey": "fell-stinger",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:final-gambit:46911cf663",
+        "sourceKey": "final-gambit",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fire-blast:04d8d2171e",
+        "sourceKey": "fire-blast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fire-fang:c54dd9a00f",
+        "sourceKey": "fire-fang",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fire-punch:b4c67d5c14",
+        "sourceKey": "fire-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fire-spin:e33975a638",
+        "sourceKey": "fire-spin",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fissure:6dff991df5",
+        "sourceKey": "fissure",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flail:b334cddd1e",
+        "sourceKey": "flail",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flame-charge:789944ea78",
+        "sourceKey": "flame-charge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flame-wheel:a2e80ed524",
+        "sourceKey": "flame-wheel",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flamethrower:206bb9ab7c",
+        "sourceKey": "flamethrower",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flare-blitz:1a8b5b6a0d",
+        "sourceKey": "flare-blitz",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flash:851e43bd44",
+        "sourceKey": "flash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flash-cannon:451e70c7df",
+        "sourceKey": "flash-cannon",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flatter:d92d2c2d4b",
+        "sourceKey": "flatter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fling:ae4754b6cd",
+        "sourceKey": "fling",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:flower-shield:36ada6005a",
+        "sourceKey": "flower-shield",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fly:f4debdb7ab",
+        "sourceKey": "fly",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:focus-blast:18dcf21c1a",
+        "sourceKey": "focus-blast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:focus-energy:585e726020",
+        "sourceKey": "focus-energy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:focus-punch:08a6abe2df",
+        "sourceKey": "focus-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:follow-me:478283fc12",
+        "sourceKey": "follow-me",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:foul-play:b9c5646b4c",
+        "sourceKey": "foul-play",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:freeze-dry:3e54303ba6",
+        "sourceKey": "freeze-dry",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:frenzy-plant:1cbdb05ac7",
+        "sourceKey": "frenzy-plant",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fury-attack:6105a9810a",
+        "sourceKey": "fury-attack",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fury-cutter:8c5905a465",
+        "sourceKey": "fury-cutter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:fury-swipes:70347d90f5",
+        "sourceKey": "fury-swipes",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:future-sight:61b8d2c6c5",
+        "sourceKey": "future-sight",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:gastro-acid:93af185feb",
+        "sourceKey": "gastro-acid",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:giga-drain:1fa269825d",
+        "sourceKey": "giga-drain",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:giga-impact:93b748ecf9",
+        "sourceKey": "giga-impact",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:glare:28574c1e43",
+        "sourceKey": "glare",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:grass-knot:a7ebdb264e",
+        "sourceKey": "grass-knot",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:grass-pledge:6303f6d1b8",
+        "sourceKey": "grass-pledge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:grassy-glide:82cb32061d",
+        "sourceKey": "grassy-glide",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:grassy-terrain:a962d289cc",
+        "sourceKey": "grassy-terrain",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:gravity:d4e3fc7b04",
+        "sourceKey": "gravity",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:growl:7d61e39e75",
+        "sourceKey": "growl",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:growth:19c64195eb",
+        "sourceKey": "growth",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:grudge:56f8eb1dea",
+        "sourceKey": "grudge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:guard-split:f5adf2159d",
+        "sourceKey": "guard-split",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:guard-swap:90d26c35e1",
+        "sourceKey": "guard-swap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:guillotine:7092362015",
+        "sourceKey": "guillotine",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:gunk-shot:22d69831af",
+        "sourceKey": "gunk-shot",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:gust:c3282cafea",
+        "sourceKey": "gust",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:gyro-ball:b02c7be08c",
+        "sourceKey": "gyro-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hail:1f6639a8a5",
+        "sourceKey": "hail",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hammer-arm:e0d29adfcc",
+        "sourceKey": "hammer-arm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:harden:9f7f561ef6",
+        "sourceKey": "harden",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:haze:840ee9db4c",
+        "sourceKey": "haze",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:head-smash:0769eb7ad7",
+        "sourceKey": "head-smash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:headbutt:eee8515ce5",
+        "sourceKey": "headbutt",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:heal-bell:55da67bfde",
+        "sourceKey": "heal-bell",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:heal-pulse:1128acc7d0",
+        "sourceKey": "heal-pulse",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:healing-wish:cedb33af0b",
+        "sourceKey": "healing-wish",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:heat-wave:33fd85f207",
+        "sourceKey": "heat-wave",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:heavy-slam:2db444b871",
+        "sourceKey": "heavy-slam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:helping-hand:5a00f9aeb6",
+        "sourceKey": "helping-hand",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hex:128df13c1e",
+        "sourceKey": "hex",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hidden-power:b5c0fe1192",
+        "sourceKey": "hidden-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:high-horsepower:428dff166d",
+        "sourceKey": "high-horsepower",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:high-jump-kick:84a37b2964",
+        "sourceKey": "high-jump-kick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hone-claws:018371ede9",
+        "sourceKey": "hone-claws",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:horn-attack:bdc3645bca",
+        "sourceKey": "horn-attack",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:horn-drill:4e2e108ecf",
+        "sourceKey": "horn-drill",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:howl:1542ab0048",
+        "sourceKey": "howl",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hurricane:3fb312f8c4",
+        "sourceKey": "hurricane",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hydro-cannon:0e3d3aa632",
+        "sourceKey": "hydro-cannon",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hydro-pump:0f9d13d535",
+        "sourceKey": "hydro-pump",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hyper-beam:89f5cc7954",
+        "sourceKey": "hyper-beam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hyper-voice:e991ec9797",
+        "sourceKey": "hyper-voice",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:hypnosis:7d9ba835e7",
+        "sourceKey": "hypnosis",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ice-beam:2d6d51edb7",
+        "sourceKey": "ice-beam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ice-fang:54fa358c0c",
+        "sourceKey": "ice-fang",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ice-punch:96cf2702e2",
+        "sourceKey": "ice-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ice-shard:5e891310b4",
+        "sourceKey": "ice-shard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:icicle-crash:12c4f6cb29",
+        "sourceKey": "icicle-crash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:icicle-spear:987c0ed373",
+        "sourceKey": "icicle-spear",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:icy-wind:f1ac65fa0b",
+        "sourceKey": "icy-wind",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:imprison:132f0118fe",
+        "sourceKey": "imprison",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:incinerate:9f74a631e5",
+        "sourceKey": "incinerate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:inferno:f8a8f21a35",
+        "sourceKey": "inferno",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:infestation:80e41e005f",
+        "sourceKey": "infestation",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:ingrain:e91f016003",
+        "sourceKey": "ingrain",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:iron-defense:13fb9c43d6",
+        "sourceKey": "iron-defense",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:iron-head:705f895399",
+        "sourceKey": "iron-head",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:iron-tail:f9f701c35f",
+        "sourceKey": "iron-tail",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:kinesis:8b1a84b6a7",
+        "sourceKey": "kinesis",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:knock-off:3baf03ac45",
+        "sourceKey": "knock-off",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:laser-focus:909cb17112",
+        "sourceKey": "laser-focus",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:last-resort:0a86d8d039",
+        "sourceKey": "last-resort",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:lava-plume:4241a6c3d3",
+        "sourceKey": "lava-plume",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:leaf-blade:368a08b98d",
+        "sourceKey": "leaf-blade",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:leaf-storm:e8598e26f5",
+        "sourceKey": "leaf-storm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:leaf-tornado:c884270595",
+        "sourceKey": "leaf-tornado",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:leech-life:46ab451d89",
+        "sourceKey": "leech-life",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:leech-seed:f7aa8ad547",
+        "sourceKey": "leech-seed",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:leer:f13f8e16a9",
+        "sourceKey": "leer",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:lick:3c13f6fd6f",
+        "sourceKey": "lick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:life-dew:085082b9cc",
+        "sourceKey": "life-dew",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:light-screen:d10427f57a",
+        "sourceKey": "light-screen",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:liquidation:af905d83d1",
+        "sourceKey": "liquidation",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:lock-on:043e22c5b9",
+        "sourceKey": "lock-on",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:lovely-kiss:9358521e0f",
+        "sourceKey": "lovely-kiss",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:low-kick:d106cd965a",
+        "sourceKey": "low-kick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:low-sweep:d7a0b0dd72",
+        "sourceKey": "low-sweep",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:lunge:b451d79c0b",
+        "sourceKey": "lunge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mach-punch:c8138c1b7d",
+        "sourceKey": "mach-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:magic-coat:f990a04c12",
+        "sourceKey": "magic-coat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:magic-room:cd656e3526",
+        "sourceKey": "magic-room",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:magical-leaf:443f974e18",
+        "sourceKey": "magical-leaf",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:magnet-rise:1b5aa82b8b",
+        "sourceKey": "magnet-rise",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:magnetic-flux:dc5c8eb468",
+        "sourceKey": "magnetic-flux",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mean-look:5fa1250c5a",
+        "sourceKey": "mean-look",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mega-drain:1969a74ad7",
+        "sourceKey": "mega-drain",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mega-kick:b893fda455",
+        "sourceKey": "mega-kick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mega-punch:1a5ffc0d34",
+        "sourceKey": "mega-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:megahorn:6a2b794986",
+        "sourceKey": "megahorn",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:memento:fe432cb211",
+        "sourceKey": "memento",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:metal-burst:9c2070bcc3",
+        "sourceKey": "metal-burst",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:metal-claw:07d6723590",
+        "sourceKey": "metal-claw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:metal-sound:0c22a49d63",
+        "sourceKey": "metal-sound",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:meteor-mash:8a85c753f0",
+        "sourceKey": "meteor-mash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:metronome:9e03f56799",
+        "sourceKey": "metronome",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:milk-drink:972b0c53a9",
+        "sourceKey": "milk-drink",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mimic:692e51978c",
+        "sourceKey": "mimic",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mind-reader:2d78f7f889",
+        "sourceKey": "mind-reader",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:minimize:5879a0f59f",
+        "sourceKey": "minimize",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mirror-coat:d56396210c",
+        "sourceKey": "mirror-coat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mist:9054966f3d",
+        "sourceKey": "mist",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:misty-terrain:296172f634",
+        "sourceKey": "misty-terrain",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:moonblast:62df207a5e",
+        "sourceKey": "moonblast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:moonlight:a22925b9c3",
+        "sourceKey": "moonlight",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:morning-sun:1375bccfc0",
+        "sourceKey": "morning-sun",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mud-shot:2490b17957",
+        "sourceKey": "mud-shot",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:mud-slap:604f73107e",
+        "sourceKey": "mud-slap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:muddy-water:12fdbad2b0",
+        "sourceKey": "muddy-water",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:nasty-plot:5de87e2f6d",
+        "sourceKey": "nasty-plot",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:nature-power:4744182f3b",
+        "sourceKey": "nature-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:night-shade:34de1d2835",
+        "sourceKey": "night-shade",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:night-slash:43c4087ef0",
+        "sourceKey": "night-slash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:nuzzle:0947453207",
+        "sourceKey": "nuzzle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:octazooka:ab7d6800e1",
+        "sourceKey": "octazooka",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:outrage:713d66baef",
+        "sourceKey": "outrage",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:overheat:beb016e696",
+        "sourceKey": "overheat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:pain-split:3bd952442f",
+        "sourceKey": "pain-split",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:pay-day:e7ba0b6ea2",
+        "sourceKey": "pay-day",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:payback:a4d842639f",
+        "sourceKey": "payback",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:peck:4d803cfdbe",
+        "sourceKey": "peck",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:perish-song:0498203e95",
+        "sourceKey": "perish-song",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:petal-blizzard:32689c3152",
+        "sourceKey": "petal-blizzard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:petal-dance:179b28c907",
+        "sourceKey": "petal-dance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:pin-missile:08745127c6",
+        "sourceKey": "pin-missile",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:play-nice:a32912ce32",
+        "sourceKey": "play-nice",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:play-rough:cfbee05105",
+        "sourceKey": "play-rough",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:pluck:eac8744624",
+        "sourceKey": "pluck",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:poison-fang:72f38c336c",
+        "sourceKey": "poison-fang",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:poison-gas:b26d78a612",
+        "sourceKey": "poison-gas",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:poison-jab:285ce9bded",
+        "sourceKey": "poison-jab",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:poison-powder:31b00c1ad7",
+        "sourceKey": "poison-powder",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:poison-sting:cccf6d05cb",
+        "sourceKey": "poison-sting",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:poison-tail:bb34d0aa61",
+        "sourceKey": "poison-tail",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:pound:39d77c4bd9",
+        "sourceKey": "pound",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:powder-snow:2608272c33",
+        "sourceKey": "powder-snow",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:power-gem:cb628f9c53",
+        "sourceKey": "power-gem",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:power-split:7d589cdac6",
+        "sourceKey": "power-split",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:power-swap:39cbb82a4c",
+        "sourceKey": "power-swap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:power-trick:d25e699f95",
+        "sourceKey": "power-trick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:power-up-punch:0177f5c9a6",
+        "sourceKey": "power-up-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:power-whip:565d00613e",
+        "sourceKey": "power-whip",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:present:4d4c7eee2e",
+        "sourceKey": "present",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:protect:680dce633d",
+        "sourceKey": "protect",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:psybeam:591037c16d",
+        "sourceKey": "psybeam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:psych-up:a383870ea0",
+        "sourceKey": "psych-up",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:psychic:421556c6f6",
+        "sourceKey": "psychic",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:psycho-cut:a57579b68f",
+        "sourceKey": "psycho-cut",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:psycho-shift:a60721a891",
+        "sourceKey": "psycho-shift",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:psyshock:1d9ea09466",
+        "sourceKey": "psyshock",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:psystrike:dd0d740033",
+        "sourceKey": "psystrike",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:quash:76c879a1f8",
+        "sourceKey": "quash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:quick-attack:0e4e8e635b",
+        "sourceKey": "quick-attack",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:quick-guard:0e70ffe3f1",
+        "sourceKey": "quick-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:quiver-dance:d4583a9e65",
+        "sourceKey": "quiver-dance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rage-powder:780f366948",
+        "sourceKey": "rage-powder",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rain-dance:66df59867a",
+        "sourceKey": "rain-dance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rapid-spin:05b8814207",
+        "sourceKey": "rapid-spin",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:razor-leaf:623796dcd8",
+        "sourceKey": "razor-leaf",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:razor-shell:f9e541b7fa",
+        "sourceKey": "razor-shell",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:recover:ec3915f542",
+        "sourceKey": "recover",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:recycle:ef5988103d",
+        "sourceKey": "recycle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:reflect:909ca0096d",
+        "sourceKey": "reflect",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:reflect-type:0de4411ed3",
+        "sourceKey": "reflect-type",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rest:2e09d5210d",
+        "sourceKey": "rest",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:retaliate:0ac2ccebd9",
+        "sourceKey": "retaliate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:revenge:16552853f9",
+        "sourceKey": "revenge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:reversal:8404591f75",
+        "sourceKey": "reversal",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:roar:c2b644a1f2",
+        "sourceKey": "roar",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rock-blast:94a39e962a",
+        "sourceKey": "rock-blast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rock-climb:259c955d47",
+        "sourceKey": "rock-climb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rock-polish:2bfa9ab351",
+        "sourceKey": "rock-polish",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rock-slide:550834b2f7",
+        "sourceKey": "rock-slide",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rock-smash:a497798e21",
+        "sourceKey": "rock-smash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rock-throw:cd1b2b4977",
+        "sourceKey": "rock-throw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rock-tomb:4d50d0ec5e",
+        "sourceKey": "rock-tomb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:role-play:f234799bf6",
+        "sourceKey": "role-play",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:rollout:a4fa034cc7",
+        "sourceKey": "rollout",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:roost:31a89e3644",
+        "sourceKey": "roost",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:round:a97b093173",
+        "sourceKey": "round",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sacred-fire:b2bb84a7d3",
+        "sourceKey": "sacred-fire",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:safeguard:f54d2de0a4",
+        "sourceKey": "safeguard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sand-attack:cfe21caa09",
+        "sourceKey": "sand-attack",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sand-tomb:0c4be9bc24",
+        "sourceKey": "sand-tomb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sandstorm:869a80f625",
+        "sourceKey": "sandstorm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:scald:fc1915852d",
+        "sourceKey": "scald",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:scary-face:5a8448fdf8",
+        "sourceKey": "scary-face",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:scratch:5a9cb6b54e",
+        "sourceKey": "scratch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:screech:64073b5037",
+        "sourceKey": "screech",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:seed-bomb:6c8c5e1520",
+        "sourceKey": "seed-bomb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:seismic-toss:092dd03a07",
+        "sourceKey": "seismic-toss",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:self-destruct:d2b46b7dd7",
+        "sourceKey": "self-destruct",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:shadow-ball:131a39712e",
+        "sourceKey": "shadow-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:shadow-claw:3d844a6b40",
+        "sourceKey": "shadow-claw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:shadow-punch:10e3241543",
+        "sourceKey": "shadow-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:shadow-sneak:34dff2cc35",
+        "sourceKey": "shadow-sneak",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sheer-cold:f4d2cf2907",
+        "sourceKey": "sheer-cold",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:shell-smash:2eea520501",
+        "sourceKey": "shell-smash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:shock-wave:4633098805",
+        "sourceKey": "shock-wave",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:simple-beam:306032cd9c",
+        "sourceKey": "simple-beam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sing:6342d0648a",
+        "sourceKey": "sing",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sketch:f416b363c6",
+        "sourceKey": "sketch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:skill-swap:1423134f11",
+        "sourceKey": "skill-swap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:skull-bash:493e4a3646",
+        "sourceKey": "skull-bash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sky-attack:5bb3dfaccc",
+        "sourceKey": "sky-attack",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:slack-off:27f4a107d6",
+        "sourceKey": "slack-off",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:slam:8e6a0ab293",
+        "sourceKey": "slam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:slash:939d59d128",
+        "sourceKey": "slash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sleep-powder:5b6f0a7b08",
+        "sourceKey": "sleep-powder",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sleep-talk:8b8303c093",
+        "sourceKey": "sleep-talk",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sludge:adcc8f7e67",
+        "sourceKey": "sludge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sludge-bomb:df14592a73",
+        "sourceKey": "sludge-bomb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sludge-wave:fa725069a5",
+        "sourceKey": "sludge-wave",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:smack-down:ef26caeab2",
+        "sourceKey": "smack-down",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:smart-strike:8dea972905",
+        "sourceKey": "smart-strike",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:smog:6247a5ccc2",
+        "sourceKey": "smog",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:smokescreen:18bd85c7e7",
+        "sourceKey": "smokescreen",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:snarl:cbcf9340b7",
+        "sourceKey": "snarl",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:snore:5a8d6bc40c",
+        "sourceKey": "snore",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:soak:c06f543b3e",
+        "sourceKey": "soak",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:soft-boiled:9ef4d82fca",
+        "sourceKey": "soft-boiled",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:solar-beam:322c306b0f",
+        "sourceKey": "solar-beam",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:spark:92f473809e",
+        "sourceKey": "spark",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:spikes:3afe33347d",
+        "sourceKey": "spikes",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:spit-up:1729f9a1f9",
+        "sourceKey": "spit-up",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:spite:04726352b7",
+        "sourceKey": "spite",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:splash:31d58043e5",
+        "sourceKey": "splash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:spore:b14d9a6a5a",
+        "sourceKey": "spore",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:stealth-rock:52b7357386",
+        "sourceKey": "stealth-rock",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:steel-wing:79953ef21f",
+        "sourceKey": "steel-wing",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sticky-web:fb16a4f3e5",
+        "sourceKey": "sticky-web",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:stockpile:6963bb3449",
+        "sourceKey": "stockpile",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:stomp:07199820d0",
+        "sourceKey": "stomp",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:stomping-tantrum:57eb441bbe",
+        "sourceKey": "stomping-tantrum",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:stone-edge:a7425ae6ee",
+        "sourceKey": "stone-edge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:stored-power:137e064283",
+        "sourceKey": "stored-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:storm-throw:f1a83ce795",
+        "sourceKey": "storm-throw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:strength:e6b88623f7",
+        "sourceKey": "strength",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:strength-sap:f8fab7c71c",
+        "sourceKey": "strength-sap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:string-shot:676b7b6274",
+        "sourceKey": "string-shot",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:struggle-bug:0eaca6421a",
+        "sourceKey": "struggle-bug",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:stun-spore:19de6c01d5",
+        "sourceKey": "stun-spore",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:submission:293f1d2ee2",
+        "sourceKey": "submission",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:substitute:7551993272",
+        "sourceKey": "substitute",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sucker-punch:63a890b2e4",
+        "sourceKey": "sucker-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sunny-day:de25c3409d",
+        "sourceKey": "sunny-day",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:super-fang:0deb644190",
+        "sourceKey": "super-fang",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:superpower:b8fa9efbc8",
+        "sourceKey": "superpower",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:supersonic:40a13b748e",
+        "sourceKey": "supersonic",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:surf:0199311728",
+        "sourceKey": "surf",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:swagger:0447c783c9",
+        "sourceKey": "swagger",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:swallow:7276e0a742",
+        "sourceKey": "swallow",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sweet-kiss:df13abcb80",
+        "sourceKey": "sweet-kiss",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:sweet-scent:1f335d3104",
+        "sourceKey": "sweet-scent",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:swift:a33603bf79",
+        "sourceKey": "swift",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:switcheroo:1745067501",
+        "sourceKey": "switcheroo",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:swords-dance:d6340d084d",
+        "sourceKey": "swords-dance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:synthesis:a23f3e1e3a",
+        "sourceKey": "synthesis",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:tackle:ceab38a5be",
+        "sourceKey": "tackle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:tail-whip:24951e6804",
+        "sourceKey": "tail-whip",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:tailwind:44c8cf4ce0",
+        "sourceKey": "tailwind",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:take-down:790765ae8a",
+        "sourceKey": "take-down",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:taunt:d69d13c094",
+        "sourceKey": "taunt",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:tearful-look:9d0d3e2280",
+        "sourceKey": "tearful-look",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:teeter-dance:1183692ba6",
+        "sourceKey": "teeter-dance",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:teleport:e99f7ff1eb",
+        "sourceKey": "teleport",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:tera-blast:54717d5e30",
+        "sourceKey": "tera-blast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thief:8dd29add99",
+        "sourceKey": "thief",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thrash:db05d4fb5b",
+        "sourceKey": "thrash",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:throat-chop:7a3ec574a5",
+        "sourceKey": "throat-chop",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thunder:49eff747f7",
+        "sourceKey": "thunder",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thunder-fang:365f4d4793",
+        "sourceKey": "thunder-fang",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thunder-punch:1f0784d6d9",
+        "sourceKey": "thunder-punch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thunder-shock:6f3d698bb8",
+        "sourceKey": "thunder-shock",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thunder-wave:4aa5fcbf2a",
+        "sourceKey": "thunder-wave",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:thunderbolt:c672b342b8",
+        "sourceKey": "thunderbolt",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:tickle:20f759a162",
+        "sourceKey": "tickle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:torment:2345b0d2fd",
+        "sourceKey": "torment",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:toxic:04651cd5fa",
+        "sourceKey": "toxic",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:toxic-spikes:d4a1a50cb3",
+        "sourceKey": "toxic-spikes",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:toxic-thread:48fe2deedb",
+        "sourceKey": "toxic-thread",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:trailblaze:9fffed5141",
+        "sourceKey": "trailblaze",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:transform:aa214ea383",
+        "sourceKey": "transform",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:tri-attack:e156e26e32",
+        "sourceKey": "tri-attack",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:trick:f39d5149a4",
+        "sourceKey": "trick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:trick-room:200ea4ffd6",
+        "sourceKey": "trick-room",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:triple-kick:cf79e085f8",
+        "sourceKey": "triple-kick",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:twister:69abaec3d4",
+        "sourceKey": "twister",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:u-turn:29cfcdcd17",
+        "sourceKey": "u-turn",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:uproar:7761e07e43",
+        "sourceKey": "uproar",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:vacuum-wave:237cc36f82",
+        "sourceKey": "vacuum-wave",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:venom-drench:4e258651c6",
+        "sourceKey": "venom-drench",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:venoshock:c0c68a9ac4",
+        "sourceKey": "venoshock",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:vine-whip:10e8c8f861",
+        "sourceKey": "vine-whip",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:vise-grip:eb179aed74",
+        "sourceKey": "vise-grip",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:vital-throw:d92d2e3599",
+        "sourceKey": "vital-throw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:volt-switch:f60ec32c3a",
+        "sourceKey": "volt-switch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:volt-tackle:8602f0c9e0",
+        "sourceKey": "volt-tackle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:water-gun:797195321c",
+        "sourceKey": "water-gun",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:water-pulse:94c844822d",
+        "sourceKey": "water-pulse",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:water-spout:fe32d5123a",
+        "sourceKey": "water-spout",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:waterfall:3cb562c897",
+        "sourceKey": "waterfall",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:weather-ball:79d83ead1a",
+        "sourceKey": "weather-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:whirlpool:f20155bb3d",
+        "sourceKey": "whirlpool",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:whirlwind:f2105a2700",
+        "sourceKey": "whirlwind",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:wide-guard:0aa6795235",
+        "sourceKey": "wide-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:will-o-wisp:f74fbde2fb",
+        "sourceKey": "will-o-wisp",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:wing-attack:3fe2950a20",
+        "sourceKey": "wing-attack",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:wish:091e606752",
+        "sourceKey": "wish",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:withdraw:c26f22db83",
+        "sourceKey": "withdraw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:wonder-room:348f56d118",
+        "sourceKey": "wonder-room",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:wood-hammer:1208dd07d1",
+        "sourceKey": "wood-hammer",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:work-up:b48ed6c5c7",
+        "sourceKey": "work-up",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:worry-seed:f94d4f47e3",
+        "sourceKey": "worry-seed",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:wrap:f0a289923e",
+        "sourceKey": "wrap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:x-scissor:5e2e09bbf6",
+        "sourceKey": "x-scissor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:yawn:25c4df8e80",
+        "sourceKey": "yawn",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:zap-cannon:a60b5c3015",
+        "sourceKey": "zap-cannon",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:move:zen-headbutt:6b0c890abc",
+        "sourceKey": "zen-headbutt",
+        "status": "accepted"
+      }
+    ],
+    "species": [
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bulbasaur-1:91b07648a3",
+        "sourceKey": "pokedex:bulbasaur:1",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ivysaur-2:e606f3e9db",
+        "sourceKey": "pokedex:ivysaur:2",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-venusaur-3:d29725c169",
+        "sourceKey": "pokedex:venusaur:3",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-charmander-4:76e12e8c3b",
+        "sourceKey": "pokedex:charmander:4",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-charmeleon-5:9ef0d98ff4",
+        "sourceKey": "pokedex:charmeleon:5",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-charizard-6:52fb46d5a2",
+        "sourceKey": "pokedex:charizard:6",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-squirtle-7:6f5ada4df3",
+        "sourceKey": "pokedex:squirtle:7",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wartortle-8:32f0a5bd0c",
+        "sourceKey": "pokedex:wartortle:8",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-blastoise-9:76d65051f7",
+        "sourceKey": "pokedex:blastoise:9",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-caterpie-10:f77ea3bb04",
+        "sourceKey": "pokedex:caterpie:10",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-metapod-11:5da0baaeef",
+        "sourceKey": "pokedex:metapod:11",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-butterfree-12:f80800242a",
+        "sourceKey": "pokedex:butterfree:12",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-weedle-13:ccaef5cee7",
+        "sourceKey": "pokedex:weedle:13",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kakuna-14:05dfd96ca6",
+        "sourceKey": "pokedex:kakuna:14",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-beedrill-15:6deb17ead8",
+        "sourceKey": "pokedex:beedrill:15",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pidgey-16:8e97efe736",
+        "sourceKey": "pokedex:pidgey:16",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pidgeotto-17:ee47274010",
+        "sourceKey": "pokedex:pidgeotto:17",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pidgeot-18:8ebee7ec94",
+        "sourceKey": "pokedex:pidgeot:18",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rattata-19:9975b0175c",
+        "sourceKey": "pokedex:rattata:19",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-raticate-20:e4e0263d4a",
+        "sourceKey": "pokedex:raticate:20",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-spearow-21:0ddd44d801",
+        "sourceKey": "pokedex:spearow:21",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-fearow-22:8cc22e710e",
+        "sourceKey": "pokedex:fearow:22",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ekans-23:bdfa91ecd0",
+        "sourceKey": "pokedex:ekans:23",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-arbok-24:359fa1adfc",
+        "sourceKey": "pokedex:arbok:24",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pikachu-25:61410cc13d",
+        "sourceKey": "pokedex:pikachu:25",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-raichu-26:0bf8d234a1",
+        "sourceKey": "pokedex:raichu:26",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sandshrew-27:0279054eaa",
+        "sourceKey": "pokedex:sandshrew:27",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sandslash-28:b74447de31",
+        "sourceKey": "pokedex:sandslash:28",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoran-f-29:bed769478b",
+        "sourceKey": "pokedex:nidoran-f:29",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidorina-30:1e0522479d",
+        "sourceKey": "pokedex:nidorina:30",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoqueen-31:4e03c07525",
+        "sourceKey": "pokedex:nidoqueen:31",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoran-m-32:a64d693f2e",
+        "sourceKey": "pokedex:nidoran-m:32",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidorino-33:bd44718fbf",
+        "sourceKey": "pokedex:nidorino:33",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoking-34:4fb1bcbb2d",
+        "sourceKey": "pokedex:nidoking:34",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-clefairy-35:305eddb332",
+        "sourceKey": "pokedex:clefairy:35",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-clefable-36:e43d616ee9",
+        "sourceKey": "pokedex:clefable:36",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-vulpix-37:31e5adf26c",
+        "sourceKey": "pokedex:vulpix:37",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ninetales-38:58fa44514d",
+        "sourceKey": "pokedex:ninetales:38",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jigglypuff-39:3b5d1d4b0d",
+        "sourceKey": "pokedex:jigglypuff:39",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wigglytuff-40:1f9d376e76",
+        "sourceKey": "pokedex:wigglytuff:40",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-zubat-41:30ce9c9861",
+        "sourceKey": "pokedex:zubat:41",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-golbat-42:01b3aaffa7",
+        "sourceKey": "pokedex:golbat:42",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-oddish-43:24da759495",
+        "sourceKey": "pokedex:oddish:43",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gloom-44:c4c7bf2a71",
+        "sourceKey": "pokedex:gloom:44",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-vileplume-45:773d44f5a6",
+        "sourceKey": "pokedex:vileplume:45",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-paras-46:c51b5cf771",
+        "sourceKey": "pokedex:paras:46",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-parasect-47:65e8220d00",
+        "sourceKey": "pokedex:parasect:47",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-venonat-48:b9b35d81a3",
+        "sourceKey": "pokedex:venonat:48",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-venomoth-49:280b64514d",
+        "sourceKey": "pokedex:venomoth:49",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-diglett-50:8fe9ebad74",
+        "sourceKey": "pokedex:diglett:50",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dugtrio-51:0c5d809546",
+        "sourceKey": "pokedex:dugtrio:51",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-meowth-52:7b8de52546",
+        "sourceKey": "pokedex:meowth:52",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-persian-53:828983479b",
+        "sourceKey": "pokedex:persian:53",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-psyduck-54:746024cf53",
+        "sourceKey": "pokedex:psyduck:54",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-golduck-55:aaad85b7ea",
+        "sourceKey": "pokedex:golduck:55",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mankey-56:beb34d2e4d",
+        "sourceKey": "pokedex:mankey:56",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-primeape-57:bf71e8a22b",
+        "sourceKey": "pokedex:primeape:57",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-growlithe-58:c6d3d72cd8",
+        "sourceKey": "pokedex:growlithe:58",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-arcanine-59:6d464f7c59",
+        "sourceKey": "pokedex:arcanine:59",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-poliwag-60:287185cfa3",
+        "sourceKey": "pokedex:poliwag:60",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-poliwhirl-61:f9fc928ba3",
+        "sourceKey": "pokedex:poliwhirl:61",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-poliwrath-62:5a1b9c0374",
+        "sourceKey": "pokedex:poliwrath:62",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-abra-63:6a4a3614d2",
+        "sourceKey": "pokedex:abra:63",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kadabra-64:4976821d58",
+        "sourceKey": "pokedex:kadabra:64",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-alakazam-65:4a28172038",
+        "sourceKey": "pokedex:alakazam:65",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-machop-66:a78ba95ec8",
+        "sourceKey": "pokedex:machop:66",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-machoke-67:d82f9f517e",
+        "sourceKey": "pokedex:machoke:67",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-machamp-68:439cdc1b53",
+        "sourceKey": "pokedex:machamp:68",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bellsprout-69:2aaaf5c98e",
+        "sourceKey": "pokedex:bellsprout:69",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-weepinbell-70:aa1c7d3a6a",
+        "sourceKey": "pokedex:weepinbell:70",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-victreebel-71:6ae7089c57",
+        "sourceKey": "pokedex:victreebel:71",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tentacool-72:b72e0559ce",
+        "sourceKey": "pokedex:tentacool:72",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tentacruel-73:8ce86c4470",
+        "sourceKey": "pokedex:tentacruel:73",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-geodude-74:1164f17b57",
+        "sourceKey": "pokedex:geodude:74",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-graveler-75:45b46831bf",
+        "sourceKey": "pokedex:graveler:75",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-golem-76:dd020f5724",
+        "sourceKey": "pokedex:golem:76",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ponyta-77:4b6fa69407",
+        "sourceKey": "pokedex:ponyta:77",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rapidash-78:a97dd55c89",
+        "sourceKey": "pokedex:rapidash:78",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slowpoke-79:d584d8866f",
+        "sourceKey": "pokedex:slowpoke:79",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slowbro-80:3f3260a251",
+        "sourceKey": "pokedex:slowbro:80",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magnemite-81:e261656753",
+        "sourceKey": "pokedex:magnemite:81",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magneton-82:2c1b265d91",
+        "sourceKey": "pokedex:magneton:82",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-farfetchd-83:05ea24aa13",
+        "sourceKey": "pokedex:farfetchd:83",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-doduo-84:a11f15ed73",
+        "sourceKey": "pokedex:doduo:84",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dodrio-85:506cc36c01",
+        "sourceKey": "pokedex:dodrio:85",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-seel-86:3af840176e",
+        "sourceKey": "pokedex:seel:86",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dewgong-87:d47faf4596",
+        "sourceKey": "pokedex:dewgong:87",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-grimer-88:af98c5f214",
+        "sourceKey": "pokedex:grimer:88",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-muk-89:711e6f8899",
+        "sourceKey": "pokedex:muk:89",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-shellder-90:99f21c2f29",
+        "sourceKey": "pokedex:shellder:90",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cloyster-91:4f6a9f57e2",
+        "sourceKey": "pokedex:cloyster:91",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gastly-92:d44ec70a0e",
+        "sourceKey": "pokedex:gastly:92",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-haunter-93:192b139c9c",
+        "sourceKey": "pokedex:haunter:93",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gengar-94:e4fd2aae37",
+        "sourceKey": "pokedex:gengar:94",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-onix-95:61a65befee",
+        "sourceKey": "pokedex:onix:95",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-drowzee-96:5c2f4bfabd",
+        "sourceKey": "pokedex:drowzee:96",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hypno-97:cc87702d7e",
+        "sourceKey": "pokedex:hypno:97",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-krabby-98:b5eeb554c4",
+        "sourceKey": "pokedex:krabby:98",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kingler-99:cb1174511d",
+        "sourceKey": "pokedex:kingler:99",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-voltorb-100:fab5d15109",
+        "sourceKey": "pokedex:voltorb:100",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-electrode-101:398d3c0562",
+        "sourceKey": "pokedex:electrode:101",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-exeggcute-102:c0bac51f25",
+        "sourceKey": "pokedex:exeggcute:102",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-exeggutor-103:1c46f8e283",
+        "sourceKey": "pokedex:exeggutor:103",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cubone-104:2a7292cc3b",
+        "sourceKey": "pokedex:cubone:104",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-marowak-105:7e62650865",
+        "sourceKey": "pokedex:marowak:105",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hitmonlee-106:d3ee4b03a9",
+        "sourceKey": "pokedex:hitmonlee:106",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hitmonchan-107:de74ec6753",
+        "sourceKey": "pokedex:hitmonchan:107",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lickitung-108:0fce9256f8",
+        "sourceKey": "pokedex:lickitung:108",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-koffing-109:138739c989",
+        "sourceKey": "pokedex:koffing:109",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-weezing-110:672d06e85e",
+        "sourceKey": "pokedex:weezing:110",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rhyhorn-111:3660e8756c",
+        "sourceKey": "pokedex:rhyhorn:111",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rhydon-112:6b39afb998",
+        "sourceKey": "pokedex:rhydon:112",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-chansey-113:dd864fad44",
+        "sourceKey": "pokedex:chansey:113",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tangela-114:ece9b236a8",
+        "sourceKey": "pokedex:tangela:114",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kangaskhan-115:7041b2a112",
+        "sourceKey": "pokedex:kangaskhan:115",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-horsea-116:bee896dbe8",
+        "sourceKey": "pokedex:horsea:116",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-seadra-117:4f990dcca8",
+        "sourceKey": "pokedex:seadra:117",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-goldeen-118:6e5c670c8d",
+        "sourceKey": "pokedex:goldeen:118",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-seaking-119:3367d23690",
+        "sourceKey": "pokedex:seaking:119",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-staryu-120:829673aa43",
+        "sourceKey": "pokedex:staryu:120",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-starmie-121:022b9d4cd6",
+        "sourceKey": "pokedex:starmie:121",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mr-mime-122:5bc3bde91c",
+        "sourceKey": "pokedex:mr-mime:122",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-scyther-123:fca711f27e",
+        "sourceKey": "pokedex:scyther:123",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jynx-124:2b86c8e0b7",
+        "sourceKey": "pokedex:jynx:124",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-electabuzz-125:572fd8f9bc",
+        "sourceKey": "pokedex:electabuzz:125",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magmar-126:65c5de5cf8",
+        "sourceKey": "pokedex:magmar:126",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pinsir-127:22283e1e47",
+        "sourceKey": "pokedex:pinsir:127",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "sourceKey": "pokedex:tauros:128",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magikarp-129:ea98e807ae",
+        "sourceKey": "pokedex:magikarp:129",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gyarados-130:380765c064",
+        "sourceKey": "pokedex:gyarados:130",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lapras-131:a9e072965e",
+        "sourceKey": "pokedex:lapras:131",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ditto-132:282f8f53ab",
+        "sourceKey": "pokedex:ditto:132",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-eevee-133:d4e3723301",
+        "sourceKey": "pokedex:eevee:133",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-vaporeon-134:3a9c5aa9e1",
+        "sourceKey": "pokedex:vaporeon:134",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jolteon-135:709ea3c6d3",
+        "sourceKey": "pokedex:jolteon:135",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-flareon-136:3ca3d43650",
+        "sourceKey": "pokedex:flareon:136",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-porygon-137:34c5abf6e0",
+        "sourceKey": "pokedex:porygon:137",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-omanyte-138:cb022ce48a",
+        "sourceKey": "pokedex:omanyte:138",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-omastar-139:e7ed7261a1",
+        "sourceKey": "pokedex:omastar:139",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kabuto-140:bf97916fcc",
+        "sourceKey": "pokedex:kabuto:140",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kabutops-141:c9193c0225",
+        "sourceKey": "pokedex:kabutops:141",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-aerodactyl-142:a444739552",
+        "sourceKey": "pokedex:aerodactyl:142",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-snorlax-143:e2ae75bce9",
+        "sourceKey": "pokedex:snorlax:143",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-articuno-144:ae7b12d58a",
+        "sourceKey": "pokedex:articuno:144",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-zapdos-145:f941789ac1",
+        "sourceKey": "pokedex:zapdos:145",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-moltres-146:7421fa5129",
+        "sourceKey": "pokedex:moltres:146",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dratini-147:eb28822362",
+        "sourceKey": "pokedex:dratini:147",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dragonair-148:9824119b92",
+        "sourceKey": "pokedex:dragonair:148",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dragonite-149:a7d72780cd",
+        "sourceKey": "pokedex:dragonite:149",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mewtwo-150:57eecbcf65",
+        "sourceKey": "pokedex:mewtwo:150",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mew-151:816c56e17c",
+        "sourceKey": "pokedex:mew:151",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-chikorita-152:24bd4cdb1d",
+        "sourceKey": "pokedex:chikorita:152",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bayleef-153:c10004c0ee",
+        "sourceKey": "pokedex:bayleef:153",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-meganium-154:ec679959cf",
+        "sourceKey": "pokedex:meganium:154",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cyndaquil-155:f879aca845",
+        "sourceKey": "pokedex:cyndaquil:155",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-quilava-156:6b195ea543",
+        "sourceKey": "pokedex:quilava:156",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-typhlosion-157:39dbe823d5",
+        "sourceKey": "pokedex:typhlosion:157",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-totodile-158:f3d3f9a1f7",
+        "sourceKey": "pokedex:totodile:158",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-croconaw-159:6491c66f54",
+        "sourceKey": "pokedex:croconaw:159",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-feraligatr-160:90a67b0244",
+        "sourceKey": "pokedex:feraligatr:160",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sentret-161:fa09afb6e0",
+        "sourceKey": "pokedex:sentret:161",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-furret-162:e293bafbb6",
+        "sourceKey": "pokedex:furret:162",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hoothoot-163:3ecad094b2",
+        "sourceKey": "pokedex:hoothoot:163",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-noctowl-164:8a8e4456b9",
+        "sourceKey": "pokedex:noctowl:164",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ledyba-165:092570add7",
+        "sourceKey": "pokedex:ledyba:165",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ledian-166:75f6bd988e",
+        "sourceKey": "pokedex:ledian:166",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-spinarak-167:19628e41f3",
+        "sourceKey": "pokedex:spinarak:167",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ariados-168:0d4d923b65",
+        "sourceKey": "pokedex:ariados:168",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-crobat-169:770c27cf8c",
+        "sourceKey": "pokedex:crobat:169",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-chinchou-170:73ded1e566",
+        "sourceKey": "pokedex:chinchou:170",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lanturn-171:7dd3633b99",
+        "sourceKey": "pokedex:lanturn:171",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pichu-172:a340114e83",
+        "sourceKey": "pokedex:pichu:172",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cleffa-173:b46f463298",
+        "sourceKey": "pokedex:cleffa:173",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-igglybuff-174:0d2b3ec19e",
+        "sourceKey": "pokedex:igglybuff:174",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-togepi-175:67fb9542a4",
+        "sourceKey": "pokedex:togepi:175",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-togetic-176:34f4acc44a",
+        "sourceKey": "pokedex:togetic:176",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-natu-177:2215129129",
+        "sourceKey": "pokedex:natu:177",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-xatu-178:4f1020db4a",
+        "sourceKey": "pokedex:xatu:178",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mareep-179:5c560baaf7",
+        "sourceKey": "pokedex:mareep:179",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-flaaffy-180:0fdfc1d5ad",
+        "sourceKey": "pokedex:flaaffy:180",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ampharos-181:b682912fc8",
+        "sourceKey": "pokedex:ampharos:181",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bellossom-182:9a504a7f58",
+        "sourceKey": "pokedex:bellossom:182",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-marill-183:4f0d454757",
+        "sourceKey": "pokedex:marill:183",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-azumarill-184:a3dec29ac6",
+        "sourceKey": "pokedex:azumarill:184",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sudowoodo-185:c5e3e39eaf",
+        "sourceKey": "pokedex:sudowoodo:185",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-politoed-186:094f7b1352",
+        "sourceKey": "pokedex:politoed:186",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hoppip-187:ab5f0bfb34",
+        "sourceKey": "pokedex:hoppip:187",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-skiploom-188:9d0d953ecc",
+        "sourceKey": "pokedex:skiploom:188",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jumpluff-189:c79c32b728",
+        "sourceKey": "pokedex:jumpluff:189",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-aipom-190:930792785e",
+        "sourceKey": "pokedex:aipom:190",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sunkern-191:8f850eef0e",
+        "sourceKey": "pokedex:sunkern:191",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sunflora-192:9529849034",
+        "sourceKey": "pokedex:sunflora:192",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-yanma-193:be62cefa8e",
+        "sourceKey": "pokedex:yanma:193",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wooper-194:c3528c41fa",
+        "sourceKey": "pokedex:wooper:194",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-quagsire-195:49377aef21",
+        "sourceKey": "pokedex:quagsire:195",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-espeon-196:3b9d57768d",
+        "sourceKey": "pokedex:espeon:196",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-umbreon-197:06cf5810c3",
+        "sourceKey": "pokedex:umbreon:197",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-murkrow-198:35fbce8a6e",
+        "sourceKey": "pokedex:murkrow:198",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slowking-199:d3aafa67fa",
+        "sourceKey": "pokedex:slowking:199",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-misdreavus-200:aeb7c6aa52",
+        "sourceKey": "pokedex:misdreavus:200",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-unown-201:d30cb2af0e",
+        "sourceKey": "pokedex:unown:201",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wobbuffet-202:3584ce6a12",
+        "sourceKey": "pokedex:wobbuffet:202",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-girafarig-203:e5e95de2f6",
+        "sourceKey": "pokedex:girafarig:203",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pineco-204:620de36c4c",
+        "sourceKey": "pokedex:pineco:204",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-forretress-205:1b3c685316",
+        "sourceKey": "pokedex:forretress:205",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dunsparce-206:1e177f5c53",
+        "sourceKey": "pokedex:dunsparce:206",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gligar-207:5313fbb7a6",
+        "sourceKey": "pokedex:gligar:207",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-steelix-208:ce2060b052",
+        "sourceKey": "pokedex:steelix:208",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-snubbull-209:f9ea9240b4",
+        "sourceKey": "pokedex:snubbull:209",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-granbull-210:e54e05f019",
+        "sourceKey": "pokedex:granbull:210",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-qwilfish-211:7abdc95638",
+        "sourceKey": "pokedex:qwilfish:211",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-scizor-212:3746285e5a",
+        "sourceKey": "pokedex:scizor:212",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-shuckle-213:92fc611a3a",
+        "sourceKey": "pokedex:shuckle:213",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-heracross-214:64b6054ba0",
+        "sourceKey": "pokedex:heracross:214",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sneasel-215:a15cfda57e",
+        "sourceKey": "pokedex:sneasel:215",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-teddiursa-216:c92f0b02a2",
+        "sourceKey": "pokedex:teddiursa:216",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ursaring-217:535b6406ea",
+        "sourceKey": "pokedex:ursaring:217",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slugma-218:eea91a820d",
+        "sourceKey": "pokedex:slugma:218",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magcargo-219:0a8b755bde",
+        "sourceKey": "pokedex:magcargo:219",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-swinub-220:fbfedcd465",
+        "sourceKey": "pokedex:swinub:220",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-piloswine-221:00b1e6c0b5",
+        "sourceKey": "pokedex:piloswine:221",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-corsola-222:c026729c63",
+        "sourceKey": "pokedex:corsola:222",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-remoraid-223:2c499ca636",
+        "sourceKey": "pokedex:remoraid:223",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-octillery-224:1d9e4ae28f",
+        "sourceKey": "pokedex:octillery:224",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-delibird-225:cf5b01e0bc",
+        "sourceKey": "pokedex:delibird:225",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mantine-226:728c8a5a9c",
+        "sourceKey": "pokedex:mantine:226",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-skarmory-227:10e28cc8bc",
+        "sourceKey": "pokedex:skarmory:227",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-houndour-228:3ae4cfc69d",
+        "sourceKey": "pokedex:houndour:228",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-houndoom-229:698f551d29",
+        "sourceKey": "pokedex:houndoom:229",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kingdra-230:b0142494ce",
+        "sourceKey": "pokedex:kingdra:230",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-phanpy-231:bfc0351db8",
+        "sourceKey": "pokedex:phanpy:231",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-donphan-232:b76d1358e2",
+        "sourceKey": "pokedex:donphan:232",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-porygon2-233:1b6413757a",
+        "sourceKey": "pokedex:porygon2:233",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-stantler-234:10dc3150c7",
+        "sourceKey": "pokedex:stantler:234",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-smeargle-235:c96f9c2108",
+        "sourceKey": "pokedex:smeargle:235",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tyrogue-236:e85f3547c2",
+        "sourceKey": "pokedex:tyrogue:236",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hitmontop-237:cc94fb1f6d",
+        "sourceKey": "pokedex:hitmontop:237",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-smoochum-238:19558fcbfa",
+        "sourceKey": "pokedex:smoochum:238",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-elekid-239:11091823be",
+        "sourceKey": "pokedex:elekid:239",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magby-240:2195d76743",
+        "sourceKey": "pokedex:magby:240",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-miltank-241:92d8c53a6f",
+        "sourceKey": "pokedex:miltank:241",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-blissey-242:70bf282b39",
+        "sourceKey": "pokedex:blissey:242",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-raikou-243:2988c131d7",
+        "sourceKey": "pokedex:raikou:243",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-entei-244:d1f710f7ec",
+        "sourceKey": "pokedex:entei:244",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-suicune-245:bfa6c003d4",
+        "sourceKey": "pokedex:suicune:245",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-larvitar-246:25483bb391",
+        "sourceKey": "pokedex:larvitar:246",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pupitar-247:ecc027f495",
+        "sourceKey": "pokedex:pupitar:247",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tyranitar-248:f59cb770f3",
+        "sourceKey": "pokedex:tyranitar:248",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lugia-249:638b512992",
+        "sourceKey": "pokedex:lugia:249",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ho-oh-250:63730cf8bf",
+        "sourceKey": "pokedex:ho-oh:250",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-celebi-251:8d7beabbeb",
+        "sourceKey": "pokedex:celebi:251",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-rattata-19:9975b0175c",
+        "canonicalId": "candidate:species:pokedex-rattata-10158:0ca7ab646a",
+        "sourceKey": "pokedex:rattata:10158",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-raticate-20:e4e0263d4a",
+        "canonicalId": "candidate:species:pokedex-raticate-10159:3f08305797",
+        "sourceKey": "pokedex:raticate:10159",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-raichu-26:0bf8d234a1",
+        "canonicalId": "candidate:species:pokedex-raichu-10150:447cf183c0",
+        "sourceKey": "pokedex:raichu:10150",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-sandshrew-27:0279054eaa",
+        "canonicalId": "candidate:species:pokedex-sandshrew-10143:840a9211a5",
+        "sourceKey": "pokedex:sandshrew:10143",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-sandslash-28:b74447de31",
+        "canonicalId": "candidate:species:pokedex-sandslash-10144:f3b483cd49",
+        "sourceKey": "pokedex:sandslash:10144",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-vulpix-37:31e5adf26c",
+        "canonicalId": "candidate:species:pokedex-vulpix-10141:ae0213bb17",
+        "sourceKey": "pokedex:vulpix:10141",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-ninetales-38:58fa44514d",
+        "canonicalId": "candidate:species:pokedex-ninetales-10142:ee10634ca6",
+        "sourceKey": "pokedex:ninetales:10142",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-diglett-50:8fe9ebad74",
+        "canonicalId": "candidate:species:pokedex-diglett-10181:7d5e726a31",
+        "sourceKey": "pokedex:diglett:10181",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-dugtrio-51:0c5d809546",
+        "canonicalId": "candidate:species:pokedex-dugtrio-10180:f651d5390b",
+        "sourceKey": "pokedex:dugtrio:10180",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-meowth-52:7b8de52546",
+        "canonicalId": "candidate:species:pokedex-meowth-10152:d7eb4b1677",
+        "sourceKey": "pokedex:meowth:10152",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-meowth-52:7b8de52546",
+        "canonicalId": "candidate:species:pokedex-meowth-11144:e0c3e716dc",
+        "sourceKey": "pokedex:meowth:11144",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-persian-53:828983479b",
+        "canonicalId": "candidate:species:pokedex-persian-10173:a12b88d23b",
+        "sourceKey": "pokedex:persian:10173",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-growlithe-58:c6d3d72cd8",
+        "canonicalId": "candidate:species:pokedex-growlithe-11174:2f786cb8f7",
+        "sourceKey": "pokedex:growlithe:11174",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-arcanine-59:6d464f7c59",
+        "canonicalId": "candidate:species:pokedex-arcanine-11179:552be48fc9",
+        "sourceKey": "pokedex:arcanine:11179",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-geodude-74:1164f17b57",
+        "canonicalId": "candidate:species:pokedex-geodude-10182:bb5443e522",
+        "sourceKey": "pokedex:geodude:10182",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-graveler-75:45b46831bf",
+        "canonicalId": "candidate:species:pokedex-graveler-10183:40a36ccf53",
+        "sourceKey": "pokedex:graveler:10183",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-golem-76:dd020f5724",
+        "canonicalId": "candidate:species:pokedex-golem-10184:a356ed2938",
+        "sourceKey": "pokedex:golem:10184",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-ponyta-77:4b6fa69407",
+        "canonicalId": "candidate:species:pokedex-ponyta-11080:9594366160",
+        "sourceKey": "pokedex:ponyta:11080",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-rapidash-78:a97dd55c89",
+        "canonicalId": "candidate:species:pokedex-rapidash-11081:26a4923db4",
+        "sourceKey": "pokedex:rapidash:11081",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-slowpoke-79:d584d8866f",
+        "canonicalId": "candidate:species:pokedex-slowpoke-11159:7e8bdb5cb9",
+        "sourceKey": "pokedex:slowpoke:11159",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-slowbro-80:3f3260a251",
+        "canonicalId": "candidate:species:pokedex-slowbro-11160:be8db992f2",
+        "sourceKey": "pokedex:slowbro:11160",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-farfetchd-83:05ea24aa13",
+        "canonicalId": "candidate:species:pokedex-farfetchd-11123:816839c5b2",
+        "sourceKey": "pokedex:farfetchd:11123",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-grimer-88:af98c5f214",
+        "canonicalId": "candidate:species:pokedex-grimer-10171:e89863bbc2",
+        "sourceKey": "pokedex:grimer:10171",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-muk-89:711e6f8899",
+        "canonicalId": "candidate:species:pokedex-muk-10172:bf361c0359",
+        "sourceKey": "pokedex:muk:10172",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-voltorb-100:fab5d15109",
+        "canonicalId": "candidate:species:pokedex-voltorb-11177:59a00e6e6a",
+        "sourceKey": "pokedex:voltorb:11177",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-electrode-101:398d3c0562",
+        "canonicalId": "candidate:species:pokedex-electrode-11180:0a7db06518",
+        "sourceKey": "pokedex:electrode:11180",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-exeggutor-103:1c46f8e283",
+        "canonicalId": "candidate:species:pokedex-exeggutor-10140:e0c941cf14",
+        "sourceKey": "pokedex:exeggutor:10140",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-marowak-105:7e62650865",
+        "canonicalId": "candidate:species:pokedex-marowak-10151:3b819388e7",
+        "sourceKey": "pokedex:marowak:10151",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-weezing-110:672d06e85e",
+        "canonicalId": "candidate:species:pokedex-weezing-11068:ed67916171",
+        "sourceKey": "pokedex:weezing:11068",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-mr-mime-122:5bc3bde91c",
+        "canonicalId": "candidate:species:pokedex-mr-mime-11133:dff9a4970d",
+        "sourceKey": "pokedex:mr-mime:11133",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "canonicalId": "candidate:species:pokedex-tauros-11203:30bd36085b",
+        "sourceKey": "pokedex:tauros:11203",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "canonicalId": "candidate:species:pokedex-tauros-11204:f1d31cb329",
+        "sourceKey": "pokedex:tauros:11204",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "canonicalId": "candidate:species:pokedex-tauros-11205:721b36e731",
+        "sourceKey": "pokedex:tauros:11205",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-articuno-144:ae7b12d58a",
+        "canonicalId": "candidate:species:pokedex-articuno-11165:67c93d8cdb",
+        "sourceKey": "pokedex:articuno:11165",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-zapdos-145:f941789ac1",
+        "canonicalId": "candidate:species:pokedex-zapdos-11167:618cbcf0cc",
+        "sourceKey": "pokedex:zapdos:11167",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-moltres-146:7421fa5129",
+        "canonicalId": "candidate:species:pokedex-moltres-11168:a14d661f25",
+        "sourceKey": "pokedex:moltres:11168",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-typhlosion-157:39dbe823d5",
+        "canonicalId": "candidate:species:pokedex-typhlosion-11182:14b62bee40",
+        "sourceKey": "pokedex:typhlosion:11182",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-wooper-194:c3528c41fa",
+        "canonicalId": "candidate:species:pokedex-wooper-11194:8ae8eedfa0",
+        "sourceKey": "pokedex:wooper:11194",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-slowking-199:d3aafa67fa",
+        "canonicalId": "candidate:species:pokedex-slowking-11161:027a968064",
+        "sourceKey": "pokedex:slowking:11161",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-qwilfish-211:7abdc95638",
+        "canonicalId": "candidate:species:pokedex-qwilfish-11181:672815b37b",
+        "sourceKey": "pokedex:qwilfish:11181",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-sneasel-215:a15cfda57e",
+        "canonicalId": "candidate:species:pokedex-sneasel-11183:86edb8e6e1",
+        "sourceKey": "pokedex:sneasel:11183",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-corsola-222:c026729c63",
+        "canonicalId": "candidate:species:pokedex-corsola-11125:96c663740a",
+        "sourceKey": "pokedex:corsola:11125",
+        "status": "accepted"
+      }
+    ],
+    "types": [
+      {
+        "canonicalId": "candidate:type:normal:317b32c143",
+        "sourceKey": "normal",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:fighting:b84707239e",
+        "sourceKey": "fighting",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:flying:a1f95e4f6e",
+        "sourceKey": "flying",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:poison:5743abdddd",
+        "sourceKey": "poison",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:ground:dbb3b50e59",
+        "sourceKey": "ground",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:rock:350a770c0e",
+        "sourceKey": "rock",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:bug:ecb53f367b",
+        "sourceKey": "bug",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:ghost:ead6ef03d6",
+        "sourceKey": "ghost",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:steel:b86262f9bc",
+        "sourceKey": "steel",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:fire:dc9f28b12d",
+        "sourceKey": "fire",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:water:0f4168490e",
+        "sourceKey": "water",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:grass:f6cc5b085b",
+        "sourceKey": "grass",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:electric:44b3c5003d",
+        "sourceKey": "electric",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:psychic:421556c6f6",
+        "sourceKey": "psychic",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:ice:4cb0b250c6",
+        "sourceKey": "ice",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:dragon:a9c43be948",
+        "sourceKey": "dragon",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:dark:e6bb5689be",
+        "sourceKey": "dark",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:type:fairy:5a81e6aa75",
+        "sourceKey": "fairy",
+        "status": "accepted"
+      }
+    ]
+  },
+  "excludedOrDeferred": {
+    "species": [
+      {
+        "disposition": "deferred",
+        "reason": "bulbapedia-only-form-identity-unresolved",
+        "sourceKey": "bulbapedia-form:Pikachu:Pale"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "bulbapedia-only-form-identity-unresolved",
+        "sourceKey": "bulbapedia-form:Smeargle:Decorator"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "bulbapedia-only-form-identity-unresolved",
+        "sourceKey": "bulbapedia-form:Snorlax:Mossy"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:aerodactyl:11010"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:alakazam:11005"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:ampharos:11013"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:beedrill:11041"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:blastoise:11004"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:charizard:11002"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:charizard:11003"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:clefable:11219"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:dragonite:11215"
+      },
+      {
+        "disposition": "excluded",
+        "reason": "human-owner-permanent-exclusion",
+        "sourceKey": "pokedex:eevee:11052"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:feraligatr:11222"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:gengar:11006"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:gyarados:11009"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:heracross:11015"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:houndoom:11016"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:kangaskhan:11007"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:meganium:11221"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:mewtwo:11011"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:mewtwo:11012"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:pidgeot:11042"
+      },
+      {
+        "disposition": "excluded",
+        "reason": "human-owner-permanent-exclusion",
+        "sourceKey": "pokedex:pikachu:11051"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:pinsir:11008"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:raichu:11250"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:raichu:11251"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:scizor:11014"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:skarmory:11223"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:slowbro:11037"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:starmie:11220"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:steelix:11050"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:tyranitar:11017"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:venusaur:11001"
+      },
+      {
+        "disposition": "deferred",
+        "reason": "battle-only-transformation",
+        "sourceKey": "pokedex:victreebel:11216"
+      }
+    ]
+  }
+}
