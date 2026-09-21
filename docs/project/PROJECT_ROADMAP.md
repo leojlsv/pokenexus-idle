@@ -10,11 +10,11 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, and the PostgreSQL persistence, identity and security foundation are complete. Canonical static game-data catalog implementation is now explicitly scheduled before reward/content implementation consumes it.
 
-**Current work:** `TASK-022 — Inventory / Item Model Spec` is **DONE** with SPEC-007 **APPROVED** and integrated after Human Owner repository-history authorization. `TASK-092 — SpeciesDefinition Static-Fact Audit & Extension Spec` is also **DONE** and integrated.
+**Current work:** `TASK-087 — Static Game Data Catalog & Ingestion Implementation` is **DONE** with the Human-approved `game-data-core-kanto-johto-v1` canonical bundle integrated. `TASK-022` and `TASK-092` also remain **DONE** and integrated.
 
-**Current action:** TASK-087 — Static Game Data Catalog & Ingestion Implementation is **ACCEPTANCE** with post-promotion independent QA READY `0/0/0/0` and delegated Class B acceptance **ACCEPTED**. Human-approved `game-data-core-kanto-johto-v1` is permanently published and reloaded; the Human Owner authorized repository-history completion on 2026-09-21, and the commit/push/main-integration sequence is now in progress. TASK-023 and TASK-088 remain independently dependency-clear.
+**Current action:** TASK-087 is **DONE** after post-promotion independent QA READY `0/0/0/0`, delegated Class B acceptance **ACCEPTED**, Human-approved canonical promotion and authorized repository-history integration. No next task is activated by this closure. TASK-023 and TASK-088 remain independently dependency-clear and **PLANNED**.
 
-**Next task after TASK-003 acceptance:** `TASK-087 — Static Game Data Catalog & Ingestion Implementation`.
+**Next task after TASK-003 acceptance:** TASK-087 is complete; no subsequent task has been activated. TASK-023 and TASK-088 are dependency-clear **PLANNED** candidates for normal materialization.
 
 **Portfolio status snapshot:**
 
@@ -42,24 +42,25 @@
 | `TASK-019` Pokémon Instance / Collection / Team Spec | DONE — exact-snapshot QA/IA clear; Human Owner accepted SPEC-005 in full and authorized repository completion/history on 2026-09-17 |
 | `TASK-020` Collection & Team Domain/Persistence Implementation | DONE — owner validation clear; QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; PM / Architecture Coordinator accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 | `TASK-021` XP / Level / Progression Rules Spec | DONE — exact-snapshot QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; Human Owner accepted SPEC-006 in full and authorized repository completion/history on 2026-09-18 |
+| `TASK-087` Static Game Data Catalog & Ingestion Implementation | DONE — exact Human-approved review promoted; canonical `game-data-core-kanto-johto-v1` published/loaded; post-promotion QA READY `0/0/0/0`; Class B acceptance ACCEPTED; repository completion authorized/completed |
 | `TASK-093` Gameplay Systems & Player Experience Consultant Governance | DONE — independent QA READY, P0/P1/P2/P3 0/0/0/0; Human Owner accepted and authorized repository history; governance integrated on 2026-09-18 |
 
-**Next product milestone:** materialize the canonical Species/Move/Learnset catalog from integrated SPEC-002/SPEC-008, while separately defining reward-ledger integrity and Move acquisition/eligibility; then close production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
+**Next product milestone:** with the canonical Species/Move/Learnset catalog now published through TASK-087, separately define reward-ledger integrity and Move acquisition/eligibility; then close production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-093`.
-- DONE: 25.
+- DONE: 26.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 1.
+- ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 68.
-- Task-count completion: **25 / 94 = 26.6%**.
+- Task-count completion: **26 / 94 = 27.7%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -289,7 +290,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 
 ### EPIC-01 — Core Domain & Universal Combat Foundation
 
-**Status:** IN PROGRESS — accepted domain/data/combat contracts and Combat Engine are complete; TASK-092/SPEC-008 are integrated, TASK-087 materializes canonical static data, and TASK-090/091 close production Move/Ability rule content
+**Status:** IN PROGRESS — accepted domain/data/combat contracts and Combat Engine are complete; TASK-092/SPEC-008 and TASK-087 canonical static data are integrated, while TASK-090/091 remain the production Move/Ability rule-content line
 **Outcome:** stable domain vocabulary/data contracts and the single deterministic Combat Engine used by all battle content.
 **Why first:** every later battle mode depends on this layer; building content before it would duplicate rules and create migration debt.
 
@@ -301,7 +302,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 | `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
 | `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; Bulbapedia-primary / PokémonDB-complementary DATA-only source policy; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or opportunistic provider fallback |
 | `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | DONE | PM → ChatGPT | DoR QA READY `0/0/0/0`; original final QA NOT READY `0/1/0/0`; corrected option-1 Pokémon-domain review PASS advisory `0/0/0/0`; final independent QA READY `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human Owner accepted SPEC-008 v2 direction, approved **option 1**, and authorized repository history/completion on 2026-09-18 | TASK-006/093 | SPEC-008 APPROVED and integrated. Persistent Species/forms keep the applicable v2 contract and genuine SourceFact states. Mega/Eternamax/battle-only transformations are explicit excluded/deferred source inventory, not separately captured/persisted SpeciesDefinition identities and do not force fake availability wrappers. No transformation-profile catalog is added in schema v2; activation/reversion and the future transformed profile remain future rulesVersion/schema-extension work |
-| `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | ACCEPTANCE | LD → ChatGPT delegated worker (Copilot quota-blocked) | Pre-promotion and post-promotion independent QA READY `0/0/0/0`; delegated Class B acceptance **ACCEPTED** | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Human Owner approved exact review seal `sha256:91b646453a56ba1496810e1f55f5bac242dd0ce68790d62ba61ec8b4b0e15377`; canonical promotion completed; repository-history completion authorized 2026-09-21 | TASK-005/006/092 | Canonical schemas/validators/loaders; deterministic hashes/provenance; Bulbapedia-primary + PokémonDB-complementary controlled ingestion; adopted local mapping roster; immutable `game-data-core-kanto-johto-v1` publication; battle-only transformations excluded/deferred; no runtime web fetch or alternate-provider fallback |
+| `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | DONE | LD → ChatGPT delegated worker (Copilot quota-blocked) | Pre-promotion and post-promotion independent QA READY `0/0/0/0`; delegated Class B acceptance **ACCEPTED** | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human Owner approved exact review seal `sha256:91b646453a56ba1496810e1f55f5bac242dd0ce68790d62ba61ec8b4b0e15377`, canonical promotion and repository-history completion | TASK-005/006/092 | Canonical schemas/validators/loaders; deterministic hashes/provenance; Bulbapedia-primary + PokémonDB-complementary controlled ingestion; adopted local mapping roster; immutable `game-data-core-kanto-johto-v1` publication; battle-only transformations excluded/deferred; no runtime web fetch or alternate-provider fallback |
 
 **Pokémon data-source policy for TASK-006/TASK-087:** the current SPEC-002 hierarchy is
 Bulbapedia-primary with PokémonDB as an approved complementary factual source. A complementary

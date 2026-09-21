@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer
@@ -873,9 +873,26 @@ Post-promotion validation on 2026-09-21:
   inventory, review commitment and permanent loader round-trip independently matched the approved
   projection.
 - delegated Class B functional/architectural acceptance: **ACCEPTED**, no implementation blocker;
-  TASK-087 is implementation-complete. The Human Owner explicitly authorized repository-history
-  completion/integration on 2026-09-21; the task remains `ACCEPTANCE` only until that authorized
-  commit/push/main-integration sequence completes.
+  TASK-087 was implementation-complete before history integration. The Human Owner explicitly
+  authorized repository-history completion/integration on 2026-09-21, allowing the governed
+  commit/push/main-integration sequence to close the task as `DONE`.
+
+## Completion
+
+TASK-087 is DONE. The Human-approved static-data review commitment
+`sha256:91b646453a56ba1496810e1f55f5bac242dd0ce68790d62ba61ec8b4b0e15377` was promoted only through
+the audited candidate-to-accepted mapping/inventory transition. The immutable canonical bundle is
+`game-data-core-kanto-johto-v1` with
+`bundleHash = sha256:bbe5114563abe85ac5b42d4f05a63c44af9fdad7abd66ebdafa504d584c02903`.
+
+The accepted implementation snapshot was committed as
+`7733f4b2ef74739c9f00ef3be9ba380198568052`, pushed on
+`feat/TASK-087-static-game-data-catalog-ingestion`, and fast-forward integrated into canonical
+`main` after explicit Human Owner repository-history/completion authorization on 2026-09-21.
+
+Post-promotion independent QA returned READY P0/P1/P2/P3 `0/0/0/0`; delegated Class B acceptance
+returned **ACCEPTED**. This DONE metadata records governed closure only and does not activate
+TASK-023, TASK-088, TASK-090 or any other downstream task.
 
 ## Dependencies
 
@@ -903,7 +920,7 @@ Post-promotion validation on 2026-09-21:
 
 ## Expected files / boundaries
 
-- tasks/active/TASK-087-static-game-data-catalog-ingestion.md
+- tasks/done/TASK-087-static-game-data-catalog-ingestion.md
 - packages/game-data/**
 - docs/project/PROJECT_ROADMAP.md
 - generated docs/project/PROJECT_ROADMAP.html
