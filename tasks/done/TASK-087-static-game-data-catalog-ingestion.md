@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer
@@ -1005,7 +1005,8 @@ Required closure items for this corrective cycle:
   bundle hash stayed `fc4eca...052b4`, and the original `publishedAt` was preserved.
 - `game-data-core-kanto-johto-v1` and its published directory remain unchanged at
   `bundleHash = sha256:bbe5114563abe85ac5b42d4f05a63c44af9fdad7abd66ebdafa504d584c02903`.
-  No corrective commit/push/merge has occurred.
+  The corrective implementation was subsequently committed, pushed and integrated only after the
+  separate Human Owner Git authorization recorded below.
 - Fresh post-promotion validation of the exact canonical v2 state is complete. Independent
   TECH/ARCH and dependency/debt/governance gates both returned **FINAL READY** with P0/P1/P2/P3
   `0/0/0/0`; redundant independent QA also returned **FINAL READY** `0/0/0/0`; and the fresh
@@ -1015,12 +1016,15 @@ Required closure items for this corrective cycle:
   historical Move mappings outside the current 547-Move v2 catalog, reloaded v1 unchanged and v2
   at `bundleHash = sha256:fc4ecaacb486b496ca2539666201cf73ace40b6ff352f210783a6fadedf052b4`,
   verified 19,035 Learnsets plus lazy/hash-verified runtime delivery and same-version idempotence,
-  and found no implementation blocker. Post-promotion QA/acceptance is therefore closed; the
-  separately governed corrective Git-history gate is the only remaining TASK-087 closure step.
+  and found no implementation blocker. Post-promotion QA/acceptance is therefore closed.
 
-Repository-history actions for this corrective cycle remain separately governed by the standard
-Human Owner Git gate. The earlier TASK-087 history authorization covered the completed first
-publication sequence and is not treated as blanket authorization for new corrective commits.
+The Human Owner explicitly authorized the full corrective repository-history sequence at
+`2026-09-21T18:48:06Z`. Corrective commit
+`2366f9cfd79a3620ca2ccc69b8b615a359d045bc` (`fix(game-data): harden static catalog publication`)
+was pushed on `fix/TASK-087-post-publication-hardening`, fast-forward integrated into canonical
+`main`, and pushed to `origin/main`. No force/rewrite operation was used. This completed the final
+TASK-087 closure gate; downstream tasks remain separate `PLANNED` work and were not activated by
+this completion.
 
 ## Prior completion record
 
@@ -1059,14 +1063,14 @@ the corrective cycle above addresses newly identified pre-consumer hardening deb
   or remap them.
 - Network crawling must respect each provider's current robots/access policy; PokémonDB
   complementing Bulbapedia must never be used to bypass a provider restriction.
-- Repository-history completion for the **first v1 publication sequence only** was explicitly
-  authorized by the Human Owner on 2026-09-21 after that sequence's post-promotion QA and delegated
-  Class B acceptance passed. It does not authorize this corrective cycle; corrective commit/push/merge
-  remains blocked on a new explicit Human Owner Git gate.
+- Repository-history completion for the first v1 publication sequence and this later corrective
+  cycle were separately authorized by the Human Owner. The corrective authorization was given at
+  `2026-09-21T18:48:06Z` and was used only for the task-scoped commit/push/main-integration sequence;
+  unrelated history rewriting/force operations remain out of scope.
 
 ## Expected files / boundaries
 
-- tasks/active/TASK-087-static-game-data-catalog-ingestion.md
+- tasks/done/TASK-087-static-game-data-catalog-ingestion.md
 - packages/game-data/**
 - docs/project/PROJECT_ROADMAP.md
 - generated docs/project/PROJECT_ROADMAP.html

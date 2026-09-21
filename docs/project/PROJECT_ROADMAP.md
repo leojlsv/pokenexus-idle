@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, core domain/combat-engine contracts, and the PostgreSQL persistence, identity and security foundation are complete. Canonical static game-data catalog implementation is now explicitly scheduled before reward/content implementation consumes it.
+**Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, and the corrected canonical static game-data catalog are integrated. Reward/content implementation remains separately planned.
 
-**Current work:** `TASK-087 — Static Game Data Catalog & Ingestion Implementation` is in **ACCEPTANCE**. The Human Owner approved corrected `reviewHash a620dd9b…a468b`; its exact accepted projection is now published immutably as `game-data-core-kanto-johto-v2` (`bundleHash fc4ecaac…052b4`). The original v1 remains immutable at `bbe511…02903`; no downstream product task is active.
+**Current work:** `TASK-087 — Static Game Data Catalog & Ingestion Implementation` is **DONE**. The Human-approved corrected `reviewHash a620dd9b…a468b` is published immutably as `game-data-core-kanto-johto-v2` (`bundleHash fc4ecaac…052b4`) and the corrective implementation is integrated into canonical `main`. The original v1 remains immutable at `bbe511…02903`; no downstream product task is active.
 
-**Current action:** post-promotion TECH/ARCH, dependency/debt/governance, independent QA and delegated Class B acceptance are complete with P0/P1/P2/P3 `0/0/0/0`. The only remaining TASK-087 closure step is the separately Human-gated corrective repository-history sequence; no commit/push/merge is authorized. TASK-023, TASK-088 and TASK-090 remain **PLANNED** and inactive.
+**Current action:** TASK-087 corrective hardening is closed after post-promotion TECH/ARCH, dependency/debt/governance, independent QA and delegated Class B acceptance all completed with P0/P1/P2/P3 `0/0/0/0`, followed by explicit Human-authorized commit/push/main integration. TASK-023, TASK-088 and TASK-090 remain **PLANNED** and inactive.
 
-**Next task after TASK-003 acceptance:** none is activated while TASK-087 awaits its separately governed repository-history closure. After closure, TASK-023, TASK-088 and TASK-090 are dependency-clear **PLANNED** candidates for normal materialization.
+**Next task after TASK-003 acceptance:** TASK-087 is complete; no subsequent task is activated automatically. TASK-023, TASK-088 and TASK-090 are dependency-clear **PLANNED** candidates for normal materialization.
 
 **Portfolio status snapshot:**
 
@@ -42,7 +42,7 @@
 | `TASK-019` Pokémon Instance / Collection / Team Spec | DONE — exact-snapshot QA/IA clear; Human Owner accepted SPEC-005 in full and authorized repository completion/history on 2026-09-17 |
 | `TASK-020` Collection & Team Domain/Persistence Implementation | DONE — owner validation clear; QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; PM / Architecture Coordinator accepted; Human Owner authorized repository completion/history on 2026-09-17 |
 | `TASK-021` XP / Level / Progression Rules Spec | DONE — exact-snapshot QA READY and IA PASS with P0/P1/P2/P3 0/0/0/0; Human Owner accepted SPEC-006 in full and authorized repository completion/history on 2026-09-18 |
-| `TASK-087` Static Game Data Catalog & Ingestion Implementation | ACCEPTANCE — Human-approved corrected review promoted immutably to v2; all post-promotion gates are clean; only the separate Git-history gate remains |
+| `TASK-087` Static Game Data Catalog & Ingestion Implementation | DONE — corrected v2 published; v1 preserved; all post-promotion gates clean; corrective history explicitly authorized and integrated |
 | `TASK-093` Gameplay Systems & Player Experience Consultant Governance | DONE — independent QA READY, P0/P1/P2/P3 0/0/0/0; Human Owner accepted and authorized repository history; governance integrated on 2026-09-18 |
 
 **Next product milestone:** with the canonical Species/Move/Learnset catalog now published through TASK-087, separately define reward-ledger integrity and Move acquisition/eligibility; then close production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
@@ -50,17 +50,17 @@
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-093`.
-- DONE: 25.
+- DONE: 26.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 1.
+- ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 68.
-- Task-count completion: **25 / 94 = 26.6%**.
+- Task-count completion: **26 / 94 = 27.7%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -302,7 +302,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 | `TASK-005` Core Domain Type Skeleton | B | DONE | LD → Copilot CLI | QA | `SK-TDD` | Completed — PM accepted; no semantic drift | TASK-004 | Implement nominal/opaque canonical IDs; exact `StatKey` + complete `StatBlock`; type/compiler guards; only additional structures directly derivable from SPEC-001; no game logic or downstream schemas |
 | `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; Bulbapedia-primary / PokémonDB-complementary DATA-only source policy; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or opportunistic provider fallback |
 | `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | DONE | PM → ChatGPT | DoR QA READY `0/0/0/0`; original final QA NOT READY `0/1/0/0`; corrected option-1 Pokémon-domain review PASS advisory `0/0/0/0`; final independent QA READY `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human Owner accepted SPEC-008 v2 direction, approved **option 1**, and authorized repository history/completion on 2026-09-18 | TASK-006/093 | SPEC-008 APPROVED and integrated. Persistent Species/forms keep the applicable v2 contract and genuine SourceFact states. Mega/Eternamax/battle-only transformations are explicit excluded/deferred source inventory, not separately captured/persisted SpeciesDefinition identities and do not force fake availability wrappers. No transformation-profile catalog is added in schema v2; activation/reversion and the future transformed profile remain future rulesVersion/schema-extension work |
-| `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | ACCEPTANCE | LD → ChatGPT delegated worker | Pre-promotion gates clean; post-promotion TECH/ARCH **FINAL READY** `0/0/0/0`, dependency/debt/governance **FINAL READY** `0/0/0/0`, independent QA **FINAL READY** `0/0/0/0`, Class B acceptance **ACCEPTED** `0/0/0/0` | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Human data gate **APPROVED** for `a620dd9b…a468b`; **NOW:** only corrective Git history remains separately Human-gated | TASK-005/006/092 | Corrected v2 published: 293 Species / 547 Moves / 19,035 Learnsets, `bundleHash fc4ecaac…052b4`; canonical roster has 552 accepted Move identities preserving five historical mappings; v1 unchanged at `bbe511…02903`; same-version v2 republish is byte-idempotent |
+| `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | DONE | LD → ChatGPT delegated worker | Pre-promotion gates clean; post-promotion TECH/ARCH **FINAL READY** `0/0/0/0`, dependency/debt/governance **FINAL READY** `0/0/0/0`, independent QA **FINAL READY** `0/0/0/0`, Class B acceptance **ACCEPTED** `0/0/0/0` | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human data gate approved `a620dd9b…a468b`; corrective commit/push/main integration explicitly authorized 2026-09-21 | TASK-005/006/092 | Corrected v2 published: 293 Species / 547 Moves / 19,035 Learnsets, `bundleHash fc4ecaac…052b4`; canonical roster has 552 accepted Move identities preserving five historical mappings; v1 unchanged at `bbe511…02903`; same-version v2 republish is byte-idempotent |
 
 **Pokémon data-source policy for TASK-006/TASK-087:** the current SPEC-002 hierarchy is
 Bulbapedia-primary with PokémonDB as an approved complementary factual source. A complementary
@@ -411,7 +411,7 @@ implementation Task before code is written.
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092 is integrated; TASK-022 remains independent. TASK-023, TASK-088 and TASK-090 are dependency-clear at the portfolio level but are intentionally held in PLANNED until the TASK-087 corrective repository-history closure completes. TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092 and TASK-087 are integrated; TASK-022 remains independent. TASK-023, TASK-088 and TASK-090 are dependency-clear at the portfolio level and remain PLANNED until explicitly materialized through normal governance. TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
