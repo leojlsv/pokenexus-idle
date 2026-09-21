@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
   fetchBulbapediaSources,
@@ -23,6 +23,11 @@ import {
   BULBAPEDIA_GEN9_MOVE_PARSER_VERSION,
   parseBulbapediaGen9Moves,
 } from "./bulbapedia-gen9-move-parser.js";
+import {
+  BULBAPEDIA_MOVE_TARGET_PARSER_VERSION,
+  buildBulbapediaMoveTargetUrl,
+  parseBulbapediaMoveTarget,
+} from "./bulbapedia-move-target.js";
 import {
   BULBAPEDIA_GEN7_MOVE_LIST_URL,
   BULBAPEDIA_GEN8_MOVE_LIST_URL,
@@ -65,13 +70,20 @@ import {
   type ExtractedBulbapediaSpeciesStaticFacts,
 } from "./bulbapedia-species-static-facts.js";
 import {
-  BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION,
+  BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION,
   BULBAPEDIA_GEN9_LEARNSET_PARSER_VERSION,
   canonicalizeBulbapediaLearnsetSpeciesName,
   parseBulbapediaGen8BdspLearnset,
   parseBulbapediaGen9Learnset,
   type BulbapediaLearnsetHtmlSource,
 } from "./bulbapedia-learnset-parser.js";
+import {
+  BULBAPEDIA_GEN7_FORM_LEARNSET_PARSER_VERSION,
+  parseBulbapediaCurrentSpeciesBaseGen9Learnset,
+  parseBulbapediaCurrentSpeciesFormLearnset,
+  parseBulbapediaGen7FormLearnset,
+  parseBulbapediaGen8GalarianFormLearnset,
+} from "./bulbapedia-species-learnset.js";
 import {
   parseBulbapediaSpeciesBaseStats,
   type ExtractedBulbapediaSpeciesBaseStats,
@@ -90,6 +102,23 @@ import {
   LOCAL_MAPPING_ROSTER,
   type LocalMappingRoster,
 } from "./mapping-roster.js";
+import type {
+  LearnsetPageIngestionProfile,
+  MaintenanceIngestionProfile,
+  SpeciesPageIngestionProfile,
+} from "./maintenance-profile.js";
+export {
+  loadIngestionProfile,
+  parseMaintenanceIngestionProfile,
+} from "./maintenance-profile.js";
+export type {
+  BulbapediaFormDispositionProfile,
+  FormLearnsetOverrideProfile,
+  ItemPageIngestionProfile,
+  LearnsetPageIngestionProfile,
+  MaintenanceIngestionProfile,
+  SpeciesPageIngestionProfile,
+} from "./maintenance-profile.js";
 import {
   materializeBdspHistoricalScalarProofs,
   requiredHistoricalScalarProof,
@@ -106,7 +135,7 @@ import {
   POKEMONDB_PARSER_VERSION,
   discoverPokemonDbSpeciesForms,
   parsePokemonDbItemPage,
-  parsePokemonDbMovePage,
+  parsePokemonDbMovePageWithUnknownTarget,
   parsePokemonDbSpeciesPage,
   type DiscoveredPokemonDbSpeciesForm,
   type ExtractedPokemonDbAbility,
@@ -129,37 +158,6 @@ import type {
   SourceRecord,
   ValidationFinding,
 } from "./schema.js";
-
-export interface SpeciesPageIngestionProfile {
-  pokemonDbUrl: string;
-  bulbapediaUrl: string;
-  excludedOrDeferred?: ExcludedOrDeferredSourceKey[];
-  bulbapediaExcludedOrDeferredForms?: BulbapediaFormDispositionProfile[];
-}
-
-export interface BulbapediaFormDispositionProfile {
-  formLabel: string;
-  disposition: "excluded" | "deferred";
-  reason: string;
-}
-
-export interface LearnsetPageIngestionProfile {
-  bulbapediaUrl: string;
-  bdspFallbackUrl?: string;
-  speciesSourceKey: string;
-}
-
-export interface ItemPageIngestionProfile {
-  sourceKey: string;
-  pokemonDbUrl: string;
-}
-
-export interface MaintenanceIngestionProfile {
-  speciesPages?: SpeciesPageIngestionProfile[];
-  movePages?: string[];
-  items?: ItemPageIngestionProfile[];
-  learnsetPages?: LearnsetPageIngestionProfile[];
-}
 
 export interface MaintenanceIngestionOptions {
   outputDirectory: string;
@@ -348,6 +346,7 @@ function stableUniqueBulbapediaUrls(
       ? [BULBAPEDIA_REGIONAL_FORM_LIST_URL]
       : []),
     ...(profile.speciesPages ?? []).map((entry) => entry.bulbapediaUrl),
+    ...(profile.formLearnsetOverrides ?? []).map((entry) => entry.bulbapediaUrl),
     ...((profile.movePages?.length ?? 0) > 0
       ? [
           BULBAPEDIA_GEN9_MOVE_LIST_URL,
@@ -371,6 +370,35 @@ function stableUniqueBulbapediaUrls(
     result.push(url.href);
   }
   return result;
+}
+
+export function mergeFetchedMaintenanceSources(
+  ...groups: readonly (readonly FetchedMaintenanceSource[])[]
+): FetchedMaintenanceSource[] {
+  const byUrl = new Map<string, FetchedMaintenanceSource>();
+  for (const group of groups) {
+    for (const source of group) {
+      const canonicalUrl = new URL(source.url).href;
+      const previous = byUrl.get(canonicalUrl);
+      if (!previous) {
+        byUrl.set(canonicalUrl, { ...source, url: canonicalUrl });
+        continue;
+      }
+      if (
+        previous.sourceContentHash !== source.sourceContentHash ||
+        previous.fetchedAt !== source.fetchedAt ||
+        !previous.bytes.equals(source.bytes)
+      ) {
+        throw new Error(
+          `duplicate maintenance source URL has conflicting immutable evidence: ${canonicalUrl}`,
+        );
+      }
+      if (previous.fetchStatus !== "cache" && source.fetchStatus === "cache") {
+        byUrl.set(canonicalUrl, { ...source, url: canonicalUrl });
+      }
+    }
+  }
+  return [...byUrl.values()];
 }
 
 export async function fetchConfiguredLearnsetSources(
@@ -408,7 +436,12 @@ export async function fetchConfiguredLearnsetSources(
         policy,
       );
       selected = fallback.sources[0];
-      if (!selected) throw new Error(`BDSP learnset fallback fetch returned no source for ${entry.speciesSourceKey}`);
+      if (!selected) {
+        throw new Error(
+          `BDSP learnset fallback fetch returned no source for ${entry.speciesSourceKey}`,
+          { cause: error },
+        );
+      }
     }
     sourcesByUrl.set(selected.url, selected);
     selectedUrlBySpeciesSourceKey.set(entry.speciesSourceKey.normalize("NFC"), selected.url);
@@ -418,6 +451,34 @@ export async function fetchConfiguredLearnsetSources(
     sources: [...sourcesByUrl.values()],
     selectedUrlBySpeciesSourceKey,
   };
+}
+
+async function fetchConfiguredBdspProofSources(
+  profile: MaintenanceIngestionProfile,
+  options: BulbapediaFetchOptions,
+  policy: RobotsPolicy,
+): Promise<{
+  sources: FetchedMaintenanceSource[];
+  selectedUrlBySpeciesSourceKey: Map<string, string>;
+}> {
+  const entries = (profile.learnsetPages ?? []).filter(
+    (entry): entry is LearnsetPageIngestionProfile & { bdspFallbackUrl: string } =>
+      entry.bdspFallbackUrl !== undefined,
+  );
+  const urls = entries.map((entry) => entry.bdspFallbackUrl);
+  const fetched = urls.length > 0
+    ? await fetchBulbapediaSources(urls, options, policy)
+    : { robotsPolicy: policy, sources: [] };
+  const fetchedByUrl = new Map(fetched.sources.map((source) => [new URL(source.url).href, source]));
+  const selectedUrlBySpeciesSourceKey = new Map<string, string>();
+  for (const entry of entries) {
+    const url = new URL(entry.bdspFallbackUrl).href;
+    if (!fetchedByUrl.has(url)) {
+      throw new Error(`BDSP proof fetch returned no source for ${entry.speciesSourceKey}`);
+    }
+    selectedUrlBySpeciesSourceKey.set(entry.speciesSourceKey.normalize("NFC"), url);
+  }
+  return { sources: fetched.sources, selectedUrlBySpeciesSourceKey };
 }
 
 function mergeExclusions(
@@ -446,10 +507,23 @@ function mergeExclusions(
     result.species = [...(result.species ?? []), ...stagedBulbapediaForms];
   }
   for (const [surface, entries] of Object.entries(result)) {
-    const keys = entries?.map((entry) => entry.sourceKey.normalize("NFC")) ?? [];
-    if (new Set(keys).size !== keys.length) {
-      throw new Error("duplicate excluded/deferred source key for " + surface);
+    if (!entries) continue;
+    const byKey = new Map<string, ExcludedOrDeferredSourceKey>();
+    for (const entry of entries) {
+      const key = entry.sourceKey.normalize("NFC");
+      const previous = byKey.get(key);
+      if (!previous) {
+        byKey.set(key, entry);
+        continue;
+      }
+      if (
+        previous.disposition !== entry.disposition ||
+        previous.reason.normalize("NFC") !== entry.reason.normalize("NFC")
+      ) {
+        throw new Error("conflicting excluded/deferred source key for " + surface + ": " + key);
+      }
     }
+    result[surface as keyof ExclusionsBySurface] = [...byKey.values()];
   }
   return result;
 }
@@ -974,7 +1048,7 @@ export function assertFullCandidateCoverage(input: {
   );
   assertExactKeySet(
     input.learnsets.map((entry) => entry.speciesSourceKey),
-    baseSpecies.map((record) => record.sourceKey),
+    input.species.map((record) => record.sourceKey),
     "full-candidate extracted modern learnset Species coverage",
   );
   assertExactKeySet(
@@ -1164,17 +1238,24 @@ export async function runMaintenanceIngestion(
     bulbapediaOptions,
     bulbapediaPolicy,
   );
-  const learnsetFetchedResult = await fetchConfiguredLearnsetSources(
-    options.profile,
-    bulbapediaOptions,
-    bulbapediaPolicy,
-  );
+  const learnsetFetchedResult =
+    intent === "full-candidate"
+      ? await fetchConfiguredBdspProofSources(
+          options.profile,
+          bulbapediaOptions,
+          bulbapediaPolicy,
+        )
+      : await fetchConfiguredLearnsetSources(
+          options.profile,
+          bulbapediaOptions,
+          bulbapediaPolicy,
+        );
   const bulbapediaFetchedResult = {
     robotsPolicy: bulbapediaPolicy,
-    sources: [
-      ...commonBulbapediaFetchedResult.sources,
-      ...learnsetFetchedResult.sources,
-    ],
+    sources: mergeFetchedMaintenanceSources(
+      commonBulbapediaFetchedResult.sources,
+      learnsetFetchedResult.sources,
+    ),
   };
   const fetched = new Map(fetchedResult.sources.map((source) => [source.url, source]));
   const bulbapediaFetched = new Map(
@@ -1396,7 +1477,46 @@ export async function runMaintenanceIngestion(
       };
     });
   });
-  const parsedLearnsets = (options.profile.learnsetPages ?? []).map((entry) => {
+  const selectedProfileLearnsets =
+    intent === "full-candidate"
+      ? []
+      : (options.profile.learnsetPages ?? []).map((entry) => {
+          const boundSpecies = species.filter(
+            (record) => record.sourceKey.normalize("NFC") === entry.speciesSourceKey.normalize("NFC"),
+          );
+          if (boundSpecies.length !== 1) {
+            throw new Error(
+              `Learnset profile speciesSourceKey ${entry.speciesSourceKey} must resolve to exactly one extracted Species`,
+            );
+          }
+          const selectedUrl = learnsetFetchedResult.selectedUrlBySpeciesSourceKey.get(
+            entry.speciesSourceKey.normalize("NFC"),
+          );
+          if (!selectedUrl) throw new Error(`Learnset source selection is missing for ${entry.speciesSourceKey}`);
+          const selectedSource = bulbapediaLearnsetSource(
+            maintenanceSourceByUrl(bulbapediaFetched, selectedUrl),
+          );
+          const parsed = decodeURIComponent(new URL(selectedUrl).pathname).endsWith(
+            "/Generation_VIII_learnset",
+          )
+            ? parseBulbapediaGen8BdspLearnset(selectedSource, entry.speciesSourceKey)
+            : parseBulbapediaGen9Learnset(selectedSource, entry.speciesSourceKey);
+          const boundSpeciesIdentity = canonicalizeBulbapediaLearnsetSpeciesName(
+            boundSpecies[0].sourceName,
+          );
+          if (parsed.sourceSpeciesKey !== boundSpeciesIdentity) {
+            throw new Error(
+              `Learnset source mismatch for ${entry.speciesSourceKey}: page Species ${parsed.sourceSpeciesKey} does not match ${boundSpeciesIdentity}`,
+            );
+          }
+          return parsed;
+        });
+
+  const historicalBdspLearnsets = (
+    intent === "full-candidate"
+      ? (options.profile.learnsetPages ?? []).filter((entry) => entry.bdspFallbackUrl !== undefined)
+      : []
+  ).map((entry) => {
     const boundSpecies = species.filter(
       (record) => record.sourceKey.normalize("NFC") === entry.speciesSourceKey.normalize("NFC"),
     );
@@ -1407,23 +1527,22 @@ export async function runMaintenanceIngestion(
     }
     if (boundSpecies[0].formLabel !== null) {
       throw new Error(
-        `Learnset profile ${entry.speciesSourceKey}: form-specific binding is not supported by the Generation IX Species-page parser`,
+        `historical BDSP proof profile ${entry.speciesSourceKey} must bind a base Species`,
       );
     }
     const selectedUrl = learnsetFetchedResult.selectedUrlBySpeciesSourceKey.get(
       entry.speciesSourceKey.normalize("NFC"),
     );
     if (!selectedUrl) {
-      throw new Error(`Learnset source selection is missing for ${entry.speciesSourceKey}`);
+      throw new Error(`historical BDSP proof source is missing for ${entry.speciesSourceKey}`);
     }
     const selectedSource = bulbapediaLearnsetSource(
       maintenanceSourceByUrl(bulbapediaFetched, selectedUrl),
     );
-    const parsed = decodeURIComponent(new URL(selectedUrl).pathname).endsWith(
-      "/Generation_VIII_learnset",
-    )
-      ? parseBulbapediaGen8BdspLearnset(selectedSource, entry.speciesSourceKey)
-      : parseBulbapediaGen9Learnset(selectedSource, entry.speciesSourceKey);
+    if (!decodeURIComponent(new URL(selectedUrl).pathname).endsWith("/Generation_VIII_learnset")) {
+      throw new Error(`historical proof source must be Generation VIII for ${entry.speciesSourceKey}`);
+    }
+    const parsed = parseBulbapediaGen8BdspLearnset(selectedSource, entry.speciesSourceKey);
     const boundSpeciesIdentity = canonicalizeBulbapediaLearnsetSpeciesName(
       boundSpecies[0].sourceName,
     );
@@ -1432,16 +1551,196 @@ export async function runMaintenanceIngestion(
         `Learnset source mismatch for ${entry.speciesSourceKey}: page Species ${parsed.sourceSpeciesKey} does not match ${boundSpeciesIdentity}`,
       );
     }
-    return parsed;
+    return {
+      speciesSourceKey: entry.speciesSourceKey,
+      parsed,
+    };
   });
-  const learnsets = parsedLearnsets.flatMap((entry) => entry.records);
-  const learnsetDiscovery = parsedLearnsets.flatMap(
-    (entry) => entry.discoveredSourceKeys,
+  const historicalBdspBySpeciesSourceKey = new Map(
+    historicalBdspLearnsets.map((entry) => [
+      entry.speciesSourceKey.normalize("NFC"),
+      entry.parsed,
+    ] as const),
   );
 
-  const parsedMoves = (options.profile.movePages ?? []).map((url) =>
-    parsePokemonDbMovePage(parserSource(sourceByUrl(fetched, url))),
+  const speciesPageBySourceKey = new Map<string, SpeciesPageIngestionProfile>();
+  const baseSourceNameByPageUrl = new Map<string, string>();
+  for (const page of options.profile.speciesPages ?? []) {
+    const canonicalPokemonDbUrl = new URL(page.pokemonDbUrl).href;
+    const discovery = speciesDiscoveryByPokemonDbUrl.get(canonicalPokemonDbUrl);
+    if (!discovery) throw new Error(`Species discovery is missing for ${page.pokemonDbUrl}`);
+    const represented = discovery.filter((entry) =>
+      species.some(
+        (record) => record.sourceKey.normalize("NFC") === entry.sourceKey.normalize("NFC"),
+      ),
+    );
+    for (const entry of represented) {
+      const key = entry.sourceKey.normalize("NFC");
+      if (speciesPageBySourceKey.has(key)) {
+        throw new Error(`Species ${entry.sourceKey} is bound to multiple Species pages`);
+      }
+      speciesPageBySourceKey.set(key, page);
+    }
+    const baseEntry = represented.filter((entry) => entry.formLabel === null);
+    if (baseEntry.length !== 1) {
+      throw new Error(`Species page ${page.pokemonDbUrl} must represent exactly one accepted base Species`);
+    }
+    const baseRecord = species.find(
+      (record) => record.sourceKey.normalize("NFC") === baseEntry[0].sourceKey.normalize("NFC"),
+    );
+    if (!baseRecord) throw new Error(`accepted base Species is missing for ${page.pokemonDbUrl}`);
+    baseSourceNameByPageUrl.set(new URL(page.pokemonDbUrl).href, baseRecord.sourceName);
+  }
+
+  const formOverrideBySpeciesSourceKey = new Map(
+    (options.profile.formLearnsetOverrides ?? []).map((entry) => [
+      entry.speciesSourceKey.normalize("NFC"),
+      entry,
+    ] as const),
   );
+  for (const override of formOverrideBySpeciesSourceKey.values()) {
+    const bound = species.filter(
+      (record) => record.sourceKey.normalize("NFC") === override.speciesSourceKey.normalize("NFC"),
+    );
+    if (bound.length !== 1 || bound[0].formLabel === null) {
+      throw new Error(`form Learnset override ${override.speciesSourceKey} must bind exactly one persistent form`);
+    }
+    if (bound[0].formLabel.normalize("NFC") !== override.formLabel.normalize("NFC")) {
+      throw new Error(
+        `form Learnset override ${override.speciesSourceKey} formLabel does not match accepted Species identity`,
+      );
+    }
+  }
+
+  const fullCandidateLearnsets = intent === "full-candidate"
+    ? species.flatMap((record): ExtractedPokemonDbLearnsetEntry[] => {
+    const page = speciesPageBySourceKey.get(record.sourceKey.normalize("NFC"));
+    if (!page) throw new Error(`accepted Species ${record.sourceKey} has no configured Species page`);
+    const baseSourceName = baseSourceNameByPageUrl.get(new URL(page.pokemonDbUrl).href);
+    if (!baseSourceName) throw new Error(`Species page base identity is missing for ${page.pokemonDbUrl}`);
+
+    if (record.formLabel === null) {
+      const currentSource = bulbapediaLearnsetSource(
+        maintenanceSourceByUrl(bulbapediaFetched, page.bulbapediaUrl),
+      );
+      const current = parseBulbapediaCurrentSpeciesBaseGen9Learnset({
+        source: currentSource,
+        speciesSourceKey: record.sourceKey,
+        baseSourceName,
+      });
+      if (current !== null) return current;
+      const historical = historicalBdspBySpeciesSourceKey.get(record.sourceKey.normalize("NFC"));
+      if (!historical) {
+        throw new Error(`base Species ${record.sourceKey} has no Gen IX Learnset and no approved BDSP fallback`);
+      }
+      return historical.records;
+    }
+
+    const override = formOverrideBySpeciesSourceKey.get(record.sourceKey.normalize("NFC"));
+    if (override) {
+      const overrideSource = bulbapediaLearnsetSource(
+        maintenanceSourceByUrl(bulbapediaFetched, override.bulbapediaUrl),
+      );
+      const overridePath = decodeURIComponent(new URL(override.bulbapediaUrl).pathname);
+      if (overridePath.endsWith("/Generation_VII_learnset")) {
+        return parseBulbapediaGen7FormLearnset({
+          source: overrideSource,
+          speciesSourceKey: record.sourceKey,
+          baseSourceName,
+          formLabel: record.formLabel,
+        });
+      }
+      if (overridePath.endsWith("/Generation_VIII_learnset")) {
+        return parseBulbapediaGen8GalarianFormLearnset({
+          source: overrideSource,
+          speciesSourceKey: record.sourceKey,
+          baseSourceName,
+          formLabel: record.formLabel,
+        });
+      }
+      throw new Error(`unsupported form Learnset override generation for ${override.speciesSourceKey}`);
+    }
+
+    const currentSource = bulbapediaLearnsetSource(
+      maintenanceSourceByUrl(bulbapediaFetched, page.bulbapediaUrl),
+    );
+    return parseBulbapediaCurrentSpeciesFormLearnset({
+      source: currentSource,
+      speciesSourceKey: record.sourceKey,
+      baseSourceName,
+      formLabel: record.formLabel,
+    });
+      })
+    : [];
+  const learnsets =
+    intent === "full-candidate"
+      ? fullCandidateLearnsets
+      : selectedProfileLearnsets.flatMap((entry) => entry.records);
+  const learnsetDiscovery = learnsets.map(learnsetInventoryKey);
+
+  const parsedMoveComplements = (options.profile.movePages ?? []).map((url) =>
+    parsePokemonDbMovePageWithUnknownTarget(parserSource(sourceByUrl(fetched, url))),
+  );
+  const moveTargetFallbackRequests = parsedMoveComplements
+    .filter((record) => record.sourceTarget === null)
+    .map((record) => ({
+      sourceKey: record.sourceKey,
+      sourceName: record.sourceName,
+      url: buildBulbapediaMoveTargetUrl(record.sourceName),
+    }));
+  const moveTargetFallbackUrls = moveTargetFallbackRequests.map((request) => request.url);
+  if (new Set(moveTargetFallbackUrls).size !== moveTargetFallbackUrls.length) {
+    throw new Error("Bulbapedia Move target fallback requests produced duplicate canonical URLs");
+  }
+  const moveTargetFallbackFetchedResult =
+    moveTargetFallbackUrls.length > 0
+      ? await fetchBulbapediaSources(
+          moveTargetFallbackUrls,
+          bulbapediaOptions,
+          bulbapediaPolicy,
+        )
+      : { robotsPolicy: bulbapediaPolicy, sources: [] };
+  const moveTargetFallbackUrlSet = new Set(moveTargetFallbackUrls);
+  for (const source of moveTargetFallbackFetchedResult.sources) {
+    if (bulbapediaFetched.has(source.url)) {
+      throw new Error(
+        `duplicate Bulbapedia source URL after Move target fallback fetch: ${source.url}`,
+      );
+    }
+    bulbapediaFetched.set(source.url, source);
+  }
+  const parsedMoves: ExtractedPokemonDbMove[] = parsedMoveComplements.map((record) => {
+    const makesContactSourceRecordId = record.sourceRecordId;
+    if (record.sourceTarget !== null) {
+      return {
+        ...record,
+        sourceTarget: record.sourceTarget,
+        sourceTargetSourceRecordId: record.sourceRecordId,
+        makesContactSourceRecordId,
+      };
+    }
+    const fallbackUrl = buildBulbapediaMoveTargetUrl(record.sourceName);
+    const fallbackSource = maintenanceSourceByUrl(bulbapediaFetched, fallbackUrl);
+    const fallback = parseBulbapediaMoveTarget({
+      url: fallbackSource.url,
+      sourceRecordId: sourceRecordIdForUrl("bulbapedia", fallbackSource.url),
+      html: fallbackSource.bytes.toString("utf8"),
+    });
+    if (
+      fallback.sourceKey.normalize("NFC") !== record.sourceKey.normalize("NFC") ||
+      fallback.sourceName.normalize("NFC") !== record.sourceName.normalize("NFC")
+    ) {
+      throw new Error(
+        `Move target fallback source disagreement for ${record.sourceKey}: Bulbapedia ${JSON.stringify(fallback.sourceName)} vs PokémonDB ${JSON.stringify(record.sourceName)}`,
+      );
+    }
+    return {
+      ...record,
+      sourceTarget: fallback.sourceTarget,
+      sourceTargetSourceRecordId: fallback.sourceRecordId,
+      makesContactSourceRecordId,
+    };
+  });
   const gen9Source = hasMovePages
     ? maintenanceSourceByUrl(bulbapediaFetched, BULBAPEDIA_GEN9_MOVE_LIST_URL)
     : null;
@@ -1503,7 +1802,10 @@ export async function runMaintenanceIngestion(
   }
   const bdspHistoricalScalarProofs = materializeBdspHistoricalScalarProofs({
     requests: bdspProofRequests,
-    evidence: parsedLearnsets.flatMap((entry) => entry.moveFacts),
+    evidence: (intent === "full-candidate"
+      ? historicalBdspLearnsets.map((entry) => entry.parsed)
+      : selectedProfileLearnsets
+    ).flatMap((entry) => entry.moveFacts),
     generation8: generation8Moves,
   });
   const revisionHistoricalScalarProofs = revisionProofRequests.map((request) => {
@@ -1611,7 +1913,7 @@ export async function runMaintenanceIngestion(
       : null;
 
   const rawExtracted: RawExtractedSnapshot = {
-    parserVersion: "pokenexus-static-raw-extract-v3",
+    parserVersion: "pokenexus-static-raw-extract-v4",
     speciesDiscovery,
     discovery: {
       species: supplementalBulbapediaSpeciesKeys,
@@ -1640,16 +1942,27 @@ export async function runMaintenanceIngestion(
     abilities,
     items,
     learnsets,
+    historicalScalarProofs,
     currentTypeEffectiveness: typeChart.currentTypeEffectiveness,
   };
   const speciesEvidenceUrls = new Set(
     (options.profile.speciesPages ?? []).map((entry) => new URL(entry.bulbapediaUrl).href),
   );
+  const gen7FormLearnsetUrls = new Set<string>();
+  const gen8LearnsetUrls = new Set<string>();
+  for (const override of options.profile.formLearnsetOverrides ?? []) {
+    const url = new URL(override.bulbapediaUrl).href;
+    const path = decodeURIComponent(new URL(url).pathname);
+    if (path.endsWith("/Generation_VII_learnset")) {
+      gen7FormLearnsetUrls.add(url);
+    } else if (path.endsWith("/Generation_VIII_learnset")) {
+      gen8LearnsetUrls.add(url);
+    }
+  }
   const gen9LearnsetUrls = new Set<string>();
-  const gen8BdspLearnsetUrls = new Set<string>();
   for (const selectedUrl of learnsetFetchedResult.selectedUrlBySpeciesSourceKey.values()) {
     if (decodeURIComponent(new URL(selectedUrl).pathname).endsWith("/Generation_VIII_learnset")) {
-      gen8BdspLearnsetUrls.add(selectedUrl);
+      gen8LearnsetUrls.add(selectedUrl);
     } else {
       gen9LearnsetUrls.add(selectedUrl);
     }
@@ -1660,11 +1973,14 @@ export async function runMaintenanceIngestion(
     ),
     ...[
       ...bulbapediaFetchedResult.sources,
+      ...moveTargetFallbackFetchedResult.sources,
       ...historicalProofFetchedResult.sources,
     ].map((source) => {
       const parserVersion =
         historicalProofUrlSet.has(source.url)
           ? BULBAPEDIA_HISTORICAL_SCALAR_PROOF_PARSER_VERSION
+          : moveTargetFallbackUrlSet.has(source.url)
+            ? BULBAPEDIA_MOVE_TARGET_PARSER_VERSION
           : source.url === BULBAPEDIA_KANTO_JOHTO_SPECIES_DISCOVERY_URL
           ? BULBAPEDIA_KANTO_JOHTO_SPECIES_DISCOVERY_PARSER_VERSION
           : source.url === BULBAPEDIA_GEN9_MOVE_LIST_URL
@@ -1682,12 +1998,14 @@ export async function runMaintenanceIngestion(
                     ? BULBAPEDIA_ITEM_LIST_PARSER_VERSION
                     : source.url === BULBAPEDIA_REGIONAL_FORM_LIST_URL
                       ? BULBAPEDIA_REGIONAL_FORM_EVIDENCE_PARSER_VERSION
+                      : gen7FormLearnsetUrls.has(source.url)
+                        ? BULBAPEDIA_GEN7_FORM_LEARNSET_PARSER_VERSION
                       : speciesEvidenceUrls.has(source.url)
                         ? BULBAPEDIA_SPECIES_PAGE_PARSER_VERSION
                       : gen9LearnsetUrls.has(source.url)
                           ? BULBAPEDIA_GEN9_LEARNSET_PARSER_VERSION
-                          : gen8BdspLearnsetUrls.has(source.url)
-                            ? BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION
+                          : gen8LearnsetUrls.has(source.url)
+                            ? BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION
                           : (() => {
                               throw new Error(
                                 "unexpected Bulbapedia reference source " + source.url,
@@ -1746,245 +2064,4 @@ export async function runMaintenanceIngestion(
     validationReport,
     ...(reviewStage ? { reviewStage } : {}),
   };
-}
-
-function profileRecord(value: unknown, path: string): Record<string, unknown> {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error(`${path} must be an object`);
-  }
-  return value as Record<string, unknown>;
-}
-
-function profileString(value: unknown, path: string): string {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`${path} must be a non-empty string`);
-  }
-  return value;
-}
-
-function profileUrl(
-  value: unknown,
-  path: string,
-  origin: "https://pokemondb.net" | "https://bulbapedia.bulbagarden.net",
-  pathnamePattern: RegExp,
-): string {
-  const raw = profileString(value, path);
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    throw new Error(`${path} must be a valid URL`);
-  }
-  if (
-    url.origin !== origin ||
-    url.username !== "" ||
-    url.password !== "" ||
-    url.search !== "" ||
-    url.hash !== "" ||
-    !pathnamePattern.test(decodeURIComponent(url.pathname))
-  ) {
-    throw new Error(
-      `${path} must be an approved canonical URL on ${origin} with the exact surface path`,
-    );
-  }
-  return url.href;
-}
-
-function rejectUnknownProfileKeys(
-  value: Record<string, unknown>,
-  allowed: readonly string[],
-  path: string,
-): void {
-  for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) throw new Error(`${path}.${key} is not supported`);
-  }
-}
-
-function parseProfileExclusions(
-  value: unknown,
-  path: string,
-): ExcludedOrDeferredSourceKey[] | undefined {
-  if (value === undefined) return undefined;
-  if (!Array.isArray(value)) throw new Error(`${path} must be an array`);
-  return value.map((entry, index) => {
-    const object = profileRecord(entry, `${path}[${index}]`);
-    rejectUnknownProfileKeys(object, ["sourceKey", "disposition", "reason"], `${path}[${index}]`);
-    const disposition = object.disposition;
-    if (disposition !== "excluded" && disposition !== "deferred") {
-      throw new Error(`${path}[${index}].disposition must be excluded or deferred`);
-    }
-    return {
-      sourceKey: profileString(object.sourceKey, `${path}[${index}].sourceKey`),
-      disposition,
-      reason: profileString(object.reason, `${path}[${index}].reason`),
-    };
-  });
-}
-
-function parseBulbapediaFormDispositions(
-  value: unknown,
-  path: string,
-): BulbapediaFormDispositionProfile[] | undefined {
-  if (value === undefined) return undefined;
-  if (!Array.isArray(value)) throw new Error(`${path} must be an array`);
-  const result = value.map((entry, index): BulbapediaFormDispositionProfile => {
-    const object = profileRecord(entry, `${path}[${index}]`);
-    rejectUnknownProfileKeys(object, ["formLabel", "disposition", "reason"], `${path}[${index}]`);
-    const disposition = object.disposition;
-    if (disposition !== "excluded" && disposition !== "deferred") {
-      throw new Error(`${path}[${index}].disposition must be excluded or deferred`);
-    }
-    return {
-      formLabel: profileString(object.formLabel, `${path}[${index}].formLabel`),
-      disposition,
-      reason: profileString(object.reason, `${path}[${index}].reason`),
-    };
-  });
-  assertUniqueProfileValues(
-    result.map((entry) => entry.formLabel),
-    `${path} formLabel`,
-  );
-  return result;
-}
-
-function assertUniqueProfileValues(values: readonly string[], label: string): void {
-  const normalized = values.map((value) => value.normalize("NFC"));
-  if (new Set(normalized).size !== normalized.length) {
-    throw new Error(`duplicate ${label} in maintenance ingestion profile`);
-  }
-}
-
-export function parseMaintenanceIngestionProfile(value: unknown): MaintenanceIngestionProfile {
-  const object = profileRecord(value, "profile");
-  rejectUnknownProfileKeys(object, ["speciesPages", "movePages", "items", "learnsetPages"], "profile");
-
-  const speciesPages = object.speciesPages === undefined
-    ? undefined
-    : (() => {
-        if (!Array.isArray(object.speciesPages)) throw new Error("profile.speciesPages must be an array");
-        return object.speciesPages.map((entry, index): SpeciesPageIngestionProfile => {
-          const page = profileRecord(entry, `profile.speciesPages[${index}]`);
-          rejectUnknownProfileKeys(
-            page,
-            ["pokemonDbUrl", "bulbapediaUrl", "excludedOrDeferred", "bulbapediaExcludedOrDeferredForms"],
-            `profile.speciesPages[${index}]`,
-          );
-          return {
-            pokemonDbUrl: profileUrl(
-              page.pokemonDbUrl,
-              `profile.speciesPages[${index}].pokemonDbUrl`,
-              "https://pokemondb.net",
-              /^\/pokedex\/[^/]+\/?$/u,
-            ),
-            bulbapediaUrl: profileUrl(
-              page.bulbapediaUrl,
-              `profile.speciesPages[${index}].bulbapediaUrl`,
-              "https://bulbapedia.bulbagarden.net",
-              /^\/wiki\/[^/]+_\(Pokémon\)$/u,
-            ),
-            excludedOrDeferred: parseProfileExclusions(
-              page.excludedOrDeferred,
-              `profile.speciesPages[${index}].excludedOrDeferred`,
-            ),
-            bulbapediaExcludedOrDeferredForms: parseBulbapediaFormDispositions(
-              page.bulbapediaExcludedOrDeferredForms,
-              `profile.speciesPages[${index}].bulbapediaExcludedOrDeferredForms`,
-            ),
-          };
-        });
-      })();
-
-  const movePages = object.movePages === undefined
-    ? undefined
-    : (() => {
-        if (!Array.isArray(object.movePages)) throw new Error("profile.movePages must be an array");
-        return object.movePages.map((entry, index) =>
-          profileUrl(
-            entry,
-            `profile.movePages[${index}]`,
-            "https://pokemondb.net",
-            /^\/move\/[^/]+\/?$/u,
-          ));
-      })();
-
-  const items = object.items === undefined
-    ? undefined
-    : (() => {
-        if (!Array.isArray(object.items)) throw new Error("profile.items must be an array");
-        return object.items.map((entry, index): ItemPageIngestionProfile => {
-          const item = profileRecord(entry, `profile.items[${index}]`);
-          rejectUnknownProfileKeys(item, ["sourceKey", "pokemonDbUrl"], `profile.items[${index}]`);
-          return {
-            sourceKey: profileString(item.sourceKey, `profile.items[${index}].sourceKey`),
-            pokemonDbUrl: profileUrl(
-              item.pokemonDbUrl,
-              `profile.items[${index}].pokemonDbUrl`,
-              "https://pokemondb.net",
-              /^\/item\/[^/]+\/?$/u,
-            ),
-          };
-        });
-      })();
-
-  const learnsetPages = object.learnsetPages === undefined
-    ? undefined
-    : (() => {
-        if (!Array.isArray(object.learnsetPages)) throw new Error("profile.learnsetPages must be an array");
-        return object.learnsetPages.map((entry, index): LearnsetPageIngestionProfile => {
-          const page = profileRecord(entry, `profile.learnsetPages[${index}]`);
-          rejectUnknownProfileKeys(
-            page,
-            ["bulbapediaUrl", "bdspFallbackUrl", "speciesSourceKey"],
-            `profile.learnsetPages[${index}]`,
-          );
-          return {
-            bulbapediaUrl: profileUrl(
-              page.bulbapediaUrl,
-              `profile.learnsetPages[${index}].bulbapediaUrl`,
-              "https://bulbapedia.bulbagarden.net",
-              /^\/wiki\/[^/]+_\(Pokémon\)\/Generation_IX_learnset$/u,
-            ),
-            bdspFallbackUrl:
-              page.bdspFallbackUrl === undefined
-                ? undefined
-                : profileUrl(
-                    page.bdspFallbackUrl,
-                    `profile.learnsetPages[${index}].bdspFallbackUrl`,
-                    "https://bulbapedia.bulbagarden.net",
-                    /^\/wiki\/[^/]+_\(Pokémon\)\/Generation_VIII_learnset$/u,
-                  ),
-            speciesSourceKey: profileString(
-              page.speciesSourceKey,
-              `profile.learnsetPages[${index}].speciesSourceKey`,
-            ),
-          };
-        });
-      })();
-
-  const result: MaintenanceIngestionProfile = { speciesPages, movePages, items, learnsetPages };
-  if (
-    (speciesPages?.length ?? 0) +
-      (movePages?.length ?? 0) +
-      (items?.length ?? 0) +
-      (learnsetPages?.length ?? 0) ===
-    0
-  ) {
-    throw new Error("maintenance ingestion profile contains no configured source surfaces");
-  }
-  assertUniqueProfileValues(speciesPages?.map((entry) => entry.pokemonDbUrl) ?? [], "Species PokémonDB URL");
-  assertUniqueProfileValues(speciesPages?.map((entry) => entry.bulbapediaUrl) ?? [], "Species Bulbapedia URL");
-  assertUniqueProfileValues(movePages ?? [], "Move PokémonDB URL");
-  assertUniqueProfileValues(items?.map((entry) => entry.sourceKey) ?? [], "Item sourceKey");
-  assertUniqueProfileValues(items?.map((entry) => entry.pokemonDbUrl) ?? [], "Item PokémonDB URL");
-  assertUniqueProfileValues(learnsetPages?.map((entry) => entry.bulbapediaUrl) ?? [], "Learnset Bulbapedia URL");
-  assertUniqueProfileValues(
-    learnsetPages?.flatMap((entry) => entry.bdspFallbackUrl ? [entry.bdspFallbackUrl] : []) ?? [],
-    "Learnset BDSP fallback URL",
-  );
-  assertUniqueProfileValues(learnsetPages?.map((entry) => entry.speciesSourceKey) ?? [], "Learnset speciesSourceKey");
-  return result;
-}
-
-export async function loadIngestionProfile(path: string): Promise<MaintenanceIngestionProfile> {
-  return parseMaintenanceIngestionProfile(JSON.parse(await readFile(path, "utf8")) as unknown);
 }

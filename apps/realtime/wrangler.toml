@@ -1,6 +1,6 @@
 name = "pokenexus-realtime"
 main = "src/index.ts"
-compatibility_date = "2025-01-09"
+compatibility_date = "2026-09-21"
 
 [[durable_objects.bindings]]
 name = "ROOM"

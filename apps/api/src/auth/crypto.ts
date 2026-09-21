@@ -3,7 +3,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 const BEARER_BYTES = 32;
 
 export function generateBearerSecret(): string {
-  return randomBytes(BEARER_BYTES).toString("base64url");
+  return Buffer.from(randomBytes(BEARER_BYTES)).toString("base64url");
 }
 
 export async function digestBearerSecret(secret: string): Promise<Uint8Array> {

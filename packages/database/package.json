@@ -21,14 +21,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config vitest.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:worker-compat": "corepack pnpm --dir ../../apps/api exec wrangler deploy integration/worker-bundle-entry.ts --cwd ../../packages/database --dry-run --compatibility-date 2025-01-09 --compatibility-flag nodejs_compat --outdir .wrangler/worker-compat --name pokenexus-database-worker-compat",
+    "test:worker-compat": "corepack pnpm --dir ../../apps/api exec wrangler deploy integration/worker-bundle-entry.ts --cwd ../../packages/database --dry-run --compatibility-date 2026-09-21 --compatibility-flag nodejs_compat --outdir .wrangler/worker-compat --name pokenexus-database-worker-compat",
     "lint": "eslint .",
     "migrate": "corepack pnpm run build && node dist/migration-cli.js"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.4"
+    "vitest": "4.1.11"
   },
   "dependencies": {
     "pg": "8.23.0",

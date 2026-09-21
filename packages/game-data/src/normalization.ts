@@ -15,13 +15,18 @@ import {
   BULBAPEDIA_GEN8_MOVE_LIST_URL,
   BULBAPEDIA_HISTORICAL_MOVE_PARSER_VERSION,
 } from "./bulbapedia-historical-move-parser.js";
-import { BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION } from "./bulbapedia-learnset-parser.js";
+import {
+  BULBAPEDIA_MOVE_TARGET_PARSER_VERSION,
+  buildBulbapediaMoveTargetUrl,
+} from "./bulbapedia-move-target.js";
+import { BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION } from "./bulbapedia-learnset-parser.js";
 import {
   BULBAPEDIA_HISTORICAL_SCALAR_PROOF_PARSER_VERSION,
   buildBulbapediaHistoricalScalarProofUrl,
   type HistoricalScalarSelectedGame,
 } from "./bulbapedia-historical-scalar-proof.js";
 import { cloneMappingRegistry } from "./mapping-roster.js";
+import type { HistoricalScalarProof } from "./move-mainline-selection.js";
 import type {
   DiscoveredPokemonDbSpeciesForm,
   ExtractedPokemonDbAbility,
@@ -32,7 +37,8 @@ import type {
   ExtractedPokemonDbType,
   ExtractedPokemonDbTypeEffectiveness,
 } from "./pokemondb-parser.js";
-import { proposeCandidateId, validateMappingRegistry } from "./reconciliation.js";
+import { proposeCandidateId } from "./candidate-id.js";
+import { validateMappingRegistry } from "./reconciliation.js";
 import {
   EGG_GROUP_KEYS,
   GameDataValidationError,
@@ -69,6 +75,7 @@ export interface RawExtractedSnapshot {
   abilities: ExtractedPokemonDbAbility[];
   items: ExtractedPokemonDbItem[];
   learnsets: ExtractedPokemonDbLearnsetEntry[];
+  historicalScalarProofs: HistoricalScalarProof[];
   currentTypeEffectiveness: ExtractedPokemonDbTypeEffectiveness[];
 }
 
@@ -313,10 +320,53 @@ interface ExplicitZaBaseCooldownEvidence {
   sourceRecordId: string;
 }
 
+export function assertRawHistoricalScalarProofBinding(
+  raw: RawExtractedSnapshot,
+  record: ExtractedPokemonDbMove,
+): HistoricalScalarProof {
+  const selectedGame = record.mainlineSelectedGame;
+  const selectedSourceRecordId = record.mainlineSelectedSourceRecordId;
+  if (
+    selectedGame === undefined ||
+    selectedGame === "scarlet-violet" ||
+    selectedSourceRecordId === undefined
+  ) {
+    throw new Error(`${record.sourceName}: historical scalar proof requires an explicit historical selected game/source`);
+  }
+  if (!Array.isArray(raw.historicalScalarProofs)) {
+    throw new Error(`${record.sourceName}: raw historical scalar proof evidence is missing`);
+  }
+  const matches = raw.historicalScalarProofs.filter(
+    (proof) =>
+      proof.sourceKey.normalize("NFC") === record.sourceKey.normalize("NFC") &&
+      proof.selectedGame === selectedGame &&
+      proof.sourceRecordId === selectedSourceRecordId,
+  );
+  if (matches.length !== 1) {
+    throw new Error(
+      `${record.sourceName}: selected historical scalar proof must resolve to exactly one same-Move raw proof; found ${matches.length}`,
+    );
+  }
+  const proof = matches[0];
+  if (proof.sourceName.normalize("NFC") !== record.sourceName.normalize("NFC")) {
+    throw new Error(`${record.sourceName}: selected historical scalar proof Move identity mismatch`);
+  }
+  if (
+    proof.typeSourceKey.normalize("NFC") !== record.typeSourceKey.normalize("NFC") ||
+    proof.category !== record.category ||
+    proof.basePp !== record.basePp ||
+    proof.power !== record.power ||
+    proof.accuracy !== record.accuracy
+  ) {
+    throw new Error(`${record.sourceName}: selected historical scalar proof tuple does not match normalized Move facts`);
+  }
+  return proof;
+}
+
 function explicitMainlineSourceRecordIds(
   record: ExtractedPokemonDbMove,
   sourceRecords: SourceRecord[],
-  rawLearnsets: ExtractedPokemonDbLearnsetEntry[],
+  raw: RawExtractedSnapshot,
 ): string[] {
   if (!Object.prototype.hasOwnProperty.call(record, "mainlineSourceRecordIds")) {
     mappingError(
@@ -398,7 +448,7 @@ function explicitMainlineSourceRecordIds(
           selectedSource.parserVersion === BULBAPEDIA_GEN9_MOVE_PARSER_VERSION;
       } else if (selectedGame === "brilliant-diamond-shining-pearl") {
         selectedMatches =
-          selectedSource.parserVersion === BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION &&
+          selectedSource.parserVersion === BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION &&
           selectedUrl.protocol === "https:" &&
           selectedUrl.hostname === "bulbapedia.bulbagarden.net" &&
           /^\/wiki\/[^/]+_\(Pok%C3%A9mon\)\/Generation_VIII_learnset$/u.test(selectedUrl.pathname) &&
@@ -425,18 +475,13 @@ function explicitMainlineSourceRecordIds(
       "selected game/source evidence does not match the approved MOVE-01 source surface",
     );
   }
-  if (selectedGame === "brilliant-diamond-shining-pearl") {
-    const sameMoveBdspLearnset = rawLearnsets.some(
-      (entry) =>
-        entry.moveSourceKey.normalize("NFC") === record.sourceKey.normalize("NFC") &&
-        entry.sourceGeneration === 8 &&
-        entry.sourceGame === "Brilliant Diamond/Shining Pearl" &&
-        entry.sourceRecordId === selectedSourceRecordId,
-    );
-    if (!sameMoveBdspLearnset) {
+  if (selectedGame !== "scarlet-violet") {
+    try {
+      assertRawHistoricalScalarProofBinding(raw, record);
+    } catch (error) {
       mappingError(
         "catalogs.moves." + record.sourceKey + ".mainlineSelectedSourceRecordId",
-        "BDSP scalar proof must be bound to a BDSP learnset row for the same Move",
+        error instanceof Error ? error.message : String(error),
       );
     }
   }
@@ -472,22 +517,51 @@ function explicitMainlineSourceRecordIds(
     }
   }
 
-  const complementarySource = sourceById.get(record.sourceRecordId);
-  let complementaryMatches = false;
-  if (complementarySource?.provider === "pokemondb") {
+  const sourceTargetSourceRecordId =
+    record.sourceTargetSourceRecordId ?? record.sourceRecordId;
+  const makesContactSourceRecordId =
+    record.makesContactSourceRecordId ?? record.sourceRecordId;
+  const pokemonDbComplementMatches = (sourceRecordId: string): boolean => {
+    const source = sourceById.get(sourceRecordId);
+    if (source?.provider !== "pokemondb") return false;
     try {
-      const url = new URL(complementarySource.canonicalUrl);
-      complementaryMatches =
+      const url = new URL(source.canonicalUrl);
+      return (
         url.pathname.startsWith("/move/") &&
-        complementarySource.parserVersion === "pokemondb-html-v2";
+        source.parserVersion === "pokemondb-html-v2"
+      );
     } catch {
-      complementaryMatches = false;
+      return false;
     }
-  }
-  if (!complementaryMatches) {
+  };
+  const bulbapediaTargetMatches = (sourceRecordId: string): boolean => {
+    const source = sourceById.get(sourceRecordId);
+    if (
+      source?.provider !== "bulbapedia" ||
+      source.parserVersion !== BULBAPEDIA_MOVE_TARGET_PARSER_VERSION
+    ) return false;
+    try {
+      return (
+        new URL(source.canonicalUrl).href ===
+        new URL(buildBulbapediaMoveTargetUrl(record.sourceName)).href
+      );
+    } catch {
+      return false;
+    }
+  };
+  if (!pokemonDbComplementMatches(makesContactSourceRecordId)) {
     mappingError(
-      "catalogs.moves." + record.sourceKey + ".sourceRecordId",
-      "sourceTarget/makesContact complement must resolve to a PokémonDB Move-page SourceRecord",
+      "catalogs.moves." + record.sourceKey + ".makesContactSourceRecordId",
+      "makesContact complement must resolve to a PokémonDB Move-page SourceRecord",
+    );
+  }
+  if (
+    !pokemonDbComplementMatches(sourceTargetSourceRecordId) &&
+    !bulbapediaTargetMatches(sourceTargetSourceRecordId)
+  ) {
+    mappingError(
+      "catalogs.moves." + record.sourceKey + ".sourceTargetSourceRecordId",
+      "sourceTarget complement must resolve to either a PokémonDB Move page or the exact versioned Bulbapedia Move target fallback page",
     );
   }
   return normalized;
@@ -539,6 +613,7 @@ export function normalizeRawExtractedSnapshot(
     types: uniqueBySourceKey([...rawInput.types], "raw.types"),
     abilities: uniqueBySourceKey([...rawInput.abilities], "raw.abilities"),
     items: uniqueBySourceKey([...rawInput.items], "raw.items"),
+    historicalScalarProofs: [...rawInput.historicalScalarProofs],
   };
   const mappingRegistry = proposePrimaryMappings(raw, baseRegistry);
   const speciesMap = mappingBySource(mappingRegistry.species);
@@ -586,7 +661,11 @@ export function normalizeRawExtractedSnapshot(
 
   const moves = raw.moves.map((record) => {
     const zaEvidence = explicitZaBaseCooldownEvidence(record);
-    const mainlineSourceRecordIds = explicitMainlineSourceRecordIds(record, sourceRecords, raw.learnsets);
+    const mainlineSourceRecordIds = explicitMainlineSourceRecordIds(record, sourceRecords, raw);
+    const sourceTargetSourceRecordId =
+      record.sourceTargetSourceRecordId ?? record.sourceRecordId;
+    const makesContactSourceRecordId =
+      record.makesContactSourceRecordId ?? record.sourceRecordId;
     return {
       id: idFor<MoveId>(moveMap, record.sourceKey, "catalogs.moves"),
       typeId: idFor<TypeId>(typeMap, record.typeSourceKey, "catalogs.moves." + record.sourceKey + ".typeId"),
@@ -597,24 +676,31 @@ export function normalizeRawExtractedSnapshot(
       sourceTarget: record.sourceTarget,
       makesContact: record.makesContact,
       zaBaseCooldownMs: zaEvidence.value,
-      sourceRecordIds: [
+      sourceRecordIds: [...new Set([
         ...mainlineSourceRecordIds,
-        record.sourceRecordId,
+        sourceTargetSourceRecordId,
+        makesContactSourceRecordId,
         zaEvidence.sourceRecordId,
-      ],
+      ])],
     };
   });
 
-  const moveFactSources = raw.moves.map((record) => ({
-    moveId: idFor<MoveId>(moveMap, record.sourceKey, "provenance.moveFactSources"),
-    mainline: {
-      selectedGame: record.mainlineSelectedGame!,
-      sourceRecordId: record.mainlineSelectedSourceRecordId!,
-    },
-    sourceTargetSourceRecordId: record.sourceRecordId,
-    makesContactSourceRecordId: record.sourceRecordId,
-    zaBaseCooldownSourceRecordId: record.zaBaseCooldownSourceRecordId!,
-  }));
+  const moveFactSources = raw.moves.map((record) => {
+    const sourceTargetSourceRecordId =
+      record.sourceTargetSourceRecordId ?? record.sourceRecordId;
+    const makesContactSourceRecordId =
+      record.makesContactSourceRecordId ?? record.sourceRecordId;
+    return {
+      moveId: idFor<MoveId>(moveMap, record.sourceKey, "provenance.moveFactSources"),
+      mainline: {
+        selectedGame: record.mainlineSelectedGame!,
+        sourceRecordId: record.mainlineSelectedSourceRecordId!,
+      },
+      sourceTargetSourceRecordId,
+      makesContactSourceRecordId,
+      zaBaseCooldownSourceRecordId: record.zaBaseCooldownSourceRecordId!,
+    };
+  });
 
   const types = raw.types.map((record) => ({
     id: idFor<TypeId>(typeMap, record.sourceKey, "catalogs.types"),

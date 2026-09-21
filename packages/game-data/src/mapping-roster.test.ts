@@ -3,13 +3,25 @@ import { LOCAL_MAPPING_ROSTER, MAPPING_ROSTER_VERSION } from "./mapping-roster.j
 import { validateMappingRegistry } from "./reconciliation.js";
 
 describe("LOCAL_MAPPING_ROSTER", () => {
-  it("contains only accepted canonical mappings for the published Core roster", () => {
+  it("contains only accepted canonical mappings and preserves historical Move identities", () => {
     expect(LOCAL_MAPPING_ROSTER.version).toBe(MAPPING_ROSTER_VERSION);
     expect(LOCAL_MAPPING_ROSTER.mappings.species).toHaveLength(293);
-    expect(LOCAL_MAPPING_ROSTER.mappings.moves).toHaveLength(477);
+    expect(LOCAL_MAPPING_ROSTER.mappings.moves).toHaveLength(552);
     expect(LOCAL_MAPPING_ROSTER.mappings.types).toHaveLength(18);
     expect(LOCAL_MAPPING_ROSTER.mappings.abilities).toHaveLength(147);
     expect(LOCAL_MAPPING_ROSTER.mappings.items).toHaveLength(30);
+
+    for (const sourceKey of [
+      "burn-up",
+      "flower-shield",
+      "leaf-tornado",
+      "mind-reader",
+      "power-up-punch",
+    ]) {
+      expect(LOCAL_MAPPING_ROSTER.mappings.moves).toContainEqual(
+        expect.objectContaining({ sourceKey, status: "accepted" }),
+      );
+    }
 
     const allMappings = [
       ...LOCAL_MAPPING_ROSTER.mappings.species,

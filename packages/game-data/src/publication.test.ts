@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -32,9 +32,17 @@ import {
   REVIEW_STAGE_VERSION,
   type ReviewApproval,
 } from "./review-commitment";
+import type { RawExtractedSnapshot } from "./normalization";
+import { runtimeVersionDirectoryName } from "./runtime-delivery";
 
 const tempDirectories: string[] = [];
 const reviewApprovalsByStageDirectory = new Map<string, ReviewApproval>();
+const IMMUTABLE_V1_VERSION = "game-data-core-kanto-johto-v1";
+const IMMUTABLE_V1_BUNDLE_HASH =
+  "sha256:bbe5114563abe85ac5b42d4f05a63c44af9fdad7abd66ebdafa504d584c02903";
+const IMMUTABLE_V2_VERSION = "game-data-core-kanto-johto-v2";
+const IMMUTABLE_V2_BUNDLE_HASH =
+  "sha256:fc4ecaacb486b496ca2539666201cf73ace40b6ff352f210783a6fadedf052b4";
 
 function fixtureContentHash(value: unknown): string {
   return sha256(Buffer.from(canonicalJson(value), "utf8"));
@@ -56,11 +64,19 @@ function reviewedCandidateForMappings(
       continue;
     }
     const entries = mappingRegistry[inventory.surface];
-    inventory.acceptedMappingKeys = entries
+    const currentSourceKeys = new Set(
+      [...inventory.acceptedMappingKeys, ...inventory.candidateSourceKeys].map((key) =>
+        key.normalize("NFC"),
+      ),
+    );
+    const currentEntries = entries.filter((entry) =>
+      currentSourceKeys.has(entry.sourceKey.normalize("NFC")),
+    );
+    inventory.acceptedMappingKeys = currentEntries
       .filter((entry) => entry.status === "accepted")
       .map((entry) => entry.sourceKey)
       .sort();
-    inventory.candidateSourceKeys = entries
+    inventory.candidateSourceKeys = currentEntries
       .filter((entry) => entry.status === "candidate")
       .map((entry) => entry.sourceKey)
       .sort();
@@ -70,14 +86,39 @@ function reviewedCandidateForMappings(
   return reviewed;
 }
 
+function reviewedRawExtractedFixture(): RawExtractedSnapshot {
+  return {
+    parserVersion: "publication-review-raw-v1",
+    speciesDiscovery: [],
+    discovery: {
+      moves: [],
+      types: [],
+      abilities: [],
+      items: [],
+      learnsets: [],
+      currentTypeEffectiveness: [],
+    },
+    species: [],
+    moves: [],
+    types: [],
+    abilities: [],
+    items: [],
+    learnsets: [],
+    historicalScalarProofs: [],
+    currentTypeEffectiveness: [],
+  };
+}
+
 function reviewApprovalFixture(
   candidate: ReturnType<typeof publishableCandidateFixture>,
   mappingRegistry: ReturnType<typeof mappingRegistryFixture>,
 ): ReviewApproval {
   const reviewedCandidate = reviewedCandidateForMappings(candidate, mappingRegistry);
+  const reviewedRawExtracted = reviewedRawExtractedFixture();
   const candidateContentHash = fixtureContentHash(reviewedCandidate);
   const mappingProposalsContentHash = fixtureContentHash(mappingRegistry);
   const placeholderHash = fixtureContentHash({ fixture: true });
+  const rawExtractedContentHash = fixtureContentHash(reviewedRawExtracted);
   const manifestWithoutHash = {
     reviewStageVersion: REVIEW_STAGE_VERSION,
     reviewScope: REVIEW_SCOPE,
@@ -88,7 +129,7 @@ function reviewApprovalFixture(
     provenanceHash: reviewedCandidate.provenance.provenanceHash!,
     sourceInventoryHash: reviewedCandidate.provenance.sourceInventoryHash,
     files: [
-      { logicalName: "raw-extracted" as const, path: "raw-extracted.json", contentHash: placeholderHash },
+      { logicalName: "raw-extracted" as const, path: "raw-extracted.json", contentHash: rawExtractedContentHash },
       { logicalName: "mapping-proposals" as const, path: "mapping-proposals.json", contentHash: mappingProposalsContentHash },
       { logicalName: "normalized-candidate" as const, path: "normalized-candidate.json", contentHash: candidateContentHash },
       { logicalName: "provenance" as const, path: "provenance-manifest.json", contentHash: fixtureContentHash(reviewedCandidate.provenance) },
@@ -100,6 +141,7 @@ function reviewApprovalFixture(
   const reviewHash = fixtureContentHash(manifestWithoutHash);
   return {
     manifest: { ...manifestWithoutHash, reviewHash },
+    reviewedRawExtracted,
     reviewedCandidate,
     reviewedMappingRegistry: mappingRegistry,
     approvedReviewHash: reviewHash,
@@ -153,6 +195,65 @@ afterEach(async () => {
 });
 
 describe("staging and immutable publication", () => {
+  it("loads the immutable published v1 through the Node canonical loader", async () => {
+    const publishedRoot = join(import.meta.dirname, "..", "published");
+    const loaded = await loadPublishedBundle(publishedRoot, IMMUTABLE_V1_VERSION);
+    expect(loaded.manifest.bundleHash).toBe(IMMUTABLE_V1_BUNDLE_HASH);
+    expect(loaded.manifest.catalogCounts).toEqual({
+      species: 293,
+      moves: 477,
+      types: 18,
+      abilities: 147,
+      items: 30,
+      learnsets: 13_785,
+      currentTypeEffectiveness: 324,
+    });
+  });
+
+  it("loads the Human-approved corrected v2 through the Node canonical loader", async () => {
+    const publishedRoot = join(import.meta.dirname, "..", "published");
+    const loaded = await loadPublishedBundle(publishedRoot, IMMUTABLE_V2_VERSION);
+    expect(loaded.manifest.bundleHash).toBe(IMMUTABLE_V2_BUNDLE_HASH);
+    expect(loaded.manifest.catalogCounts).toEqual({
+      species: 293,
+      moves: 547,
+      types: 18,
+      abilities: 147,
+      items: 30,
+      learnsets: 19_035,
+      currentTypeEffectiveness: 324,
+    });
+  });
+
+  it("does not apply immutable-v1 provenance compatibility to another published version", async () => {
+    const root = await tempDirectory();
+    const canonicalPublishedRoot = join(import.meta.dirname, "..", "published");
+    const sourceDirectory = join(
+      canonicalPublishedRoot,
+      await runtimeVersionDirectoryName(IMMUTABLE_V1_VERSION),
+    );
+    const otherVersion = "game-data-legacy-v5-unapproved";
+    const destination = join(root, await runtimeVersionDirectoryName(otherVersion));
+    await cp(sourceDirectory, destination, { recursive: true });
+
+    const manifestPath = join(destination, "manifest.json");
+    const manifest = JSON.parse(
+      await readFile(manifestPath, "utf8"),
+    ) as PublishedBundleManifest;
+    manifest.gameDataVersion = otherVersion;
+    manifest.bundleHash = bundleHash(
+      manifest.schemaVersion,
+      manifest.gameDataVersion,
+      manifest.artifacts,
+      manifest.provenanceHash,
+    );
+    await writeFile(manifestPath, canonicalJson(manifest), "utf8");
+
+    await expect(loadPublishedBundle(root, otherVersion)).rejects.toMatchObject({
+      finding: { code: "invalid-move-mainline-source" },
+    });
+  });
+
   it("emits publication findings deterministically across canonical registry serialization", () => {
     const candidate = publishableCandidateFixture();
     const registry = mappingRegistryFixture();
@@ -171,6 +272,22 @@ describe("staging and immutable publication", () => {
     expect(canonicalJson(validatePublicationReadiness(candidate, registry))).toBe(
       canonicalJson(validatePublicationReadiness(candidate, reparsed)),
     );
+  });
+
+  it("retains accepted historical mappings outside the current inventory without forcing them into the catalog", async () => {
+    const root = await tempDirectory();
+    const candidate = publishableCandidateFixture();
+    const registry = mappingRegistryFixture();
+    registry.moves.push({
+      sourceKey: "historical-out-of-scope-move",
+      canonicalId: "historical-out-of-scope-move" as (typeof registry.moves)[number]["canonicalId"],
+      status: "accepted",
+    });
+
+    expect(validatePublicationReadiness(candidate, registry)).toEqual([]);
+    const staged = await stageApprovedCandidate(join(root, "stage"), candidate, registry);
+    expect(staged.artifacts).toHaveLength(7);
+    expect(candidate.catalogs.moves.some((move) => move.id === "historical-out-of-scope-move")).toBe(false);
   });
 
   it("stages only a fully validated candidate with reconciled mapping evidence", async () => {
@@ -369,7 +486,7 @@ describe("staging and immutable publication", () => {
 
     await expect(
       stageApprovedCandidate(join(root, "stage"), candidate, mappingRegistryFixture()),
-    ).rejects.toThrow(/historical Bulbapedia Move proof for tackle must be bound/i);
+    ).rejects.toThrow(/historical Bulbapedia Move proof must match accepted Move source key tackle/i);
   });
 
   it("publishes atomically by explicit opaque version and loads with full hash verification", async () => {

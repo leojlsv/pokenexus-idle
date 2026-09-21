@@ -5,7 +5,7 @@ export const BULBAPEDIA_BASE_SPECIES_EVIDENCE_PARSER_VERSION =
   "bulbapedia-base-species-evidence-v8" as const;
 
 export const BULBAPEDIA_SPECIES_PAGE_PARSER_VERSION =
-  "bulbapedia-species-page-v16" as const;
+  "bulbapedia-species-page-v17" as const;
 
 export const BULBAPEDIA_REGIONAL_FORM_EVIDENCE_PARSER_VERSION =
   "bulbapedia-regional-form-evidence-v2" as const;

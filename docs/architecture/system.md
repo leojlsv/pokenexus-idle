@@ -39,6 +39,10 @@ PostgreSQL
 Static assets -> R2/CDN
 ```
 
+Versioned static game-data uses the same R2/CDN delivery plane but remains a distinct immutable
+SPEC-002 dataset. See `docs/architecture/static-game-data-delivery.md` for lazy shard loading and
+historical-version retention rules.
+
 ## Layer boundaries
 
 ### web

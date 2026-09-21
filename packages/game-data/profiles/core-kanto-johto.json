@@ -1,0 +1,3187 @@
+{
+  "speciesPages": [
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/bulbasaur",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bulbasaur_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ivysaur",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ivysaur_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/venusaur",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Venusaur_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:venusaur:11001",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/charmander",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Charmander_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/charmeleon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Charmeleon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/charizard",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Charizard_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:charizard:11002",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        },
+        {
+          "sourceKey": "pokedex:charizard:11003",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/squirtle",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Squirtle_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/wartortle",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wartortle_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/blastoise",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Blastoise_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:blastoise:11004",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/caterpie",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Caterpie_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/metapod",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Metapod_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/butterfree",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Butterfree_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/weedle",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Weedle_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/kakuna",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kakuna_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/beedrill",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Beedrill_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:beedrill:11041",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pidgey",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgey_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pidgeotto",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgeotto_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pidgeot",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgeot_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:pidgeot:11042",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/rattata",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rattata_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/raticate",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Raticate_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/spearow",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Spearow_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/fearow",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Fearow_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ekans",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ekans_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/arbok",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Arbok_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pikachu",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pikachu_(Pok%C3%A9mon)",
+      "bulbapediaExcludedOrDeferredForms": [
+        {
+          "formLabel": "Pale",
+          "disposition": "deferred",
+          "reason": "bulbapedia-only-form-identity-unresolved"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/raichu",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Raichu_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:raichu:11250",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        },
+        {
+          "sourceKey": "pokedex:raichu:11251",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/sandshrew",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sandshrew_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/sandslash",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sandslash_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/nidoran-f",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoran%E2%99%80_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/nidorina",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidorina_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/nidoqueen",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoqueen_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/nidoran-m",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoran%E2%99%82_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/nidorino",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidorino_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/nidoking",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoking_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/clefairy",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Clefairy_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/clefable",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Clefable_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:clefable:11219",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/vulpix",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Vulpix_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ninetales",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ninetales_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/jigglypuff",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jigglypuff_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/wigglytuff",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wigglytuff_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/zubat",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Zubat_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/golbat",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Golbat_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/oddish",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Oddish_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/gloom",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gloom_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/vileplume",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Vileplume_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/paras",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Paras_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/parasect",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Parasect_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/venonat",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Venonat_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/venomoth",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Venomoth_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/diglett",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Diglett_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/dugtrio",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dugtrio_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/meowth",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Meowth_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/persian",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Persian_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/psyduck",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Psyduck_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/golduck",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Golduck_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/mankey",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mankey_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/primeape",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Primeape_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/growlithe",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Growlithe_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/arcanine",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Arcanine_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/poliwag",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwag_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/poliwhirl",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwhirl_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/poliwrath",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwrath_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/abra",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Abra_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/kadabra",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kadabra_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/alakazam",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Alakazam_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:alakazam:11005",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/machop",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Machop_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/machoke",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Machoke_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/machamp",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Machamp_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/bellsprout",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bellsprout_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/weepinbell",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Weepinbell_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/victreebel",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Victreebel_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:victreebel:11216",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/tentacool",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tentacool_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/tentacruel",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tentacruel_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/geodude",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Geodude_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/graveler",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Graveler_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/golem",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Golem_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ponyta",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ponyta_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/rapidash",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rapidash_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/slowpoke",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowpoke_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/slowbro",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowbro_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:slowbro:11037",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/magnemite",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magnemite_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/magneton",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magneton_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/farfetchd",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Farfetch%27d_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/doduo",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Doduo_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/dodrio",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dodrio_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/seel",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Seel_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/dewgong",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dewgong_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/grimer",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Grimer_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/muk",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Muk_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/shellder",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Shellder_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/cloyster",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cloyster_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/gastly",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gastly_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/haunter",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Haunter_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/gengar",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gengar_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:gengar:11006",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/onix",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Onix_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/drowzee",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Drowzee_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/hypno",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hypno_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/krabby",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Krabby_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/kingler",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kingler_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/voltorb",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Voltorb_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/electrode",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Electrode_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/exeggcute",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Exeggcute_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/exeggutor",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Exeggutor_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/cubone",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cubone_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/marowak",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Marowak_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/hitmonlee",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmonlee_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/hitmonchan",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmonchan_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/lickitung",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lickitung_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/koffing",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Koffing_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/weezing",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Weezing_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/rhyhorn",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rhyhorn_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/rhydon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rhydon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/chansey",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Chansey_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/tangela",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tangela_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/kangaskhan",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kangaskhan_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:kangaskhan:11007",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/horsea",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Horsea_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/seadra",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Seadra_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/goldeen",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Goldeen_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/seaking",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Seaking_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/staryu",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Staryu_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/starmie",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Starmie_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:starmie:11220",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/mr-mime",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mr._Mime_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/scyther",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Scyther_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/jynx",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jynx_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/electabuzz",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Electabuzz_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/magmar",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magmar_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pinsir",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pinsir_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:pinsir:11008",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/tauros",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tauros_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/magikarp",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magikarp_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/gyarados",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gyarados_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:gyarados:11009",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/lapras",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lapras_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ditto",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ditto_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/eevee",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Eevee_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/vaporeon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Vaporeon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/jolteon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jolteon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/flareon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Flareon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/porygon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Porygon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/omanyte",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Omanyte_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/omastar",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Omastar_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/kabuto",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kabuto_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/kabutops",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kabutops_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/aerodactyl",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Aerodactyl_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:aerodactyl:11010",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/snorlax",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Snorlax_(Pok%C3%A9mon)",
+      "bulbapediaExcludedOrDeferredForms": [
+        {
+          "formLabel": "Mossy",
+          "disposition": "deferred",
+          "reason": "bulbapedia-only-form-identity-unresolved"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/articuno",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Articuno_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/zapdos",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Zapdos_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/moltres",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Moltres_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/dratini",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dratini_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/dragonair",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dragonair_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/dragonite",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dragonite_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:dragonite:11215",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/mewtwo",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mewtwo_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:mewtwo:11011",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        },
+        {
+          "sourceKey": "pokedex:mewtwo:11012",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/mew",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mew_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/chikorita",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Chikorita_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/bayleef",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bayleef_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/meganium",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Meganium_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:meganium:11221",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/cyndaquil",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cyndaquil_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/quilava",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Quilava_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/typhlosion",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Typhlosion_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/totodile",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Totodile_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/croconaw",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Croconaw_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/feraligatr",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Feraligatr_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:feraligatr:11222",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/sentret",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sentret_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/furret",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Furret_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/hoothoot",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hoothoot_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/noctowl",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Noctowl_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ledyba",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ledyba_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ledian",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ledian_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/spinarak",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Spinarak_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ariados",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ariados_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/crobat",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Crobat_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/chinchou",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Chinchou_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/lanturn",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lanturn_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pichu",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pichu_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/cleffa",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cleffa_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/igglybuff",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Igglybuff_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/togepi",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Togepi_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/togetic",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Togetic_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/natu",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Natu_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/xatu",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Xatu_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/mareep",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mareep_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/flaaffy",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Flaaffy_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ampharos",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ampharos_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:ampharos:11013",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/bellossom",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bellossom_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/marill",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Marill_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/azumarill",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Azumarill_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/sudowoodo",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sudowoodo_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/politoed",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Politoed_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/hoppip",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hoppip_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/skiploom",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Skiploom_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/jumpluff",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jumpluff_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/aipom",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Aipom_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/sunkern",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sunkern_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/sunflora",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sunflora_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/yanma",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Yanma_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/wooper",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wooper_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/quagsire",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Quagsire_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/espeon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Espeon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/umbreon",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Umbreon_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/murkrow",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Murkrow_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/slowking",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowking_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/misdreavus",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Misdreavus_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/unown",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Unown_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/wobbuffet",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wobbuffet_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/girafarig",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Girafarig_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pineco",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pineco_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/forretress",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Forretress_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/dunsparce",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dunsparce_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/gligar",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gligar_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/steelix",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Steelix_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:steelix:11050",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/snubbull",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Snubbull_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/granbull",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Granbull_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/qwilfish",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Qwilfish_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/scizor",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Scizor_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:scizor:11014",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/shuckle",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Shuckle_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/heracross",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Heracross_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:heracross:11015",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/sneasel",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sneasel_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/teddiursa",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Teddiursa_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ursaring",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ursaring_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/slugma",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slugma_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/magcargo",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magcargo_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/swinub",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Swinub_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/piloswine",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Piloswine_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/corsola",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Corsola_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/remoraid",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Remoraid_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/octillery",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Octillery_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/delibird",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Delibird_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/mantine",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mantine_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/skarmory",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Skarmory_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:skarmory:11223",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/houndour",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Houndour_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/houndoom",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Houndoom_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:houndoom:11016",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/kingdra",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kingdra_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/phanpy",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Phanpy_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/donphan",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Donphan_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/porygon2",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Porygon2_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/stantler",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Stantler_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/smeargle",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Smeargle_(Pok%C3%A9mon)",
+      "bulbapediaExcludedOrDeferredForms": [
+        {
+          "formLabel": "Decorator",
+          "disposition": "deferred",
+          "reason": "bulbapedia-only-form-identity-unresolved"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/tyrogue",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tyrogue_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/hitmontop",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmontop_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/smoochum",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Smoochum_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/elekid",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Elekid_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/magby",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magby_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/miltank",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Miltank_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/blissey",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Blissey_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/raikou",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Raikou_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/entei",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Entei_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/suicune",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Suicune_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/larvitar",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Larvitar_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/pupitar",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pupitar_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/tyranitar",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tyranitar_(Pok%C3%A9mon)",
+      "excludedOrDeferred": [
+        {
+          "sourceKey": "pokedex:tyranitar:11017",
+          "disposition": "deferred",
+          "reason": "battle-only-transformation"
+        }
+      ]
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/lugia",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lugia_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/ho-oh",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ho-Oh_(Pok%C3%A9mon)"
+    },
+    {
+      "pokemonDbUrl": "https://pokemondb.net/pokedex/celebi",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Celebi_(Pok%C3%A9mon)"
+    }
+  ],
+  "movePages": [
+    "https://pokemondb.net/move/absorb",
+    "https://pokemondb.net/move/acid",
+    "https://pokemondb.net/move/acid-armor",
+    "https://pokemondb.net/move/acid-spray",
+    "https://pokemondb.net/move/acrobatics",
+    "https://pokemondb.net/move/acupressure",
+    "https://pokemondb.net/move/aerial-ace",
+    "https://pokemondb.net/move/aeroblast",
+    "https://pokemondb.net/move/after-you",
+    "https://pokemondb.net/move/agility",
+    "https://pokemondb.net/move/air-cutter",
+    "https://pokemondb.net/move/air-slash",
+    "https://pokemondb.net/move/alluring-voice",
+    "https://pokemondb.net/move/ally-switch",
+    "https://pokemondb.net/move/amnesia",
+    "https://pokemondb.net/move/ancient-power",
+    "https://pokemondb.net/move/aqua-jet",
+    "https://pokemondb.net/move/aqua-ring",
+    "https://pokemondb.net/move/aqua-tail",
+    "https://pokemondb.net/move/arm-thrust",
+    "https://pokemondb.net/move/aromatherapy",
+    "https://pokemondb.net/move/aromatic-mist",
+    "https://pokemondb.net/move/assurance",
+    "https://pokemondb.net/move/astonish",
+    "https://pokemondb.net/move/attract",
+    "https://pokemondb.net/move/aura-sphere",
+    "https://pokemondb.net/move/aurora-beam",
+    "https://pokemondb.net/move/aurora-veil",
+    "https://pokemondb.net/move/autotomize",
+    "https://pokemondb.net/move/avalanche",
+    "https://pokemondb.net/move/axe-kick",
+    "https://pokemondb.net/move/baby-doll-eyes",
+    "https://pokemondb.net/move/barb-barrage",
+    "https://pokemondb.net/move/baton-pass",
+    "https://pokemondb.net/move/beat-up",
+    "https://pokemondb.net/move/belch",
+    "https://pokemondb.net/move/belly-drum",
+    "https://pokemondb.net/move/bind",
+    "https://pokemondb.net/move/bite",
+    "https://pokemondb.net/move/blast-burn",
+    "https://pokemondb.net/move/blaze-kick",
+    "https://pokemondb.net/move/blizzard",
+    "https://pokemondb.net/move/block",
+    "https://pokemondb.net/move/body-press",
+    "https://pokemondb.net/move/body-slam",
+    "https://pokemondb.net/move/bone-club",
+    "https://pokemondb.net/move/bone-rush",
+    "https://pokemondb.net/move/bonemerang",
+    "https://pokemondb.net/move/bounce",
+    "https://pokemondb.net/move/brave-bird",
+    "https://pokemondb.net/move/breaking-swipe",
+    "https://pokemondb.net/move/brick-break",
+    "https://pokemondb.net/move/brine",
+    "https://pokemondb.net/move/brutal-swing",
+    "https://pokemondb.net/move/bubble-beam",
+    "https://pokemondb.net/move/bug-bite",
+    "https://pokemondb.net/move/bug-buzz",
+    "https://pokemondb.net/move/bulk-up",
+    "https://pokemondb.net/move/bulldoze",
+    "https://pokemondb.net/move/bullet-punch",
+    "https://pokemondb.net/move/bullet-seed",
+    "https://pokemondb.net/move/burning-jealousy",
+    "https://pokemondb.net/move/calm-mind",
+    "https://pokemondb.net/move/charge",
+    "https://pokemondb.net/move/charge-beam",
+    "https://pokemondb.net/move/charm",
+    "https://pokemondb.net/move/chilling-water",
+    "https://pokemondb.net/move/chip-away",
+    "https://pokemondb.net/move/chloroblast",
+    "https://pokemondb.net/move/circle-throw",
+    "https://pokemondb.net/move/clear-smog",
+    "https://pokemondb.net/move/close-combat",
+    "https://pokemondb.net/move/coaching",
+    "https://pokemondb.net/move/coil",
+    "https://pokemondb.net/move/comeuppance",
+    "https://pokemondb.net/move/confide",
+    "https://pokemondb.net/move/confuse-ray",
+    "https://pokemondb.net/move/confusion",
+    "https://pokemondb.net/move/conversion",
+    "https://pokemondb.net/move/conversion-2",
+    "https://pokemondb.net/move/copycat",
+    "https://pokemondb.net/move/cosmic-power",
+    "https://pokemondb.net/move/cotton-guard",
+    "https://pokemondb.net/move/cotton-spore",
+    "https://pokemondb.net/move/counter",
+    "https://pokemondb.net/move/covet",
+    "https://pokemondb.net/move/crabhammer",
+    "https://pokemondb.net/move/cross-chop",
+    "https://pokemondb.net/move/cross-poison",
+    "https://pokemondb.net/move/crunch",
+    "https://pokemondb.net/move/crush-claw",
+    "https://pokemondb.net/move/curse",
+    "https://pokemondb.net/move/cut",
+    "https://pokemondb.net/move/dark-pulse",
+    "https://pokemondb.net/move/dazzling-gleam",
+    "https://pokemondb.net/move/defense-curl",
+    "https://pokemondb.net/move/defog",
+    "https://pokemondb.net/move/destiny-bond",
+    "https://pokemondb.net/move/detect",
+    "https://pokemondb.net/move/dig",
+    "https://pokemondb.net/move/disable",
+    "https://pokemondb.net/move/disarming-voice",
+    "https://pokemondb.net/move/discharge",
+    "https://pokemondb.net/move/dive",
+    "https://pokemondb.net/move/double-edge",
+    "https://pokemondb.net/move/double-hit",
+    "https://pokemondb.net/move/double-kick",
+    "https://pokemondb.net/move/double-team",
+    "https://pokemondb.net/move/draco-meteor",
+    "https://pokemondb.net/move/dragon-breath",
+    "https://pokemondb.net/move/dragon-cheer",
+    "https://pokemondb.net/move/dragon-claw",
+    "https://pokemondb.net/move/dragon-dance",
+    "https://pokemondb.net/move/dragon-hammer",
+    "https://pokemondb.net/move/dragon-pulse",
+    "https://pokemondb.net/move/dragon-rush",
+    "https://pokemondb.net/move/dragon-tail",
+    "https://pokemondb.net/move/drain-punch",
+    "https://pokemondb.net/move/draining-kiss",
+    "https://pokemondb.net/move/dream-eater",
+    "https://pokemondb.net/move/drill-peck",
+    "https://pokemondb.net/move/drill-run",
+    "https://pokemondb.net/move/dual-chop",
+    "https://pokemondb.net/move/dual-wingbeat",
+    "https://pokemondb.net/move/dynamic-punch",
+    "https://pokemondb.net/move/earth-power",
+    "https://pokemondb.net/move/earthquake",
+    "https://pokemondb.net/move/echoed-voice",
+    "https://pokemondb.net/move/eerie-impulse",
+    "https://pokemondb.net/move/eerie-spell",
+    "https://pokemondb.net/move/electric-terrain",
+    "https://pokemondb.net/move/electro-ball",
+    "https://pokemondb.net/move/electroweb",
+    "https://pokemondb.net/move/embargo",
+    "https://pokemondb.net/move/ember",
+    "https://pokemondb.net/move/encore",
+    "https://pokemondb.net/move/endeavor",
+    "https://pokemondb.net/move/endure",
+    "https://pokemondb.net/move/energy-ball",
+    "https://pokemondb.net/move/entrainment",
+    "https://pokemondb.net/move/eruption",
+    "https://pokemondb.net/move/expanding-force",
+    "https://pokemondb.net/move/explosion",
+    "https://pokemondb.net/move/extrasensory",
+    "https://pokemondb.net/move/extreme-speed",
+    "https://pokemondb.net/move/facade",
+    "https://pokemondb.net/move/fairy-wind",
+    "https://pokemondb.net/move/fake-out",
+    "https://pokemondb.net/move/fake-tears",
+    "https://pokemondb.net/move/false-swipe",
+    "https://pokemondb.net/move/feather-dance",
+    "https://pokemondb.net/move/feint",
+    "https://pokemondb.net/move/fell-stinger",
+    "https://pokemondb.net/move/fiery-wrath",
+    "https://pokemondb.net/move/final-gambit",
+    "https://pokemondb.net/move/fire-blast",
+    "https://pokemondb.net/move/fire-fang",
+    "https://pokemondb.net/move/fire-pledge",
+    "https://pokemondb.net/move/fire-punch",
+    "https://pokemondb.net/move/fire-spin",
+    "https://pokemondb.net/move/fissure",
+    "https://pokemondb.net/move/flail",
+    "https://pokemondb.net/move/flame-charge",
+    "https://pokemondb.net/move/flame-wheel",
+    "https://pokemondb.net/move/flamethrower",
+    "https://pokemondb.net/move/flare-blitz",
+    "https://pokemondb.net/move/flash",
+    "https://pokemondb.net/move/flash-cannon",
+    "https://pokemondb.net/move/flatter",
+    "https://pokemondb.net/move/fling",
+    "https://pokemondb.net/move/flip-turn",
+    "https://pokemondb.net/move/fly",
+    "https://pokemondb.net/move/focus-blast",
+    "https://pokemondb.net/move/focus-energy",
+    "https://pokemondb.net/move/focus-punch",
+    "https://pokemondb.net/move/follow-me",
+    "https://pokemondb.net/move/foul-play",
+    "https://pokemondb.net/move/freeze-dry",
+    "https://pokemondb.net/move/freezing-glare",
+    "https://pokemondb.net/move/frenzy-plant",
+    "https://pokemondb.net/move/frustration",
+    "https://pokemondb.net/move/fury-attack",
+    "https://pokemondb.net/move/fury-cutter",
+    "https://pokemondb.net/move/fury-swipes",
+    "https://pokemondb.net/move/future-sight",
+    "https://pokemondb.net/move/gastro-acid",
+    "https://pokemondb.net/move/giga-drain",
+    "https://pokemondb.net/move/giga-impact",
+    "https://pokemondb.net/move/glare",
+    "https://pokemondb.net/move/grass-knot",
+    "https://pokemondb.net/move/grass-pledge",
+    "https://pokemondb.net/move/grassy-glide",
+    "https://pokemondb.net/move/grassy-terrain",
+    "https://pokemondb.net/move/gravity",
+    "https://pokemondb.net/move/growl",
+    "https://pokemondb.net/move/growth",
+    "https://pokemondb.net/move/grudge",
+    "https://pokemondb.net/move/guard-split",
+    "https://pokemondb.net/move/guard-swap",
+    "https://pokemondb.net/move/guillotine",
+    "https://pokemondb.net/move/gunk-shot",
+    "https://pokemondb.net/move/gust",
+    "https://pokemondb.net/move/gyro-ball",
+    "https://pokemondb.net/move/hail",
+    "https://pokemondb.net/move/hammer-arm",
+    "https://pokemondb.net/move/hard-press",
+    "https://pokemondb.net/move/harden",
+    "https://pokemondb.net/move/haze",
+    "https://pokemondb.net/move/head-smash",
+    "https://pokemondb.net/move/headbutt",
+    "https://pokemondb.net/move/heal-bell",
+    "https://pokemondb.net/move/heal-pulse",
+    "https://pokemondb.net/move/healing-wish",
+    "https://pokemondb.net/move/heat-crash",
+    "https://pokemondb.net/move/heat-wave",
+    "https://pokemondb.net/move/heavy-slam",
+    "https://pokemondb.net/move/helping-hand",
+    "https://pokemondb.net/move/hex",
+    "https://pokemondb.net/move/hidden-power",
+    "https://pokemondb.net/move/high-horsepower",
+    "https://pokemondb.net/move/high-jump-kick",
+    "https://pokemondb.net/move/hone-claws",
+    "https://pokemondb.net/move/horn-attack",
+    "https://pokemondb.net/move/horn-drill",
+    "https://pokemondb.net/move/howl",
+    "https://pokemondb.net/move/hurricane",
+    "https://pokemondb.net/move/hydro-cannon",
+    "https://pokemondb.net/move/hydro-pump",
+    "https://pokemondb.net/move/hyper-beam",
+    "https://pokemondb.net/move/hyper-drill",
+    "https://pokemondb.net/move/hyper-fang",
+    "https://pokemondb.net/move/hyper-voice",
+    "https://pokemondb.net/move/hypnosis",
+    "https://pokemondb.net/move/ice-beam",
+    "https://pokemondb.net/move/ice-fang",
+    "https://pokemondb.net/move/ice-punch",
+    "https://pokemondb.net/move/ice-shard",
+    "https://pokemondb.net/move/ice-spinner",
+    "https://pokemondb.net/move/icicle-crash",
+    "https://pokemondb.net/move/icicle-spear",
+    "https://pokemondb.net/move/icy-wind",
+    "https://pokemondb.net/move/imprison",
+    "https://pokemondb.net/move/incinerate",
+    "https://pokemondb.net/move/infernal-parade",
+    "https://pokemondb.net/move/inferno",
+    "https://pokemondb.net/move/infestation",
+    "https://pokemondb.net/move/ingrain",
+    "https://pokemondb.net/move/iron-defense",
+    "https://pokemondb.net/move/iron-head",
+    "https://pokemondb.net/move/iron-tail",
+    "https://pokemondb.net/move/kinesis",
+    "https://pokemondb.net/move/knock-off",
+    "https://pokemondb.net/move/laser-focus",
+    "https://pokemondb.net/move/lash-out",
+    "https://pokemondb.net/move/last-resort",
+    "https://pokemondb.net/move/lava-plume",
+    "https://pokemondb.net/move/leaf-blade",
+    "https://pokemondb.net/move/leaf-storm",
+    "https://pokemondb.net/move/leech-life",
+    "https://pokemondb.net/move/leech-seed",
+    "https://pokemondb.net/move/leer",
+    "https://pokemondb.net/move/lick",
+    "https://pokemondb.net/move/life-dew",
+    "https://pokemondb.net/move/light-screen",
+    "https://pokemondb.net/move/liquidation",
+    "https://pokemondb.net/move/lock-on",
+    "https://pokemondb.net/move/lovely-kiss",
+    "https://pokemondb.net/move/low-kick",
+    "https://pokemondb.net/move/low-sweep",
+    "https://pokemondb.net/move/lunge",
+    "https://pokemondb.net/move/mach-punch",
+    "https://pokemondb.net/move/magic-coat",
+    "https://pokemondb.net/move/magic-room",
+    "https://pokemondb.net/move/magical-leaf",
+    "https://pokemondb.net/move/magnet-rise",
+    "https://pokemondb.net/move/magnetic-flux",
+    "https://pokemondb.net/move/me-first",
+    "https://pokemondb.net/move/mean-look",
+    "https://pokemondb.net/move/mega-drain",
+    "https://pokemondb.net/move/mega-kick",
+    "https://pokemondb.net/move/mega-punch",
+    "https://pokemondb.net/move/megahorn",
+    "https://pokemondb.net/move/memento",
+    "https://pokemondb.net/move/metal-burst",
+    "https://pokemondb.net/move/metal-claw",
+    "https://pokemondb.net/move/metal-sound",
+    "https://pokemondb.net/move/meteor-beam",
+    "https://pokemondb.net/move/meteor-mash",
+    "https://pokemondb.net/move/metronome",
+    "https://pokemondb.net/move/milk-drink",
+    "https://pokemondb.net/move/mimic",
+    "https://pokemondb.net/move/minimize",
+    "https://pokemondb.net/move/mirror-coat",
+    "https://pokemondb.net/move/mist",
+    "https://pokemondb.net/move/misty-explosion",
+    "https://pokemondb.net/move/misty-terrain",
+    "https://pokemondb.net/move/moonblast",
+    "https://pokemondb.net/move/moonlight",
+    "https://pokemondb.net/move/morning-sun",
+    "https://pokemondb.net/move/mud-shot",
+    "https://pokemondb.net/move/mud-slap",
+    "https://pokemondb.net/move/muddy-water",
+    "https://pokemondb.net/move/mystical-fire",
+    "https://pokemondb.net/move/nasty-plot",
+    "https://pokemondb.net/move/nature-power",
+    "https://pokemondb.net/move/night-shade",
+    "https://pokemondb.net/move/night-slash",
+    "https://pokemondb.net/move/nuzzle",
+    "https://pokemondb.net/move/octazooka",
+    "https://pokemondb.net/move/outrage",
+    "https://pokemondb.net/move/overheat",
+    "https://pokemondb.net/move/pain-split",
+    "https://pokemondb.net/move/parting-shot",
+    "https://pokemondb.net/move/pay-day",
+    "https://pokemondb.net/move/payback",
+    "https://pokemondb.net/move/peck",
+    "https://pokemondb.net/move/perish-song",
+    "https://pokemondb.net/move/petal-blizzard",
+    "https://pokemondb.net/move/petal-dance",
+    "https://pokemondb.net/move/phantom-force",
+    "https://pokemondb.net/move/pin-missile",
+    "https://pokemondb.net/move/play-nice",
+    "https://pokemondb.net/move/play-rough",
+    "https://pokemondb.net/move/pluck",
+    "https://pokemondb.net/move/poison-fang",
+    "https://pokemondb.net/move/poison-gas",
+    "https://pokemondb.net/move/poison-jab",
+    "https://pokemondb.net/move/poison-powder",
+    "https://pokemondb.net/move/poison-sting",
+    "https://pokemondb.net/move/poison-tail",
+    "https://pokemondb.net/move/pollen-puff",
+    "https://pokemondb.net/move/poltergeist",
+    "https://pokemondb.net/move/pounce",
+    "https://pokemondb.net/move/pound",
+    "https://pokemondb.net/move/powder-snow",
+    "https://pokemondb.net/move/power-gem",
+    "https://pokemondb.net/move/power-split",
+    "https://pokemondb.net/move/power-swap",
+    "https://pokemondb.net/move/power-trick",
+    "https://pokemondb.net/move/power-whip",
+    "https://pokemondb.net/move/present",
+    "https://pokemondb.net/move/protect",
+    "https://pokemondb.net/move/psybeam",
+    "https://pokemondb.net/move/psych-up",
+    "https://pokemondb.net/move/psychic",
+    "https://pokemondb.net/move/psychic-fangs",
+    "https://pokemondb.net/move/psychic-noise",
+    "https://pokemondb.net/move/psychic-terrain",
+    "https://pokemondb.net/move/psycho-cut",
+    "https://pokemondb.net/move/psycho-shift",
+    "https://pokemondb.net/move/psyshield-bash",
+    "https://pokemondb.net/move/psyshock",
+    "https://pokemondb.net/move/psystrike",
+    "https://pokemondb.net/move/pursuit",
+    "https://pokemondb.net/move/quash",
+    "https://pokemondb.net/move/quick-attack",
+    "https://pokemondb.net/move/quick-guard",
+    "https://pokemondb.net/move/quiver-dance",
+    "https://pokemondb.net/move/rage-fist",
+    "https://pokemondb.net/move/rage-powder",
+    "https://pokemondb.net/move/raging-bull",
+    "https://pokemondb.net/move/raging-fury",
+    "https://pokemondb.net/move/rain-dance",
+    "https://pokemondb.net/move/rapid-spin",
+    "https://pokemondb.net/move/razor-leaf",
+    "https://pokemondb.net/move/razor-shell",
+    "https://pokemondb.net/move/recover",
+    "https://pokemondb.net/move/recycle",
+    "https://pokemondb.net/move/reflect",
+    "https://pokemondb.net/move/reflect-type",
+    "https://pokemondb.net/move/rest",
+    "https://pokemondb.net/move/retaliate",
+    "https://pokemondb.net/move/return",
+    "https://pokemondb.net/move/revenge",
+    "https://pokemondb.net/move/reversal",
+    "https://pokemondb.net/move/roar",
+    "https://pokemondb.net/move/rock-blast",
+    "https://pokemondb.net/move/rock-climb",
+    "https://pokemondb.net/move/rock-polish",
+    "https://pokemondb.net/move/rock-slide",
+    "https://pokemondb.net/move/rock-smash",
+    "https://pokemondb.net/move/rock-throw",
+    "https://pokemondb.net/move/rock-tomb",
+    "https://pokemondb.net/move/role-play",
+    "https://pokemondb.net/move/rollout",
+    "https://pokemondb.net/move/roost",
+    "https://pokemondb.net/move/round",
+    "https://pokemondb.net/move/sacred-fire",
+    "https://pokemondb.net/move/safeguard",
+    "https://pokemondb.net/move/sand-attack",
+    "https://pokemondb.net/move/sand-tomb",
+    "https://pokemondb.net/move/sandstorm",
+    "https://pokemondb.net/move/scald",
+    "https://pokemondb.net/move/scale-shot",
+    "https://pokemondb.net/move/scary-face",
+    "https://pokemondb.net/move/scorching-sands",
+    "https://pokemondb.net/move/scratch",
+    "https://pokemondb.net/move/screech",
+    "https://pokemondb.net/move/seed-bomb",
+    "https://pokemondb.net/move/seismic-toss",
+    "https://pokemondb.net/move/self-destruct",
+    "https://pokemondb.net/move/shadow-ball",
+    "https://pokemondb.net/move/shadow-bone",
+    "https://pokemondb.net/move/shadow-claw",
+    "https://pokemondb.net/move/shadow-punch",
+    "https://pokemondb.net/move/shadow-sneak",
+    "https://pokemondb.net/move/sheer-cold",
+    "https://pokemondb.net/move/shell-side-arm",
+    "https://pokemondb.net/move/shell-smash",
+    "https://pokemondb.net/move/shock-wave",
+    "https://pokemondb.net/move/simple-beam",
+    "https://pokemondb.net/move/sing",
+    "https://pokemondb.net/move/sketch",
+    "https://pokemondb.net/move/skill-swap",
+    "https://pokemondb.net/move/skitter-smack",
+    "https://pokemondb.net/move/skull-bash",
+    "https://pokemondb.net/move/sky-attack",
+    "https://pokemondb.net/move/slack-off",
+    "https://pokemondb.net/move/slam",
+    "https://pokemondb.net/move/slash",
+    "https://pokemondb.net/move/sleep-powder",
+    "https://pokemondb.net/move/sleep-talk",
+    "https://pokemondb.net/move/sludge",
+    "https://pokemondb.net/move/sludge-bomb",
+    "https://pokemondb.net/move/sludge-wave",
+    "https://pokemondb.net/move/smack-down",
+    "https://pokemondb.net/move/smart-strike",
+    "https://pokemondb.net/move/smog",
+    "https://pokemondb.net/move/smokescreen",
+    "https://pokemondb.net/move/snarl",
+    "https://pokemondb.net/move/snatch",
+    "https://pokemondb.net/move/snore",
+    "https://pokemondb.net/move/snowscape",
+    "https://pokemondb.net/move/soak",
+    "https://pokemondb.net/move/soft-boiled",
+    "https://pokemondb.net/move/solar-beam",
+    "https://pokemondb.net/move/solar-blade",
+    "https://pokemondb.net/move/spark",
+    "https://pokemondb.net/move/sparkling-aria",
+    "https://pokemondb.net/move/spikes",
+    "https://pokemondb.net/move/spit-up",
+    "https://pokemondb.net/move/spite",
+    "https://pokemondb.net/move/splash",
+    "https://pokemondb.net/move/spore",
+    "https://pokemondb.net/move/stealth-rock",
+    "https://pokemondb.net/move/steel-beam",
+    "https://pokemondb.net/move/steel-wing",
+    "https://pokemondb.net/move/sticky-web",
+    "https://pokemondb.net/move/stockpile",
+    "https://pokemondb.net/move/stomp",
+    "https://pokemondb.net/move/stomping-tantrum",
+    "https://pokemondb.net/move/stone-edge",
+    "https://pokemondb.net/move/stored-power",
+    "https://pokemondb.net/move/storm-throw",
+    "https://pokemondb.net/move/strange-steam",
+    "https://pokemondb.net/move/strength",
+    "https://pokemondb.net/move/strength-sap",
+    "https://pokemondb.net/move/string-shot",
+    "https://pokemondb.net/move/struggle-bug",
+    "https://pokemondb.net/move/stun-spore",
+    "https://pokemondb.net/move/submission",
+    "https://pokemondb.net/move/substitute",
+    "https://pokemondb.net/move/sucker-punch",
+    "https://pokemondb.net/move/sunny-day",
+    "https://pokemondb.net/move/super-fang",
+    "https://pokemondb.net/move/supercell-slam",
+    "https://pokemondb.net/move/superpower",
+    "https://pokemondb.net/move/supersonic",
+    "https://pokemondb.net/move/surf",
+    "https://pokemondb.net/move/swagger",
+    "https://pokemondb.net/move/swallow",
+    "https://pokemondb.net/move/sweet-kiss",
+    "https://pokemondb.net/move/sweet-scent",
+    "https://pokemondb.net/move/swift",
+    "https://pokemondb.net/move/switcheroo",
+    "https://pokemondb.net/move/swords-dance",
+    "https://pokemondb.net/move/synthesis",
+    "https://pokemondb.net/move/tackle",
+    "https://pokemondb.net/move/tail-whip",
+    "https://pokemondb.net/move/tailwind",
+    "https://pokemondb.net/move/take-down",
+    "https://pokemondb.net/move/taunt",
+    "https://pokemondb.net/move/tearful-look",
+    "https://pokemondb.net/move/teeter-dance",
+    "https://pokemondb.net/move/teleport",
+    "https://pokemondb.net/move/temper-flare",
+    "https://pokemondb.net/move/tera-blast",
+    "https://pokemondb.net/move/thief",
+    "https://pokemondb.net/move/thrash",
+    "https://pokemondb.net/move/throat-chop",
+    "https://pokemondb.net/move/thunder",
+    "https://pokemondb.net/move/thunder-fang",
+    "https://pokemondb.net/move/thunder-punch",
+    "https://pokemondb.net/move/thunder-shock",
+    "https://pokemondb.net/move/thunder-wave",
+    "https://pokemondb.net/move/thunderbolt",
+    "https://pokemondb.net/move/thunderous-kick",
+    "https://pokemondb.net/move/tickle",
+    "https://pokemondb.net/move/tidy-up",
+    "https://pokemondb.net/move/torment",
+    "https://pokemondb.net/move/toxic",
+    "https://pokemondb.net/move/toxic-spikes",
+    "https://pokemondb.net/move/toxic-thread",
+    "https://pokemondb.net/move/trailblaze",
+    "https://pokemondb.net/move/transform",
+    "https://pokemondb.net/move/tri-attack",
+    "https://pokemondb.net/move/trick",
+    "https://pokemondb.net/move/trick-room",
+    "https://pokemondb.net/move/triple-axel",
+    "https://pokemondb.net/move/triple-kick",
+    "https://pokemondb.net/move/twin-beam",
+    "https://pokemondb.net/move/twister",
+    "https://pokemondb.net/move/u-turn",
+    "https://pokemondb.net/move/upper-hand",
+    "https://pokemondb.net/move/uproar",
+    "https://pokemondb.net/move/vacuum-wave",
+    "https://pokemondb.net/move/venom-drench",
+    "https://pokemondb.net/move/venoshock",
+    "https://pokemondb.net/move/vine-whip",
+    "https://pokemondb.net/move/vise-grip",
+    "https://pokemondb.net/move/vital-throw",
+    "https://pokemondb.net/move/volt-switch",
+    "https://pokemondb.net/move/volt-tackle",
+    "https://pokemondb.net/move/water-gun",
+    "https://pokemondb.net/move/water-pledge",
+    "https://pokemondb.net/move/water-pulse",
+    "https://pokemondb.net/move/water-spout",
+    "https://pokemondb.net/move/waterfall",
+    "https://pokemondb.net/move/wave-crash",
+    "https://pokemondb.net/move/weather-ball",
+    "https://pokemondb.net/move/whirlpool",
+    "https://pokemondb.net/move/whirlwind",
+    "https://pokemondb.net/move/wide-guard",
+    "https://pokemondb.net/move/wild-charge",
+    "https://pokemondb.net/move/will-o-wisp",
+    "https://pokemondb.net/move/wing-attack",
+    "https://pokemondb.net/move/wish",
+    "https://pokemondb.net/move/withdraw",
+    "https://pokemondb.net/move/wonder-room",
+    "https://pokemondb.net/move/wood-hammer",
+    "https://pokemondb.net/move/work-up",
+    "https://pokemondb.net/move/worry-seed",
+    "https://pokemondb.net/move/wrap",
+    "https://pokemondb.net/move/x-scissor",
+    "https://pokemondb.net/move/yawn",
+    "https://pokemondb.net/move/zap-cannon",
+    "https://pokemondb.net/move/zen-headbutt"
+  ],
+  "items": [
+    {
+      "sourceKey": "lonely-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/lonely-mint"
+    },
+    {
+      "sourceKey": "adamant-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/adamant-mint"
+    },
+    {
+      "sourceKey": "naughty-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/naughty-mint"
+    },
+    {
+      "sourceKey": "brave-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/brave-mint"
+    },
+    {
+      "sourceKey": "bold-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/bold-mint"
+    },
+    {
+      "sourceKey": "impish-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/impish-mint"
+    },
+    {
+      "sourceKey": "lax-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/lax-mint"
+    },
+    {
+      "sourceKey": "relaxed-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/relaxed-mint"
+    },
+    {
+      "sourceKey": "modest-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/modest-mint"
+    },
+    {
+      "sourceKey": "mild-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/mild-mint"
+    },
+    {
+      "sourceKey": "rash-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/rash-mint"
+    },
+    {
+      "sourceKey": "quiet-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/quiet-mint"
+    },
+    {
+      "sourceKey": "calm-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/calm-mint"
+    },
+    {
+      "sourceKey": "gentle-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/gentle-mint"
+    },
+    {
+      "sourceKey": "careful-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/careful-mint"
+    },
+    {
+      "sourceKey": "sassy-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/sassy-mint"
+    },
+    {
+      "sourceKey": "timid-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/timid-mint"
+    },
+    {
+      "sourceKey": "hasty-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/hasty-mint"
+    },
+    {
+      "sourceKey": "jolly-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/jolly-mint"
+    },
+    {
+      "sourceKey": "naive-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/naive-mint"
+    },
+    {
+      "sourceKey": "serious-mint",
+      "pokemonDbUrl": "https://pokemondb.net/item/serious-mint"
+    },
+    {
+      "sourceKey": "bottle-cap",
+      "pokemonDbUrl": "https://pokemondb.net/item/bottle-cap"
+    },
+    {
+      "sourceKey": "gold-bottle-cap",
+      "pokemonDbUrl": "https://pokemondb.net/item/gold-bottle-cap"
+    },
+    {
+      "sourceKey": "fast-ball",
+      "pokemonDbUrl": "https://pokemondb.net/item/fast-ball"
+    },
+    {
+      "sourceKey": "friend-ball",
+      "pokemonDbUrl": "https://pokemondb.net/item/friend-ball"
+    },
+    {
+      "sourceKey": "heavy-ball",
+      "pokemonDbUrl": "https://pokemondb.net/item/heavy-ball"
+    },
+    {
+      "sourceKey": "level-ball",
+      "pokemonDbUrl": "https://pokemondb.net/item/level-ball"
+    },
+    {
+      "sourceKey": "love-ball",
+      "pokemonDbUrl": "https://pokemondb.net/item/love-ball"
+    },
+    {
+      "sourceKey": "lure-ball",
+      "pokemonDbUrl": "https://pokemondb.net/item/lure-ball"
+    },
+    {
+      "sourceKey": "moon-ball",
+      "pokemonDbUrl": "https://pokemondb.net/item/moon-ball"
+    }
+  ],
+  "learnsetPages": [
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bulbasaur_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "speciesSourceKey": "pokedex:bulbasaur:1"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ivysaur_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ivysaur_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ivysaur:2"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Venusaur_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Venusaur_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:venusaur:3"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Charmander_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Charmander_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:charmander:4"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Charmeleon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Charmeleon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:charmeleon:5"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Charizard_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Charizard_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:charizard:6"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Squirtle_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Squirtle_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:squirtle:7"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wartortle_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Wartortle_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:wartortle:8"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Blastoise_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Blastoise_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:blastoise:9"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Caterpie_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Caterpie_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:caterpie:10"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Metapod_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Metapod_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:metapod:11"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Butterfree_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Butterfree_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:butterfree:12"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Weedle_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Weedle_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:weedle:13"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kakuna_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Kakuna_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:kakuna:14"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Beedrill_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Beedrill_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:beedrill:15"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgey_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgey_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pidgey:16"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgeotto_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgeotto_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pidgeotto:17"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgeot_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pidgeot_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pidgeot:18"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rattata_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Rattata_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:rattata:19"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Raticate_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Raticate_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:raticate:20"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Spearow_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Spearow_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:spearow:21"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Fearow_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Fearow_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:fearow:22"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ekans_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ekans_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ekans:23"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Arbok_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Arbok_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:arbok:24"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pikachu_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pikachu_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pikachu:25"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Raichu_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Raichu_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:raichu:26"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sandshrew_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Sandshrew_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:sandshrew:27"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sandslash_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Sandslash_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:sandslash:28"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoran%E2%99%80_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoran%E2%99%80_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:nidoran-f:29"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidorina_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidorina_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:nidorina:30"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoqueen_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoqueen_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:nidoqueen:31"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoran%E2%99%82_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoran%E2%99%82_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:nidoran-m:32"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidorino_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidorino_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:nidorino:33"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoking_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Nidoking_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:nidoking:34"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Clefairy_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Clefairy_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:clefairy:35"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Clefable_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Clefable_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:clefable:36"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Vulpix_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Vulpix_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:vulpix:37"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ninetales_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ninetales_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ninetales:38"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jigglypuff_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Jigglypuff_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:jigglypuff:39"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wigglytuff_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Wigglytuff_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:wigglytuff:40"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Zubat_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Zubat_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:zubat:41"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Golbat_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Golbat_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:golbat:42"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Oddish_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Oddish_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:oddish:43"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gloom_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Gloom_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:gloom:44"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Vileplume_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Vileplume_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:vileplume:45"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Paras_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Paras_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:paras:46"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Parasect_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Parasect_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:parasect:47"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Venonat_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Venonat_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:venonat:48"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Venomoth_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Venomoth_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:venomoth:49"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Diglett_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Diglett_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:diglett:50"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dugtrio_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Dugtrio_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:dugtrio:51"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Meowth_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Meowth_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:meowth:52"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Persian_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Persian_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:persian:53"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Psyduck_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Psyduck_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:psyduck:54"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Golduck_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Golduck_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:golduck:55"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mankey_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Mankey_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:mankey:56"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Primeape_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Primeape_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:primeape:57"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Growlithe_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Growlithe_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:growlithe:58"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Arcanine_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Arcanine_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:arcanine:59"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwag_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwag_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:poliwag:60"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwhirl_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwhirl_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:poliwhirl:61"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwrath_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Poliwrath_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:poliwrath:62"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Abra_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Abra_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:abra:63"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kadabra_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Kadabra_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:kadabra:64"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Alakazam_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Alakazam_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:alakazam:65"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Machop_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Machop_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:machop:66"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Machoke_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Machoke_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:machoke:67"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Machamp_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Machamp_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:machamp:68"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bellsprout_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Bellsprout_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:bellsprout:69"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Weepinbell_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Weepinbell_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:weepinbell:70"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Victreebel_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Victreebel_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:victreebel:71"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tentacool_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Tentacool_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:tentacool:72"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tentacruel_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Tentacruel_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:tentacruel:73"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Geodude_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Geodude_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:geodude:74"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Graveler_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Graveler_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:graveler:75"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Golem_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Golem_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:golem:76"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ponyta_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ponyta_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ponyta:77"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rapidash_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Rapidash_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:rapidash:78"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowpoke_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowpoke_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:slowpoke:79"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowbro_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowbro_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:slowbro:80"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magnemite_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Magnemite_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:magnemite:81"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magneton_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Magneton_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:magneton:82"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Farfetch%27d_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Farfetch%27d_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:farfetchd:83"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Doduo_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Doduo_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:doduo:84"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dodrio_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Dodrio_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:dodrio:85"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Seel_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Seel_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:seel:86"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dewgong_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Dewgong_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:dewgong:87"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Grimer_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Grimer_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:grimer:88"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Muk_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Muk_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:muk:89"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Shellder_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Shellder_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:shellder:90"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cloyster_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Cloyster_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:cloyster:91"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gastly_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Gastly_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:gastly:92"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Haunter_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Haunter_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:haunter:93"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gengar_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Gengar_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:gengar:94"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Onix_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Onix_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:onix:95"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Drowzee_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Drowzee_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:drowzee:96"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hypno_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Hypno_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:hypno:97"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Krabby_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Krabby_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:krabby:98"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kingler_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Kingler_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:kingler:99"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Voltorb_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Voltorb_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:voltorb:100"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Electrode_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Electrode_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:electrode:101"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Exeggcute_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Exeggcute_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:exeggcute:102"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Exeggutor_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Exeggutor_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:exeggutor:103"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cubone_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Cubone_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:cubone:104"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Marowak_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Marowak_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:marowak:105"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmonlee_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmonlee_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:hitmonlee:106"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmonchan_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmonchan_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:hitmonchan:107"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lickitung_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Lickitung_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:lickitung:108"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Koffing_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Koffing_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:koffing:109"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Weezing_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Weezing_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:weezing:110"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rhyhorn_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Rhyhorn_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:rhyhorn:111"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rhydon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Rhydon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:rhydon:112"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Chansey_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Chansey_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:chansey:113"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tangela_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Tangela_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:tangela:114"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kangaskhan_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Kangaskhan_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:kangaskhan:115"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Horsea_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Horsea_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:horsea:116"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Seadra_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Seadra_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:seadra:117"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Goldeen_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Goldeen_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:goldeen:118"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Seaking_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Seaking_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:seaking:119"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Staryu_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Staryu_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:staryu:120"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Starmie_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Starmie_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:starmie:121"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mr._Mime_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Mr._Mime_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:mr-mime:122"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Scyther_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Scyther_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:scyther:123"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jynx_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Jynx_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:jynx:124"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Electabuzz_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Electabuzz_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:electabuzz:125"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magmar_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Magmar_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:magmar:126"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pinsir_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pinsir_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pinsir:127"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tauros_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Tauros_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:tauros:128"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magikarp_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Magikarp_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:magikarp:129"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gyarados_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Gyarados_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:gyarados:130"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lapras_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Lapras_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:lapras:131"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ditto_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ditto_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ditto:132"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Eevee_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Eevee_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:eevee:133"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Vaporeon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Vaporeon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:vaporeon:134"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jolteon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Jolteon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:jolteon:135"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Flareon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Flareon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:flareon:136"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Porygon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Porygon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:porygon:137"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Omanyte_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Omanyte_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:omanyte:138"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Omastar_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Omastar_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:omastar:139"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kabuto_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Kabuto_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:kabuto:140"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kabutops_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Kabutops_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:kabutops:141"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Aerodactyl_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Aerodactyl_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:aerodactyl:142"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Snorlax_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Snorlax_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:snorlax:143"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Articuno_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Articuno_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:articuno:144"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Zapdos_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Zapdos_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:zapdos:145"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Moltres_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Moltres_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:moltres:146"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dratini_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Dratini_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:dratini:147"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dragonair_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Dragonair_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:dragonair:148"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dragonite_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Dragonite_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:dragonite:149"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mewtwo_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Mewtwo_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:mewtwo:150"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mew_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Mew_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:mew:151"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Chikorita_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Chikorita_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:chikorita:152"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bayleef_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Bayleef_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:bayleef:153"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Meganium_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Meganium_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:meganium:154"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cyndaquil_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Cyndaquil_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:cyndaquil:155"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Quilava_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Quilava_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:quilava:156"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Typhlosion_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Typhlosion_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:typhlosion:157"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Totodile_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Totodile_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:totodile:158"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Croconaw_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Croconaw_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:croconaw:159"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Feraligatr_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Feraligatr_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:feraligatr:160"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sentret_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Sentret_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:sentret:161"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Furret_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Furret_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:furret:162"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hoothoot_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Hoothoot_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:hoothoot:163"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Noctowl_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Noctowl_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:noctowl:164"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ledyba_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ledyba_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ledyba:165"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ledian_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ledian_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ledian:166"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Spinarak_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Spinarak_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:spinarak:167"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ariados_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ariados_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ariados:168"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Crobat_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Crobat_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:crobat:169"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Chinchou_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Chinchou_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:chinchou:170"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lanturn_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Lanturn_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:lanturn:171"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pichu_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pichu_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pichu:172"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Cleffa_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Cleffa_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:cleffa:173"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Igglybuff_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Igglybuff_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:igglybuff:174"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Togepi_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Togepi_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:togepi:175"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Togetic_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Togetic_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:togetic:176"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Natu_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Natu_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:natu:177"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Xatu_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Xatu_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:xatu:178"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mareep_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Mareep_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:mareep:179"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Flaaffy_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Flaaffy_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:flaaffy:180"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ampharos_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ampharos_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ampharos:181"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Bellossom_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Bellossom_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:bellossom:182"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Marill_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Marill_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:marill:183"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Azumarill_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Azumarill_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:azumarill:184"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sudowoodo_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Sudowoodo_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:sudowoodo:185"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Politoed_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Politoed_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:politoed:186"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hoppip_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Hoppip_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:hoppip:187"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Skiploom_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Skiploom_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:skiploom:188"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Jumpluff_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Jumpluff_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:jumpluff:189"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Aipom_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Aipom_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:aipom:190"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sunkern_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Sunkern_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:sunkern:191"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sunflora_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Sunflora_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:sunflora:192"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Yanma_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Yanma_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:yanma:193"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wooper_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Wooper_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:wooper:194"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Quagsire_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Quagsire_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:quagsire:195"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Espeon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Espeon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:espeon:196"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Umbreon_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Umbreon_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:umbreon:197"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Murkrow_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Murkrow_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:murkrow:198"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowking_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Slowking_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:slowking:199"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Misdreavus_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Misdreavus_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:misdreavus:200"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Unown_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Unown_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:unown:201"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Wobbuffet_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Wobbuffet_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:wobbuffet:202"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Girafarig_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Girafarig_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:girafarig:203"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pineco_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pineco_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pineco:204"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Forretress_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Forretress_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:forretress:205"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Dunsparce_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Dunsparce_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:dunsparce:206"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Gligar_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Gligar_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:gligar:207"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Steelix_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Steelix_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:steelix:208"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Snubbull_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Snubbull_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:snubbull:209"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Granbull_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Granbull_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:granbull:210"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Qwilfish_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Qwilfish_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:qwilfish:211"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Scizor_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Scizor_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:scizor:212"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Shuckle_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Shuckle_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:shuckle:213"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Heracross_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Heracross_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:heracross:214"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Sneasel_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Sneasel_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:sneasel:215"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Teddiursa_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Teddiursa_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:teddiursa:216"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ursaring_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ursaring_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ursaring:217"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Slugma_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Slugma_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:slugma:218"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magcargo_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Magcargo_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:magcargo:219"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Swinub_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Swinub_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:swinub:220"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Piloswine_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Piloswine_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:piloswine:221"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Corsola_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Corsola_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:corsola:222"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Remoraid_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Remoraid_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:remoraid:223"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Octillery_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Octillery_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:octillery:224"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Delibird_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Delibird_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:delibird:225"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mantine_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Mantine_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:mantine:226"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Skarmory_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Skarmory_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:skarmory:227"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Houndour_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Houndour_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:houndour:228"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Houndoom_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Houndoom_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:houndoom:229"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Kingdra_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Kingdra_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:kingdra:230"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Phanpy_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Phanpy_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:phanpy:231"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Donphan_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Donphan_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:donphan:232"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Porygon2_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Porygon2_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:porygon2:233"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Stantler_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Stantler_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:stantler:234"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Smeargle_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Smeargle_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:smeargle:235"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tyrogue_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Tyrogue_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:tyrogue:236"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmontop_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Hitmontop_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:hitmontop:237"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Smoochum_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Smoochum_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:smoochum:238"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Elekid_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Elekid_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:elekid:239"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Magby_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Magby_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:magby:240"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Miltank_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Miltank_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:miltank:241"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Blissey_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Blissey_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:blissey:242"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Raikou_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Raikou_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:raikou:243"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Entei_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Entei_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:entei:244"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Suicune_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Suicune_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:suicune:245"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Larvitar_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Larvitar_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:larvitar:246"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Pupitar_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Pupitar_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:pupitar:247"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Tyranitar_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Tyranitar_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:tyranitar:248"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Lugia_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Lugia_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:lugia:249"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Ho-Oh_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Ho-Oh_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:ho-oh:250"
+    },
+    {
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Celebi_(Pok%C3%A9mon)/Generation_IX_learnset",
+      "bdspFallbackUrl": "https://bulbapedia.bulbagarden.net/wiki/Celebi_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      "speciesSourceKey": "pokedex:celebi:251"
+    }
+  ],
+  "formLearnsetOverrides": [
+    {
+      "speciesSourceKey": "pokedex:rattata:10158",
+      "formLabel": "Alolan Rattata",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Rattata_(Pok%C3%A9mon)/Generation_VII_learnset"
+    },
+    {
+      "speciesSourceKey": "pokedex:raticate:10159",
+      "formLabel": "Alolan Raticate",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Raticate_(Pok%C3%A9mon)/Generation_VII_learnset"
+    },
+    {
+      "speciesSourceKey": "pokedex:farfetchd:11123",
+      "formLabel": "Galarian Farfetch'd",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Farfetch%27d_(Pok%C3%A9mon)/Generation_VIII_learnset"
+    },
+    {
+      "speciesSourceKey": "pokedex:marowak:10151",
+      "formLabel": "Alolan Marowak",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Marowak_(Pok%C3%A9mon)/Generation_VII_learnset"
+    },
+    {
+      "speciesSourceKey": "pokedex:mr-mime:11133",
+      "formLabel": "Galarian Mr. Mime",
+      "bulbapediaUrl": "https://bulbapedia.bulbagarden.net/wiki/Mr._Mime_(Pok%C3%A9mon)/Generation_VIII_learnset"
+    }
+  ]
+}

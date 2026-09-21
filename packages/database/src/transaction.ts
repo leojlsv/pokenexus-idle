@@ -33,6 +33,7 @@ export async function withTransaction<T>(
       throw new AggregateError(
         [error, rollbackError],
         "Database transaction and rollback both failed",
+        { cause: rollbackError },
       );
     }
     throw error;

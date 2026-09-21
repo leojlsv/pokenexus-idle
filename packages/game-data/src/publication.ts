@@ -34,12 +34,10 @@ import {
   type ValidationFinding,
 } from "./schema.js";
 import { canonicalizeBulbapediaMoveName } from "./bulbapedia-za-parser.js";
-import {
-  REVIEW_SCOPE,
-  REVIEW_STAGE_VERSION,
-  type ReviewApproval,
-  type ReviewStageManifest,
-} from "./review-commitment.js";
+import { BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION } from "./bulbapedia-learnset-parser.js";
+import { BULBAPEDIA_MOVE_TARGET_PARSER_VERSION } from "./bulbapedia-move-target.js";
+import type { ReviewApproval } from "./review-commitment.js";
+import { verifyReviewApproval } from "./review-approval.js";
 
 export type { ReviewApproval, ReviewStageManifest } from "./review-commitment.js";
 
@@ -107,185 +105,11 @@ const ARTIFACT_PATHS: Record<string, string> = {
 };
 const REQUIRED_ARTIFACT_LOGICAL_NAMES = Object.keys(ARTIFACT_PATHS).sort();
 const HASH_RE = /^sha256:[0-9a-f]{64}$/;
-
-function contentHash(value: unknown): string {
-  return sha256(Buffer.from(canonicalJson(value), "utf8"));
-}
-
-function canonicalAcceptedMappingRegistry(registry: MappingRegistry): MappingRegistry {
-  return {
-    species: registry.species.map((entry) => ({ ...entry, status: "accepted" })),
-    moves: registry.moves.map((entry) => ({ ...entry, status: "accepted" })),
-    types: registry.types.map((entry) => ({ ...entry, status: "accepted" })),
-    abilities: registry.abilities.map((entry) => ({ ...entry, status: "accepted" })),
-    items: registry.items.map((entry) => ({ ...entry, status: "accepted" })),
-  };
-}
-
-const REVIEW_MAPPING_SURFACES = ["species", "moves", "types", "abilities", "items"] as const;
-
-function sortedSourceKeys(values: string[]): string[] {
-  return [...values].sort((left, right) => left.localeCompare(right, "en", { sensitivity: "variant" }));
-}
-
-function acceptedCandidateFromReview(
-  reviewedCandidateInput: GameDataCandidate,
-  reviewedMappings: MappingRegistry,
-): GameDataCandidate {
-  const reviewedCandidate = parseGameDataCandidate(reviewedCandidateInput);
-  const inventories = reviewedCandidate.provenance.inventories.map((inventory) => {
-    if (!REVIEW_MAPPING_SURFACES.includes(inventory.surface as typeof REVIEW_MAPPING_SURFACES[number])) {
-      return inventory;
-    }
-    const surface = inventory.surface as typeof REVIEW_MAPPING_SURFACES[number];
-    const reviewedEntries = reviewedMappings[surface];
-    const expectedReviewedAccepted = sortedSourceKeys(
-      reviewedEntries.filter((entry) => entry.status === "accepted").map((entry) => entry.sourceKey),
-    );
-    const expectedReviewedCandidates = sortedSourceKeys(
-      reviewedEntries.filter((entry) => entry.status === "candidate").map((entry) => entry.sourceKey),
-    );
-    if (
-      !equalStrings(inventory.acceptedMappingKeys, expectedReviewedAccepted) ||
-      !equalStrings(inventory.candidateSourceKeys, expectedReviewedCandidates)
-    ) {
-      throw new Error(
-        `reviewed candidate ${surface} inventory does not match the Human-reviewed mapping proposal statuses`,
-      );
-    }
-    return {
-      ...inventory,
-      acceptedMappingKeys: sortedSourceKeys(reviewedEntries.map((entry) => entry.sourceKey)),
-      candidateSourceKeys: [],
-    };
-  });
-  const acceptedSourceInventoryHash = sourceInventoryHash(inventories);
-  const { provenanceHash: _reviewedProvenanceHash, ...reviewedProvenanceWithoutHash } =
-    reviewedCandidate.provenance;
-  const acceptedProvenanceWithoutHash: ProvenanceManifest = {
-    ...reviewedProvenanceWithoutHash,
-    inventories,
-    sourceInventoryHash: acceptedSourceInventoryHash,
-  };
-  const acceptedProvenance: ProvenanceManifest = {
-    ...acceptedProvenanceWithoutHash,
-    provenanceHash: provenanceHash(acceptedProvenanceWithoutHash),
-  };
-  return {
-    ...reviewedCandidate,
-    provenance: acceptedProvenance,
-  };
-}
-
-function candidateSemanticCommitment(candidate: GameDataCandidate): string {
-  const artifacts = sortedDescriptors(
-    Object.values(canonicalizeCandidateArtifacts(candidate)).map((artifact) => artifact.descriptor),
-  );
-  return contentHash({
-    schemaVersion: candidate.schemaVersion,
-    normalizerVersion: candidate.normalizerVersion,
-    artifacts,
-    provenance: canonicalizeProvenanceManifest(candidate.provenance),
-  });
-}
-
-function reviewFile(
-  manifest: ReviewStageManifest,
-  logicalName: ReviewStageManifest["files"][number]["logicalName"],
-  expectedPath: string,
-): ReviewStageManifest["files"][number] {
-  const matches = manifest.files.filter((file) => file.logicalName === logicalName);
-  if (matches.length !== 1 || matches[0].path !== expectedPath || !HASH_RE.test(matches[0].contentHash)) {
-    throw new Error(`approved review manifest has invalid ${logicalName} file descriptor`);
-  }
-  return matches[0];
-}
-
-function verifyReviewApproval(
-  candidate: GameDataCandidate,
-  mappingRegistry: MappingRegistry,
-  approval: ReviewApproval,
-): string {
-  if (!HASH_RE.test(approval.approvedReviewHash)) {
-    throw new Error("approved reviewHash must be an exact sha256 commitment");
-  }
-  const manifest = approval.manifest;
-  if (
-    manifest.reviewStageVersion !== REVIEW_STAGE_VERSION ||
-    canonicalJson(manifest.reviewScope) !== canonicalJson(REVIEW_SCOPE) ||
-    manifest.schemaVersion !== SCHEMA_VERSION ||
-    manifest.normalizerVersion !== NORMALIZER_VERSION
-  ) {
-    throw new Error("approved review manifest does not match the supported review contract");
-  }
-  if (manifest.reviewHash !== approval.approvedReviewHash) {
-    throw new Error("approved reviewHash does not match the supplied review manifest");
-  }
-  const { reviewHash, ...manifestWithoutHash } = manifest;
-  if (contentHash(manifestWithoutHash) !== reviewHash) {
-    throw new Error("approved review manifest reviewHash is invalid");
-  }
-  const expectedReviewFiles = [
-    "raw-extracted",
-    "mapping-proposals",
-    "normalized-candidate",
-    "provenance",
-    "validation-report",
-    "excluded-species-evidence",
-    "human-review-sample",
-  ].sort();
-  const actualReviewFiles = manifest.files.map((file) => file.logicalName).sort();
-  if (
-    actualReviewFiles.length !== expectedReviewFiles.length ||
-    actualReviewFiles.some((logicalName, index) => logicalName !== expectedReviewFiles[index])
-  ) {
-    throw new Error("approved review manifest must contain exactly the seven review files");
-  }
-
-  const reviewedCandidate = parseGameDataCandidate(approval.reviewedCandidate);
-  const reviewedCandidateContentHash = contentHash(approval.reviewedCandidate);
-  const reviewedMappingHash = contentHash(approval.reviewedMappingRegistry);
-  if (manifest.candidateContentHash !== reviewedCandidateContentHash) {
-    throw new Error("reviewed candidate does not match the Human-approved review commitment");
-  }
-  if (manifest.mappingProposalsContentHash !== reviewedMappingHash) {
-    throw new Error("reviewed mapping registry does not match the Human-approved review commitment");
-  }
-  if (
-    manifest.provenanceHash !== reviewedCandidate.provenance.provenanceHash ||
-    manifest.sourceInventoryHash !== reviewedCandidate.provenance.sourceInventoryHash
-  ) {
-    throw new Error("reviewed candidate provenance does not match the Human-approved review commitment");
-  }
-
-  const normalizedCandidateFile = reviewFile(
-    manifest,
-    "normalized-candidate",
-    "normalized-candidate.json",
-  );
-  const mappingFile = reviewFile(manifest, "mapping-proposals", "mapping-proposals.json");
-  const provenanceFile = reviewFile(manifest, "provenance", "provenance-manifest.json");
-  if (
-    normalizedCandidateFile.contentHash !== reviewedCandidateContentHash ||
-    mappingFile.contentHash !== reviewedMappingHash ||
-    provenanceFile.contentHash !== contentHash(reviewedCandidate.provenance)
-  ) {
-    throw new Error("approved review file descriptors do not authenticate candidate/mapping provenance");
-  }
-
-  const expectedAcceptedMappings = canonicalAcceptedMappingRegistry(approval.reviewedMappingRegistry);
-  if (canonicalJson(mappingRegistry) !== canonicalJson(expectedAcceptedMappings)) {
-    throw new Error("canonical mapping registry is not the exact accepted form of the Human-reviewed mapping proposals");
-  }
-  const expectedAcceptedCandidate = acceptedCandidateFromReview(
-    reviewedCandidate,
-    approval.reviewedMappingRegistry,
-  );
-  if (candidateSemanticCommitment(candidate) !== candidateSemanticCommitment(expectedAcceptedCandidate)) {
-    throw new Error("candidate is not the exact accepted form of the Human-reviewed candidate");
-  }
-  return approval.approvedReviewHash;
-}
+const IMMUTABLE_V1_COMPATIBILITY = {
+  gameDataVersion: "game-data-core-kanto-johto-v1",
+  bundleHash: "sha256:bbe5114563abe85ac5b42d4f05a63c44af9fdad7abd66ebdafa504d584c02903",
+  legacyBdspParserVersion: "bulbapedia-gen8-bdsp-learnset-v5",
+} as const;
 
 function publicationError(path: string, message: string, code = "publication-invalid"): GameDataValidationError {
   return new GameDataValidationError({ code, path, message });
@@ -310,16 +134,48 @@ function assertExactArtifactSet(
   }
 }
 
-function mappingAcceptedKeys(registry: MappingRegistry, surface: "species" | "moves" | "types" | "abilities" | "items"): string[] {
-  return registry[surface].filter((entry) => entry.status === "accepted").map((entry) => entry.sourceKey).sort();
+function currentMappingSourceKeys(inventory: ProvenanceManifest["inventories"][number]): Set<string> {
+  return new Set(
+    [...inventory.acceptedMappingKeys, ...inventory.candidateSourceKeys].map((key) =>
+      key.normalize("NFC"),
+    ),
+  );
+}
+
+function mappingAcceptedKeys(
+  registry: MappingRegistry,
+  surface: "species" | "moves" | "types" | "abilities" | "items",
+  currentSourceKeys?: ReadonlySet<string>,
+): string[] {
+  return registry[surface]
+    .filter(
+      (entry) =>
+        entry.status === "accepted" &&
+        (currentSourceKeys === undefined ||
+          currentSourceKeys.has(entry.sourceKey.normalize("NFC"))),
+    )
+    .map((entry) => entry.sourceKey)
+    .sort();
 }
 
 function catalogIds(candidate: GameDataCandidate, surface: "species" | "moves" | "types" | "abilities" | "items"): string[] {
   return candidate.catalogs[surface].map((entry) => entry.id).sort();
 }
 
-function mappingIds(registry: MappingRegistry, surface: "species" | "moves" | "types" | "abilities" | "items"): string[] {
-  return registry[surface].filter((entry) => entry.status === "accepted").map((entry) => entry.canonicalId).sort();
+function mappingIds(
+  registry: MappingRegistry,
+  surface: "species" | "moves" | "types" | "abilities" | "items",
+  currentSourceKeys?: ReadonlySet<string>,
+): string[] {
+  return registry[surface]
+    .filter(
+      (entry) =>
+        entry.status === "accepted" &&
+        (currentSourceKeys === undefined ||
+          currentSourceKeys.has(entry.sourceKey.normalize("NFC"))),
+    )
+    .map((entry) => entry.canonicalId)
+    .sort();
 }
 
 function equalStrings(left: string[], right: string[]): boolean {
@@ -364,14 +220,26 @@ export function validatePublicationReadiness(candidate: GameDataCandidate, regis
 
   for (const surface of ["species", "moves", "types", "abilities", "items"] as const) {
     const inventory = inventoryBySurface.get(surface);
-    if (inventory && !equalStrings([...inventory.acceptedMappingKeys].sort(), mappingAcceptedKeys(registry, surface))) {
+    const currentSourceKeys = inventory ? currentMappingSourceKeys(inventory) : undefined;
+    if (
+      inventory &&
+      !equalStrings(
+        [...inventory.acceptedMappingKeys].sort(),
+        mappingAcceptedKeys(registry, surface, currentSourceKeys),
+      )
+    ) {
       findings.push({
         code: "mapping-inventory-mismatch",
         path: `provenance.inventories.${surface}.acceptedMappingKeys`,
         message: "accepted mapping inventory does not match the supplied local mapping registry",
       });
     }
-    if (!equalStrings(catalogIds(candidate, surface), mappingIds(registry, surface))) {
+    if (
+      !equalStrings(
+        catalogIds(candidate, surface),
+        mappingIds(registry, surface, currentSourceKeys),
+      )
+    ) {
       findings.push({
         code: "mapping-catalog-mismatch",
         path: `catalogs.${surface}`,
@@ -403,35 +271,28 @@ export function validatePublicationReadiness(candidate: GameDataCandidate, regis
   for (const relation of candidate.provenance.moveFactSources) {
     const mapping = acceptedMoveMappingById.get(relation.moveId);
     if (!mapping) continue;
-    if (relation.mainline.selectedGame !== "scarlet-violet") {
+    if (
+      relation.mainline.selectedGame !== "scarlet-violet" &&
+      relation.mainline.selectedGame !== "brilliant-diamond-shining-pearl"
+    ) {
       let sourceMatchesMove = false;
-      if (relation.mainline.selectedGame === "brilliant-diamond-shining-pearl") {
-        sourceMatchesMove = candidate.catalogs.learnsets.some(
-          (entry) =>
-            entry.moveId === relation.moveId &&
-            entry.sourceGeneration === 8 &&
-            entry.sourceGame === "Brilliant Diamond/Shining Pearl" &&
-            entry.sourceRecordIds.includes(relation.mainline.sourceRecordId),
-        );
-      } else {
-        const source = sourceById.get(relation.mainline.sourceRecordId);
-        if (source) {
-          try {
-            const url = new URL(source.canonicalUrl);
-            const titles = url.searchParams.getAll("titles");
-            const match = titles.length === 1 ? /^(.+) \(move\)$/u.exec(titles[0]) : null;
-            const sourceKey = match ? canonicalizeBulbapediaMoveName(match[1]) : null;
-            sourceMatchesMove = sourceKey === mapping.sourceKey.normalize("NFC");
-          } catch {
-            sourceMatchesMove = false;
-          }
+      const source = sourceById.get(relation.mainline.sourceRecordId);
+      if (source) {
+        try {
+          const url = new URL(source.canonicalUrl);
+          const titles = url.searchParams.getAll("titles");
+          const match = titles.length === 1 ? /^(.+) \(move\)$/u.exec(titles[0]) : null;
+          const sourceKey = match ? canonicalizeBulbapediaMoveName(match[1]) : null;
+          sourceMatchesMove = sourceKey === mapping.sourceKey.normalize("NFC");
+        } catch {
+          sourceMatchesMove = false;
         }
       }
       if (!sourceMatchesMove) {
         findings.push({
           code: "move-mainline-mapping-mismatch",
           path: `provenance.moveFactSources.${relation.moveId}.mainline`,
-          message: `historical Bulbapedia Move proof for ${mapping.sourceKey} must be bound to a selected-game learnset row for the same Move`,
+          message: `historical Bulbapedia Move proof must match accepted Move source key ${mapping.sourceKey}`,
         });
       }
     }
@@ -444,8 +305,19 @@ export function validatePublicationReadiness(candidate: GameDataCandidate, regis
       let sourceKey: string | null = null;
       try {
         const url = new URL(source.canonicalUrl);
-        const match = /^\/move\/([^/]+)$/.exec(url.pathname);
-        sourceKey = match ? decodeURIComponent(match[1]).normalize("NFC") : null;
+        if (source.provider === "pokemondb") {
+          const match = /^\/move\/([^/]+)$/.exec(url.pathname);
+          sourceKey = match ? decodeURIComponent(match[1]).normalize("NFC") : null;
+        } else if (
+          role === "sourceTargetSourceRecordId" &&
+          source.provider === "bulbapedia" &&
+          source.parserVersion === BULBAPEDIA_MOVE_TARGET_PARSER_VERSION
+        ) {
+          const match = /^\/wiki\/(.+)_\(move\)$/u.exec(decodeURIComponent(url.pathname));
+          sourceKey = match
+            ? canonicalizeBulbapediaMoveName(match[1].replace(/_/g, " "))
+            : null;
+        }
       } catch {
         sourceKey = null;
       }
@@ -509,6 +381,17 @@ export async function stageCandidate(
   }
   const stagingFindings = validatePublicationReadiness(candidate, mappingRegistry);
   if (stagingFindings.length > 0) throw new GameDataValidationError(stagingFindings[0]);
+  if (
+    candidate.provenance.moveFactSources.some(
+      (relation) => relation.mainline.selectedGame !== "scarlet-violet",
+    ) &&
+    !reviewApproval
+  ) {
+    throw publicationError(
+      "reviewApproval",
+      "historical MOVE-01 selections require Human-reviewed raw scalar-proof evidence before staging",
+    );
+  }
 
   const expectedInventoryHash = sourceInventoryHash(candidate.provenance.inventories);
   if (candidate.provenance.sourceInventoryHash !== expectedInventoryHash) {
@@ -769,9 +652,20 @@ async function reconstructCandidateFromPayload(
   normalizerVersion: string,
   descriptors: ArtifactDescriptor[],
   provenance: ProvenanceManifest,
+  allowImmutableV1Compatibility = false,
 ): Promise<GameDataCandidate> {
   assertExactArtifactSet(descriptors, "artifacts");
-  return parseGameDataCandidate({
+  const validationProvenance: ProvenanceManifest = {
+    ...provenance,
+    sourceRecords: provenance.sourceRecords.map((source) =>
+      allowImmutableV1Compatibility &&
+      source.provider === "bulbapedia" &&
+      source.parserVersion === IMMUTABLE_V1_COMPATIBILITY.legacyBdspParserVersion
+        ? { ...source, parserVersion: BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION }
+        : source,
+    ),
+  };
+  const candidate = parseGameDataCandidate({
     schemaVersion: SCHEMA_VERSION,
     normalizerVersion,
     catalogs: {
@@ -809,8 +703,9 @@ async function reconstructCandidateFromPayload(
         ),
       ),
     },
-    provenance,
+    provenance: validationProvenance,
   });
+  return { ...candidate, provenance };
 }
 
 async function assertCanonicalCandidatePayload(
@@ -1009,7 +904,10 @@ export async function publishStagedCandidate(
       if (!(await pathExists(destination))) throw error;
       const existing = (await loadPublishedBundle(publishedRoot, normalizedGameDataVersion)).manifest;
       if (existing.gameDataVersion !== normalizedGameDataVersion || existing.bundleHash !== manifest.bundleHash) {
-        throw new Error(`gameDataVersion ${normalizedGameDataVersion} already exists with different content`);
+        throw new Error(
+          `gameDataVersion ${normalizedGameDataVersion} already exists with different content`,
+          { cause: error },
+        );
       }
       await rm(temporary, { recursive: true, force: true });
       return { directory: destination, manifest: existing };
@@ -1068,6 +966,8 @@ export async function loadPublishedBundle(publishedRoot: string, gameDataVersion
     manifest.normalizerVersion,
     manifest.artifacts,
     provenance,
+    manifest.gameDataVersion === IMMUTABLE_V1_COMPATIBILITY.gameDataVersion &&
+      manifest.bundleHash === IMMUTABLE_V1_COMPATIBILITY.bundleHash,
   );
   await assertCanonicalCandidatePayload(directory, candidate, manifest.artifacts);
   return { directory, manifest, candidate };

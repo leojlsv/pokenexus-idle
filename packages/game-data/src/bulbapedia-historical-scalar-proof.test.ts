@@ -172,6 +172,36 @@ describe("Bulbapedia historical scalar proof parser", () => {
     });
   });
 
+  it("maps exact historical Power Varies to semantic null without relaxing Accuracy", () => {
+    const game = "ultra-sun-ultra-moon" as const;
+    const variesPower = wikitext("Return", game, {
+      power: "Varies",
+      accuracy: "100",
+    });
+    expect(
+      parseBulbapediaHistoricalScalarProof(
+        source("Return", game, response("Return", game, variesPower)),
+        "Return",
+        game,
+      ),
+    ).toMatchObject({
+      power: null,
+      accuracy: 100,
+    });
+
+    const variesAccuracy = wikitext("Return", game, {
+      power: "Varies",
+      accuracy: "Varies",
+    });
+    expect(() =>
+      parseBulbapediaHistoricalScalarProof(
+        source("Return", game, response("Return", game, variesAccuracy)),
+        "Return",
+        game,
+      ),
+    ).toThrow(/accuracy: expected exact integer/i);
+  });
+
   it("fails closed when a tt annotation contains game-specific scalar evidence", () => {
     const game = "sword-shield" as const;
     const content = wikitext("Tackle", game, {

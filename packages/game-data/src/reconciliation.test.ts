@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  proposeCandidateId,
   reconcileSourceInventory,
   validateMappingRegistry,
 } from "./reconciliation";
+import { proposeCandidateId } from "./candidate-id";
 import { asId, inventoryFixture } from "./test-fixtures";
 import type { MappingRegistry } from "./schema";
 

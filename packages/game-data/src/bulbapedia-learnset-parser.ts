@@ -2,8 +2,8 @@ import type { ExtractedPokemonDbLearnsetEntry } from "./pokemondb-parser.js";
 
 export const BULBAPEDIA_GEN9_LEARNSET_PARSER_VERSION =
   "bulbapedia-gen9-learnset-v1" as const;
-export const BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION =
-  "bulbapedia-gen8-bdsp-learnset-v5" as const;
+export const BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION =
+  "bulbapedia-gen8-learnset-v6" as const;
 
 export interface BulbapediaLearnsetHtmlSource {
   url: string;

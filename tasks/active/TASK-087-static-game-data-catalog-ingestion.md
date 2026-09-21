@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: DONE
+- State: ACCEPTANCE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer
@@ -22,8 +22,8 @@
   - docs/specs/SPEC-001-core-domain-model.md
   - docs/specs/SPEC-003-combat-rules-v1.md
   - docs/specs/SPEC-005-pokemon-instance-collection-team.md
-- Branch: feat/TASK-087-static-game-data-catalog-ingestion
-- Worktree: .worktrees/TASK-087-static-game-data-catalog-ingestion
+- Branch: fix/TASK-087-post-publication-hardening
+- Worktree: .worktrees/TASK-087-post-publication-hardening
 
 ## Objective
 
@@ -877,9 +877,154 @@ Post-promotion validation on 2026-09-21:
   authorized repository-history completion/integration on 2026-09-21, allowing the governed
   commit/push/main-integration sequence to close the task as `DONE`.
 
-## Completion
+## Corrective hardening cycle — 2026-09-21
 
-TASK-087 is DONE. The Human-approved static-data review commitment
+The Human Owner explicitly directed that **all** dependency and technical-debt findings identified
+after the first TASK-087 closure must be resolved before any other product task advances. TASK-087
+is therefore reopened in `FIX` as a bounded corrective cycle. This does not activate TASK-023,
+TASK-088, TASK-090 or any downstream implementation.
+
+Required closure items for this corrective cycle:
+
+- [x] eliminate the published Learnset coverage gap for all 42 accepted persistent alternate forms,
+      without `baseSpeciesId` inheritance/fallback and without changing existing canonical IDs;
+- [x] preserve immutable `game-data-core-kanto-johto-v1`; any factual correction/new Learnset
+      coverage must stage under a **new** `gameDataVersion` and pass a fresh exact Human review gate
+      before permanent canonical publication;
+- [x] split Node/filesystem maintenance/publication APIs from a runtime-safe static-data consumer
+      surface and prove that the production Worker target can consume the accepted delivery shape;
+- [x] implement the SPEC-002 logical sharding/lazy-consumption expectation so runtime consumers do
+      not need provenance/source-inventory or every catalog shard in one deployment payload;
+- [x] add a concrete retention/delivery policy for immutable published versions that preserves
+      authoritative-history resolvability without assuming every future bundle must be eagerly
+      embedded in an application bundle;
+- [x] upgrade the vulnerable Vitest line to a patched release compatible with the repository's
+      Node/Vite baseline and revalidate the workspace;
+- [x] update compatible Cloudflare tooling/runtime metadata deliberately and prove Worker builds;
+- [x] strengthen CI with `roadmap:check`, production dependency audit and the new game-data
+      Worker-compatibility gate; keep live upstream ingestion opt-in rather than turning CI into a
+      network crawler;
+- [x] update stale roadmap/README statements, including dependency-clear TASK-090 visibility, with
+      no downstream task activation;
+- [x] remove the unused legacy provenance caller compatibility parameter if no production caller
+      still requires it;
+- [x] split the largest maintenance/publication modules only where doing so materially lowers
+      ownership/test risk; do not perform cosmetic refactors;
+- [x] resolve the Git worktree metadata warning using a non-destructive repository-maintenance
+      procedure and verify repository integrity afterward;
+- [x] run full workspace validation plus fresh independent QA; no P0/P1 finding may remain.
+
+### Corrective implementation evidence
+
+- The corrected full candidate contains 293 Species, 547 Moves, 18 Types, 147 Abilities, 30 Items,
+  19,035 Learnsets and 324 current type-effectiveness records. Learnsets cover 293 unique Species,
+  including all 42 accepted persistent forms, with zero orphan Species/Move references and no
+  `baseSpeciesId` Learnset inheritance.
+- Exact form ingestion uses 37 current Species-page form Learnsets plus five explicit historical
+  form overrides. All 251 base Species were structurally classified as 181 current Gen IX plus 70
+  approved historical fallbacks, with zero remaining parser-error cases.
+- The Move catalog is the exact corrected Core-Learnset closure: 547 Moves. `Psychic Noise`
+  preserves `sourceTarget = any-adjacent` from structured Bulbapedia Range evidence while
+  `makesContact` remains proven only by PokémonDB; both role SourceRecords are independently bound.
+- Historical MOVE-01 scalar proof is review-only raw evidence (`historicalScalarProofs`) rather than
+  a fabricated playable Learnset row. Raw extraction is versioned `pokenexus-static-raw-extract-v4`
+  and the review contract is `task-087-review-stage-v3`.
+- Three full `review-core` executions after factual closure/refactoring produced the same exact
+  candidate. The last comparison was byte-identical across all eight review-stage files.
+  `reviewHash = sha256:a620dd9b2721e6cc483dc9d3ea15c3e1b38de6cdb9fc8a18c48cb7d3168a468b`,
+  `candidateContentHash = sha256:5221b25da2ba0423e2c042b36cf0660550d177c74a5dc4cedb505718483b0836`,
+  and `mappingProposalsContentHash = sha256:f6c196af851ac59439e4a73be08e5e3db92819524af31cb6e268d4fedf89d905`.
+  Its 151 pre-Human findings are exactly the expected 150 `candidate-mapping-unresolved` findings
+  for 75 new Move candidates plus one aggregate `mapping-catalog-mismatch`; schema validation is
+  otherwise green. The Human Owner explicitly approved this exact review commitment at
+  `2026-09-21T18:16:19Z`.
+- The package root and `@pokenexus/game-data/runtime` are Worker/browser-safe; Node filesystem and
+  publication APIs live under `@pokenexus/game-data/node`. Runtime delivery resolves only a version
+  manifest first, then individually hash-verifies requested catalog shards; Learnsets and
+  provenance/source-inventory remain lazy. Wrangler dry-run bundles this surface under the strict
+  realtime Worker target with no `nodejs_compat` requirement.
+- `docs/architecture/static-game-data-delivery.md` defines immutable R2/CDN-style object delivery,
+  on-demand historical version resolution and retention. `packages/game-data/published/**` remains
+  canonical repository evidence and is not included in the package distribution (`files = dist`).
+- Tooling baseline is now pnpm `10.34.5`, Vitest `4.1.11`, Wrangler `4.136.1`,
+  `@cloudflare/workers-types` `5.20260921.1`, Cloudflare `compatibility_date = 2026-09-21`, ESLint
+  `10.11.0` / `@eslint/js 10.0.1` / `typescript-eslint 8.70.1`. Full and production dependency
+  audits report no known vulnerabilities.
+- CI now includes `roadmap:check`, production dependency audit, normal workspace gates, the strict
+  game-data Worker compatibility smoke and the database Worker compatibility smoke. Live upstream
+  ingestion remains opt-in.
+- `finalizeProvenance.provider` compatibility was removed after confirming no production caller.
+  Targeted decomposition moved maintenance-profile parsing to `maintenance-profile.ts`, Human
+  review/replay verification to `review-approval.ts`, runtime delivery to `runtime-delivery.ts`,
+  canonical JSON to `canonical-json.ts`, and candidate-ID generation to `candidate-id.ts`; no
+  cosmetic mass rewrite was performed.
+- Git administrative repair first ran `git worktree repair`, then proved all 32
+  `.git/worktrees/*/refs` directories were empty before removing only those empty directories.
+  `git count-objects -vH` now reports `garbage: 0`; `git fsck --full --no-reflogs` reports no
+  corruption and all registered worktrees remain present. Dangling objects were left untouched.
+- Historical reload compatibility is explicitly preserved for the immutable v1: the Node published
+  loader accepts its sealed `bulbapedia-gen8-bdsp-learnset-v5` provenance only through an internal
+  validation-only v5→current-parser compatibility projection, then returns the original v5
+  provenance unchanged. Normal candidate parsing/staging remains strict and rejects v5. A regression
+  loads `game-data-core-kanto-johto-v1` through `loadPublishedBundle` and asserts the exact known
+  `bundleHash = sha256:bbe5114563abe85ac5b42d4f05a63c44af9fdad7abd66ebdafa504d584c02903`
+  with 477 Moves / 13,785 Learnsets.
+- Corrective scratch artifacts no longer pollute the repository root. Diagnostic scripts, duplicate
+  review outputs and obsolete Worker-smoke scratch files were removed; the sole retained Human-review
+  evidence and ingestion cache are under ignored `.tmp/task-087-hardening/`, including
+  `review-a620dd9b/`. No top-level `.tmp-*` path remains.
+- Final current-snapshot re-gates after all corrective fixes are independently READY with
+  P0/P1/P2/P3 `0/0/0/0` for both TECH/ARCH and dependency/technical-debt review. The final
+  `@pokenexus/game-data` suite is 314 passed / 1 live-ingestion skipped; workspace lint, typecheck,
+  tests, build, roadmap check, full + production dependency audits, strict game-data Worker smoke,
+  database Worker smoke and `git diff --check` pass. Published v1 has zero Git diff.
+- Fresh independent Class B acceptance of the final corrective snapshot is **ACCEPTED** with
+  P0/P1/P2/P3 `0/0/0/0`. It independently recomputed
+  `reviewHash = sha256:a620dd9b2721e6cc483dc9d3ea15c3e1b38de6cdb9fc8a18c48cb7d3168a468b`,
+  verified all seven sealed review-file hashes plus candidate/mapping commitments, confirmed
+  293 Species / 42 forms / 547 Moves / 19,035 Learnsets with zero orphan Species/Move references,
+  and found no implementation blocker. This pre-promotion acceptance did not itself authorize
+  publication or Git history.
+- After the explicit Human approval, the reviewed mapping registry was promoted through the exact
+  audited `candidate -> accepted` transition. The canonical mapping roster now contains 293 Species,
+  **552 Move mappings** (the 477 previously accepted historical identities plus the 75 newly approved
+  mappings), 18 Types, 147 Abilities and 30 Items; all are `accepted`. The five historical Move
+  mappings no longer present in the current Learnset closure remain intentionally preserved and were
+  not re-used or renamed.
+- The exact accepted projection was staged with the approved `ReviewApproval` and canonically
+  published as `gameDataVersion = game-data-core-kanto-johto-v2` at
+  `2026-09-21T18:18:54.923Z`. The corrected immutable bundle is:
+  - `bundleHash = sha256:fc4ecaacb486b496ca2539666201cf73ace40b6ff352f210783a6fadedf052b4`;
+  - `provenanceHash = sha256:b7df6560514961937f87cb7edf48b87b1dc6f407cea0e2fdc213994c9de1c8eb`;
+  - `sourceInventoryHash = sha256:4fb913f77edb79472c67d30dc90ce166c1e476c03684d38734c6c54ee4c9e4b1`;
+  - 293 Species, 547 Moves, 18 Types, 147 Abilities, 30 Items, 19,035 Learnsets and 324 current
+    Type-effectiveness rows.
+- Real-loader regressions now cover both immutable v1 and corrected v2. Lazy runtime tests resolve v2
+  and hash-verify its 547-Move and 19,035-Learnset shards. A duplicate same-version v2 publication
+  was executed with the same approved review: all 10 published files remained byte-identical, the
+  bundle hash stayed `fc4eca...052b4`, and the original `publishedAt` was preserved.
+- `game-data-core-kanto-johto-v1` and its published directory remain unchanged at
+  `bundleHash = sha256:bbe5114563abe85ac5b42d4f05a63c44af9fdad7abd66ebdafa504d584c02903`.
+  No corrective commit/push/merge has occurred.
+- Fresh post-promotion validation of the exact canonical v2 state is complete. Independent
+  TECH/ARCH and dependency/debt/governance gates both returned **FINAL READY** with P0/P1/P2/P3
+  `0/0/0/0`; redundant independent QA also returned **FINAL READY** `0/0/0/0`; and the fresh
+  delegated Class B acceptance returned **ACCEPTED** `0/0/0/0`. These gates independently
+  recomputed the approved `reviewHash = sha256:a620dd9b2721e6cc483dc9d3ea15c3e1b38de6cdb9fc8a18c48cb7d3168a468b`,
+  verified the exact 293/552/18/147/30 accepted canonical mapping projection, preserved the five
+  historical Move mappings outside the current 547-Move v2 catalog, reloaded v1 unchanged and v2
+  at `bundleHash = sha256:fc4ecaacb486b496ca2539666201cf73ace40b6ff352f210783a6fadedf052b4`,
+  verified 19,035 Learnsets plus lazy/hash-verified runtime delivery and same-version idempotence,
+  and found no implementation blocker. Post-promotion QA/acceptance is therefore closed; the
+  separately governed corrective Git-history gate is the only remaining TASK-087 closure step.
+
+Repository-history actions for this corrective cycle remain separately governed by the standard
+Human Owner Git gate. The earlier TASK-087 history authorization covered the completed first
+publication sequence and is not treated as blanket authorization for new corrective commits.
+
+## Prior completion record
+
+TASK-087 previously reached DONE. The Human-approved static-data review commitment
 `sha256:91b646453a56ba1496810e1f55f5bac242dd0ce68790d62ba61ec8b4b0e15377` was promoted only through
 the audited candidate-to-accepted mapping/inventory transition. The immutable canonical bundle is
 `game-data-core-kanto-johto-v1` with
@@ -891,8 +1036,8 @@ The accepted implementation snapshot was committed as
 `main` after explicit Human Owner repository-history/completion authorization on 2026-09-21.
 
 Post-promotion independent QA returned READY P0/P1/P2/P3 `0/0/0/0`; delegated Class B acceptance
-returned **ACCEPTED**. This DONE metadata records governed closure only and does not activate
-TASK-023, TASK-088, TASK-090 or any other downstream task.
+returned **ACCEPTED**. That prior closure remains the immutable history of the first publication;
+the corrective cycle above addresses newly identified pre-consumer hardening debt.
 
 ## Dependencies
 
@@ -914,13 +1059,14 @@ TASK-023, TASK-088, TASK-090 or any other downstream task.
   or remap them.
 - Network crawling must respect each provider's current robots/access policy; PokémonDB
   complementing Bulbapedia must never be used to bypass a provider restriction.
-- Repository-history completion was explicitly authorized by the Human Owner on 2026-09-21 after
-  post-promotion QA and delegated Class B acceptance passed. This authorization applies to the
-  governed TASK-087 completion sequence; unrelated history rewriting/force operations remain out of scope.
+- Repository-history completion for the **first v1 publication sequence only** was explicitly
+  authorized by the Human Owner on 2026-09-21 after that sequence's post-promotion QA and delegated
+  Class B acceptance passed. It does not authorize this corrective cycle; corrective commit/push/merge
+  remains blocked on a new explicit Human Owner Git gate.
 
 ## Expected files / boundaries
 
-- tasks/done/TASK-087-static-game-data-catalog-ingestion.md
+- tasks/active/TASK-087-static-game-data-catalog-ingestion.md
 - packages/game-data/**
 - docs/project/PROJECT_ROADMAP.md
 - generated docs/project/PROJECT_ROADMAP.html

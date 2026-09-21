@@ -13,9 +13,10 @@ import {
   type SpeciesDefinitionV2,
   type TypeDefinitionV1,
 } from "./schema.js";
-import type {
-  CandidateValidationReport,
-  RawExtractedSnapshot,
+import {
+  assertRawHistoricalScalarProofBinding,
+  type CandidateValidationReport,
+  type RawExtractedSnapshot,
 } from "./normalization.js";
 import { validatePublicationReadiness } from "./publication.js";
 import {
@@ -280,6 +281,7 @@ function assertHistoricalMoveRawBindings(
         `review stage historical Move ${moveMapping.sourceKey} selected-game/source does not match raw extracted evidence`,
       );
     }
+    assertRawHistoricalScalarProofBinding(rawExtracted, rawMove);
 
     const candidateMove = candidateMoves.get(relation.moveId);
     if (!candidateMove) {

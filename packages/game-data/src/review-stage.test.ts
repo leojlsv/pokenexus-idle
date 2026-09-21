@@ -43,6 +43,7 @@ function rawFixture(): RawExtractedSnapshot {
     abilities: [],
     items: [],
     learnsets: [],
+    historicalScalarProofs: [],
     currentTypeEffectiveness: [],
   };
 }
@@ -120,18 +121,12 @@ function historicalReviewFixture() {
     canonicalUrl:
       "https://bulbapedia.bulbagarden.net/wiki/Alpha_(Pok%C3%A9mon)/Generation_VIII_learnset",
     fetchedAt: "2026-09-18T00:00:00.000Z",
-    parserVersion: "bulbapedia-gen8-bdsp-learnset-v5",
+    parserVersion: "bulbapedia-gen8-learnset-v6",
     sourceContentHash:
       "sha256:1212121212121212121212121212121212121212121212121212121212121212",
     fetchStatus: "fetched",
   });
   input.candidate.catalogs.moves[0].sourceRecordIds.push(bdspSourceRecordId);
-  input.candidate.catalogs.learnsets[0] = {
-    ...input.candidate.catalogs.learnsets[0],
-    sourceGeneration: 8,
-    sourceGame: "Brilliant Diamond/Shining Pearl",
-    sourceRecordIds: [bdspSourceRecordId],
-  };
   input.candidate.provenance.moveFactSources[0].mainline = {
     selectedGame: "brilliant-diamond-shining-pearl",
     sourceRecordId: bdspSourceRecordId,
@@ -162,6 +157,19 @@ function historicalReviewFixture() {
       sourceRecordId: "source:move:tackle",
     },
   ];
+  input.rawExtracted.historicalScalarProofs = [
+    {
+      sourceName: "Tackle",
+      sourceKey: "tackle",
+      selectedGame: "brilliant-diamond-shining-pearl",
+      typeSourceKey: "normal",
+      category: "physical",
+      basePp: 35,
+      power: 40,
+      accuracy: 100,
+      sourceRecordId: bdspSourceRecordId,
+    },
+  ];
   const findings = validatePublicationReadiness(input.candidate, input.mappingRegistry);
   input.validationReport = {
     candidateValid: true,
@@ -179,7 +187,7 @@ describe("pre-Human review stage", () => {
 
     expect(second).toEqual(first);
     expect(first.manifest).toMatchObject({
-      reviewStageVersion: "task-087-review-stage-v2",
+      reviewStageVersion: "task-087-review-stage-v3",
       reviewScope: {
         kind: "core-kanto-johto",
         nationalDexMin: 1,
@@ -280,13 +288,12 @@ describe("pre-Human review stage", () => {
       canonicalUrl:
         "https://bulbapedia.bulbagarden.net/wiki/Beta_(Pok%C3%A9mon)/Generation_VIII_learnset",
       fetchedAt: "2026-09-18T00:00:00.000Z",
-      parserVersion: "bulbapedia-gen8-bdsp-learnset-v5",
+      parserVersion: "bulbapedia-gen8-learnset-v6",
       sourceContentHash:
         "sha256:3434343434343434343434343434343434343434343434343434343434343434",
       fetchStatus: "fetched",
     });
     input.candidate.catalogs.moves[0].sourceRecordIds.push(wrongSourceRecordId);
-    input.candidate.catalogs.learnsets[0].sourceRecordIds.push(wrongSourceRecordId);
     input.candidate.provenance.moveFactSources[0].mainline.sourceRecordId = wrongSourceRecordId;
     input.candidate.provenance = finalizeProvenance({
       sourceRecords: input.candidate.provenance.sourceRecords,

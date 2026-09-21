@@ -25,6 +25,7 @@ import {
   buildReviewExcludedSpeciesEvidence,
   enrichMovesWithZaBaseCooldowns,
   fetchConfiguredLearnsetSources,
+  mergeFetchedMaintenanceSources,
   parseMaintenanceIngestionProfile,
   resolveBulbapediaStaticFormLabels,
   runMaintenanceIngestion,
@@ -45,6 +46,45 @@ import type { MappingRegistry, SourceRecord } from "./schema.js";
 const POKEMONDB_SOURCE_ID = "source:pokemondb:test-move-page";
 const BULBAPEDIA_GEN9_SOURCE_ID = "source:bulbapedia:test-gen9-move-list";
 const BULBAPEDIA_ZA_SOURCE_ID = "source:bulbapedia:test-za-move-list";
+
+describe("maintenance fetched-source reconciliation", () => {
+  it("deduplicates the same canonical URL and normalizes a fetched/cache overlap deterministically", () => {
+    const url =
+      "https://bulbapedia.bulbagarden.net/wiki/Mr._Mime_(Pok%C3%A9mon)/Generation_VIII_learnset";
+    const bytes = Buffer.from("same source bytes", "utf8");
+    const common = {
+      url,
+      bytes,
+      sourceContentHash: "sha256:" + "1".repeat(64),
+      fetchedAt: "2026-09-21T15:00:00.000Z",
+      fetchStatus: "fetched" as const,
+    };
+    const proof = { ...common, bytes: Buffer.from(bytes), fetchStatus: "cache" as const };
+
+    expect(mergeFetchedMaintenanceSources([common], [proof])).toEqual([proof]);
+    expect(mergeFetchedMaintenanceSources([proof], [proof])).toEqual([proof]);
+  });
+
+  it("fails closed when one canonical URL resolves to conflicting immutable evidence", () => {
+    const url = "https://bulbapedia.bulbagarden.net/wiki/Test_(Pok%C3%A9mon)";
+    const first = {
+      url,
+      bytes: Buffer.from("first", "utf8"),
+      sourceContentHash: "sha256:" + "1".repeat(64),
+      fetchedAt: "2026-09-21T15:00:00.000Z",
+      fetchStatus: "cache" as const,
+    };
+    const second = {
+      ...first,
+      bytes: Buffer.from("second", "utf8"),
+      sourceContentHash: "sha256:" + "2".repeat(64),
+    };
+
+    expect(() => mergeFetchedMaintenanceSources([first], [second])).toThrow(
+      /conflicting immutable evidence/i,
+    );
+  });
+});
 
 function reviewEvidenceSourceRecord(id: string, canonicalUrl: string): SourceRecord {
   const bulbapedia = new URL(canonicalUrl).hostname === "bulbapedia.bulbagarden.net";
@@ -179,6 +219,7 @@ function rawSnapshot(moves: ExtractedPokemonDbMove[]): RawExtractedSnapshot {
     abilities: [],
     items: [],
     learnsets: [],
+    historicalScalarProofs: [],
     currentTypeEffectiveness: [
       {
         attackTypeSourceKey: "normal",
@@ -1305,7 +1346,7 @@ describe("maintenance Species source hierarchy", () => {
       );
       expect(bulbapediaSpeciesSource).toMatchObject({
         provider: "bulbapedia",
-        parserVersion: "bulbapedia-species-page-v16",
+        parserVersion: "bulbapedia-species-page-v17",
       });
       expect(pokemonDbSpeciesSource).toMatchObject({
         provider: "pokemondb",

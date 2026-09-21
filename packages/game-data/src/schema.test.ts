@@ -381,11 +381,67 @@ describe("candidate cross-catalog validation", () => {
       expect.objectContaining({ code: "invalid-move-mainline-source" }),
     );
 
+    const legacyPublishedBdspParser = candidateFixture();
+    legacyPublishedBdspParser.provenance.sourceRecords.push({
+      id: "source:bulbapedia:legacy-bdsp",
+      provider: "bulbapedia",
+      canonicalUrl:
+        "https://bulbapedia.bulbagarden.net/wiki/Tackle_(Pok%C3%A9mon)/Generation_VIII_learnset",
+      fetchedAt: "2026-01-01T00:00:00.000Z",
+      fetchStatus: "cache",
+      parserVersion: "bulbapedia-gen8-bdsp-learnset-v5",
+      sourceContentHash:
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    });
+    legacyPublishedBdspParser.catalogs.moves[0].sourceRecordIds.push(
+      "source:bulbapedia:legacy-bdsp",
+    );
+    legacyPublishedBdspParser.provenance.moveFactSources[0].mainline = {
+      selectedGame: "brilliant-diamond-shining-pearl",
+      sourceRecordId: "source:bulbapedia:legacy-bdsp",
+    };
+    expect(validateGameDataCandidate(legacyPublishedBdspParser).findings).toContainEqual(
+      expect.objectContaining({ code: "invalid-move-mainline-source" }),
+    );
+
     const wrongComplement = candidateFixture();
     wrongComplement.provenance.moveFactSources[0].sourceTargetSourceRecordId =
       "source:bulbapedia:gen9-moves";
     expect(validateGameDataCandidate(wrongComplement).findings).toContainEqual(
       expect.objectContaining({ code: "invalid-move-complement-source" }),
+    );
+
+    const bulbapediaTarget = candidateFixture();
+    bulbapediaTarget.provenance.sourceRecords.push({
+      id: "source:bulbapedia:psychic-noise-target",
+      provider: "bulbapedia",
+      canonicalUrl:
+        "https://bulbapedia.bulbagarden.net/wiki/Psychic_Noise_(move)",
+      fetchedAt: "2026-09-21T00:00:00.000Z",
+      parserVersion: "bulbapedia-move-target-v1",
+      sourceContentHash:
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      fetchStatus: "fetched",
+    });
+    bulbapediaTarget.catalogs.moves[0].sourceRecordIds.push(
+      "source:bulbapedia:psychic-noise-target",
+    );
+    bulbapediaTarget.provenance.moveFactSources[0].sourceTargetSourceRecordId =
+      "source:bulbapedia:psychic-noise-target";
+    expect(
+      validateGameDataCandidate(bulbapediaTarget).findings.filter(
+        (finding) => finding.code === "invalid-move-complement-source",
+      ),
+    ).toEqual([]);
+
+    const bulbapediaContact = structuredClone(bulbapediaTarget);
+    bulbapediaContact.provenance.moveFactSources[0].makesContactSourceRecordId =
+      "source:bulbapedia:psychic-noise-target";
+    expect(validateGameDataCandidate(bulbapediaContact).findings).toContainEqual(
+      expect.objectContaining({
+        code: "invalid-move-complement-source",
+        path: expect.stringContaining("makesContactSourceRecordId"),
+      }),
     );
 
     const roleOutsideAggregate = candidateFixture();

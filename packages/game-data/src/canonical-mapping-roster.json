@@ -1,892 +1,1763 @@
 {
   "version": "mapping-roster-v1",
   "mappings": {
-    "abilities": [
+    "species": [
       {
-        "canonicalId": "candidate:ability:adaptability:661559a2e0",
-        "sourceKey": "adaptability",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bulbasaur-1:91b07648a3",
+        "sourceKey": "pokedex:bulbasaur:1",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:aftermath:bf648e3127",
-        "sourceKey": "aftermath",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ivysaur-2:e606f3e9db",
+        "sourceKey": "pokedex:ivysaur:2",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:analytic:6710e49eeb",
-        "sourceKey": "analytic",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-venusaur-3:d29725c169",
+        "sourceKey": "pokedex:venusaur:3",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:anger-point:1c6ac58a8a",
-        "sourceKey": "anger-point",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-charmander-4:76e12e8c3b",
+        "sourceKey": "pokedex:charmander:4",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:anticipation:24dfc16f0c",
-        "sourceKey": "anticipation",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-charmeleon-5:9ef0d98ff4",
+        "sourceKey": "pokedex:charmeleon:5",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:arena-trap:2f56256ba1",
-        "sourceKey": "arena-trap",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-charizard-6:52fb46d5a2",
+        "sourceKey": "pokedex:charizard:6",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:battle-armor:e88229141f",
-        "sourceKey": "battle-armor",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-squirtle-7:6f5ada4df3",
+        "sourceKey": "pokedex:squirtle:7",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:berserk:30282be22e",
-        "sourceKey": "berserk",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wartortle-8:32f0a5bd0c",
+        "sourceKey": "pokedex:wartortle:8",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:big-pecks:5257844383",
-        "sourceKey": "big-pecks",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-blastoise-9:76d65051f7",
+        "sourceKey": "pokedex:blastoise:9",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:blaze:88a5c49d8c",
-        "sourceKey": "blaze",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-caterpie-10:f77ea3bb04",
+        "sourceKey": "pokedex:caterpie:10",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:chlorophyll:e883803e27",
-        "sourceKey": "chlorophyll",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-metapod-11:5da0baaeef",
+        "sourceKey": "pokedex:metapod:11",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:clear-body:40a5b2701d",
-        "sourceKey": "clear-body",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-butterfree-12:f80800242a",
+        "sourceKey": "pokedex:butterfree:12",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:cloud-nine:34f1d2c776",
-        "sourceKey": "cloud-nine",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-weedle-13:ccaef5cee7",
+        "sourceKey": "pokedex:weedle:13",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:competitive:020dae3832",
-        "sourceKey": "competitive",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kakuna-14:05dfd96ca6",
+        "sourceKey": "pokedex:kakuna:14",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:compound-eyes:3e41ec25ae",
-        "sourceKey": "compound-eyes",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-beedrill-15:6deb17ead8",
+        "sourceKey": "pokedex:beedrill:15",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:contrary:112d857213",
-        "sourceKey": "contrary",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pidgey-16:8e97efe736",
+        "sourceKey": "pokedex:pidgey:16",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:cud-chew:f3d278083e",
-        "sourceKey": "cud-chew",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pidgeotto-17:ee47274010",
+        "sourceKey": "pokedex:pidgeotto:17",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:curious-medicine:e814d4745a",
-        "sourceKey": "curious-medicine",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pidgeot-18:8ebee7ec94",
+        "sourceKey": "pokedex:pidgeot:18",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:cursed-body:73f89f4417",
-        "sourceKey": "cursed-body",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rattata-19:9975b0175c",
+        "sourceKey": "pokedex:rattata:19",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:cute-charm:f6ad0a5390",
-        "sourceKey": "cute-charm",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-raticate-20:e4e0263d4a",
+        "sourceKey": "pokedex:raticate:20",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:damp:1b0cf192c1",
-        "sourceKey": "damp",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-spearow-21:0ddd44d801",
+        "sourceKey": "pokedex:spearow:21",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:defiant:1cc9ffadf6",
-        "sourceKey": "defiant",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-fearow-22:8cc22e710e",
+        "sourceKey": "pokedex:fearow:22",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:download:68ff63fb82",
-        "sourceKey": "download",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ekans-23:bdfa91ecd0",
+        "sourceKey": "pokedex:ekans:23",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:drizzle:424f22be65",
-        "sourceKey": "drizzle",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-arbok-24:359fa1adfc",
+        "sourceKey": "pokedex:arbok:24",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:drought:caaed8c4eb",
-        "sourceKey": "drought",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pikachu-25:61410cc13d",
+        "sourceKey": "pokedex:pikachu:25",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:dry-skin:c31e8a3578",
-        "sourceKey": "dry-skin",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-raichu-26:0bf8d234a1",
+        "sourceKey": "pokedex:raichu:26",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:early-bird:6b845af518",
-        "sourceKey": "early-bird",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sandshrew-27:0279054eaa",
+        "sourceKey": "pokedex:sandshrew:27",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:effect-spore:7d1cf8761f",
-        "sourceKey": "effect-spore",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sandslash-28:b74447de31",
+        "sourceKey": "pokedex:sandslash:28",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:filter:dfc3376b82",
-        "sourceKey": "filter",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoran-f-29:bed769478b",
+        "sourceKey": "pokedex:nidoran-f:29",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:flame-body:593421c987",
-        "sourceKey": "flame-body",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidorina-30:1e0522479d",
+        "sourceKey": "pokedex:nidorina:30",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:flash-fire:44b3b76f5b",
-        "sourceKey": "flash-fire",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoqueen-31:4e03c07525",
+        "sourceKey": "pokedex:nidoqueen:31",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:forewarn:3309178b5b",
-        "sourceKey": "forewarn",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoran-m-32:a64d693f2e",
+        "sourceKey": "pokedex:nidoran-m:32",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:friend-guard:d3dc53a068",
-        "sourceKey": "friend-guard",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidorino-33:bd44718fbf",
+        "sourceKey": "pokedex:nidorino:33",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:frisk:1949ba43f8",
-        "sourceKey": "frisk",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-nidoking-34:4fb1bcbb2d",
+        "sourceKey": "pokedex:nidoking:34",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:fur-coat:2ab3ff6ed9",
-        "sourceKey": "fur-coat",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-clefairy-35:305eddb332",
+        "sourceKey": "pokedex:clefairy:35",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:galvanize:5ef21a7db8",
-        "sourceKey": "galvanize",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-clefable-36:e43d616ee9",
+        "sourceKey": "pokedex:clefable:36",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:gluttony:133579cb43",
-        "sourceKey": "gluttony",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-vulpix-37:31e5adf26c",
+        "sourceKey": "pokedex:vulpix:37",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:guts:36bf28efea",
-        "sourceKey": "guts",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ninetales-38:58fa44514d",
+        "sourceKey": "pokedex:ninetales:38",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:harvest:d087ee8196",
-        "sourceKey": "harvest",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jigglypuff-39:3b5d1d4b0d",
+        "sourceKey": "pokedex:jigglypuff:39",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:healer:44f4ea1dbf",
-        "sourceKey": "healer",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wigglytuff-40:1f9d376e76",
+        "sourceKey": "pokedex:wigglytuff:40",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:honey-gather:65c9999b9e",
-        "sourceKey": "honey-gather",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-zubat-41:30ce9c9861",
+        "sourceKey": "pokedex:zubat:41",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:huge-power:097c8762f3",
-        "sourceKey": "huge-power",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-golbat-42:01b3aaffa7",
+        "sourceKey": "pokedex:golbat:42",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:hustle:b01928cd61",
-        "sourceKey": "hustle",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-oddish-43:24da759495",
+        "sourceKey": "pokedex:oddish:43",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:hydration:4163fe8dc2",
-        "sourceKey": "hydration",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gloom-44:c4c7bf2a71",
+        "sourceKey": "pokedex:gloom:44",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:hyper-cutter:57c021a89f",
-        "sourceKey": "hyper-cutter",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-vileplume-45:773d44f5a6",
+        "sourceKey": "pokedex:vileplume:45",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:ice-body:9f942391a0",
-        "sourceKey": "ice-body",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-paras-46:c51b5cf771",
+        "sourceKey": "pokedex:paras:46",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:illuminate:f63a8387f3",
-        "sourceKey": "illuminate",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-parasect-47:65e8220d00",
+        "sourceKey": "pokedex:parasect:47",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:immunity:43e63f4a1c",
-        "sourceKey": "immunity",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-venonat-48:b9b35d81a3",
+        "sourceKey": "pokedex:venonat:48",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:imposter:91d0660ed1",
-        "sourceKey": "imposter",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-venomoth-49:280b64514d",
+        "sourceKey": "pokedex:venomoth:49",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:infiltrator:eb1dc8706e",
-        "sourceKey": "infiltrator",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-diglett-50:8fe9ebad74",
+        "sourceKey": "pokedex:diglett:50",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:inner-focus:d1e11cbe3d",
-        "sourceKey": "inner-focus",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dugtrio-51:0c5d809546",
+        "sourceKey": "pokedex:dugtrio:51",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:insomnia:75eb93fd0d",
-        "sourceKey": "insomnia",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-meowth-52:7b8de52546",
+        "sourceKey": "pokedex:meowth:52",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:intimidate:ffa53c9ada",
-        "sourceKey": "intimidate",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-persian-53:828983479b",
+        "sourceKey": "pokedex:persian:53",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:iron-fist:40bb289869",
-        "sourceKey": "iron-fist",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-psyduck-54:746024cf53",
+        "sourceKey": "pokedex:psyduck:54",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:justified:a4dd766615",
-        "sourceKey": "justified",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-golduck-55:aaad85b7ea",
+        "sourceKey": "pokedex:golduck:55",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:keen-eye:459dbad828",
-        "sourceKey": "keen-eye",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mankey-56:beb34d2e4d",
+        "sourceKey": "pokedex:mankey:56",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:leaf-guard:ec996395e5",
-        "sourceKey": "leaf-guard",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-primeape-57:bf71e8a22b",
+        "sourceKey": "pokedex:primeape:57",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:levitate:21b41c0332",
-        "sourceKey": "levitate",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-growlithe-58:c6d3d72cd8",
+        "sourceKey": "pokedex:growlithe:58",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:light-metal:72966ee97d",
-        "sourceKey": "light-metal",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-arcanine-59:6d464f7c59",
+        "sourceKey": "pokedex:arcanine:59",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:lightning-rod:0a688760d8",
-        "sourceKey": "lightning-rod",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-poliwag-60:287185cfa3",
+        "sourceKey": "pokedex:poliwag:60",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:limber:5da180dc7e",
-        "sourceKey": "limber",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-poliwhirl-61:f9fc928ba3",
+        "sourceKey": "pokedex:poliwhirl:61",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:liquid-ooze:c1e5a06395",
-        "sourceKey": "liquid-ooze",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-poliwrath-62:5a1b9c0374",
+        "sourceKey": "pokedex:poliwrath:62",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:magic-bounce:106126c5fe",
-        "sourceKey": "magic-bounce",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-abra-63:6a4a3614d2",
+        "sourceKey": "pokedex:abra:63",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:magic-guard:1ff6982228",
-        "sourceKey": "magic-guard",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kadabra-64:4976821d58",
+        "sourceKey": "pokedex:kadabra:64",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:magma-armor:bd15de9280",
-        "sourceKey": "magma-armor",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-alakazam-65:4a28172038",
+        "sourceKey": "pokedex:alakazam:65",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:magnet-pull:9f4241a24c",
-        "sourceKey": "magnet-pull",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-machop-66:a78ba95ec8",
+        "sourceKey": "pokedex:machop:66",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:marvel-scale:53bcae3cbd",
-        "sourceKey": "marvel-scale",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-machoke-67:d82f9f517e",
+        "sourceKey": "pokedex:machoke:67",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:misty-surge:cbb91d71c2",
-        "sourceKey": "misty-surge",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-machamp-68:439cdc1b53",
+        "sourceKey": "pokedex:machamp:68",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:mold-breaker:fef3f3635b",
-        "sourceKey": "mold-breaker",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bellsprout-69:2aaaf5c98e",
+        "sourceKey": "pokedex:bellsprout:69",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:moody:5654179bcb",
-        "sourceKey": "moody",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-weepinbell-70:aa1c7d3a6a",
+        "sourceKey": "pokedex:weepinbell:70",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:moxie:19faf1bb25",
-        "sourceKey": "moxie",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-victreebel-71:6ae7089c57",
+        "sourceKey": "pokedex:victreebel:71",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:multiscale:1a644e8fe5",
-        "sourceKey": "multiscale",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tentacool-72:b72e0559ce",
+        "sourceKey": "pokedex:tentacool:72",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:natural-cure:e5b23fc3e0",
-        "sourceKey": "natural-cure",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tentacruel-73:8ce86c4470",
+        "sourceKey": "pokedex:tentacruel:73",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:neutralizing-gas:c771edba19",
-        "sourceKey": "neutralizing-gas",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-geodude-74:1164f17b57",
+        "sourceKey": "pokedex:geodude:74",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:no-guard:d66a417d1d",
-        "sourceKey": "no-guard",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-graveler-75:45b46831bf",
+        "sourceKey": "pokedex:graveler:75",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:oblivious:db0f1125da",
-        "sourceKey": "oblivious",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-golem-76:dd020f5724",
+        "sourceKey": "pokedex:golem:76",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:overcoat:b7524b5d32",
-        "sourceKey": "overcoat",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ponyta-77:4b6fa69407",
+        "sourceKey": "pokedex:ponyta:77",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:overgrow:aeaf91a0d6",
-        "sourceKey": "overgrow",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rapidash-78:a97dd55c89",
+        "sourceKey": "pokedex:rapidash:78",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:own-tempo:eb24d00818",
-        "sourceKey": "own-tempo",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slowpoke-79:d584d8866f",
+        "sourceKey": "pokedex:slowpoke:79",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:pastel-veil:1386374c6d",
-        "sourceKey": "pastel-veil",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slowbro-80:3f3260a251",
+        "sourceKey": "pokedex:slowbro:80",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:pickpocket:afc82785f0",
-        "sourceKey": "pickpocket",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magnemite-81:e261656753",
+        "sourceKey": "pokedex:magnemite:81",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:pickup:1f64847ea5",
-        "sourceKey": "pickup",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magneton-82:2c1b265d91",
+        "sourceKey": "pokedex:magneton:82",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:plus:383ef36928",
-        "sourceKey": "plus",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-farfetchd-83:05ea24aa13",
+        "sourceKey": "pokedex:farfetchd:83",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:poison-point:c46ffc3e2a",
-        "sourceKey": "poison-point",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-doduo-84:a11f15ed73",
+        "sourceKey": "pokedex:doduo:84",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:poison-touch:3f5bd6ea24",
-        "sourceKey": "poison-touch",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dodrio-85:506cc36c01",
+        "sourceKey": "pokedex:dodrio:85",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:power-of-alchemy:06f20a6d1a",
-        "sourceKey": "power-of-alchemy",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-seel-86:3af840176e",
+        "sourceKey": "pokedex:seel:86",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:prankster:2c0e0571a2",
-        "sourceKey": "prankster",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dewgong-87:d47faf4596",
+        "sourceKey": "pokedex:dewgong:87",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:pressure:b667446e6e",
-        "sourceKey": "pressure",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-grimer-88:af98c5f214",
+        "sourceKey": "pokedex:grimer:88",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:quick-draw:930ff35aab",
-        "sourceKey": "quick-draw",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-muk-89:711e6f8899",
+        "sourceKey": "pokedex:muk:89",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:quick-feet:21a2ef2d53",
-        "sourceKey": "quick-feet",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-shellder-90:99f21c2f29",
+        "sourceKey": "pokedex:shellder:90",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:rain-dish:308a636cd3",
-        "sourceKey": "rain-dish",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cloyster-91:4f6a9f57e2",
+        "sourceKey": "pokedex:cloyster:91",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:rattled:a818cbccc7",
-        "sourceKey": "rattled",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gastly-92:d44ec70a0e",
+        "sourceKey": "pokedex:gastly:92",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:reckless:d7c5630b7d",
-        "sourceKey": "reckless",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-haunter-93:192b139c9c",
+        "sourceKey": "pokedex:haunter:93",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:regenerator:5ba403a393",
-        "sourceKey": "regenerator",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gengar-94:e4fd2aae37",
+        "sourceKey": "pokedex:gengar:94",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:rivalry:204507d4e9",
-        "sourceKey": "rivalry",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-onix-95:61a65befee",
+        "sourceKey": "pokedex:onix:95",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:rock-head:6b5413a8ea",
-        "sourceKey": "rock-head",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-drowzee-96:5c2f4bfabd",
+        "sourceKey": "pokedex:drowzee:96",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:run-away:8f672c9063",
-        "sourceKey": "run-away",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hypno-97:cc87702d7e",
+        "sourceKey": "pokedex:hypno:97",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sand-force:d7fbbe806d",
-        "sourceKey": "sand-force",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-krabby-98:b5eeb554c4",
+        "sourceKey": "pokedex:krabby:98",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sand-rush:76a5a54e63",
-        "sourceKey": "sand-rush",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kingler-99:cb1174511d",
+        "sourceKey": "pokedex:kingler:99",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sand-stream:e9bcf71d6b",
-        "sourceKey": "sand-stream",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-voltorb-100:fab5d15109",
+        "sourceKey": "pokedex:voltorb:100",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sand-veil:a639c3b5a3",
-        "sourceKey": "sand-veil",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-electrode-101:398d3c0562",
+        "sourceKey": "pokedex:electrode:101",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sap-sipper:1420bdc0d2",
-        "sourceKey": "sap-sipper",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-exeggcute-102:c0bac51f25",
+        "sourceKey": "pokedex:exeggcute:102",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:scrappy:b73b6cac02",
-        "sourceKey": "scrappy",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-exeggutor-103:1c46f8e283",
+        "sourceKey": "pokedex:exeggutor:103",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:screen-cleaner:e1c7db6c49",
-        "sourceKey": "screen-cleaner",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cubone-104:2a7292cc3b",
+        "sourceKey": "pokedex:cubone:104",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:serene-grace:c9965e386c",
-        "sourceKey": "serene-grace",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-marowak-105:7e62650865",
+        "sourceKey": "pokedex:marowak:105",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:shadow-tag:39df69505e",
-        "sourceKey": "shadow-tag",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hitmonlee-106:d3ee4b03a9",
+        "sourceKey": "pokedex:hitmonlee:106",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:shed-skin:6b99c835d7",
-        "sourceKey": "shed-skin",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hitmonchan-107:de74ec6753",
+        "sourceKey": "pokedex:hitmonchan:107",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sheer-force:8b7170a62f",
-        "sourceKey": "sheer-force",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lickitung-108:0fce9256f8",
+        "sourceKey": "pokedex:lickitung:108",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:shell-armor:f5393780d5",
-        "sourceKey": "shell-armor",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-koffing-109:138739c989",
+        "sourceKey": "pokedex:koffing:109",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:shield-dust:1cc913de1a",
-        "sourceKey": "shield-dust",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-weezing-110:672d06e85e",
+        "sourceKey": "pokedex:weezing:110",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:skill-link:532983cbce",
-        "sourceKey": "skill-link",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rhyhorn-111:3660e8756c",
+        "sourceKey": "pokedex:rhyhorn:111",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:slush-rush:9e863f726f",
-        "sourceKey": "slush-rush",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-rhydon-112:6b39afb998",
+        "sourceKey": "pokedex:rhydon:112",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sniper:d1a4be19b3",
-        "sourceKey": "sniper",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-chansey-113:dd864fad44",
+        "sourceKey": "pokedex:chansey:113",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:snow-cloak:c98937a7e1",
-        "sourceKey": "snow-cloak",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tangela-114:ece9b236a8",
+        "sourceKey": "pokedex:tangela:114",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:snow-warning:00b2fc3646",
-        "sourceKey": "snow-warning",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kangaskhan-115:7041b2a112",
+        "sourceKey": "pokedex:kangaskhan:115",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:solar-power:b1ddd165fe",
-        "sourceKey": "solar-power",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-horsea-116:bee896dbe8",
+        "sourceKey": "pokedex:horsea:116",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:soundproof:994a857030",
-        "sourceKey": "soundproof",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-seadra-117:4f990dcca8",
+        "sourceKey": "pokedex:seadra:117",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:speed-boost:b327e1e14c",
-        "sourceKey": "speed-boost",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-goldeen-118:6e5c670c8d",
+        "sourceKey": "pokedex:goldeen:118",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:static:2053dbbf6e",
-        "sourceKey": "static",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-seaking-119:3367d23690",
+        "sourceKey": "pokedex:seaking:119",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:steadfast:9fe92c4232",
-        "sourceKey": "steadfast",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-staryu-120:829673aa43",
+        "sourceKey": "pokedex:staryu:120",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:stench:f3c7279229",
-        "sourceKey": "stench",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-starmie-121:022b9d4cd6",
+        "sourceKey": "pokedex:starmie:121",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sticky-hold:9e6ce4e631",
-        "sourceKey": "sticky-hold",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mr-mime-122:5bc3bde91c",
+        "sourceKey": "pokedex:mr-mime:122",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:sturdy:25a5c452fb",
-        "sourceKey": "sturdy",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-scyther-123:fca711f27e",
+        "sourceKey": "pokedex:scyther:123",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:suction-cups:41d85977ba",
-        "sourceKey": "suction-cups",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jynx-124:2b86c8e0b7",
+        "sourceKey": "pokedex:jynx:124",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:super-luck:a2f81c1f28",
-        "sourceKey": "super-luck",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-electabuzz-125:572fd8f9bc",
+        "sourceKey": "pokedex:electabuzz:125",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:surge-surfer:0bca869159",
-        "sourceKey": "surge-surfer",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magmar-126:65c5de5cf8",
+        "sourceKey": "pokedex:magmar:126",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:swarm:44eb92b463",
-        "sourceKey": "swarm",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pinsir-127:22283e1e47",
+        "sourceKey": "pokedex:pinsir:127",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:swift-swim:2598b8c27e",
-        "sourceKey": "swift-swim",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "sourceKey": "pokedex:tauros:128",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:synchronize:2823580ca7",
-        "sourceKey": "synchronize",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magikarp-129:ea98e807ae",
+        "sourceKey": "pokedex:magikarp:129",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:tangled-feet:515c6d88e2",
-        "sourceKey": "tangled-feet",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gyarados-130:380765c064",
+        "sourceKey": "pokedex:gyarados:130",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:tangling-hair:7c1a10d0fa",
-        "sourceKey": "tangling-hair",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lapras-131:a9e072965e",
+        "sourceKey": "pokedex:lapras:131",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:technician:29ba9d9cef",
-        "sourceKey": "technician",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ditto-132:282f8f53ab",
+        "sourceKey": "pokedex:ditto:132",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:telepathy:2f4e79a308",
-        "sourceKey": "telepathy",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-eevee-133:d4e3723301",
+        "sourceKey": "pokedex:eevee:133",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:thick-fat:2033fffd2d",
-        "sourceKey": "thick-fat",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-vaporeon-134:3a9c5aa9e1",
+        "sourceKey": "pokedex:vaporeon:134",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:tinted-lens:7774c95bbb",
-        "sourceKey": "tinted-lens",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jolteon-135:709ea3c6d3",
+        "sourceKey": "pokedex:jolteon:135",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:torrent:cad4058f8c",
-        "sourceKey": "torrent",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-flareon-136:3ca3d43650",
+        "sourceKey": "pokedex:flareon:136",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:tough-claws:17cc260974",
-        "sourceKey": "tough-claws",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-porygon-137:34c5abf6e0",
+        "sourceKey": "pokedex:porygon:137",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:trace:eafe895eb8",
-        "sourceKey": "trace",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-omanyte-138:cb022ce48a",
+        "sourceKey": "pokedex:omanyte:138",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:unaware:a5e7591128",
-        "sourceKey": "unaware",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-omastar-139:e7ed7261a1",
+        "sourceKey": "pokedex:omastar:139",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:unburden:81df5284d2",
-        "sourceKey": "unburden",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kabuto-140:bf97916fcc",
+        "sourceKey": "pokedex:kabuto:140",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:unnerve:1913bc0491",
-        "sourceKey": "unnerve",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kabutops-141:c9193c0225",
+        "sourceKey": "pokedex:kabutops:141",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:vital-spirit:0d7993076f",
-        "sourceKey": "vital-spirit",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-aerodactyl-142:a444739552",
+        "sourceKey": "pokedex:aerodactyl:142",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:volt-absorb:e4724713af",
-        "sourceKey": "volt-absorb",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-snorlax-143:e2ae75bce9",
+        "sourceKey": "pokedex:snorlax:143",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:water-absorb:b42496fe36",
-        "sourceKey": "water-absorb",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-articuno-144:ae7b12d58a",
+        "sourceKey": "pokedex:articuno:144",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:water-veil:0cdd7b454f",
-        "sourceKey": "water-veil",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-zapdos-145:f941789ac1",
+        "sourceKey": "pokedex:zapdos:145",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:weak-armor:3b8dc7f1eb",
-        "sourceKey": "weak-armor",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-moltres-146:7421fa5129",
+        "sourceKey": "pokedex:moltres:146",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:ability:wonder-skin:161331e832",
-        "sourceKey": "wonder-skin",
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dratini-147:eb28822362",
+        "sourceKey": "pokedex:dratini:147",
         "status": "accepted"
-      }
-    ],
-    "items": [
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dragonair-148:9824119b92",
+        "sourceKey": "pokedex:dragonair:148",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dragonite-149:a7d72780cd",
+        "sourceKey": "pokedex:dragonite:149",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mewtwo-150:57eecbcf65",
+        "sourceKey": "pokedex:mewtwo:150",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mew-151:816c56e17c",
+        "sourceKey": "pokedex:mew:151",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-chikorita-152:24bd4cdb1d",
+        "sourceKey": "pokedex:chikorita:152",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bayleef-153:c10004c0ee",
+        "sourceKey": "pokedex:bayleef:153",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-meganium-154:ec679959cf",
+        "sourceKey": "pokedex:meganium:154",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cyndaquil-155:f879aca845",
+        "sourceKey": "pokedex:cyndaquil:155",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-quilava-156:6b195ea543",
+        "sourceKey": "pokedex:quilava:156",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-typhlosion-157:39dbe823d5",
+        "sourceKey": "pokedex:typhlosion:157",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-totodile-158:f3d3f9a1f7",
+        "sourceKey": "pokedex:totodile:158",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-croconaw-159:6491c66f54",
+        "sourceKey": "pokedex:croconaw:159",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-feraligatr-160:90a67b0244",
+        "sourceKey": "pokedex:feraligatr:160",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sentret-161:fa09afb6e0",
+        "sourceKey": "pokedex:sentret:161",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-furret-162:e293bafbb6",
+        "sourceKey": "pokedex:furret:162",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hoothoot-163:3ecad094b2",
+        "sourceKey": "pokedex:hoothoot:163",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-noctowl-164:8a8e4456b9",
+        "sourceKey": "pokedex:noctowl:164",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ledyba-165:092570add7",
+        "sourceKey": "pokedex:ledyba:165",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ledian-166:75f6bd988e",
+        "sourceKey": "pokedex:ledian:166",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-spinarak-167:19628e41f3",
+        "sourceKey": "pokedex:spinarak:167",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ariados-168:0d4d923b65",
+        "sourceKey": "pokedex:ariados:168",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-crobat-169:770c27cf8c",
+        "sourceKey": "pokedex:crobat:169",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-chinchou-170:73ded1e566",
+        "sourceKey": "pokedex:chinchou:170",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lanturn-171:7dd3633b99",
+        "sourceKey": "pokedex:lanturn:171",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pichu-172:a340114e83",
+        "sourceKey": "pokedex:pichu:172",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-cleffa-173:b46f463298",
+        "sourceKey": "pokedex:cleffa:173",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-igglybuff-174:0d2b3ec19e",
+        "sourceKey": "pokedex:igglybuff:174",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-togepi-175:67fb9542a4",
+        "sourceKey": "pokedex:togepi:175",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-togetic-176:34f4acc44a",
+        "sourceKey": "pokedex:togetic:176",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-natu-177:2215129129",
+        "sourceKey": "pokedex:natu:177",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-xatu-178:4f1020db4a",
+        "sourceKey": "pokedex:xatu:178",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mareep-179:5c560baaf7",
+        "sourceKey": "pokedex:mareep:179",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-flaaffy-180:0fdfc1d5ad",
+        "sourceKey": "pokedex:flaaffy:180",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ampharos-181:b682912fc8",
+        "sourceKey": "pokedex:ampharos:181",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-bellossom-182:9a504a7f58",
+        "sourceKey": "pokedex:bellossom:182",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-marill-183:4f0d454757",
+        "sourceKey": "pokedex:marill:183",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-azumarill-184:a3dec29ac6",
+        "sourceKey": "pokedex:azumarill:184",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sudowoodo-185:c5e3e39eaf",
+        "sourceKey": "pokedex:sudowoodo:185",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-politoed-186:094f7b1352",
+        "sourceKey": "pokedex:politoed:186",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hoppip-187:ab5f0bfb34",
+        "sourceKey": "pokedex:hoppip:187",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-skiploom-188:9d0d953ecc",
+        "sourceKey": "pokedex:skiploom:188",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-jumpluff-189:c79c32b728",
+        "sourceKey": "pokedex:jumpluff:189",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-aipom-190:930792785e",
+        "sourceKey": "pokedex:aipom:190",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sunkern-191:8f850eef0e",
+        "sourceKey": "pokedex:sunkern:191",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sunflora-192:9529849034",
+        "sourceKey": "pokedex:sunflora:192",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-yanma-193:be62cefa8e",
+        "sourceKey": "pokedex:yanma:193",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wooper-194:c3528c41fa",
+        "sourceKey": "pokedex:wooper:194",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-quagsire-195:49377aef21",
+        "sourceKey": "pokedex:quagsire:195",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-espeon-196:3b9d57768d",
+        "sourceKey": "pokedex:espeon:196",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-umbreon-197:06cf5810c3",
+        "sourceKey": "pokedex:umbreon:197",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-murkrow-198:35fbce8a6e",
+        "sourceKey": "pokedex:murkrow:198",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slowking-199:d3aafa67fa",
+        "sourceKey": "pokedex:slowking:199",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-misdreavus-200:aeb7c6aa52",
+        "sourceKey": "pokedex:misdreavus:200",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-unown-201:d30cb2af0e",
+        "sourceKey": "pokedex:unown:201",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-wobbuffet-202:3584ce6a12",
+        "sourceKey": "pokedex:wobbuffet:202",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-girafarig-203:e5e95de2f6",
+        "sourceKey": "pokedex:girafarig:203",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pineco-204:620de36c4c",
+        "sourceKey": "pokedex:pineco:204",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-forretress-205:1b3c685316",
+        "sourceKey": "pokedex:forretress:205",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-dunsparce-206:1e177f5c53",
+        "sourceKey": "pokedex:dunsparce:206",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-gligar-207:5313fbb7a6",
+        "sourceKey": "pokedex:gligar:207",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-steelix-208:ce2060b052",
+        "sourceKey": "pokedex:steelix:208",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-snubbull-209:f9ea9240b4",
+        "sourceKey": "pokedex:snubbull:209",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-granbull-210:e54e05f019",
+        "sourceKey": "pokedex:granbull:210",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-qwilfish-211:7abdc95638",
+        "sourceKey": "pokedex:qwilfish:211",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-scizor-212:3746285e5a",
+        "sourceKey": "pokedex:scizor:212",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-shuckle-213:92fc611a3a",
+        "sourceKey": "pokedex:shuckle:213",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-heracross-214:64b6054ba0",
+        "sourceKey": "pokedex:heracross:214",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-sneasel-215:a15cfda57e",
+        "sourceKey": "pokedex:sneasel:215",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-teddiursa-216:c92f0b02a2",
+        "sourceKey": "pokedex:teddiursa:216",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ursaring-217:535b6406ea",
+        "sourceKey": "pokedex:ursaring:217",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-slugma-218:eea91a820d",
+        "sourceKey": "pokedex:slugma:218",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magcargo-219:0a8b755bde",
+        "sourceKey": "pokedex:magcargo:219",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-swinub-220:fbfedcd465",
+        "sourceKey": "pokedex:swinub:220",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-piloswine-221:00b1e6c0b5",
+        "sourceKey": "pokedex:piloswine:221",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-corsola-222:c026729c63",
+        "sourceKey": "pokedex:corsola:222",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-remoraid-223:2c499ca636",
+        "sourceKey": "pokedex:remoraid:223",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-octillery-224:1d9e4ae28f",
+        "sourceKey": "pokedex:octillery:224",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-delibird-225:cf5b01e0bc",
+        "sourceKey": "pokedex:delibird:225",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-mantine-226:728c8a5a9c",
+        "sourceKey": "pokedex:mantine:226",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-skarmory-227:10e28cc8bc",
+        "sourceKey": "pokedex:skarmory:227",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-houndour-228:3ae4cfc69d",
+        "sourceKey": "pokedex:houndour:228",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-houndoom-229:698f551d29",
+        "sourceKey": "pokedex:houndoom:229",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-kingdra-230:b0142494ce",
+        "sourceKey": "pokedex:kingdra:230",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-phanpy-231:bfc0351db8",
+        "sourceKey": "pokedex:phanpy:231",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-donphan-232:b76d1358e2",
+        "sourceKey": "pokedex:donphan:232",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-porygon2-233:1b6413757a",
+        "sourceKey": "pokedex:porygon2:233",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-stantler-234:10dc3150c7",
+        "sourceKey": "pokedex:stantler:234",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-smeargle-235:c96f9c2108",
+        "sourceKey": "pokedex:smeargle:235",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tyrogue-236:e85f3547c2",
+        "sourceKey": "pokedex:tyrogue:236",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-hitmontop-237:cc94fb1f6d",
+        "sourceKey": "pokedex:hitmontop:237",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-smoochum-238:19558fcbfa",
+        "sourceKey": "pokedex:smoochum:238",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-elekid-239:11091823be",
+        "sourceKey": "pokedex:elekid:239",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-magby-240:2195d76743",
+        "sourceKey": "pokedex:magby:240",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-miltank-241:92d8c53a6f",
+        "sourceKey": "pokedex:miltank:241",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-blissey-242:70bf282b39",
+        "sourceKey": "pokedex:blissey:242",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-raikou-243:2988c131d7",
+        "sourceKey": "pokedex:raikou:243",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-entei-244:d1f710f7ec",
+        "sourceKey": "pokedex:entei:244",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-suicune-245:bfa6c003d4",
+        "sourceKey": "pokedex:suicune:245",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-larvitar-246:25483bb391",
+        "sourceKey": "pokedex:larvitar:246",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-pupitar-247:ecc027f495",
+        "sourceKey": "pokedex:pupitar:247",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-tyranitar-248:f59cb770f3",
+        "sourceKey": "pokedex:tyranitar:248",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-lugia-249:638b512992",
+        "sourceKey": "pokedex:lugia:249",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-ho-oh-250:63730cf8bf",
+        "sourceKey": "pokedex:ho-oh:250",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": null,
+        "canonicalId": "candidate:species:pokedex-celebi-251:8d7beabbeb",
+        "sourceKey": "pokedex:celebi:251",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-rattata-19:9975b0175c",
+        "canonicalId": "candidate:species:pokedex-rattata-10158:0ca7ab646a",
+        "sourceKey": "pokedex:rattata:10158",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-raticate-20:e4e0263d4a",
+        "canonicalId": "candidate:species:pokedex-raticate-10159:3f08305797",
+        "sourceKey": "pokedex:raticate:10159",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-raichu-26:0bf8d234a1",
+        "canonicalId": "candidate:species:pokedex-raichu-10150:447cf183c0",
+        "sourceKey": "pokedex:raichu:10150",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-sandshrew-27:0279054eaa",
+        "canonicalId": "candidate:species:pokedex-sandshrew-10143:840a9211a5",
+        "sourceKey": "pokedex:sandshrew:10143",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-sandslash-28:b74447de31",
+        "canonicalId": "candidate:species:pokedex-sandslash-10144:f3b483cd49",
+        "sourceKey": "pokedex:sandslash:10144",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-vulpix-37:31e5adf26c",
+        "canonicalId": "candidate:species:pokedex-vulpix-10141:ae0213bb17",
+        "sourceKey": "pokedex:vulpix:10141",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-ninetales-38:58fa44514d",
+        "canonicalId": "candidate:species:pokedex-ninetales-10142:ee10634ca6",
+        "sourceKey": "pokedex:ninetales:10142",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-diglett-50:8fe9ebad74",
+        "canonicalId": "candidate:species:pokedex-diglett-10181:7d5e726a31",
+        "sourceKey": "pokedex:diglett:10181",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-dugtrio-51:0c5d809546",
+        "canonicalId": "candidate:species:pokedex-dugtrio-10180:f651d5390b",
+        "sourceKey": "pokedex:dugtrio:10180",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-meowth-52:7b8de52546",
+        "canonicalId": "candidate:species:pokedex-meowth-10152:d7eb4b1677",
+        "sourceKey": "pokedex:meowth:10152",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-meowth-52:7b8de52546",
+        "canonicalId": "candidate:species:pokedex-meowth-11144:e0c3e716dc",
+        "sourceKey": "pokedex:meowth:11144",
+        "status": "accepted"
+      },
+      {
+        "baseSpeciesId": "candidate:species:pokedex-persian-53:828983479b",
+        "canonicalId": "candidate:species:pokedex-persian-10173:a12b88d23b",
+        "sourceKey": "pokedex:persian:10173",
+        "status": "accepted"
+      },
       {
-        "canonicalId": "candidate:item:lonely-mint:0cd3a6b9df",
-        "sourceKey": "lonely-mint",
+        "baseSpeciesId": "candidate:species:pokedex-growlithe-58:c6d3d72cd8",
+        "canonicalId": "candidate:species:pokedex-growlithe-11174:2f786cb8f7",
+        "sourceKey": "pokedex:growlithe:11174",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:adamant-mint:b66db404d2",
-        "sourceKey": "adamant-mint",
+        "baseSpeciesId": "candidate:species:pokedex-arcanine-59:6d464f7c59",
+        "canonicalId": "candidate:species:pokedex-arcanine-11179:552be48fc9",
+        "sourceKey": "pokedex:arcanine:11179",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:naughty-mint:c837f65756",
-        "sourceKey": "naughty-mint",
+        "baseSpeciesId": "candidate:species:pokedex-geodude-74:1164f17b57",
+        "canonicalId": "candidate:species:pokedex-geodude-10182:bb5443e522",
+        "sourceKey": "pokedex:geodude:10182",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:brave-mint:26b2ccbb74",
-        "sourceKey": "brave-mint",
+        "baseSpeciesId": "candidate:species:pokedex-graveler-75:45b46831bf",
+        "canonicalId": "candidate:species:pokedex-graveler-10183:40a36ccf53",
+        "sourceKey": "pokedex:graveler:10183",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:bold-mint:5a4b70c1ac",
-        "sourceKey": "bold-mint",
+        "baseSpeciesId": "candidate:species:pokedex-golem-76:dd020f5724",
+        "canonicalId": "candidate:species:pokedex-golem-10184:a356ed2938",
+        "sourceKey": "pokedex:golem:10184",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:impish-mint:44459f1b9f",
-        "sourceKey": "impish-mint",
+        "baseSpeciesId": "candidate:species:pokedex-ponyta-77:4b6fa69407",
+        "canonicalId": "candidate:species:pokedex-ponyta-11080:9594366160",
+        "sourceKey": "pokedex:ponyta:11080",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:lax-mint:d1292d1c81",
-        "sourceKey": "lax-mint",
+        "baseSpeciesId": "candidate:species:pokedex-rapidash-78:a97dd55c89",
+        "canonicalId": "candidate:species:pokedex-rapidash-11081:26a4923db4",
+        "sourceKey": "pokedex:rapidash:11081",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:relaxed-mint:4c1b69c45b",
-        "sourceKey": "relaxed-mint",
+        "baseSpeciesId": "candidate:species:pokedex-slowpoke-79:d584d8866f",
+        "canonicalId": "candidate:species:pokedex-slowpoke-11159:7e8bdb5cb9",
+        "sourceKey": "pokedex:slowpoke:11159",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:modest-mint:1ba70da13c",
-        "sourceKey": "modest-mint",
+        "baseSpeciesId": "candidate:species:pokedex-slowbro-80:3f3260a251",
+        "canonicalId": "candidate:species:pokedex-slowbro-11160:be8db992f2",
+        "sourceKey": "pokedex:slowbro:11160",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:mild-mint:f934df6273",
-        "sourceKey": "mild-mint",
+        "baseSpeciesId": "candidate:species:pokedex-farfetchd-83:05ea24aa13",
+        "canonicalId": "candidate:species:pokedex-farfetchd-11123:816839c5b2",
+        "sourceKey": "pokedex:farfetchd:11123",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:rash-mint:c1443b2431",
-        "sourceKey": "rash-mint",
+        "baseSpeciesId": "candidate:species:pokedex-grimer-88:af98c5f214",
+        "canonicalId": "candidate:species:pokedex-grimer-10171:e89863bbc2",
+        "sourceKey": "pokedex:grimer:10171",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:quiet-mint:e75671c081",
-        "sourceKey": "quiet-mint",
+        "baseSpeciesId": "candidate:species:pokedex-muk-89:711e6f8899",
+        "canonicalId": "candidate:species:pokedex-muk-10172:bf361c0359",
+        "sourceKey": "pokedex:muk:10172",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:calm-mint:fe217866a0",
-        "sourceKey": "calm-mint",
+        "baseSpeciesId": "candidate:species:pokedex-voltorb-100:fab5d15109",
+        "canonicalId": "candidate:species:pokedex-voltorb-11177:59a00e6e6a",
+        "sourceKey": "pokedex:voltorb:11177",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:gentle-mint:9abffc079b",
-        "sourceKey": "gentle-mint",
+        "baseSpeciesId": "candidate:species:pokedex-electrode-101:398d3c0562",
+        "canonicalId": "candidate:species:pokedex-electrode-11180:0a7db06518",
+        "sourceKey": "pokedex:electrode:11180",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:careful-mint:23f4960320",
-        "sourceKey": "careful-mint",
+        "baseSpeciesId": "candidate:species:pokedex-exeggutor-103:1c46f8e283",
+        "canonicalId": "candidate:species:pokedex-exeggutor-10140:e0c941cf14",
+        "sourceKey": "pokedex:exeggutor:10140",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:sassy-mint:83ac900d70",
-        "sourceKey": "sassy-mint",
+        "baseSpeciesId": "candidate:species:pokedex-marowak-105:7e62650865",
+        "canonicalId": "candidate:species:pokedex-marowak-10151:3b819388e7",
+        "sourceKey": "pokedex:marowak:10151",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:timid-mint:33218531ac",
-        "sourceKey": "timid-mint",
+        "baseSpeciesId": "candidate:species:pokedex-weezing-110:672d06e85e",
+        "canonicalId": "candidate:species:pokedex-weezing-11068:ed67916171",
+        "sourceKey": "pokedex:weezing:11068",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:hasty-mint:cae38438d6",
-        "sourceKey": "hasty-mint",
+        "baseSpeciesId": "candidate:species:pokedex-mr-mime-122:5bc3bde91c",
+        "canonicalId": "candidate:species:pokedex-mr-mime-11133:dff9a4970d",
+        "sourceKey": "pokedex:mr-mime:11133",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:jolly-mint:e43b80793e",
-        "sourceKey": "jolly-mint",
+        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "canonicalId": "candidate:species:pokedex-tauros-11203:30bd36085b",
+        "sourceKey": "pokedex:tauros:11203",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:naive-mint:adc2dd9cf8",
-        "sourceKey": "naive-mint",
+        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "canonicalId": "candidate:species:pokedex-tauros-11204:f1d31cb329",
+        "sourceKey": "pokedex:tauros:11204",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:serious-mint:1510661446",
-        "sourceKey": "serious-mint",
+        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
+        "canonicalId": "candidate:species:pokedex-tauros-11205:721b36e731",
+        "sourceKey": "pokedex:tauros:11205",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:bottle-cap:6c09a69c91",
-        "sourceKey": "bottle-cap",
+        "baseSpeciesId": "candidate:species:pokedex-articuno-144:ae7b12d58a",
+        "canonicalId": "candidate:species:pokedex-articuno-11165:67c93d8cdb",
+        "sourceKey": "pokedex:articuno:11165",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:gold-bottle-cap:e02d613f7c",
-        "sourceKey": "gold-bottle-cap",
+        "baseSpeciesId": "candidate:species:pokedex-zapdos-145:f941789ac1",
+        "canonicalId": "candidate:species:pokedex-zapdos-11167:618cbcf0cc",
+        "sourceKey": "pokedex:zapdos:11167",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:fast-ball:97bc4e9551",
-        "sourceKey": "fast-ball",
+        "baseSpeciesId": "candidate:species:pokedex-moltres-146:7421fa5129",
+        "canonicalId": "candidate:species:pokedex-moltres-11168:a14d661f25",
+        "sourceKey": "pokedex:moltres:11168",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:friend-ball:3db37d2041",
-        "sourceKey": "friend-ball",
+        "baseSpeciesId": "candidate:species:pokedex-typhlosion-157:39dbe823d5",
+        "canonicalId": "candidate:species:pokedex-typhlosion-11182:14b62bee40",
+        "sourceKey": "pokedex:typhlosion:11182",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:heavy-ball:e883eca3f1",
-        "sourceKey": "heavy-ball",
+        "baseSpeciesId": "candidate:species:pokedex-wooper-194:c3528c41fa",
+        "canonicalId": "candidate:species:pokedex-wooper-11194:8ae8eedfa0",
+        "sourceKey": "pokedex:wooper:11194",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:level-ball:b8cb59288b",
-        "sourceKey": "level-ball",
+        "baseSpeciesId": "candidate:species:pokedex-slowking-199:d3aafa67fa",
+        "canonicalId": "candidate:species:pokedex-slowking-11161:027a968064",
+        "sourceKey": "pokedex:slowking:11161",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:love-ball:70b65e8715",
-        "sourceKey": "love-ball",
+        "baseSpeciesId": "candidate:species:pokedex-qwilfish-211:7abdc95638",
+        "canonicalId": "candidate:species:pokedex-qwilfish-11181:672815b37b",
+        "sourceKey": "pokedex:qwilfish:11181",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:lure-ball:8eec17db9c",
-        "sourceKey": "lure-ball",
+        "baseSpeciesId": "candidate:species:pokedex-sneasel-215:a15cfda57e",
+        "canonicalId": "candidate:species:pokedex-sneasel-11183:86edb8e6e1",
+        "sourceKey": "pokedex:sneasel:11183",
         "status": "accepted"
       },
       {
-        "canonicalId": "candidate:item:moon-ball:bc7a6ff49d",
-        "sourceKey": "moon-ball",
+        "baseSpeciesId": "candidate:species:pokedex-corsola-222:c026729c63",
+        "canonicalId": "candidate:species:pokedex-corsola-11125:96c663740a",
+        "sourceKey": "pokedex:corsola:11125",
         "status": "accepted"
       }
     ],
@@ -3275,1765 +4146,380 @@
         "canonicalId": "candidate:move:zen-headbutt:6b0c890abc",
         "sourceKey": "zen-headbutt",
         "status": "accepted"
-      }
-    ],
-    "species": [
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-bulbasaur-1:91b07648a3",
-        "sourceKey": "pokedex:bulbasaur:1",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ivysaur-2:e606f3e9db",
-        "sourceKey": "pokedex:ivysaur:2",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-venusaur-3:d29725c169",
-        "sourceKey": "pokedex:venusaur:3",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-charmander-4:76e12e8c3b",
-        "sourceKey": "pokedex:charmander:4",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-charmeleon-5:9ef0d98ff4",
-        "sourceKey": "pokedex:charmeleon:5",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-charizard-6:52fb46d5a2",
-        "sourceKey": "pokedex:charizard:6",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-squirtle-7:6f5ada4df3",
-        "sourceKey": "pokedex:squirtle:7",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-wartortle-8:32f0a5bd0c",
-        "sourceKey": "pokedex:wartortle:8",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-blastoise-9:76d65051f7",
-        "sourceKey": "pokedex:blastoise:9",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-caterpie-10:f77ea3bb04",
-        "sourceKey": "pokedex:caterpie:10",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-metapod-11:5da0baaeef",
-        "sourceKey": "pokedex:metapod:11",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-butterfree-12:f80800242a",
-        "sourceKey": "pokedex:butterfree:12",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-weedle-13:ccaef5cee7",
-        "sourceKey": "pokedex:weedle:13",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-kakuna-14:05dfd96ca6",
-        "sourceKey": "pokedex:kakuna:14",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-beedrill-15:6deb17ead8",
-        "sourceKey": "pokedex:beedrill:15",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pidgey-16:8e97efe736",
-        "sourceKey": "pokedex:pidgey:16",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pidgeotto-17:ee47274010",
-        "sourceKey": "pokedex:pidgeotto:17",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pidgeot-18:8ebee7ec94",
-        "sourceKey": "pokedex:pidgeot:18",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-rattata-19:9975b0175c",
-        "sourceKey": "pokedex:rattata:19",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-raticate-20:e4e0263d4a",
-        "sourceKey": "pokedex:raticate:20",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-spearow-21:0ddd44d801",
-        "sourceKey": "pokedex:spearow:21",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-fearow-22:8cc22e710e",
-        "sourceKey": "pokedex:fearow:22",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ekans-23:bdfa91ecd0",
-        "sourceKey": "pokedex:ekans:23",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-arbok-24:359fa1adfc",
-        "sourceKey": "pokedex:arbok:24",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pikachu-25:61410cc13d",
-        "sourceKey": "pokedex:pikachu:25",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-raichu-26:0bf8d234a1",
-        "sourceKey": "pokedex:raichu:26",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-sandshrew-27:0279054eaa",
-        "sourceKey": "pokedex:sandshrew:27",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-sandslash-28:b74447de31",
-        "sourceKey": "pokedex:sandslash:28",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-nidoran-f-29:bed769478b",
-        "sourceKey": "pokedex:nidoran-f:29",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-nidorina-30:1e0522479d",
-        "sourceKey": "pokedex:nidorina:30",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-nidoqueen-31:4e03c07525",
-        "sourceKey": "pokedex:nidoqueen:31",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-nidoran-m-32:a64d693f2e",
-        "sourceKey": "pokedex:nidoran-m:32",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-nidorino-33:bd44718fbf",
-        "sourceKey": "pokedex:nidorino:33",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-nidoking-34:4fb1bcbb2d",
-        "sourceKey": "pokedex:nidoking:34",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-clefairy-35:305eddb332",
-        "sourceKey": "pokedex:clefairy:35",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-clefable-36:e43d616ee9",
-        "sourceKey": "pokedex:clefable:36",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-vulpix-37:31e5adf26c",
-        "sourceKey": "pokedex:vulpix:37",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ninetales-38:58fa44514d",
-        "sourceKey": "pokedex:ninetales:38",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-jigglypuff-39:3b5d1d4b0d",
-        "sourceKey": "pokedex:jigglypuff:39",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-wigglytuff-40:1f9d376e76",
-        "sourceKey": "pokedex:wigglytuff:40",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-zubat-41:30ce9c9861",
-        "sourceKey": "pokedex:zubat:41",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-golbat-42:01b3aaffa7",
-        "sourceKey": "pokedex:golbat:42",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-oddish-43:24da759495",
-        "sourceKey": "pokedex:oddish:43",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-gloom-44:c4c7bf2a71",
-        "sourceKey": "pokedex:gloom:44",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-vileplume-45:773d44f5a6",
-        "sourceKey": "pokedex:vileplume:45",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-paras-46:c51b5cf771",
-        "sourceKey": "pokedex:paras:46",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-parasect-47:65e8220d00",
-        "sourceKey": "pokedex:parasect:47",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-venonat-48:b9b35d81a3",
-        "sourceKey": "pokedex:venonat:48",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-venomoth-49:280b64514d",
-        "sourceKey": "pokedex:venomoth:49",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-diglett-50:8fe9ebad74",
-        "sourceKey": "pokedex:diglett:50",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-dugtrio-51:0c5d809546",
-        "sourceKey": "pokedex:dugtrio:51",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-meowth-52:7b8de52546",
-        "sourceKey": "pokedex:meowth:52",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-persian-53:828983479b",
-        "sourceKey": "pokedex:persian:53",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-psyduck-54:746024cf53",
-        "sourceKey": "pokedex:psyduck:54",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-golduck-55:aaad85b7ea",
-        "sourceKey": "pokedex:golduck:55",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-mankey-56:beb34d2e4d",
-        "sourceKey": "pokedex:mankey:56",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-primeape-57:bf71e8a22b",
-        "sourceKey": "pokedex:primeape:57",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-growlithe-58:c6d3d72cd8",
-        "sourceKey": "pokedex:growlithe:58",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-arcanine-59:6d464f7c59",
-        "sourceKey": "pokedex:arcanine:59",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-poliwag-60:287185cfa3",
-        "sourceKey": "pokedex:poliwag:60",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-poliwhirl-61:f9fc928ba3",
-        "sourceKey": "pokedex:poliwhirl:61",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-poliwrath-62:5a1b9c0374",
-        "sourceKey": "pokedex:poliwrath:62",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-abra-63:6a4a3614d2",
-        "sourceKey": "pokedex:abra:63",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-kadabra-64:4976821d58",
-        "sourceKey": "pokedex:kadabra:64",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-alakazam-65:4a28172038",
-        "sourceKey": "pokedex:alakazam:65",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-machop-66:a78ba95ec8",
-        "sourceKey": "pokedex:machop:66",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-machoke-67:d82f9f517e",
-        "sourceKey": "pokedex:machoke:67",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-machamp-68:439cdc1b53",
-        "sourceKey": "pokedex:machamp:68",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-bellsprout-69:2aaaf5c98e",
-        "sourceKey": "pokedex:bellsprout:69",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-weepinbell-70:aa1c7d3a6a",
-        "sourceKey": "pokedex:weepinbell:70",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-victreebel-71:6ae7089c57",
-        "sourceKey": "pokedex:victreebel:71",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-tentacool-72:b72e0559ce",
-        "sourceKey": "pokedex:tentacool:72",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-tentacruel-73:8ce86c4470",
-        "sourceKey": "pokedex:tentacruel:73",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-geodude-74:1164f17b57",
-        "sourceKey": "pokedex:geodude:74",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-graveler-75:45b46831bf",
-        "sourceKey": "pokedex:graveler:75",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-golem-76:dd020f5724",
-        "sourceKey": "pokedex:golem:76",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ponyta-77:4b6fa69407",
-        "sourceKey": "pokedex:ponyta:77",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-rapidash-78:a97dd55c89",
-        "sourceKey": "pokedex:rapidash:78",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-slowpoke-79:d584d8866f",
-        "sourceKey": "pokedex:slowpoke:79",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-slowbro-80:3f3260a251",
-        "sourceKey": "pokedex:slowbro:80",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-magnemite-81:e261656753",
-        "sourceKey": "pokedex:magnemite:81",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-magneton-82:2c1b265d91",
-        "sourceKey": "pokedex:magneton:82",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-farfetchd-83:05ea24aa13",
-        "sourceKey": "pokedex:farfetchd:83",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-doduo-84:a11f15ed73",
-        "sourceKey": "pokedex:doduo:84",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-dodrio-85:506cc36c01",
-        "sourceKey": "pokedex:dodrio:85",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-seel-86:3af840176e",
-        "sourceKey": "pokedex:seel:86",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-dewgong-87:d47faf4596",
-        "sourceKey": "pokedex:dewgong:87",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-grimer-88:af98c5f214",
-        "sourceKey": "pokedex:grimer:88",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-muk-89:711e6f8899",
-        "sourceKey": "pokedex:muk:89",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-shellder-90:99f21c2f29",
-        "sourceKey": "pokedex:shellder:90",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-cloyster-91:4f6a9f57e2",
-        "sourceKey": "pokedex:cloyster:91",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-gastly-92:d44ec70a0e",
-        "sourceKey": "pokedex:gastly:92",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-haunter-93:192b139c9c",
-        "sourceKey": "pokedex:haunter:93",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-gengar-94:e4fd2aae37",
-        "sourceKey": "pokedex:gengar:94",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-onix-95:61a65befee",
-        "sourceKey": "pokedex:onix:95",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-drowzee-96:5c2f4bfabd",
-        "sourceKey": "pokedex:drowzee:96",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-hypno-97:cc87702d7e",
-        "sourceKey": "pokedex:hypno:97",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-krabby-98:b5eeb554c4",
-        "sourceKey": "pokedex:krabby:98",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-kingler-99:cb1174511d",
-        "sourceKey": "pokedex:kingler:99",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-voltorb-100:fab5d15109",
-        "sourceKey": "pokedex:voltorb:100",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-electrode-101:398d3c0562",
-        "sourceKey": "pokedex:electrode:101",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-exeggcute-102:c0bac51f25",
-        "sourceKey": "pokedex:exeggcute:102",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-exeggutor-103:1c46f8e283",
-        "sourceKey": "pokedex:exeggutor:103",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-cubone-104:2a7292cc3b",
-        "sourceKey": "pokedex:cubone:104",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-marowak-105:7e62650865",
-        "sourceKey": "pokedex:marowak:105",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-hitmonlee-106:d3ee4b03a9",
-        "sourceKey": "pokedex:hitmonlee:106",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-hitmonchan-107:de74ec6753",
-        "sourceKey": "pokedex:hitmonchan:107",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-lickitung-108:0fce9256f8",
-        "sourceKey": "pokedex:lickitung:108",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-koffing-109:138739c989",
-        "sourceKey": "pokedex:koffing:109",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-weezing-110:672d06e85e",
-        "sourceKey": "pokedex:weezing:110",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-rhyhorn-111:3660e8756c",
-        "sourceKey": "pokedex:rhyhorn:111",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-rhydon-112:6b39afb998",
-        "sourceKey": "pokedex:rhydon:112",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-chansey-113:dd864fad44",
-        "sourceKey": "pokedex:chansey:113",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-tangela-114:ece9b236a8",
-        "sourceKey": "pokedex:tangela:114",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-kangaskhan-115:7041b2a112",
-        "sourceKey": "pokedex:kangaskhan:115",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-horsea-116:bee896dbe8",
-        "sourceKey": "pokedex:horsea:116",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-seadra-117:4f990dcca8",
-        "sourceKey": "pokedex:seadra:117",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-goldeen-118:6e5c670c8d",
-        "sourceKey": "pokedex:goldeen:118",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-seaking-119:3367d23690",
-        "sourceKey": "pokedex:seaking:119",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-staryu-120:829673aa43",
-        "sourceKey": "pokedex:staryu:120",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-starmie-121:022b9d4cd6",
-        "sourceKey": "pokedex:starmie:121",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-mr-mime-122:5bc3bde91c",
-        "sourceKey": "pokedex:mr-mime:122",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-scyther-123:fca711f27e",
-        "sourceKey": "pokedex:scyther:123",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-jynx-124:2b86c8e0b7",
-        "sourceKey": "pokedex:jynx:124",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-electabuzz-125:572fd8f9bc",
-        "sourceKey": "pokedex:electabuzz:125",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-magmar-126:65c5de5cf8",
-        "sourceKey": "pokedex:magmar:126",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pinsir-127:22283e1e47",
-        "sourceKey": "pokedex:pinsir:127",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-tauros-128:e14d9052a3",
-        "sourceKey": "pokedex:tauros:128",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-magikarp-129:ea98e807ae",
-        "sourceKey": "pokedex:magikarp:129",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-gyarados-130:380765c064",
-        "sourceKey": "pokedex:gyarados:130",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-lapras-131:a9e072965e",
-        "sourceKey": "pokedex:lapras:131",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ditto-132:282f8f53ab",
-        "sourceKey": "pokedex:ditto:132",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-eevee-133:d4e3723301",
-        "sourceKey": "pokedex:eevee:133",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-vaporeon-134:3a9c5aa9e1",
-        "sourceKey": "pokedex:vaporeon:134",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-jolteon-135:709ea3c6d3",
-        "sourceKey": "pokedex:jolteon:135",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-flareon-136:3ca3d43650",
-        "sourceKey": "pokedex:flareon:136",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-porygon-137:34c5abf6e0",
-        "sourceKey": "pokedex:porygon:137",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-omanyte-138:cb022ce48a",
-        "sourceKey": "pokedex:omanyte:138",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-omastar-139:e7ed7261a1",
-        "sourceKey": "pokedex:omastar:139",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-kabuto-140:bf97916fcc",
-        "sourceKey": "pokedex:kabuto:140",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-kabutops-141:c9193c0225",
-        "sourceKey": "pokedex:kabutops:141",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-aerodactyl-142:a444739552",
-        "sourceKey": "pokedex:aerodactyl:142",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-snorlax-143:e2ae75bce9",
-        "sourceKey": "pokedex:snorlax:143",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-articuno-144:ae7b12d58a",
-        "sourceKey": "pokedex:articuno:144",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-zapdos-145:f941789ac1",
-        "sourceKey": "pokedex:zapdos:145",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-moltres-146:7421fa5129",
-        "sourceKey": "pokedex:moltres:146",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-dratini-147:eb28822362",
-        "sourceKey": "pokedex:dratini:147",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-dragonair-148:9824119b92",
-        "sourceKey": "pokedex:dragonair:148",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-dragonite-149:a7d72780cd",
-        "sourceKey": "pokedex:dragonite:149",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-mewtwo-150:57eecbcf65",
-        "sourceKey": "pokedex:mewtwo:150",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-mew-151:816c56e17c",
-        "sourceKey": "pokedex:mew:151",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-chikorita-152:24bd4cdb1d",
-        "sourceKey": "pokedex:chikorita:152",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-bayleef-153:c10004c0ee",
-        "sourceKey": "pokedex:bayleef:153",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-meganium-154:ec679959cf",
-        "sourceKey": "pokedex:meganium:154",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-cyndaquil-155:f879aca845",
-        "sourceKey": "pokedex:cyndaquil:155",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-quilava-156:6b195ea543",
-        "sourceKey": "pokedex:quilava:156",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-typhlosion-157:39dbe823d5",
-        "sourceKey": "pokedex:typhlosion:157",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-totodile-158:f3d3f9a1f7",
-        "sourceKey": "pokedex:totodile:158",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-croconaw-159:6491c66f54",
-        "sourceKey": "pokedex:croconaw:159",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-feraligatr-160:90a67b0244",
-        "sourceKey": "pokedex:feraligatr:160",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-sentret-161:fa09afb6e0",
-        "sourceKey": "pokedex:sentret:161",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-furret-162:e293bafbb6",
-        "sourceKey": "pokedex:furret:162",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-hoothoot-163:3ecad094b2",
-        "sourceKey": "pokedex:hoothoot:163",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-noctowl-164:8a8e4456b9",
-        "sourceKey": "pokedex:noctowl:164",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ledyba-165:092570add7",
-        "sourceKey": "pokedex:ledyba:165",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ledian-166:75f6bd988e",
-        "sourceKey": "pokedex:ledian:166",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-spinarak-167:19628e41f3",
-        "sourceKey": "pokedex:spinarak:167",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ariados-168:0d4d923b65",
-        "sourceKey": "pokedex:ariados:168",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-crobat-169:770c27cf8c",
-        "sourceKey": "pokedex:crobat:169",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-chinchou-170:73ded1e566",
-        "sourceKey": "pokedex:chinchou:170",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-lanturn-171:7dd3633b99",
-        "sourceKey": "pokedex:lanturn:171",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pichu-172:a340114e83",
-        "sourceKey": "pokedex:pichu:172",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-cleffa-173:b46f463298",
-        "sourceKey": "pokedex:cleffa:173",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-igglybuff-174:0d2b3ec19e",
-        "sourceKey": "pokedex:igglybuff:174",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-togepi-175:67fb9542a4",
-        "sourceKey": "pokedex:togepi:175",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-togetic-176:34f4acc44a",
-        "sourceKey": "pokedex:togetic:176",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-natu-177:2215129129",
-        "sourceKey": "pokedex:natu:177",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-xatu-178:4f1020db4a",
-        "sourceKey": "pokedex:xatu:178",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-mareep-179:5c560baaf7",
-        "sourceKey": "pokedex:mareep:179",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-flaaffy-180:0fdfc1d5ad",
-        "sourceKey": "pokedex:flaaffy:180",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ampharos-181:b682912fc8",
-        "sourceKey": "pokedex:ampharos:181",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-bellossom-182:9a504a7f58",
-        "sourceKey": "pokedex:bellossom:182",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-marill-183:4f0d454757",
-        "sourceKey": "pokedex:marill:183",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-azumarill-184:a3dec29ac6",
-        "sourceKey": "pokedex:azumarill:184",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-sudowoodo-185:c5e3e39eaf",
-        "sourceKey": "pokedex:sudowoodo:185",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-politoed-186:094f7b1352",
-        "sourceKey": "pokedex:politoed:186",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-hoppip-187:ab5f0bfb34",
-        "sourceKey": "pokedex:hoppip:187",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-skiploom-188:9d0d953ecc",
-        "sourceKey": "pokedex:skiploom:188",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-jumpluff-189:c79c32b728",
-        "sourceKey": "pokedex:jumpluff:189",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-aipom-190:930792785e",
-        "sourceKey": "pokedex:aipom:190",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-sunkern-191:8f850eef0e",
-        "sourceKey": "pokedex:sunkern:191",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-sunflora-192:9529849034",
-        "sourceKey": "pokedex:sunflora:192",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-yanma-193:be62cefa8e",
-        "sourceKey": "pokedex:yanma:193",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-wooper-194:c3528c41fa",
-        "sourceKey": "pokedex:wooper:194",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-quagsire-195:49377aef21",
-        "sourceKey": "pokedex:quagsire:195",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-espeon-196:3b9d57768d",
-        "sourceKey": "pokedex:espeon:196",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-umbreon-197:06cf5810c3",
-        "sourceKey": "pokedex:umbreon:197",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-murkrow-198:35fbce8a6e",
-        "sourceKey": "pokedex:murkrow:198",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-slowking-199:d3aafa67fa",
-        "sourceKey": "pokedex:slowking:199",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-misdreavus-200:aeb7c6aa52",
-        "sourceKey": "pokedex:misdreavus:200",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-unown-201:d30cb2af0e",
-        "sourceKey": "pokedex:unown:201",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-wobbuffet-202:3584ce6a12",
-        "sourceKey": "pokedex:wobbuffet:202",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-girafarig-203:e5e95de2f6",
-        "sourceKey": "pokedex:girafarig:203",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pineco-204:620de36c4c",
-        "sourceKey": "pokedex:pineco:204",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-forretress-205:1b3c685316",
-        "sourceKey": "pokedex:forretress:205",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-dunsparce-206:1e177f5c53",
-        "sourceKey": "pokedex:dunsparce:206",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-gligar-207:5313fbb7a6",
-        "sourceKey": "pokedex:gligar:207",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-steelix-208:ce2060b052",
-        "sourceKey": "pokedex:steelix:208",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-snubbull-209:f9ea9240b4",
-        "sourceKey": "pokedex:snubbull:209",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-granbull-210:e54e05f019",
-        "sourceKey": "pokedex:granbull:210",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-qwilfish-211:7abdc95638",
-        "sourceKey": "pokedex:qwilfish:211",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-scizor-212:3746285e5a",
-        "sourceKey": "pokedex:scizor:212",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-shuckle-213:92fc611a3a",
-        "sourceKey": "pokedex:shuckle:213",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-heracross-214:64b6054ba0",
-        "sourceKey": "pokedex:heracross:214",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-sneasel-215:a15cfda57e",
-        "sourceKey": "pokedex:sneasel:215",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-teddiursa-216:c92f0b02a2",
-        "sourceKey": "pokedex:teddiursa:216",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ursaring-217:535b6406ea",
-        "sourceKey": "pokedex:ursaring:217",
-        "status": "accepted"
-      },
-      {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-slugma-218:eea91a820d",
-        "sourceKey": "pokedex:slugma:218",
-        "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-magcargo-219:0a8b755bde",
-        "sourceKey": "pokedex:magcargo:219",
+        "canonicalId": "candidate:move:alluring-voice:e56f867d2b",
+        "sourceKey": "alluring-voice",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-swinub-220:fbfedcd465",
-        "sourceKey": "pokedex:swinub:220",
+        "canonicalId": "candidate:move:arm-thrust:8f6126790a",
+        "sourceKey": "arm-thrust",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-piloswine-221:00b1e6c0b5",
-        "sourceKey": "pokedex:piloswine:221",
+        "canonicalId": "candidate:move:aromatic-mist:80d1fcc795",
+        "sourceKey": "aromatic-mist",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-corsola-222:c026729c63",
-        "sourceKey": "pokedex:corsola:222",
+        "canonicalId": "candidate:move:axe-kick:4b19117f71",
+        "sourceKey": "axe-kick",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-remoraid-223:2c499ca636",
-        "sourceKey": "pokedex:remoraid:223",
+        "canonicalId": "candidate:move:barb-barrage:5af9842764",
+        "sourceKey": "barb-barrage",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-octillery-224:1d9e4ae28f",
-        "sourceKey": "pokedex:octillery:224",
+        "canonicalId": "candidate:move:body-press:e402da3c26",
+        "sourceKey": "body-press",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-delibird-225:cf5b01e0bc",
-        "sourceKey": "pokedex:delibird:225",
+        "canonicalId": "candidate:move:bone-club:7276d1d296",
+        "sourceKey": "bone-club",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-mantine-226:728c8a5a9c",
-        "sourceKey": "pokedex:mantine:226",
+        "canonicalId": "candidate:move:breaking-swipe:73ad35e9ae",
+        "sourceKey": "breaking-swipe",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-skarmory-227:10e28cc8bc",
-        "sourceKey": "pokedex:skarmory:227",
+        "canonicalId": "candidate:move:brutal-swing:ee6bd58ced",
+        "sourceKey": "brutal-swing",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-houndour-228:3ae4cfc69d",
-        "sourceKey": "pokedex:houndour:228",
+        "canonicalId": "candidate:move:burning-jealousy:1b5a183bb7",
+        "sourceKey": "burning-jealousy",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-houndoom-229:698f551d29",
-        "sourceKey": "pokedex:houndoom:229",
+        "canonicalId": "candidate:move:chilling-water:341f0dc581",
+        "sourceKey": "chilling-water",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-kingdra-230:b0142494ce",
-        "sourceKey": "pokedex:kingdra:230",
+        "canonicalId": "candidate:move:chip-away:c021f7408a",
+        "sourceKey": "chip-away",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-phanpy-231:bfc0351db8",
-        "sourceKey": "pokedex:phanpy:231",
+        "canonicalId": "candidate:move:chloroblast:f5be58305a",
+        "sourceKey": "chloroblast",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-donphan-232:b76d1358e2",
-        "sourceKey": "pokedex:donphan:232",
+        "canonicalId": "candidate:move:coaching:3e0f9f03a7",
+        "sourceKey": "coaching",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-porygon2-233:1b6413757a",
-        "sourceKey": "pokedex:porygon2:233",
+        "canonicalId": "candidate:move:comeuppance:c131293194",
+        "sourceKey": "comeuppance",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-stantler-234:10dc3150c7",
-        "sourceKey": "pokedex:stantler:234",
+        "canonicalId": "candidate:move:confide:f6b004418a",
+        "sourceKey": "confide",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-smeargle-235:c96f9c2108",
-        "sourceKey": "pokedex:smeargle:235",
+        "canonicalId": "candidate:move:dragon-cheer:5ee1bb69b7",
+        "sourceKey": "dragon-cheer",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-tyrogue-236:e85f3547c2",
-        "sourceKey": "pokedex:tyrogue:236",
+        "canonicalId": "candidate:move:dragon-hammer:485302e8b6",
+        "sourceKey": "dragon-hammer",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-hitmontop-237:cc94fb1f6d",
-        "sourceKey": "pokedex:hitmontop:237",
+        "canonicalId": "candidate:move:draining-kiss:a03d683a4d",
+        "sourceKey": "draining-kiss",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-smoochum-238:19558fcbfa",
-        "sourceKey": "pokedex:smoochum:238",
+        "canonicalId": "candidate:move:dual-wingbeat:eadffc71b9",
+        "sourceKey": "dual-wingbeat",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-elekid-239:11091823be",
-        "sourceKey": "pokedex:elekid:239",
+        "canonicalId": "candidate:move:eerie-spell:c9cb942475",
+        "sourceKey": "eerie-spell",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-magby-240:2195d76743",
-        "sourceKey": "pokedex:magby:240",
+        "canonicalId": "candidate:move:electroweb:f0900532ab",
+        "sourceKey": "electroweb",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-miltank-241:92d8c53a6f",
-        "sourceKey": "pokedex:miltank:241",
+        "canonicalId": "candidate:move:embargo:9fc073e6d2",
+        "sourceKey": "embargo",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-blissey-242:70bf282b39",
-        "sourceKey": "pokedex:blissey:242",
+        "canonicalId": "candidate:move:expanding-force:ddbf817e59",
+        "sourceKey": "expanding-force",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-raikou-243:2988c131d7",
-        "sourceKey": "pokedex:raikou:243",
+        "canonicalId": "candidate:move:fiery-wrath:2b15ca71f6",
+        "sourceKey": "fiery-wrath",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-entei-244:d1f710f7ec",
-        "sourceKey": "pokedex:entei:244",
+        "canonicalId": "candidate:move:fire-pledge:bc138c8db9",
+        "sourceKey": "fire-pledge",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-suicune-245:bfa6c003d4",
-        "sourceKey": "pokedex:suicune:245",
+        "canonicalId": "candidate:move:flip-turn:d215b5481d",
+        "sourceKey": "flip-turn",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-larvitar-246:25483bb391",
-        "sourceKey": "pokedex:larvitar:246",
+        "canonicalId": "candidate:move:freezing-glare:ca528b8591",
+        "sourceKey": "freezing-glare",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-pupitar-247:ecc027f495",
-        "sourceKey": "pokedex:pupitar:247",
+        "canonicalId": "candidate:move:frustration:1748ba31e2",
+        "sourceKey": "frustration",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-tyranitar-248:f59cb770f3",
-        "sourceKey": "pokedex:tyranitar:248",
+        "canonicalId": "candidate:move:hard-press:5f1f4a38ab",
+        "sourceKey": "hard-press",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-lugia-249:638b512992",
-        "sourceKey": "pokedex:lugia:249",
+        "canonicalId": "candidate:move:heat-crash:04ec313775",
+        "sourceKey": "heat-crash",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-ho-oh-250:63730cf8bf",
-        "sourceKey": "pokedex:ho-oh:250",
+        "canonicalId": "candidate:move:hyper-drill:8883d92f98",
+        "sourceKey": "hyper-drill",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": null,
-        "canonicalId": "candidate:species:pokedex-celebi-251:8d7beabbeb",
-        "sourceKey": "pokedex:celebi:251",
+        "canonicalId": "candidate:move:hyper-fang:1b837b378d",
+        "sourceKey": "hyper-fang",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-rattata-19:9975b0175c",
-        "canonicalId": "candidate:species:pokedex-rattata-10158:0ca7ab646a",
-        "sourceKey": "pokedex:rattata:10158",
+        "canonicalId": "candidate:move:ice-spinner:ec97d77017",
+        "sourceKey": "ice-spinner",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-raticate-20:e4e0263d4a",
-        "canonicalId": "candidate:species:pokedex-raticate-10159:3f08305797",
-        "sourceKey": "pokedex:raticate:10159",
+        "canonicalId": "candidate:move:infernal-parade:b941f6fe82",
+        "sourceKey": "infernal-parade",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-raichu-26:0bf8d234a1",
-        "canonicalId": "candidate:species:pokedex-raichu-10150:447cf183c0",
-        "sourceKey": "pokedex:raichu:10150",
+        "canonicalId": "candidate:move:lash-out:3976b83987",
+        "sourceKey": "lash-out",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-sandshrew-27:0279054eaa",
-        "canonicalId": "candidate:species:pokedex-sandshrew-10143:840a9211a5",
-        "sourceKey": "pokedex:sandshrew:10143",
+        "canonicalId": "candidate:move:me-first:b22ccbf611",
+        "sourceKey": "me-first",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-sandslash-28:b74447de31",
-        "canonicalId": "candidate:species:pokedex-sandslash-10144:f3b483cd49",
-        "sourceKey": "pokedex:sandslash:10144",
+        "canonicalId": "candidate:move:meteor-beam:51463f3d05",
+        "sourceKey": "meteor-beam",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-vulpix-37:31e5adf26c",
-        "canonicalId": "candidate:species:pokedex-vulpix-10141:ae0213bb17",
-        "sourceKey": "pokedex:vulpix:10141",
+        "canonicalId": "candidate:move:misty-explosion:668ca46be4",
+        "sourceKey": "misty-explosion",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-ninetales-38:58fa44514d",
-        "canonicalId": "candidate:species:pokedex-ninetales-10142:ee10634ca6",
-        "sourceKey": "pokedex:ninetales:10142",
+        "canonicalId": "candidate:move:mystical-fire:fa5f20195e",
+        "sourceKey": "mystical-fire",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-diglett-50:8fe9ebad74",
-        "canonicalId": "candidate:species:pokedex-diglett-10181:7d5e726a31",
-        "sourceKey": "pokedex:diglett:10181",
+        "canonicalId": "candidate:move:parting-shot:b7afbfcb6b",
+        "sourceKey": "parting-shot",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-dugtrio-51:0c5d809546",
-        "canonicalId": "candidate:species:pokedex-dugtrio-10180:f651d5390b",
-        "sourceKey": "pokedex:dugtrio:10180",
+        "canonicalId": "candidate:move:phantom-force:08359bde51",
+        "sourceKey": "phantom-force",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-meowth-52:7b8de52546",
-        "canonicalId": "candidate:species:pokedex-meowth-10152:d7eb4b1677",
-        "sourceKey": "pokedex:meowth:10152",
+        "canonicalId": "candidate:move:pollen-puff:caf6fe9081",
+        "sourceKey": "pollen-puff",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-meowth-52:7b8de52546",
-        "canonicalId": "candidate:species:pokedex-meowth-11144:e0c3e716dc",
-        "sourceKey": "pokedex:meowth:11144",
+        "canonicalId": "candidate:move:poltergeist:99726fe9dc",
+        "sourceKey": "poltergeist",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-persian-53:828983479b",
-        "canonicalId": "candidate:species:pokedex-persian-10173:a12b88d23b",
-        "sourceKey": "pokedex:persian:10173",
+        "canonicalId": "candidate:move:pounce:6bd9c98136",
+        "sourceKey": "pounce",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-growlithe-58:c6d3d72cd8",
-        "canonicalId": "candidate:species:pokedex-growlithe-11174:2f786cb8f7",
-        "sourceKey": "pokedex:growlithe:11174",
+        "canonicalId": "candidate:move:psychic-fangs:75160f5ed9",
+        "sourceKey": "psychic-fangs",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-arcanine-59:6d464f7c59",
-        "canonicalId": "candidate:species:pokedex-arcanine-11179:552be48fc9",
-        "sourceKey": "pokedex:arcanine:11179",
+        "canonicalId": "candidate:move:psychic-noise:9c33f49ae3",
+        "sourceKey": "psychic-noise",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-geodude-74:1164f17b57",
-        "canonicalId": "candidate:species:pokedex-geodude-10182:bb5443e522",
-        "sourceKey": "pokedex:geodude:10182",
+        "canonicalId": "candidate:move:psychic-terrain:4ac0cc4032",
+        "sourceKey": "psychic-terrain",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-graveler-75:45b46831bf",
-        "canonicalId": "candidate:species:pokedex-graveler-10183:40a36ccf53",
-        "sourceKey": "pokedex:graveler:10183",
+        "canonicalId": "candidate:move:psyshield-bash:678fee12ca",
+        "sourceKey": "psyshield-bash",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-golem-76:dd020f5724",
-        "canonicalId": "candidate:species:pokedex-golem-10184:a356ed2938",
-        "sourceKey": "pokedex:golem:10184",
+        "canonicalId": "candidate:move:pursuit:68fcfd9b4d",
+        "sourceKey": "pursuit",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-ponyta-77:4b6fa69407",
-        "canonicalId": "candidate:species:pokedex-ponyta-11080:9594366160",
-        "sourceKey": "pokedex:ponyta:11080",
+        "canonicalId": "candidate:move:rage-fist:759bb84db7",
+        "sourceKey": "rage-fist",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-rapidash-78:a97dd55c89",
-        "canonicalId": "candidate:species:pokedex-rapidash-11081:26a4923db4",
-        "sourceKey": "pokedex:rapidash:11081",
+        "canonicalId": "candidate:move:raging-bull:591571373c",
+        "sourceKey": "raging-bull",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-slowpoke-79:d584d8866f",
-        "canonicalId": "candidate:species:pokedex-slowpoke-11159:7e8bdb5cb9",
-        "sourceKey": "pokedex:slowpoke:11159",
+        "canonicalId": "candidate:move:raging-fury:a195666d5c",
+        "sourceKey": "raging-fury",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-slowbro-80:3f3260a251",
-        "canonicalId": "candidate:species:pokedex-slowbro-11160:be8db992f2",
-        "sourceKey": "pokedex:slowbro:11160",
+        "canonicalId": "candidate:move:return:7187f0675e",
+        "sourceKey": "return",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-farfetchd-83:05ea24aa13",
-        "canonicalId": "candidate:species:pokedex-farfetchd-11123:816839c5b2",
-        "sourceKey": "pokedex:farfetchd:11123",
+        "canonicalId": "candidate:move:scale-shot:0d22a5d24c",
+        "sourceKey": "scale-shot",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-grimer-88:af98c5f214",
-        "canonicalId": "candidate:species:pokedex-grimer-10171:e89863bbc2",
-        "sourceKey": "pokedex:grimer:10171",
+        "canonicalId": "candidate:move:scorching-sands:92c7c64094",
+        "sourceKey": "scorching-sands",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-muk-89:711e6f8899",
-        "canonicalId": "candidate:species:pokedex-muk-10172:bf361c0359",
-        "sourceKey": "pokedex:muk:10172",
+        "canonicalId": "candidate:move:shadow-bone:f6533499cf",
+        "sourceKey": "shadow-bone",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-voltorb-100:fab5d15109",
-        "canonicalId": "candidate:species:pokedex-voltorb-11177:59a00e6e6a",
-        "sourceKey": "pokedex:voltorb:11177",
+        "canonicalId": "candidate:move:shell-side-arm:d1ef45917b",
+        "sourceKey": "shell-side-arm",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-electrode-101:398d3c0562",
-        "canonicalId": "candidate:species:pokedex-electrode-11180:0a7db06518",
-        "sourceKey": "pokedex:electrode:11180",
+        "canonicalId": "candidate:move:skitter-smack:c3056bf3e3",
+        "sourceKey": "skitter-smack",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-exeggutor-103:1c46f8e283",
-        "canonicalId": "candidate:species:pokedex-exeggutor-10140:e0c941cf14",
-        "sourceKey": "pokedex:exeggutor:10140",
+        "canonicalId": "candidate:move:snatch:6cd512a819",
+        "sourceKey": "snatch",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-marowak-105:7e62650865",
-        "canonicalId": "candidate:species:pokedex-marowak-10151:3b819388e7",
-        "sourceKey": "pokedex:marowak:10151",
+        "canonicalId": "candidate:move:snowscape:966de39776",
+        "sourceKey": "snowscape",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-weezing-110:672d06e85e",
-        "canonicalId": "candidate:species:pokedex-weezing-11068:ed67916171",
-        "sourceKey": "pokedex:weezing:11068",
+        "canonicalId": "candidate:move:solar-blade:a174bb5147",
+        "sourceKey": "solar-blade",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-mr-mime-122:5bc3bde91c",
-        "canonicalId": "candidate:species:pokedex-mr-mime-11133:dff9a4970d",
-        "sourceKey": "pokedex:mr-mime:11133",
+        "canonicalId": "candidate:move:sparkling-aria:584a5d00b8",
+        "sourceKey": "sparkling-aria",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
-        "canonicalId": "candidate:species:pokedex-tauros-11203:30bd36085b",
-        "sourceKey": "pokedex:tauros:11203",
+        "canonicalId": "candidate:move:steel-beam:1b77f86ded",
+        "sourceKey": "steel-beam",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
-        "canonicalId": "candidate:species:pokedex-tauros-11204:f1d31cb329",
-        "sourceKey": "pokedex:tauros:11204",
+        "canonicalId": "candidate:move:strange-steam:488000106d",
+        "sourceKey": "strange-steam",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-tauros-128:e14d9052a3",
-        "canonicalId": "candidate:species:pokedex-tauros-11205:721b36e731",
-        "sourceKey": "pokedex:tauros:11205",
+        "canonicalId": "candidate:move:supercell-slam:d389fbdccb",
+        "sourceKey": "supercell-slam",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-articuno-144:ae7b12d58a",
-        "canonicalId": "candidate:species:pokedex-articuno-11165:67c93d8cdb",
-        "sourceKey": "pokedex:articuno:11165",
+        "canonicalId": "candidate:move:temper-flare:c525e38267",
+        "sourceKey": "temper-flare",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-zapdos-145:f941789ac1",
-        "canonicalId": "candidate:species:pokedex-zapdos-11167:618cbcf0cc",
-        "sourceKey": "pokedex:zapdos:11167",
+        "canonicalId": "candidate:move:thunderous-kick:b414fbc8c2",
+        "sourceKey": "thunderous-kick",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-moltres-146:7421fa5129",
-        "canonicalId": "candidate:species:pokedex-moltres-11168:a14d661f25",
-        "sourceKey": "pokedex:moltres:11168",
+        "canonicalId": "candidate:move:tidy-up:7f683f1f00",
+        "sourceKey": "tidy-up",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-typhlosion-157:39dbe823d5",
-        "canonicalId": "candidate:species:pokedex-typhlosion-11182:14b62bee40",
-        "sourceKey": "pokedex:typhlosion:11182",
+        "canonicalId": "candidate:move:triple-axel:a12aae1203",
+        "sourceKey": "triple-axel",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-wooper-194:c3528c41fa",
-        "canonicalId": "candidate:species:pokedex-wooper-11194:8ae8eedfa0",
-        "sourceKey": "pokedex:wooper:11194",
+        "canonicalId": "candidate:move:twin-beam:d0d8d27cb6",
+        "sourceKey": "twin-beam",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-slowking-199:d3aafa67fa",
-        "canonicalId": "candidate:species:pokedex-slowking-11161:027a968064",
-        "sourceKey": "pokedex:slowking:11161",
+        "canonicalId": "candidate:move:upper-hand:4f8f6cfeb6",
+        "sourceKey": "upper-hand",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-qwilfish-211:7abdc95638",
-        "canonicalId": "candidate:species:pokedex-qwilfish-11181:672815b37b",
-        "sourceKey": "pokedex:qwilfish:11181",
+        "canonicalId": "candidate:move:water-pledge:531aefa1ed",
+        "sourceKey": "water-pledge",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-sneasel-215:a15cfda57e",
-        "canonicalId": "candidate:species:pokedex-sneasel-11183:86edb8e6e1",
-        "sourceKey": "pokedex:sneasel:11183",
+        "canonicalId": "candidate:move:wave-crash:9974e3f4d2",
+        "sourceKey": "wave-crash",
         "status": "accepted"
       },
       {
-        "baseSpeciesId": "candidate:species:pokedex-corsola-222:c026729c63",
-        "canonicalId": "candidate:species:pokedex-corsola-11125:96c663740a",
-        "sourceKey": "pokedex:corsola:11125",
+        "canonicalId": "candidate:move:wild-charge:4afd7571e0",
+        "sourceKey": "wild-charge",
         "status": "accepted"
       }
     ],
@@ -5126,6 +4612,895 @@
       {
         "canonicalId": "candidate:type:fairy:5a81e6aa75",
         "sourceKey": "fairy",
+        "status": "accepted"
+      }
+    ],
+    "abilities": [
+      {
+        "canonicalId": "candidate:ability:adaptability:661559a2e0",
+        "sourceKey": "adaptability",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:aftermath:bf648e3127",
+        "sourceKey": "aftermath",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:analytic:6710e49eeb",
+        "sourceKey": "analytic",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:anger-point:1c6ac58a8a",
+        "sourceKey": "anger-point",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:anticipation:24dfc16f0c",
+        "sourceKey": "anticipation",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:arena-trap:2f56256ba1",
+        "sourceKey": "arena-trap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:battle-armor:e88229141f",
+        "sourceKey": "battle-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:berserk:30282be22e",
+        "sourceKey": "berserk",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:big-pecks:5257844383",
+        "sourceKey": "big-pecks",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:blaze:88a5c49d8c",
+        "sourceKey": "blaze",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:chlorophyll:e883803e27",
+        "sourceKey": "chlorophyll",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:clear-body:40a5b2701d",
+        "sourceKey": "clear-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cloud-nine:34f1d2c776",
+        "sourceKey": "cloud-nine",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:competitive:020dae3832",
+        "sourceKey": "competitive",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:compound-eyes:3e41ec25ae",
+        "sourceKey": "compound-eyes",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:contrary:112d857213",
+        "sourceKey": "contrary",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cud-chew:f3d278083e",
+        "sourceKey": "cud-chew",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:curious-medicine:e814d4745a",
+        "sourceKey": "curious-medicine",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cursed-body:73f89f4417",
+        "sourceKey": "cursed-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:cute-charm:f6ad0a5390",
+        "sourceKey": "cute-charm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:damp:1b0cf192c1",
+        "sourceKey": "damp",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:defiant:1cc9ffadf6",
+        "sourceKey": "defiant",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:download:68ff63fb82",
+        "sourceKey": "download",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:drizzle:424f22be65",
+        "sourceKey": "drizzle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:drought:caaed8c4eb",
+        "sourceKey": "drought",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:dry-skin:c31e8a3578",
+        "sourceKey": "dry-skin",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:early-bird:6b845af518",
+        "sourceKey": "early-bird",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:effect-spore:7d1cf8761f",
+        "sourceKey": "effect-spore",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:filter:dfc3376b82",
+        "sourceKey": "filter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:flame-body:593421c987",
+        "sourceKey": "flame-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:flash-fire:44b3b76f5b",
+        "sourceKey": "flash-fire",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:forewarn:3309178b5b",
+        "sourceKey": "forewarn",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:friend-guard:d3dc53a068",
+        "sourceKey": "friend-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:frisk:1949ba43f8",
+        "sourceKey": "frisk",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:fur-coat:2ab3ff6ed9",
+        "sourceKey": "fur-coat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:galvanize:5ef21a7db8",
+        "sourceKey": "galvanize",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:gluttony:133579cb43",
+        "sourceKey": "gluttony",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:guts:36bf28efea",
+        "sourceKey": "guts",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:harvest:d087ee8196",
+        "sourceKey": "harvest",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:healer:44f4ea1dbf",
+        "sourceKey": "healer",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:honey-gather:65c9999b9e",
+        "sourceKey": "honey-gather",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:huge-power:097c8762f3",
+        "sourceKey": "huge-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:hustle:b01928cd61",
+        "sourceKey": "hustle",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:hydration:4163fe8dc2",
+        "sourceKey": "hydration",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:hyper-cutter:57c021a89f",
+        "sourceKey": "hyper-cutter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:ice-body:9f942391a0",
+        "sourceKey": "ice-body",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:illuminate:f63a8387f3",
+        "sourceKey": "illuminate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:immunity:43e63f4a1c",
+        "sourceKey": "immunity",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:imposter:91d0660ed1",
+        "sourceKey": "imposter",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:infiltrator:eb1dc8706e",
+        "sourceKey": "infiltrator",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:inner-focus:d1e11cbe3d",
+        "sourceKey": "inner-focus",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:insomnia:75eb93fd0d",
+        "sourceKey": "insomnia",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:intimidate:ffa53c9ada",
+        "sourceKey": "intimidate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:iron-fist:40bb289869",
+        "sourceKey": "iron-fist",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:justified:a4dd766615",
+        "sourceKey": "justified",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:keen-eye:459dbad828",
+        "sourceKey": "keen-eye",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:leaf-guard:ec996395e5",
+        "sourceKey": "leaf-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:levitate:21b41c0332",
+        "sourceKey": "levitate",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:light-metal:72966ee97d",
+        "sourceKey": "light-metal",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:lightning-rod:0a688760d8",
+        "sourceKey": "lightning-rod",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:limber:5da180dc7e",
+        "sourceKey": "limber",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:liquid-ooze:c1e5a06395",
+        "sourceKey": "liquid-ooze",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magic-bounce:106126c5fe",
+        "sourceKey": "magic-bounce",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magic-guard:1ff6982228",
+        "sourceKey": "magic-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magma-armor:bd15de9280",
+        "sourceKey": "magma-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:magnet-pull:9f4241a24c",
+        "sourceKey": "magnet-pull",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:marvel-scale:53bcae3cbd",
+        "sourceKey": "marvel-scale",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:misty-surge:cbb91d71c2",
+        "sourceKey": "misty-surge",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:mold-breaker:fef3f3635b",
+        "sourceKey": "mold-breaker",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:moody:5654179bcb",
+        "sourceKey": "moody",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:moxie:19faf1bb25",
+        "sourceKey": "moxie",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:multiscale:1a644e8fe5",
+        "sourceKey": "multiscale",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:natural-cure:e5b23fc3e0",
+        "sourceKey": "natural-cure",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:neutralizing-gas:c771edba19",
+        "sourceKey": "neutralizing-gas",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:no-guard:d66a417d1d",
+        "sourceKey": "no-guard",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:oblivious:db0f1125da",
+        "sourceKey": "oblivious",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:overcoat:b7524b5d32",
+        "sourceKey": "overcoat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:overgrow:aeaf91a0d6",
+        "sourceKey": "overgrow",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:own-tempo:eb24d00818",
+        "sourceKey": "own-tempo",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pastel-veil:1386374c6d",
+        "sourceKey": "pastel-veil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pickpocket:afc82785f0",
+        "sourceKey": "pickpocket",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pickup:1f64847ea5",
+        "sourceKey": "pickup",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:plus:383ef36928",
+        "sourceKey": "plus",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:poison-point:c46ffc3e2a",
+        "sourceKey": "poison-point",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:poison-touch:3f5bd6ea24",
+        "sourceKey": "poison-touch",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:power-of-alchemy:06f20a6d1a",
+        "sourceKey": "power-of-alchemy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:prankster:2c0e0571a2",
+        "sourceKey": "prankster",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:pressure:b667446e6e",
+        "sourceKey": "pressure",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:quick-draw:930ff35aab",
+        "sourceKey": "quick-draw",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:quick-feet:21a2ef2d53",
+        "sourceKey": "quick-feet",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rain-dish:308a636cd3",
+        "sourceKey": "rain-dish",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rattled:a818cbccc7",
+        "sourceKey": "rattled",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:reckless:d7c5630b7d",
+        "sourceKey": "reckless",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:regenerator:5ba403a393",
+        "sourceKey": "regenerator",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rivalry:204507d4e9",
+        "sourceKey": "rivalry",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:rock-head:6b5413a8ea",
+        "sourceKey": "rock-head",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:run-away:8f672c9063",
+        "sourceKey": "run-away",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-force:d7fbbe806d",
+        "sourceKey": "sand-force",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-rush:76a5a54e63",
+        "sourceKey": "sand-rush",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-stream:e9bcf71d6b",
+        "sourceKey": "sand-stream",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sand-veil:a639c3b5a3",
+        "sourceKey": "sand-veil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sap-sipper:1420bdc0d2",
+        "sourceKey": "sap-sipper",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:scrappy:b73b6cac02",
+        "sourceKey": "scrappy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:screen-cleaner:e1c7db6c49",
+        "sourceKey": "screen-cleaner",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:serene-grace:c9965e386c",
+        "sourceKey": "serene-grace",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shadow-tag:39df69505e",
+        "sourceKey": "shadow-tag",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shed-skin:6b99c835d7",
+        "sourceKey": "shed-skin",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sheer-force:8b7170a62f",
+        "sourceKey": "sheer-force",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shell-armor:f5393780d5",
+        "sourceKey": "shell-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:shield-dust:1cc913de1a",
+        "sourceKey": "shield-dust",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:skill-link:532983cbce",
+        "sourceKey": "skill-link",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:slush-rush:9e863f726f",
+        "sourceKey": "slush-rush",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sniper:d1a4be19b3",
+        "sourceKey": "sniper",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:snow-cloak:c98937a7e1",
+        "sourceKey": "snow-cloak",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:snow-warning:00b2fc3646",
+        "sourceKey": "snow-warning",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:solar-power:b1ddd165fe",
+        "sourceKey": "solar-power",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:soundproof:994a857030",
+        "sourceKey": "soundproof",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:speed-boost:b327e1e14c",
+        "sourceKey": "speed-boost",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:static:2053dbbf6e",
+        "sourceKey": "static",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:steadfast:9fe92c4232",
+        "sourceKey": "steadfast",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:stench:f3c7279229",
+        "sourceKey": "stench",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sticky-hold:9e6ce4e631",
+        "sourceKey": "sticky-hold",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:sturdy:25a5c452fb",
+        "sourceKey": "sturdy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:suction-cups:41d85977ba",
+        "sourceKey": "suction-cups",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:super-luck:a2f81c1f28",
+        "sourceKey": "super-luck",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:surge-surfer:0bca869159",
+        "sourceKey": "surge-surfer",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:swarm:44eb92b463",
+        "sourceKey": "swarm",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:swift-swim:2598b8c27e",
+        "sourceKey": "swift-swim",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:synchronize:2823580ca7",
+        "sourceKey": "synchronize",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tangled-feet:515c6d88e2",
+        "sourceKey": "tangled-feet",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tangling-hair:7c1a10d0fa",
+        "sourceKey": "tangling-hair",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:technician:29ba9d9cef",
+        "sourceKey": "technician",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:telepathy:2f4e79a308",
+        "sourceKey": "telepathy",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:thick-fat:2033fffd2d",
+        "sourceKey": "thick-fat",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tinted-lens:7774c95bbb",
+        "sourceKey": "tinted-lens",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:torrent:cad4058f8c",
+        "sourceKey": "torrent",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:tough-claws:17cc260974",
+        "sourceKey": "tough-claws",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:trace:eafe895eb8",
+        "sourceKey": "trace",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:unaware:a5e7591128",
+        "sourceKey": "unaware",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:unburden:81df5284d2",
+        "sourceKey": "unburden",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:unnerve:1913bc0491",
+        "sourceKey": "unnerve",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:vital-spirit:0d7993076f",
+        "sourceKey": "vital-spirit",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:volt-absorb:e4724713af",
+        "sourceKey": "volt-absorb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:water-absorb:b42496fe36",
+        "sourceKey": "water-absorb",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:water-veil:0cdd7b454f",
+        "sourceKey": "water-veil",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:weak-armor:3b8dc7f1eb",
+        "sourceKey": "weak-armor",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:ability:wonder-skin:161331e832",
+        "sourceKey": "wonder-skin",
+        "status": "accepted"
+      }
+    ],
+    "items": [
+      {
+        "canonicalId": "candidate:item:lonely-mint:0cd3a6b9df",
+        "sourceKey": "lonely-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:adamant-mint:b66db404d2",
+        "sourceKey": "adamant-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:naughty-mint:c837f65756",
+        "sourceKey": "naughty-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:brave-mint:26b2ccbb74",
+        "sourceKey": "brave-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:bold-mint:5a4b70c1ac",
+        "sourceKey": "bold-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:impish-mint:44459f1b9f",
+        "sourceKey": "impish-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:lax-mint:d1292d1c81",
+        "sourceKey": "lax-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:relaxed-mint:4c1b69c45b",
+        "sourceKey": "relaxed-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:modest-mint:1ba70da13c",
+        "sourceKey": "modest-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:mild-mint:f934df6273",
+        "sourceKey": "mild-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:rash-mint:c1443b2431",
+        "sourceKey": "rash-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:quiet-mint:e75671c081",
+        "sourceKey": "quiet-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:calm-mint:fe217866a0",
+        "sourceKey": "calm-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:gentle-mint:9abffc079b",
+        "sourceKey": "gentle-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:careful-mint:23f4960320",
+        "sourceKey": "careful-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:sassy-mint:83ac900d70",
+        "sourceKey": "sassy-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:timid-mint:33218531ac",
+        "sourceKey": "timid-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:hasty-mint:cae38438d6",
+        "sourceKey": "hasty-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:jolly-mint:e43b80793e",
+        "sourceKey": "jolly-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:naive-mint:adc2dd9cf8",
+        "sourceKey": "naive-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:serious-mint:1510661446",
+        "sourceKey": "serious-mint",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:bottle-cap:6c09a69c91",
+        "sourceKey": "bottle-cap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:gold-bottle-cap:e02d613f7c",
+        "sourceKey": "gold-bottle-cap",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:fast-ball:97bc4e9551",
+        "sourceKey": "fast-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:friend-ball:3db37d2041",
+        "sourceKey": "friend-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:heavy-ball:e883eca3f1",
+        "sourceKey": "heavy-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:level-ball:b8cb59288b",
+        "sourceKey": "level-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:love-ball:70b65e8715",
+        "sourceKey": "love-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:lure-ball:8eec17db9c",
+        "sourceKey": "lure-ball",
+        "status": "accepted"
+      },
+      {
+        "canonicalId": "candidate:item:moon-ball:bc7a6ff49d",
+        "sourceKey": "moon-ball",
         "status": "accepted"
       }
     ]

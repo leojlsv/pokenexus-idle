@@ -2,14 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import {
   PACKAGE_NAME,
   SCHEMA_VERSION,
-  loadPublishedBundle,
   parseGameDataCandidate,
   parseGameDataManifest,
   parseMoveDefinitionV1,
   parseSpeciesDefinitionV2,
-  stageCandidate,
   validateGameDataCandidate,
-  validatePublicationReadiness,
 } from "./index";
 
 describe("game-data entrypoint", () => {
@@ -17,16 +14,13 @@ describe("game-data entrypoint", () => {
     expect(PACKAGE_NAME).toBe("@pokenexus/game-data");
   });
 
-  it("exposes the accepted schema, validator and publication/loading surface", () => {
+  it("exposes the accepted runtime schema and validators", () => {
     expect(SCHEMA_VERSION).toBe("3");
     expect(parseSpeciesDefinitionV2).toBeTypeOf("function");
     expect(parseMoveDefinitionV1).toBeTypeOf("function");
     expect(parseGameDataCandidate).toBeTypeOf("function");
     expect(validateGameDataCandidate).toBeTypeOf("function");
     expect(parseGameDataManifest).toBeTypeOf("function");
-    expect(validatePublicationReadiness).toBeTypeOf("function");
-    expect(stageCandidate).toBeTypeOf("function");
-    expect(loadPublishedBundle).toBeTypeOf("function");
   });
 
   it("imports without performing network I/O", async () => {

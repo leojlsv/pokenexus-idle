@@ -6,7 +6,8 @@ import type {
   StatBlock,
   TypeId,
 } from "@pokenexus/game-types";
-import { BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION } from "./bulbapedia-learnset-parser.js";
+import { BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION } from "./bulbapedia-learnset-parser.js";
+import { BULBAPEDIA_MOVE_TARGET_PARSER_VERSION } from "./bulbapedia-move-target.js";
 import {
   BULBAPEDIA_HISTORICAL_SCALAR_PROOF_PARSER_VERSION,
   BULBAPEDIA_SM_TRADITIONAL_CUTOFF,
@@ -802,6 +803,27 @@ function isPokemonDbMovePageSource(source: SourceRecord): boolean {
   }
 }
 
+function isBulbapediaMoveTargetSource(source: SourceRecord): boolean {
+  if (
+    source.provider !== "bulbapedia" ||
+    source.parserVersion !== BULBAPEDIA_MOVE_TARGET_PARSER_VERSION
+  ) {
+    return false;
+  }
+  try {
+    const url = new URL(source.canonicalUrl);
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "bulbapedia.bulbagarden.net" &&
+      /^\/wiki\/[^/]+_\(move\)$/u.test(decodeURIComponent(url.pathname)) &&
+      url.search === "" &&
+      url.hash === ""
+    );
+  } catch {
+    return false;
+  }
+}
+
 function mainlineSourceMatchesGame(
   source: SourceRecord,
   game: MoveMainlineGame,
@@ -810,7 +832,7 @@ function mainlineSourceMatchesGame(
   if (game === "brilliant-diamond-shining-pearl") {
     if (
       source.provider !== "bulbapedia" ||
-      source.parserVersion !== BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION
+      source.parserVersion !== BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION
     ) return false;
     try {
       const url = new URL(source.canonicalUrl);
@@ -1028,38 +1050,29 @@ export function validateGameDataCandidate(candidate: GameDataCandidate): Validat
         ),
       );
     }
-    if (relation.mainline.selectedGame === "brilliant-diamond-shining-pearl") {
-      const boundLearnset = candidate.catalogs.learnsets.some(
-        (entry) =>
-          entry.moveId === record.id &&
-          entry.sourceGeneration === 8 &&
-          entry.sourceGame === "Brilliant Diamond/Shining Pearl" &&
-          entry.sourceRecordIds.includes(relation.mainline.sourceRecordId),
+    const sourceTargetSource = sourceById.get(relation.sourceTargetSourceRecordId);
+    if (
+      !sourceTargetSource ||
+      (!isPokemonDbMovePageSource(sourceTargetSource) &&
+        !isBulbapediaMoveTargetSource(sourceTargetSource))
+    ) {
+      findings.push(
+        finding(
+          "invalid-move-complement-source",
+          `provenance.moveFactSources.${record.id}.sourceTargetSourceRecordId`,
+          "sourceTarget provenance must reference a versioned PokémonDB Move page or Bulbapedia Move target fallback page",
+        ),
       );
-      if (!boundLearnset) {
-        findings.push(
-          finding(
-            "invalid-move-mainline-source",
-            `provenance.moveFactSources.${record.id}.mainline`,
-            "BDSP mainline scalar provenance must be bound to a BDSP learnset row for the same Move",
-          ),
-        );
-      }
     }
-    for (const [role, roleId] of [
-      ["sourceTargetSourceRecordId", relation.sourceTargetSourceRecordId],
-      ["makesContactSourceRecordId", relation.makesContactSourceRecordId],
-    ] as const) {
-      const source = sourceById.get(roleId);
-      if (!source || !isPokemonDbMovePageSource(source)) {
-        findings.push(
-          finding(
-            "invalid-move-complement-source",
-            `provenance.moveFactSources.${record.id}.${role}`,
-            "sourceTarget/makesContact provenance must reference a versioned PokémonDB Move page",
-          ),
-        );
-      }
+    const makesContactSource = sourceById.get(relation.makesContactSourceRecordId);
+    if (!makesContactSource || !isPokemonDbMovePageSource(makesContactSource)) {
+      findings.push(
+        finding(
+          "invalid-move-complement-source",
+          `provenance.moveFactSources.${record.id}.makesContactSourceRecordId`,
+          "makesContact provenance must reference a versioned PokémonDB Move page",
+        ),
+      );
     }
     const zaSource = sourceById.get(relation.zaBaseCooldownSourceRecordId);
     if (!zaSource || !isBulbapediaZaMoveListSource(zaSource)) {

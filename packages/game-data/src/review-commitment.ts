@@ -1,6 +1,7 @@
 import type { GameDataCandidate, MappingRegistry } from "./schema.js";
+import type { RawExtractedSnapshot } from "./normalization.js";
 
-export const REVIEW_STAGE_VERSION = "task-087-review-stage-v2" as const;
+export const REVIEW_STAGE_VERSION = "task-087-review-stage-v3" as const;
 export const REVIEW_SCOPE = {
   kind: "core-kanto-johto",
   nationalDexMin: 1,
@@ -36,6 +37,7 @@ export interface ReviewStageManifest {
 
 export interface ReviewApproval {
   manifest: ReviewStageManifest;
+  reviewedRawExtracted: RawExtractedSnapshot;
   reviewedCandidate: GameDataCandidate;
   reviewedMappingRegistry: MappingRegistry;
   approvedReviewHash: string;

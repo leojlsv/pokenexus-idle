@@ -95,7 +95,9 @@ function parsePayload(source: BulbapediaHistoricalScalarProofSource): Record<str
       return asRecord(JSON.parse(source.text), "Bulbapedia historical scalar proof response");
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new Error("Bulbapedia historical scalar proof response contains malformed JSON");
+        throw new Error("Bulbapedia historical scalar proof response contains malformed JSON", {
+          cause: error,
+        });
       }
       throw error;
     }
@@ -347,6 +349,12 @@ function nullableScalar(value: string, label: string): number | null {
   return exactInteger(visible, label, 0);
 }
 
+function nullablePower(value: string): number | null {
+  const visible = parseTtVisible(value, "MoveInfobox power");
+  if (visible === "—" || visible === "Varies") return null;
+  return exactInteger(visible, "MoveInfobox power", 0);
+}
+
 function parseCategory(value: string): "physical" | "special" | "status" {
   const visible = parseTtVisible(value, "MoveInfobox damagecategory").toLowerCase();
   if (visible !== "physical" && visible !== "special" && visible !== "status") {
@@ -442,7 +450,7 @@ export function parseBulbapediaHistoricalScalarProof(
     typeSourceKey: canonicalizeSourceName(parsedType, "Bulbapedia Type name"),
     category: parseCategory(requiredField(fields, "damagecategory")),
     basePp,
-    power: nullableScalar(requiredField(fields, "power"), "MoveInfobox power"),
+    power: nullablePower(requiredField(fields, "power")),
     accuracy: nullableScalar(requiredField(fields, "accuracy"), "MoveInfobox accuracy"),
     sourceRecordId: source.sourceRecordId,
   };

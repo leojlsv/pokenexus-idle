@@ -58,6 +58,10 @@ export interface ExtractedPokemonDbMove {
   basePp: number;
   makesContact: boolean;
   sourceTarget: ExtractedMoveSourceTarget;
+  /** Exact SourceRecord supporting sourceTarget when it differs from sourceRecordId. */
+  sourceTargetSourceRecordId?: string;
+  /** Exact SourceRecord supporting makesContact when it differs from sourceRecordId. */
+  makesContactSourceRecordId?: string;
   /**
    * Variant-specific factual input. PokémonDB mainline parsing never supplies
    * this field. An approved external Z-A source/enrichment step must provide
@@ -105,6 +109,13 @@ export type ExtractedMoveSourceTarget =
   | "opponents-side"
   | "users-side"
   | "varies";
+
+export type ExtractedPokemonDbMoveWithUnknownTarget = Omit<
+  ExtractedPokemonDbMove,
+  "sourceTarget"
+> & {
+  sourceTarget: ExtractedMoveSourceTarget | null;
+};
 
 export interface ExtractedPokemonDbType {
   sourceKey: string;
@@ -576,19 +587,26 @@ const MOVE_TARGET_DESCRIPTIONS: Record<string, ExtractedMoveSourceTarget> = {
   "Varies according to the move.": "varies",
 };
 
-function parseMoveTarget(html: string): ExtractedMoveSourceTarget {
+function parseMoveTarget(html: string): ExtractedMoveSourceTarget | null {
   const heading = /<h2\b[^>]*>\s*Move target\s*<\/h2>/i.exec(html);
   if (!heading || heading.index === undefined) throw new Error("Move target: required structured section is missing");
   const remainder = html.slice(heading.index + heading[0].length);
-  const paragraph = /<p\b[^>]*>([\s\S]*?)<\/p>/i.exec(remainder);
-  if (!paragraph) throw new Error("Move target: labeled target description is missing");
+  const nextHeading = /<h2\b/i.exec(remainder);
+  const section = remainder.slice(0, nextHeading?.index ?? remainder.length);
+  const paragraph = /<p\b[^>]*>([\s\S]*?)<\/p>/i.exec(section);
+  if (!paragraph) {
+    if (visibleText(section) === "Currently unknown.") return null;
+    throw new Error("Move target: labeled target description is missing");
+  }
   const description = visibleText(paragraph[1]);
   const mapped = MOVE_TARGET_DESCRIPTIONS[description];
   if (!mapped) throw new Error(`Move target: unmapped source classification ${JSON.stringify(description)}`);
   return mapped;
 }
 
-export function parsePokemonDbMovePage(source: PokemonDbHtmlSource): ExtractedPokemonDbMove {
+export function parsePokemonDbMovePageWithUnknownTarget(
+  source: PokemonDbHtmlSource,
+): ExtractedPokemonDbMoveWithUnknownTarget {
   const slug = sourceSlugFromUrl(source, "/move/");
   const moveDataHeading = /<h2\b[^>]*>\s*Move data\s*<\/h2>/i.exec(source.html);
   if (!moveDataHeading || moveDataHeading.index === undefined) throw new Error("Move data: required structured section is missing");
@@ -614,6 +632,17 @@ export function parsePokemonDbMovePage(source: PokemonDbHtmlSource): ExtractedPo
     makesContact: contact === "yes",
     sourceTarget: parseMoveTarget(source.html),
     sourceRecordId: source.sourceRecordId,
+  };
+}
+
+export function parsePokemonDbMovePage(source: PokemonDbHtmlSource): ExtractedPokemonDbMove {
+  const record = parsePokemonDbMovePageWithUnknownTarget(source);
+  if (record.sourceTarget === null) {
+    throw new Error("Move target: source classification is explicitly unknown");
+  }
+  return {
+    ...record,
+    sourceTarget: record.sourceTarget,
   };
 }
 

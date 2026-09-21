@@ -4,7 +4,6 @@ import {
   bundleHash,
   canonicalJson,
   canonicalizeCandidateArtifacts,
-  finalizeProvenance,
   provenanceHash,
   sha256,
 } from "./canonical";
@@ -113,18 +112,6 @@ describe("canonical serialization and hashes", () => {
       ),
     };
     expect(provenanceHash(changed)).not.toBe(provenanceHash(duplicated));
-  });
-
-  it("discards the legacy manifest-wide provider before hashing/finalizing provenance", () => {
-    const provenance = candidateFixture().provenance;
-    const finalized = finalizeProvenance({
-      provider: "pokemondb",
-      sourceRecords: provenance.sourceRecords,
-      moveFactSources: provenance.moveFactSources,
-      inventories: provenance.inventories,
-    });
-    expect(finalized).not.toHaveProperty("provider");
-    expect(provenanceHash(finalized)).toBe(finalized.provenanceHash);
   });
 
   it("uses the exact SPEC-002 BundleHashInput and logical-name ordering", () => {

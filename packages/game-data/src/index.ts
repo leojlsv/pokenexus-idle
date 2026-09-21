@@ -1,8 +1,5 @@
 export const PACKAGE_NAME = "@pokenexus/game-data" as const;
 
-// Public static-data contract surface. Maintenance/crawler internals intentionally remain
-// package-private; consumers get only canonical schema/validation, deterministic serialization
-// helpers and immutable staged/published bundle APIs from the package root.
-export * from "./schema.js";
-export * from "./canonical.js";
-export * from "./publication.js";
+// Default entrypoint is runtime-safe. Node-only publication/maintenance helpers live under
+// `@pokenexus/game-data/node` so Cloudflare consumers cannot pull filesystem code accidentally.
+export * from "./runtime.js";

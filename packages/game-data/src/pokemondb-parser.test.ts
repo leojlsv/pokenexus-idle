@@ -6,6 +6,7 @@ import {
   parsePokemonDbItemPage,
   parsePokemonDbLearnsetPage,
   parsePokemonDbMovePage,
+  parsePokemonDbMovePageWithUnknownTarget,
   parsePokemonDbSpeciesPage,
   parsePokemonDbTypeChartPage,
 } from "./pokemondb-parser";
@@ -285,6 +286,26 @@ describe("versioned PokémonDB DATA-only parser", () => {
         ),
       ).sourceTarget,
     ).toBe("random-opponent");
+  });
+
+  it("exposes only the exact structured unknown-target sentinel to the maintenance fallback path", () => {
+    const html = `
+      <main><h1>Psychic Noise (move)</h1>
+      <h2>Move data</h2><table class="vitals-table"><tbody>
+        <tr><th>Type</th><td><a href="/type/psychic">Psychic</a></td></tr>
+        <tr><th>Category</th><td>Special</td></tr>
+        <tr><th>Power</th><td>75</td></tr><tr><th>Accuracy</th><td>100</td></tr>
+        <tr><th>PP</th><td>10</td></tr>
+        <tr><th>Makes contact?</th><td>No</td></tr><tr><th>Introduced</th><td>Generation 9</td></tr>
+      </tbody></table>
+      <h2>Move target</h2>
+      Currently unknown.
+      <h2>Learnt by TM</h2>
+      </main>`;
+    const moveSource = source("https://pokemondb.net/move/psychic-noise", html);
+
+    expect(parsePokemonDbMovePageWithUnknownTarget(moveSource).sourceTarget).toBeNull();
+    expect(() => parsePokemonDbMovePage(moveSource)).toThrow(/explicitly unknown/i);
   });
 
   it("keeps Ability and Item extraction to identity/structured classification only", () => {

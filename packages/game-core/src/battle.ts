@@ -607,7 +607,7 @@ export function resolveUseMove(
     }
 
     // Critical hit roll (if policy is normal)
-    let isCrit = false;
+    let isCrit: boolean;
     if (moveRule.criticalPolicy === "always") {
       isCrit = true;
     } else if (moveRule.criticalPolicy === "never") {

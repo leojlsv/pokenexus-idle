@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION,
+  BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION,
   BULBAPEDIA_GEN9_LEARNSET_PARSER_VERSION,
   bulbapediaLearnsetDiscoveryKey,
   canonicalizeBulbapediaLearnsetSpeciesName,
@@ -259,8 +259,8 @@ describe("Bulbapedia Generation IX learnset parser", () => {
 
 describe("Bulbapedia Generation VIII BDSP learnset fallback parser", () => {
   it("extracts the approved BDSP level, TM and breeding rows with historical provenance", () => {
-    expect(BULBAPEDIA_GEN8_BDSP_LEARNSET_PARSER_VERSION).toBe(
-      "bulbapedia-gen8-bdsp-learnset-v5",
+    expect(BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION).toBe(
+      "bulbapedia-gen8-learnset-v6",
     );
     const result = parseBulbapediaGen8BdspLearnset(
       gen8Source(

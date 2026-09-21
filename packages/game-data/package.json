@@ -9,6 +9,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
     }
   },
   "files": ["dist"],
@@ -17,15 +25,16 @@
   },
   "scripts": {
     "prebuild": "corepack pnpm --filter @pokenexus/game-types build",
-    "build": "tsc -p tsconfig.json",
+    "build": "node ../../scripts/clean-game-data-dist.mjs && tsc -p tsconfig.build.json",
     "pretypecheck": "corepack pnpm --filter @pokenexus/game-types build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "test:worker-compat": "corepack pnpm run build && node ../../scripts/game-data-worker-compat.mjs",
     "lint": "eslint .",
     "ingest": "corepack pnpm run build && node dist/maintenance-cli.js"
   },
   "devDependencies": {
     "typescript": "^5.7.3",
-    "vitest": "^3.0.4"
+    "vitest": "4.1.11"
   }
 }
