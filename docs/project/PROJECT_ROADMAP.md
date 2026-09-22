@@ -60,7 +60,7 @@
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 66.
-- Task-count completion: **27 / 94 = 28.7%**.
+- Task-count completion: **28 / 94 = 29.8%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
