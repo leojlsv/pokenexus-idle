@@ -765,7 +765,21 @@ Canonical Move validation now requires:
 - Species and Move references resolve;
 - generation/game scope present;
 - learn method recognized;
-- method-specific required qualifiers present.
+- method-specific required qualifiers present;
+- every published Species has at least one current Learnset row;
+- every current published MoveDefinition is referenced by at least one current Learnset row;
+- each Species resolves to exactly one selected Learnset generation/game source context;
+- machine identity is scoped by generation + game + machine identifier and cannot map to multiple
+  Moves inside the same source context;
+- once Species/Move mappings are canonical, accepted Learnset inventory identity and published
+  Learnset rows match exactly 1:1.
+
+### Persistent forms
+
+- `formLabel` and `baseSpeciesId` are either both present or both absent;
+- a form points directly to a canonical base Species rather than another form;
+- a form retains the National Dex number of its base Species;
+- a form cannot be introduced before its base Species.
 
 ### Type matrix
 
@@ -779,7 +793,22 @@ Canonical Move validation now requires:
 - every normalized source-backed record traces to at least one source record;
 - every source record has URL/fetchedAt/parser version/source-content hash;
 - no forbidden asset/editorial/layout fields in raw extracted or normalized output;
-- no unapproved-provider data or unresolved cross-provider disagreement silently mixed into the bundle.
+- no unapproved-provider data or unresolved cross-provider disagreement silently mixed into the bundle;
+- semantically equivalent duplicate SourceRecords are rejected;
+- unreferenced SourceRecords must be explicitly recognized retained ingestion/audit evidence rather
+  than unexplained residue;
+- cross-surface SourceRecord reuse is fail-closed except for explicitly approved evidence patterns;
+- the current Bulbapedia type-chart SourceRecord may intentionally support both Type definitions and
+  current type-effectiveness rows when provider, parser version and canonical URL match the approved
+  type-chart surface exactly;
+- Species SourceRecords shared across different National Dex identities are allowed only for the
+  approved aggregate Regional-form evidence surface;
+- one Learnset SourceRecord cannot provide Learnset evidence across different National Dex
+  identities;
+- a SourceRecord shared by Species and Learnset evidence must remain within one National Dex
+  identity;
+- a SourceRecord shared by Learnset and Move facts is allowed only for the approved historical
+  BDSP mainline scalar-proof role and cannot simultaneously satisfy unrelated Move provenance roles.
 
 Any required validation failure blocks canonical publication.
 

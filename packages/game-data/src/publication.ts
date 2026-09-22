@@ -38,6 +38,7 @@ import { BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION } from "./bulbapedia-learnset-p
 import { BULBAPEDIA_MOVE_TARGET_PARSER_VERSION } from "./bulbapedia-move-target.js";
 import type { ReviewApproval } from "./review-commitment.js";
 import { verifyReviewApproval } from "./review-approval.js";
+import { validateCandidatePublicationSanity } from "./publication-sanity.js";
 
 export type { ReviewApproval, ReviewStageManifest } from "./review-commitment.js";
 
@@ -185,7 +186,10 @@ function equalStrings(left: string[], right: string[]): boolean {
 }
 
 export function validatePublicationReadiness(candidate: GameDataCandidate, registry: MappingRegistry): ValidationFinding[] {
-  const findings = [...validateMappingRegistry(registry)];
+  const findings = [
+    ...validateMappingRegistry(registry),
+    ...validateCandidatePublicationSanity(candidate, registry),
+  ];
   for (const [surface, entries] of Object.entries(registry) as Array<[keyof MappingRegistry, MappingRegistry[keyof MappingRegistry]]>) {
     for (const entry of entries) {
       if (entry.status === "candidate") {

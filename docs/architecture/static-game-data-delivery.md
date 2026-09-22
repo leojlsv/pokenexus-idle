@@ -69,7 +69,22 @@ paths.
 
 - game-data package tests validate lazy shard loading plus immutable v1 backward resolution and
   corrected v2 resolution;
+- candidate publication sanity is part of `validatePublicationReadiness(...)`, so normalized
+  maintenance validation, review-stage construction, staging, and the final atomic publication
+  revalidation share the same Learnset/forms/provenance integrity gate;
+- repository sanity tooling under `scripts/game-data-sanity/` validates the newest immutable
+  publication and compares it with the immediately preceding manifest-selected publication; this
+  latest/previous discovery is CI/maintenance behavior only and does not weaken the runtime
+  requirement to request an explicit `gameDataVersion`;
+- before semantic sanity checks, repository tooling independently verifies the canonical manifest
+  contract and bytes, supported schema/normalizer versions, all catalog counts against artifact
+  descriptors, artifact hashes/counts, provenance/source-inventory hashes and the release
+  `bundleHash`; comparison baselines must produce a fresh report and cannot reuse the candidate
+  report on child failure;
+- dedicated package tests cover candidate sanity, staging rejection, comparison classification,
+  automatic publication selection, and stale-report cleanup;
 - `test:worker-compat` bundles the runtime entrypoint with Wrangler under the strict realtime
   Worker target (no `nodejs_compat`);
-- CI runs the Worker compatibility gate and production dependency audit;
+- CI runs package/workspace tests, current publication sanity, current-vs-previous comparison,
+  Worker compatibility and the production dependency audit;
 - live provider crawling remains opt-in maintenance and is never a routine CI prerequisite.

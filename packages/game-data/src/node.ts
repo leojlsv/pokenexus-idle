@@ -3,3 +3,4 @@
 export * from "./runtime.js";
 export * from "./canonical.js";
 export * from "./publication.js";
+export * from "./publication-sanity.js";

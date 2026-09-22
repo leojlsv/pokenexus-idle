@@ -306,10 +306,18 @@ export function provenanceFixture(): ProvenanceManifest {
       }),
       inventoryFixture({
         surface: "learnsets",
-        discoveredSourceKeys: ["alpha:gen9:sv:tackle:level-up"],
-        acceptedMappingKeys: ["alpha:gen9:sv:tackle:level-up"],
-        extractedSourceKeys: ["alpha:gen9:sv:tackle:level-up"],
-        normalizedSourceKeys: ["alpha:gen9:sv:tackle:level-up"],
+        discoveredSourceKeys: [
+          JSON.stringify(["alpha", "tackle", 9, "Scarlet/Violet", "level-up", 1, null]),
+        ],
+        acceptedMappingKeys: [
+          JSON.stringify(["alpha", "tackle", 9, "Scarlet/Violet", "level-up", 1, null]),
+        ],
+        extractedSourceKeys: [
+          JSON.stringify(["alpha", "tackle", 9, "Scarlet/Violet", "level-up", 1, null]),
+        ],
+        normalizedSourceKeys: [
+          JSON.stringify(["alpha", "tackle", 9, "Scarlet/Violet", "level-up", 1, null]),
+        ],
       }),
       inventoryFixture({
         surface: "type-effectiveness",
