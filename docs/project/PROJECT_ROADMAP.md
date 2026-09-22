@@ -10,11 +10,11 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, and baseline progression/Inventory/Reward persistence are integrated. Source-specific reward/content behavior remains separately planned.
 
-**Current work:** No implementation task is currently ACTIVE. `TASK-024 — Progression / Inventory / Reward Implementation` is **DONE** after final QA **READY**, IA **PASS**, Class B acceptance **PASS**, Human Owner history authorization and integration to `main`.
+**Current work:** `TASK-088 — Move Acquisition / Eligibility Rules Spec` is **ACCEPTANCE** after Human Owner approval of SPEC-010. TASK-024 is **DONE**; TASK-089 is now dependency-clear on TASK-088 semantics but remains **PLANNED** until explicitly activated.
 
-**Current action:** PM selects/activates the next roadmap task explicitly. TASK-088 and TASK-090 remain **PLANNED** and inactive.
+**Current action:** Human Owner has authorized TASK-088 repository history/completion. Freeze and integrate the accepted SPEC-010 snapshot, then close TASK-088 as DONE. TASK-089 and TASK-090 remain **PLANNED** and inactive.
 
-**Next task after TASK-003 acceptance:** no task is auto-activated by TASK-024 completion; select the next roadmap item explicitly.
+**Next task after TASK-003 acceptance:** close TASK-088 only after separate Human Owner history authorization; TASK-089 is the next implementation dependency but is not auto-activated.
 
 **Portfolio status snapshot:**
 
@@ -45,7 +45,7 @@
 | `TASK-087` Static Game Data Catalog & Ingestion Implementation | DONE — corrected v2 published; v1 preserved; all post-promotion gates clean; corrective history explicitly authorized and integrated |
 | `TASK-093` Gameplay Systems & Player Experience Consultant Governance | DONE — independent QA READY, P0/P1/P2/P3 0/0/0/0; Human Owner accepted and authorized repository history; governance integrated on 2026-09-18 |
 
-**Next product milestone:** with canonical static game data and reward-ledger integrity now closed, implement progression/Inventory/reward persistence through TASK-024 while separately defining Move acquisition/eligibility and production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
+**Next product milestone:** with progression/Inventory/reward persistence closed through TASK-024, accept and implement authoritative Move acquisition/eligibility through TASK-088/089 before TASK-025 exposes public Move-loadout mutation; production Move/Ability rule-content coverage remains separately owned by TASK-090/091 before Solo Hunt production content consumes it.
 
 ### Portfolio progress
 
@@ -56,10 +56,10 @@
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 0.
+- ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 0.
-- PLANNED: 66.
+- PLANNED: 65.
 - Task-count completion: **28 / 94 = 29.8%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
@@ -411,7 +411,7 @@ implementation Task before code is written.
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092 and TASK-087 are integrated; TASK-022 remains independent. TASK-023, TASK-088 and TASK-090 are dependency-clear at the portfolio level and remain PLANNED until explicitly materialized through normal governance. TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087 and TASK-024 are integrated. TASK-088 is APPROVED and in ACCEPTANCE pending its authorized history closure; TASK-090 remains dependency-clear but PLANNED/inactive. TASK-089 follows TASK-088 closure, TASK-091 follows TASK-090, and TASK-025 waits for TASK-089. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
@@ -472,8 +472,8 @@ content relies on those mechanics.
 | `TASK-022` Inventory / Item Model Spec | A | DONE | PM → ChatGPT | Fresh QA READY + **IA PASS** after replay/idempotency fix; reconciled current-main QA READY + IA PASS; P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-007 semantics and authorized repository history/completion on 2026-09-18 | TASK-006/013/019/093 | **APPROVED SPEC-007 integrated:** fungible quantity ownership; no gameplay capacity/stack cap; fail-closed overflow; atomic consume/effect; durable source/command correlation prevents replay double-consume; shared Potion evaluator; revival/equipment deferred; TM TASK-088-owned; every valid accepted capture attempt consumes one item whether success or failure |
 | `TASK-023` Reward Ledger & Integrity Model | A | DONE | PM → ChatGPT | QA **READY** + two IA **PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-THREAT`, `SK-PG` | Completed — Human Owner accepted APPROVED SPEC-009 and authorized repository closure on 2026-09-22 | TASK-013/021/022 | APPROVED SPEC-009 integrated: one immutable Reward Resolution per server-authoritative source, then atomic canonical sibling effects + Reward Completion with replay/conflict/OCC/version/privacy/correction invariants; no cadence/scarcity/economy semantics introduced |
 | `TASK-024` Progression / Inventory / Reward Implementation | B | DONE | LD → ChatGPT delegated implementation worker (Copilot quota unavailable) | Final QA **READY** + final IA **PASS**, P0/P1/P2/P3 `0/0/0/0`; Class B functional/architectural acceptance **PASS**; PostgreSQL/API/Worker/workspace gates green | `SK-TDD`, `SK-PG` | Completed — Human Owner authorized repository history/completion on 2026-09-22 | TASK-018/021/022/023/087 | Integrated to `main` at `5bbf540`. Immutable exact context remains historically resolvable while new-use eligibility is evaluated separately for exact pairs, rules-only and game-data-only Rewards. Database PG `51/51`; API PG `22/22` / Reward `9/9`; API unit `56/56`; workspace + Worker gates PASS |
-| `TASK-088` Move Acquisition / Eligibility Rules Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | **HUMAN accepts Move acquisition/eligibility rules** | TASK-006/019/021/022 | **Required advisory consultation: GSC; add PXE if economic/paid/scarcity acquisition channels are proposed.** Define authoritative learned/available-Move semantics distinct from raw Learnset facts; initial Pokémon loadout/bootstrap; level-based availability; TM/machine/tutor/egg/evolution/transfer methods if adopted; permanence/replacement rules; generation/game Learnset interpretation; static-data correction behavior; exact server authority consumed by loadout mutation |
-| `TASK-089` Move Acquisition / Eligibility Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG`, `SK-GAME-ARCH` | PM acceptance | TASK-020/024/087/088 | Implement authoritative eligible/learned-Move source from accepted rules + canonical Learnset/catalog data; persist acquired state only if SPEC requires it; compose level/item acquisition hooks; validate loadout replacement against server authority; bootstrap existing/uninitialized Pokémon deterministically; integration tests |
+| `TASK-088` Move Acquisition / Eligibility Rules Spec | A | ACCEPTANCE | PM → ChatGPT | GSC **PASS** + QA **READY**, P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | Accepted — Human Owner approved SPEC-010 in full and separately authorized repository history/completion on 2026-09-22 | TASK-006/019/021/022 | **APPROVED SPEC-010:** level-up-only derived eligibility; deterministic bootstrap; server-selected exact pair + retained rule-artifact semantics; no automatic loadout rewrite; no learned-set persistence; selected-only grandfathering; machine/TM/tutor/egg/evolution/transfer/reminder acquisition deferred |
+| `TASK-089` Move Acquisition / Eligibility Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG`, `SK-GAME-ARCH` | PM acceptance | TASK-020/024/087/088 | Implement SPEC-010 v1 level-derived Move eligibility + deterministic bootstrap from the exact accepted Learnset context; validate complete loadout replacement against server authority and shared Pokémon OCC; do not persist a learned/acquired Move set and do not add machine/item acquisition hooks unless a later accepted rules extension explicitly expands scope |
 | `TASK-025` Player State API Integration | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-CF-WBP` reference-only | PM acceptance | TASK-020/024/089 | Collection/team/inventory/progression endpoints; expose ordered Move-loadout mutation only through TASK-089 authoritative Move eligibility; authz; optimistic/idempotent command handling |
 
 **Exit criteria:** authenticated players have authoritative collection/team/inventory/progression state suitable for gameplay rewards and team selection.
