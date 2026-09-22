@@ -10,11 +10,11 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, and the corrected canonical static game-data catalog are integrated. Reward/content implementation remains separately planned.
 
-**Current work:** `TASK-023 — Reward Ledger & Integrity Model` is in **ACCEPTANCE** after Human acceptance of APPROVED SPEC-009. It defines reward-source identity, immutable Reward Resolution, atomic sibling effects, replay/idempotency and immutable completion evidence before TASK-024 can implement durable XP/Inventory/reward mutations.
+**Current work:** `TASK-023 — Reward Ledger & Integrity Model` is **DONE** and APPROVED SPEC-009 is integrated into canonical `main`. TASK-024 is now the next progression/inventory/reward implementation task to materialize.
 
-**Current action:** Human Owner accepted SPEC-009 on 2026-09-22 after independent QA **READY** and two reward-integrity/concurrency IA **PASS** results, all P0/P1/P2/P3 `0/0/0/0`. TASK-023 is in ACCEPTANCE awaiting separately authorized repository-history integration and DONE closure; TASK-024 remains unmaterialized until that governed closure. TASK-088 and TASK-090 remain **PLANNED** and inactive.
+**Current action:** TASK-023 history integration/closure was Human-authorized and completed on 2026-09-22. APPROVED SPEC-009 is canonical. TASK-024 is the next task to materialize; TASK-088 and TASK-090 remain **PLANNED** and inactive.
 
-**Next task after TASK-003 acceptance:** TASK-023 has reached ACCEPTANCE with APPROVED SPEC-009 and awaits repository completion. TASK-024 follows after TASK-023 closure; TASK-088 and TASK-090 remain dependency-clear **PLANNED** parallel candidates.
+**Next task after TASK-003 acceptance:** TASK-024 — Progression / Inventory / Reward Implementation. TASK-088 and TASK-090 remain dependency-clear **PLANNED** parallel candidates.
 
 **Portfolio status snapshot:**
 
@@ -45,22 +45,22 @@
 | `TASK-087` Static Game Data Catalog & Ingestion Implementation | DONE — corrected v2 published; v1 preserved; all post-promotion gates clean; corrective history explicitly authorized and integrated |
 | `TASK-093` Gameplay Systems & Player Experience Consultant Governance | DONE — independent QA READY, P0/P1/P2/P3 0/0/0/0; Human Owner accepted and authorized repository history; governance integrated on 2026-09-18 |
 
-**Next product milestone:** with the canonical Species/Move/Learnset catalog now published through TASK-087, separately define reward-ledger integrity and Move acquisition/eligibility; then close production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
+**Next product milestone:** with canonical static game data and reward-ledger integrity now closed, implement progression/Inventory/reward persistence through TASK-024 while separately defining Move acquisition/eligibility and production Move/Ability rule-content coverage before public Move-loadout mutation and Solo Hunt production content consume them.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-093`.
-- DONE: 26.
+- DONE: 27.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 1.
+- ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 67.
-- Task-count completion: **26 / 94 = 27.7%**.
+- Task-count completion: **27 / 94 = 28.7%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -454,7 +454,7 @@ content relies on those mechanics.
 
 ### EPIC-03 — Trainer, Collection, Team, Inventory & Progression
 
-**Status:** IN PROGRESS — TASK-021/022 are complete; TASK-023 / SPEC-009 is the active Class A reward-integrity specification
+**Status:** IN PROGRESS — TASK-021/022/023 are complete; TASK-024 is the next reward/progression implementation line
 **Outcome:** a persistent trainer owns Pokémon/items, builds teams and progresses through server-authoritative rules.
 
 #### STORY-03.1 — Pokémon ownership and team model
@@ -470,7 +470,7 @@ content relies on those mechanics.
 |---|---|---|---|---|---|---|---|---|
 | `TASK-021` XP / Level / Progression Rules Spec | A | DONE | PM → ChatGPT | QA READY + **IA PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`, `SK-GAME-BAL` | Completed — Human Owner accepted SPEC-006 in full and authorized repository completion/history on 2026-09-18 | TASK-019/020 | APPROVED SPEC-006: Pokémon hard Level Cap `200` + species-independent cubic cumulative XP curve; separate **uncapped Player Level** with Level 1/0 XP baseline and cumulative `50*L*(L-1)` curve (`100*L` next-Level cost); server-authoritative grants, Player/Pokémon OCC/idempotency/versioning handoff; feature thresholds/effects remain separately owned |
 | `TASK-022` Inventory / Item Model Spec | A | DONE | PM → ChatGPT | Fresh QA READY + **IA PASS** after replay/idempotency fix; reconciled current-main QA READY + IA PASS; P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-007 semantics and authorized repository history/completion on 2026-09-18 | TASK-006/013/019/093 | **APPROVED SPEC-007 integrated:** fungible quantity ownership; no gameplay capacity/stack cap; fail-closed overflow; atomic consume/effect; durable source/command correlation prevents replay double-consume; shared Potion evaluator; revival/equipment deferred; TM TASK-088-owned; every valid accepted capture attempt consumes one item whether success or failure |
-| `TASK-023` Reward Ledger & Integrity Model | A | ACCEPTANCE | PM → ChatGPT | QA **READY** + two IA **PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-THREAT`, `SK-PG` | Completed — Human Owner accepted APPROVED SPEC-009 on 2026-09-22 | TASK-013/021/022 | APPROVED SPEC-009 freezes one immutable Reward Resolution per server-authoritative source, then atomically applies canonical sibling effects + Reward Completion with replay/conflict/OCC/version/privacy/correction invariants; accepted task now awaits repository-history integration/DONE closure; **PXE/GSC remain N/A while scope stays strictly ledger authority/integrity and introduces no cadence/scarcity/economy semantics** |
+| `TASK-023` Reward Ledger & Integrity Model | A | DONE | PM → ChatGPT | QA **READY** + two IA **PASS**, P0/P1/P2/P3 `0/0/0/0` | `SK-THREAT`, `SK-PG` | Completed — Human Owner accepted APPROVED SPEC-009 and authorized repository closure on 2026-09-22 | TASK-013/021/022 | APPROVED SPEC-009 integrated: one immutable Reward Resolution per server-authoritative source, then atomic canonical sibling effects + Reward Completion with replay/conflict/OCC/version/privacy/correction invariants; no cadence/scarcity/economy semantics introduced |
 | `TASK-024` Progression / Inventory / Reward Implementation | B | PLANNED | LD → Copilot CLI | QA; IA for reward-integrity paths | `SK-TDD`, `SK-PG` | PM acceptance | TASK-018/021/022/023/087 | XP grants; item mutations; reward transactions; canonical static item/data consumption through TASK-087 loaders; emit reward audit events on the TASK-018 substrate; integration tests |
 | `TASK-088` Move Acquisition / Eligibility Rules Spec | A | PLANNED | PM → ChatGPT | QA | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | **HUMAN accepts Move acquisition/eligibility rules** | TASK-006/019/021/022 | **Required advisory consultation: GSC; add PXE if economic/paid/scarcity acquisition channels are proposed.** Define authoritative learned/available-Move semantics distinct from raw Learnset facts; initial Pokémon loadout/bootstrap; level-based availability; TM/machine/tutor/egg/evolution/transfer methods if adopted; permanence/replacement rules; generation/game Learnset interpretation; static-data correction behavior; exact server authority consumed by loadout mutation |
 | `TASK-089` Move Acquisition / Eligibility Implementation | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-PG`, `SK-GAME-ARCH` | PM acceptance | TASK-020/024/087/088 | Implement authoritative eligible/learned-Move source from accepted rules + canonical Learnset/catalog data; persist acquired state only if SPEC requires it; compose level/item acquisition hooks; validate loadout replacement against server authority; bootstrap existing/uninitialized Pokémon deterministically; integration tests |

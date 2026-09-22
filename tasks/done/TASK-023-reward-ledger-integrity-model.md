@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -149,12 +149,10 @@ an Independent Auditor review is required before implementation readiness.
 
 ## Acceptance state
 
-- TASK-023 is in ACCEPTANCE after Human Owner approval and clean QA/IA gates.
+- TASK-023 reached ACCEPTANCE after Human Owner approval and clean QA/IA gates.
 - No production implementation belongs to this specification task; TASK-024 owns implementation.
-- Remaining closure work is repository-history integration and then moving this task record from
-  `tasks/active/` to `tasks/done/` with final roadmap completion metadata.
-- Commit, push and merge remain separately governed Git-history actions and are not authorized by a
-  generic continuation instruction.
+- Human Owner subsequently authorized repository-history integration and governed closure on
+  2026-09-22.
 
 ## Dependencies
 
@@ -178,7 +176,7 @@ an Independent Auditor review is required before implementation readiness.
 
 ## Expected files / boundaries
 
-- `tasks/active/TASK-023-reward-ledger-integrity-model.md`
+- `tasks/done/TASK-023-reward-ledger-integrity-model.md`
 - `docs/specs/SPEC-009-reward-ledger-integrity.md`
 - `docs/project/PROJECT_ROADMAP.md`
 - generated `docs/project/PROJECT_ROADMAP.html`
@@ -187,5 +185,14 @@ No production TypeScript, SQL migration, dependency, lockfile or runtime binding
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`.
-Do not create an implementation-summary/changelog file.
+TASK-023 is DONE. SPEC-009 is APPROVED after independent QA returned READY, two independent
+reward-integrity/concurrency audits returned PASS, all at P0/P1/P2/P3 `0/0/0/0`, and the Human
+Owner accepted the exact reviewed semantic baseline on 2026-09-22.
+
+The accepted specification snapshot was committed as `ab7994c` (`docs(project): approve reward
+ledger integrity spec`), pushed on `spec/TASK-023-reward-ledger-integrity`, and fast-forward
+integrated into canonical `main` after explicit Human Owner authorization on 2026-09-22.
+
+This DONE metadata records governed closure only. TASK-024 owns production progression/Inventory/
+reward persistence and orchestration implementation under APPROVED SPEC-009; TASK-088 and TASK-090
+remain separate planned gameplay-rule/content lines.
