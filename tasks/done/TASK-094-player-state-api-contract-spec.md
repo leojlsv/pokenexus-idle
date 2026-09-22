@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -119,8 +119,11 @@ player-visible, so the contract now explicitly classifies six retained presets a
 product/UX capacity constraint rather than a gameplay-invisible abuse/storage ceiling. The narrow
 wording delta then received fresh **GSC ADVISORY PASS** with no remaining correction. All required
 independent pre-acceptance gates on the Human-revised snapshot are now clear. On 2026-09-22 the Human
-Owner explicitly accepted the complete revised SPEC-011 snapshot. TASK-094 is now in ACCEPTANCE
-pending repository/history closure only; TASK-025 remains blocked until that closure is complete.
+Owner explicitly accepted the complete revised SPEC-011 snapshot. The approved contract was committed
+to canonical `main` at `190ef09` (`docs(project): approve player state api contract`). The Human Owner
+then separately authorized repository/history completion for TASK-094. TASK-094 is now DONE;
+TASK-025 is dependency-clear on SPEC-011/TASK-094 but remains PLANNED/inactive until normal task
+activation.
 
 ## Pre-acceptance gate evidence
 
@@ -170,6 +173,23 @@ TASK-089-only Move mutation authority boundary.
 ## Acceptance state
 
 - SPEC-011 is **APPROVED**.
-- TASK-094 is **ACCEPTANCE** pending separate repository/history completion authorization and closure.
-- TASK-025 remains **PLANNED** and must not start until TASK-094 is formally completed/integrated.
-- No TASK-094 Git/history mutation has been authorized by this semantic approval alone.
+- TASK-094 is **DONE**.
+- The approved SPEC-011 / ACCEPTANCE snapshot was committed to canonical `main` at `190ef09`
+  (`docs(project): approve player state api contract`).
+- On 2026-09-22 the Human Owner separately authorized repository/history completion for TASK-094.
+- TASK-025 is dependency-clear but remains **PLANNED** and inactive until normal activation.
+
+## Completion
+
+TASK-094 is DONE. SPEC-011 is APPROVED after fresh Human-revised 6-Team QA **READY** and IA **PASS**
+with P0/P1/P2/P3 `0/0/0/0`, the reconciled GSC **ADVISORY PASS**, explicit Human Owner semantic
+acceptance, and separate repository/history completion authorization on 2026-09-22.
+
+The approved contract freezes the self-scoped Player State HTTP surface, lossless exact-integer JSON
+encoding, ADR-006 session/Origin/CSRF behavior, bounded paging, deliberate player-visible six-preset
+Saved Team capacity, separate 64-new-create/rolling-24h abuse control, replay-first durable Team-create
+idempotency with exact 30-day deleted-Team tombstones, OCC without hidden stale retries, and TASK-089
+as the only Move Loadout mutation authority.
+
+No TASK-025 production implementation was performed by TASK-094. TASK-025 remains separately owned
+Class B work and must follow normal activation/review/acceptance flow.

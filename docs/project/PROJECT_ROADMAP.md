@@ -10,11 +10,11 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, baseline progression/Inventory/Reward persistence, and authoritative Move eligibility are integrated. Public player-state/API exposure and production Move/Ability content remain separately planned.
 
-**Current work:** `SPEC-011 — Player State API Contract` is **APPROVED** after fresh 6-Team delta QA READY `0/0/0/0`, IA PASS `0/0/0/0`, reconciled GSC **ADVISORY PASS**, and explicit Human Owner acceptance on 2026-09-22. `TASK-094` is now **ACCEPTANCE** pending repository/history closure. TASK-025 remains blocked from implementation until that formal closure.
+**Current work:** `SPEC-011 — Player State API Contract` is **APPROVED** and `TASK-094` is **DONE** after fresh 6-Team delta QA READY `0/0/0/0`, IA PASS `0/0/0/0`, reconciled GSC **ADVISORY PASS**, explicit Human Owner acceptance, and separate repository/history completion authorization on 2026-09-22. The approved snapshot was integrated at `190ef09`. TASK-025 is dependency-clear but remains PLANNED/inactive.
 
-**Current action:** close TASK-094 repository/history only after separate Human authorization. The approved SPEC-011 retains **6 live saved Teams per Player** as an intentional player-visible preset-capacity choice, the separate 64 accepted new Team creates per rolling 24h abuse-control, durable Team-create idempotency with a 30-day post-delete replay window, bounded reads and fail-closed TASK-089 Move authority. TASK-025 and TASK-090 remain **PLANNED**.
+**Current action:** no downstream task is auto-activated by TASK-094 closure. TASK-025 is now eligible for normal activation against APPROVED SPEC-011 but remains **PLANNED/inactive**; TASK-090 also remains **PLANNED**.
 
-**Next task after TASK-003 acceptance:** TASK-094 is the active planning gate for the TASK-025 path; TASK-025 starts only after SPEC-011 is APPROVED.
+**Next task after TASK-003 acceptance:** TASK-025 is dependency-clear through DONE TASK-094 / APPROVED SPEC-011 but remains PLANNED until normal activation.
 
 **Portfolio status snapshot:**
 
@@ -45,24 +45,24 @@
 | `TASK-087` Static Game Data Catalog & Ingestion Implementation | DONE — corrected v2 published; v1 preserved; all post-promotion gates clean; corrective history explicitly authorized and integrated |
 | `TASK-093` Gameplay Systems & Player Experience Consultant Governance | DONE — independent QA READY, P0/P1/P2/P3 0/0/0/0; Human Owner accepted and authorized repository history; governance integrated on 2026-09-18 |
 | `TASK-089` Move Acquisition / Eligibility Implementation | DONE — accepted implementation integrated at `bd3d036`; historical QA/TECH P2 + IA P3 were evidence-only and are now closed by fresh disposable-PG17 `4/4` PASS; Human Owner authorized repository history/completion |
-| `TASK-094` Player State API Contract Spec | ACCEPTANCE — SPEC-011 APPROVED by Human Owner on 2026-09-22 after fresh 6-Team QA READY + IA PASS `0/0/0/0` and reconciled GSC ADVISORY PASS; repository/history closure pending separate authorization |
+| `TASK-094` Player State API Contract Spec | DONE — SPEC-011 APPROVED by Human Owner on 2026-09-22 after fresh 6-Team QA READY + IA PASS `0/0/0/0` and reconciled GSC ADVISORY PASS; repository/history completion separately authorized; approved snapshot integrated at `190ef09` |
 
 **Next product milestone:** with progression/Inventory/reward persistence closed through TASK-024 and authoritative Move eligibility closed through TASK-089, accept SPEC-011 through TASK-094 and then implement the player-state/Move-loadout API through TASK-025; production Move/Ability rule-content coverage remains separately owned by TASK-090/091 before Solo Hunt production content consumes it.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-094`.
-- DONE: 30.
+- DONE: 31.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 1.
+- ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 64.
-- Task-count completion: **30 / 95 = 31.6%**.
+- Task-count completion: **31 / 95 = 32.6%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -413,7 +413,7 @@ implementation Task before code is written.
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088 and TASK-089 are integrated. TASK-025 is blocked on accepted SPEC-011/TASK-094 and remains PLANNED/inactive; TASK-090 remains independently PLANNED/inactive, and TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089 and TASK-094 are integrated. TASK-025 is dependency-clear on APPROVED SPEC-011 / DONE TASK-094 but remains PLANNED/inactive until normal activation; TASK-090 remains independently PLANNED/inactive, and TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
@@ -456,7 +456,7 @@ content relies on those mechanics.
 
 ### EPIC-03 — Trainer, Collection, Team, Inventory & Progression
 
-**Status:** IN PROGRESS — TASK-089 authoritative Move eligibility is DONE; TASK-094 now owns the Class A public Player State API contract required before PLANNED TASK-025 implementation
+**Status:** IN PROGRESS — TASK-089 authoritative Move eligibility and TASK-094 / APPROVED SPEC-011 are DONE; TASK-025 is dependency-clear but remains PLANNED/inactive until normal activation
 **Outcome:** a persistent trainer owns Pokémon/items, builds teams and progresses through server-authoritative rules.
 
 #### STORY-03.1 — Pokémon ownership and team model
@@ -476,7 +476,7 @@ content relies on those mechanics.
 | `TASK-024` Progression / Inventory / Reward Implementation | B | DONE | LD → ChatGPT delegated implementation worker (Copilot quota unavailable) | Final QA **READY** + final IA **PASS**, P0/P1/P2/P3 `0/0/0/0`; Class B functional/architectural acceptance **PASS**; PostgreSQL/API/Worker/workspace gates green | `SK-TDD`, `SK-PG` | Completed — Human Owner authorized repository history/completion on 2026-09-22 | TASK-018/021/022/023/087 | Integrated to `main` at `5bbf540`. Immutable exact context remains historically resolvable while new-use eligibility is evaluated separately for exact pairs, rules-only and game-data-only Rewards. Database PG `51/51`; API PG `22/22` / Reward `9/9`; API unit `56/56`; workspace + Worker gates PASS |
 | `TASK-088` Move Acquisition / Eligibility Rules Spec | A | DONE | PM → ChatGPT | GSC **PASS** + QA **READY**, P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | Completed — Human Owner approved SPEC-010 in full and authorized repository history/completion on 2026-09-22 | TASK-006/019/021/022 | **APPROVED SPEC-010 integrated at `72039d8`:** level-up-only derived eligibility; deterministic bootstrap; server-selected exact pair + retained rule-artifact semantics; no automatic loadout rewrite; no learned-set persistence; selected-only grandfathering; machine/TM/tutor/egg/evolution/transfer/reminder acquisition deferred |
 | `TASK-089` Move Acquisition / Eligibility Implementation | B | DONE | LD → ChatGPT delegated implementation worker | QA/TECH **READY / PASS WITH P2** `0/0/1/0` + **IA PASS** `0/0/0/1` at REVIEW; sole evidence gap subsequently closed by disposable PG17 `4/4` PASS, no code correction | `SK-TDD`, `SK-PG`, `SK-GAME-ARCH` | Completed — PM accepted exact REVIEW snapshot; Human Owner authorized repository history/completion on 2026-09-22 | TASK-020/024/087/088 | Integrated at `bd3d036`. APPROVED SPEC-010 implemented: Level-derived eligibility from one exact Learnset context; exact server-selected pair + retained compatibility/new-use checks + exact artifact/hash; deterministic bootstrap; complete replacement via shared Pokémon OCC; catalog/Worker/workspace/PostgreSQL gates PASS; no public endpoint, learned/acquired persistence or machine/TM Item hooks |
-| `TASK-094` Player State API Contract Spec | A | ACCEPTANCE | PM → ChatGPT | Fresh 6-Team delta QA READY + IA PASS `0/0/0/0`; reconciled GSC delta ADVISORY PASS, no remaining correction | `SK-API-SEC`, `SK-PG`, `SK-GAME-ARCH` reference-only | **HUMAN accepted SPEC-011 on 2026-09-22; repository/history closure pending separate authorization** | TASK-017/020/024/089 | **APPROVED SPEC-011:** self-scoped Player State routes/payloads/errors, lossless integer encoding, session activity + CSRF/Origin, bounded Collection/Team/Inventory paging, deliberate player-visible **6-live-Team preset capacity** + separate 64-create/24h abuse control, serialized durable Team-create idempotency with 30-day deletion replay window, OCC no-hidden-retry and TASK-089 Move-authority handoff |
+| `TASK-094` Player State API Contract Spec | A | DONE | PM → ChatGPT | Fresh 6-Team delta QA READY + IA PASS `0/0/0/0`; reconciled GSC delta ADVISORY PASS, no remaining correction | `SK-API-SEC`, `SK-PG`, `SK-GAME-ARCH` reference-only | Completed — Human Owner accepted SPEC-011 and separately authorized repository history/completion on 2026-09-22 | TASK-017/020/024/089 | **APPROVED SPEC-011 integrated at `190ef09`:** self-scoped Player State routes/payloads/errors, lossless integer encoding, session activity + CSRF/Origin, bounded Collection/Team/Inventory paging, deliberate player-visible **6-live-Team preset capacity** + separate 64-create/24h abuse control, serialized durable Team-create idempotency with 30-day deletion replay window, OCC no-hidden-retry and TASK-089 Move-authority handoff |
 | `TASK-025` Player State API Integration | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-CF-WBP` reference-only | PM acceptance | TASK-020/024/089/094 | Implement APPROVED SPEC-011 only: Collection/team/inventory/progression reads and accepted Team/Move commands; expose ordered Move-loadout mutation only through TASK-089 authoritative Move eligibility; authz; OCC/idempotency; no unsupported Ability/Inventory/progression mutation |
 
 **Exit criteria:** authenticated players have authoritative collection/team/inventory/progression state suitable for gameplay rewards and team selection.

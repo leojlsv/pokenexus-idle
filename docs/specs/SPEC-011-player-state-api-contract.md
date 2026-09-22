@@ -557,7 +557,7 @@ The accepted v1 decisions include:
 9. `409 stale` without a fresh write token or hidden retry, plus `503 authority_unavailable` for
    exact Move-context/persisted Species resolution failure.
 
-The Class A semantic acceptance gate is complete. TASK-025 implementation remains blocked until
-TASK-094 completes its normal repository/history closure and the approved SPEC-011 snapshot is
-formally integrated. PXE remains N/A because the saved-Team capacity is not a currency, source/sink,
-paid advantage, monetization mechanic or economy-value constraint.
+The Class A semantic acceptance and TASK-094 repository/history closure gates are complete. TASK-025
+is dependency-clear on this approved contract but remains separately PLANNED/inactive until normal
+task activation. PXE remains N/A because the saved-Team capacity is not a currency, source/sink, paid
+advantage, monetization mechanic or economy-value constraint.
