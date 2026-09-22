@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -29,8 +29,9 @@ implementation-ready authority without inventing economy, paid acquisition or sc
 
 ## Context
 
-TASK-024 is DONE. TASK-089 and TASK-025 remain blocked until TASK-088 supplies the authoritative
-Move eligibility source required by SPEC-005.
+TASK-024 is DONE. TASK-088 now supplies the authoritative Move eligibility source required by
+SPEC-005; TASK-089 is dependency-clear on these semantics but remains separately PLANNED, and
+TASK-025 still waits for TASK-089.
 
 Accepted upstream contracts already require:
 
@@ -48,13 +49,13 @@ technically viable: all 293 published Species/forms have at least one level-up M
 That observation is validation evidence, not a permanent schema guarantee; runtime behavior remains
 fail-closed if a future accepted catalog cannot bootstrap a specific Pokémon.
 
-This task intentionally proposes no paid acquisition, market value, scarcity, drop-rate or TM sink
-economy. Therefore PXE is N/A for the current draft. Any later proposal that makes Move acquisition
+This task intentionally defines no paid acquisition, market value, scarcity, drop-rate or TM sink
+economy. Therefore PXE is N/A for the approved v1 baseline. Any later proposal that makes Move acquisition
 paid/scarce/economic must add PXE review before Human acceptance of that change.
 
 ## Proposed v1 direction
 
-The DRAFT baseline is intentionally narrow:
+The approved v1 baseline is intentionally narrow:
 
 1. only canonical `level-up` Learnset rows can create current player-facing Move availability;
 2. a Move is level-available when its minimum canonical level-up threshold for the Pokémon's
@@ -195,7 +196,7 @@ preserving explicit extension points for future acquisition methods.
 
 ## Expected files / boundaries
 
-- `tasks/active/TASK-088-move-acquisition-eligibility-rules-spec.md`
+- `tasks/done/TASK-088-move-acquisition-eligibility-rules-spec.md`
 - `docs/specs/SPEC-010-move-acquisition-eligibility-rules.md`
 - `docs/project/PROJECT_ROADMAP.md`
 - generated `docs/project/PROJECT_ROADMAP.html`
@@ -214,19 +215,30 @@ Move set, deterministic bootstrap, no automatic loadout rewrite, selected-only g
 server-selected exact static/rules context, and deferral of machine/TM/tutor/egg/evolution/transfer/
 reminder acquisition.
 
-GSC and QA were already clear at P0/P1/P2/P3 `0/0/0/0`, so TASK-088 has completed its Class A
-semantic/review gates and is now in ACCEPTANCE.
+GSC and QA were already clear at P0/P1/P2/P3 `0/0/0/0`, so TASK-088 completed its Class A
+semantic/review gates before repository closure.
 
 ## Acceptance state
 
 - SPEC-010 is **APPROVED**.
-- TASK-088 is **ACCEPTANCE**.
+- TASK-088 is **DONE**.
 - TASK-089 may use the approved rules as its dependency once normal task activation occurs.
 - On 2026-09-22 the Human Owner separately authorized repository history/completion for TASK-088.
-- Repository history was still unmodified at the instant of this acceptance-state record; the
-  authorized commit/push/integration/DONE sequence follows this frozen snapshot.
+- The accepted APPROVED/ACCEPTANCE snapshot was committed as `72039d8`
+  (`docs(project): approve move eligibility spec`), pushed on
+  `spec/TASK-088-move-acquisition-eligibility-rules`, and fast-forward integrated into `main`.
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`.
-Do not create an implementation-summary/changelog file.
+TASK-088 is DONE. SPEC-010 is APPROVED after required GSC advisory **PASS** and independent QA
+**READY**, both P0/P1/P2/P3 `0/0/0/0`, followed by explicit Human Owner semantic approval and
+separate repository-history/completion authorization on 2026-09-22.
+
+The approved rules establish level-up-only derived Move eligibility, deterministic bootstrap,
+server-selected exact static/rules authority, no automatic loadout rewrite, no persistent
+learned/acquired Move set, selected-only grandfathering after corrections, and deferral of
+machine/TM/tutor/egg/evolution/transfer/reminder acquisition.
+
+The accepted specification snapshot was integrated into canonical `main` at `72039d8`. This DONE
+metadata records governed closure only; TASK-089 owns implementation and remains PLANNED until
+explicitly activated.
