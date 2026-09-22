@@ -269,6 +269,23 @@ not assume every published historical bundle is enabled for new bootstrap operat
   repository completion if that environment becomes available; no source change is required by
   either independent reviewer.
 
+### Post-DONE PostgreSQL evidence closure
+
+- On 2026-09-22, after TASK-089 completion, the Human Owner requested execution of the previously
+  deferred task-local PostgreSQL regression.
+- A disposable `postgres:17-alpine` container was started with database
+  `pokenexus_test_task089`; the test suite applied the canonical migrations itself and the container
+  was removed immediately after execution.
+- Exact command:
+  `corepack pnpm --filter @pokenexus/api exec vitest run --config vitest.integration.config.ts integration/move-eligibility-postgresql.test.ts`.
+- Result: **4/4 PASS**. The run proves deterministic bootstrap/no rewrite, ownership fail-closed,
+  shared Pokémon OCC rejection of a progression-vs-loadout race without hidden retry, and preservation
+  of the selected ordered loadout across a later Level change while the shared OCC version advances.
+- No source, migration or test change was required. The worktree remained clean and synchronized with
+  `origin/main` after the disposable database was removed.
+- This execution closes the factual PostgreSQL evidence gap that produced the historical QA P2 / IA
+  P3 annotations. Those original reviewer results remain preserved above as review-history facts.
+
 ## Dependencies
 
 - TASK-020 — DONE; provides persistence-only selected Move Loadout + Pokémon OCC repository.
@@ -310,11 +327,12 @@ Git/history mutation. Implementation completed and the exact uncommitted REVIEW 
 QA/TECH READY/PASS WITH P2 and independent authority/OCC IA PASS; neither review found a P0/P1 code
 defect. At the explicit PM review gate, the Human Owner then instructed `continue` on 2026-09-22,
 which records Class B functional/architectural acceptance of that exact snapshot and advances the
-task to ACCEPTANCE. The only open evidence item is fresh execution of the already-authored TASK-089
-PostgreSQL regression in an environment with a disposable PG17 URL. The Human Owner subsequently
-authorized repository history/completion on 2026-09-22; that authorization permits the frozen
+task to ACCEPTANCE. The Human Owner subsequently authorized repository history/completion on
+2026-09-22; that authorization permits the frozen
 implementation snapshot to be committed/published and the task to transition to DONE without
-rebase/reset/force.
+rebase/reset/force. After DONE, the previously deferred task-local PostgreSQL regression was executed
+on disposable PostgreSQL 17 and passed `4/4`, closing the remaining validation-evidence gap without
+any source change.
 
 ## Completion
 
@@ -328,7 +346,7 @@ rebase/reset/force.
   published-catalog regression `2/2`, API Worker compatibility PASS, game-data Worker
   compatibility PASS, workspace `lint` / `typecheck` / `test` / `build` PASS,
   `roadmap:check` PASS and `git diff --check` PASS.
-- The authored task-local PostgreSQL regression remains unexecuted because no disposable PG17
-  environment is available. This is the accepted QA P2 / IA P3 evidence deferral; no source
-  correction is outstanding.
+- The authored task-local PostgreSQL regression subsequently ran on disposable PostgreSQL 17 and
+  passed `4/4`; the historical QA P2 / IA P3 evidence deferral is therefore closed. No source
+  correction was required.
 - TASK-025 and TASK-090 are not auto-activated by this completion.
