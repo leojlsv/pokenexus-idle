@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer assignment; GitHub Copilot CLI unavailable due account quota at implementation start)
@@ -329,7 +329,9 @@ tests alone are insufficient for the reward-integrity path.
   `be414ce5d514304b92a72cc3633ef3b44681b341d5d1dbd6d38761d533be1c28`.
 - `git diff --check`: PASS.
 - Class B PM/Architecture functional and architectural acceptance gate: **PASS**.
-- Git history remains unmodified; merge/commit/push require separate Human Owner authorization.
+- Human Owner authorized repository history/completion on 2026-09-22.
+- Feature implementation/acceptance snapshot integrated to `main` at `5bbf540`
+  (`feat(rewards): implement progression inventory and reward`).
 
 ## Definition-of-Ready evidence
 
