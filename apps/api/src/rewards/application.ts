@@ -28,27 +28,24 @@ import {
   type ItemDefinitionV1,
   type RuntimeGameDataReader,
 } from "@pokenexus/game-data/runtime";
+import type {
+  ExactGameDataVersionAuthority,
+  ExactStaticContextPairAuthority,
+  StaticContextPairCompatibilityRecord,
+} from "../static-context/authority";
+
+export type {
+  ExactGameDataVersionAuthority,
+  ExactStaticContextPairAuthority,
+  StaticContextPairAuthorityResolution,
+  StaticContextPairCompatibilityRecord,
+  StaticContextPairRef,
+} from "../static-context/authority";
 
 export interface PinnedProgressionRules {
   readonly rulesVersion: string;
   readonly pokemonProgressionRuleId: string | null;
   readonly playerProgressionRuleId: string | null;
-}
-
-export interface StaticContextPairRef {
-  readonly gameDataVersion: string;
-  readonly rulesVersion: string;
-}
-
-export type StaticContextPairCompatibilityRecord = StaticContextPairRef;
-
-export interface StaticContextPairAuthorityResolution {
-  readonly compatibility: StaticContextPairCompatibilityRecord;
-  readonly newOperationsAllowed: boolean;
-}
-
-export interface ExactStaticContextPairAuthority {
-  resolve(pair: StaticContextPairRef): Promise<StaticContextPairAuthorityResolution | null>;
 }
 
 export interface PinnedRewardContext {
@@ -69,13 +66,6 @@ export interface PinnedRewardContextLoader {
 export interface ExactRulesVersionResolver {
   resolve(rulesVersion: string): Promise<{
     readonly rules: PinnedProgressionRules;
-    readonly newOperationsAllowed: boolean;
-  } | null>;
-}
-
-export interface ExactGameDataVersionAuthority {
-  resolve(gameDataVersion: string): Promise<{
-    readonly gameDataVersion: string;
     readonly newOperationsAllowed: boolean;
   } | null>;
 }

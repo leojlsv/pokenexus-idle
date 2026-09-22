@@ -5,6 +5,7 @@ export {
 } from "./battle";
 export { deriveSimpleDamageMoveCooldownMs } from "./cooldown";
 export { advanceCadence } from "./effects";
+export * from "./move-eligibility";
 export { createRngState, nextRngState } from "./rng";
 export * from "./progression";
 export { cadenceParticipantKey } from "./types";
