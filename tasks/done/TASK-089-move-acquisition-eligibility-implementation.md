@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker (explicit Lead Developer assignment)
@@ -19,7 +19,7 @@
   - `docs/specs/SPEC-006-xp-level-progression-rules.md`
 - ADR: `docs/decisions/ADR-005-persistence-data-access-strategy.md`
 - Related tasks: TASK-020, TASK-024, TASK-087, TASK-088, TASK-025
-- Branch: `main` (canonical integration worktree; repository history/completion authorized by Human Owner on 2026-09-22)
+- Branch: `main` (implementation integrated at `bd3d036`; repository history/completion authorized by Human Owner on 2026-09-22)
 - Worktree: `.worktrees/main-governance-integration`
 
 ## Objective
@@ -315,3 +315,20 @@ PostgreSQL regression in an environment with a disposable PG17 URL. The Human Ow
 authorized repository history/completion on 2026-09-22; that authorization permits the frozen
 implementation snapshot to be committed/published and the task to transition to DONE without
 rebase/reset/force.
+
+## Completion
+
+- TASK-089 is DONE.
+- Human Owner / PM accepted the exact Class B REVIEW snapshot and its documented non-blocking
+  PostgreSQL evidence gap on 2026-09-22.
+- Human Owner separately authorized repository history/completion on 2026-09-22.
+- The accepted implementation snapshot is integrated to `main` at `bd3d036`
+  (`feat(moves): implement move eligibility authority`).
+- Fresh closure re-gates before the implementation commit: game-core `256/256`, API `70/70`,
+  published-catalog regression `2/2`, API Worker compatibility PASS, game-data Worker
+  compatibility PASS, workspace `lint` / `typecheck` / `test` / `build` PASS,
+  `roadmap:check` PASS and `git diff --check` PASS.
+- The authored task-local PostgreSQL regression remains unexecuted because no disposable PG17
+  environment is available. This is the accepted QA P2 / IA P3 evidence deferral; no source
+  correction is outstanding.
+- TASK-025 and TASK-090 are not auto-activated by this completion.
