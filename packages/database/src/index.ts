@@ -1,7 +1,7 @@
 export { withPgClient } from "./pg-client.js";
 export type { PgClientConfig } from "./pg-client.js";
 export { withTransaction } from "./transaction.js";
-export type { TransactionIsolationLevel, TransactionOptions } from "./transaction.js";
+export type { TransactionClient, TransactionIsolationLevel, TransactionOptions } from "./transaction.js";
 export {
   decodeOpaqueStringDbV1,
   encodeOpaqueStringDbV1,
@@ -11,3 +11,6 @@ export { generateUuidV7 } from "./uuid-v7.js";
 export * from "./auth-repository.js";
 export * from "./player-repository.js";
 export * from "./collection-team-repository.js";
+export * from "./progression-repository.js";
+export * from "./inventory-repository.js";
+export * from "./reward-repository.js";

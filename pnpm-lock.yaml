@@ -35,6 +35,12 @@ importers:
       '@pokenexus/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@pokenexus/game-core':
+        specifier: workspace:*
+        version: link:../../packages/game-core
+      '@pokenexus/game-data':
+        specifier: workspace:*
+        version: link:../../packages/game-data
       '@simplewebauthn/server':
         specifier: 14.0.2
         version: 14.0.2

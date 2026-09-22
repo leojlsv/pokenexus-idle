@@ -90,16 +90,19 @@ async function insertPokemon(
   }> = {},
 ): Promise<string> {
   const id = values.id ?? generateUuidV7();
+  const level = values.level ?? 100;
+  const totalExperience = level * level * level - 1;
   await client.query(
     `INSERT INTO pokenexus.pokemon_instances (
-      pokemon_instance_id, owner_player_id, species_id, level,
+      pokemon_instance_id, owner_player_id, species_id, level, total_experience,
       iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe, row_version
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
     [
       id,
       ownerPlayerId,
       values.species ?? encoded("species:test"),
-      values.level ?? 100,
+      level,
+      totalExperience,
       values.ivHp ?? 31,
       values.ivAtk ?? 31,
       values.ivDef ?? 31,
@@ -153,6 +156,7 @@ describe("PostgreSQL 17 migration foundation", () => {
       "0001_postgresql_schema_v1.sql",
       "0002_authentication_session_foundation.sql",
       "0003_collection_team_spec005.sql",
+      "0004_progression_inventory_reward.sql",
     ]);
     const [persistenceMigration, authMigration] = canonical;
 

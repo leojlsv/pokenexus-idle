@@ -38,10 +38,17 @@ export async function createOrLoadPlayerByAccountId(
   candidatePlayerId: string,
 ): Promise<PlayerRecord> {
   const inserted = await client.query<PlayerRow>(
-    `INSERT INTO pokenexus.players (player_id, account_id)
-     VALUES ($1, $2)
-     ON CONFLICT (account_id) DO NOTHING
-     RETURNING player_id, account_id`,
+    `WITH inserted_player AS (
+       INSERT INTO pokenexus.players (player_id, account_id)
+       VALUES ($1, $2)
+       ON CONFLICT (account_id) DO NOTHING
+       RETURNING player_id, account_id
+     ), ensured_inventory AS (
+       INSERT INTO pokenexus.player_inventories (player_id)
+       SELECT player_id FROM inserted_player
+       ON CONFLICT (player_id) DO NOTHING
+     )
+     SELECT player_id, account_id FROM inserted_player`,
     [candidatePlayerId, accountId],
   );
   if (inserted.rows[0]) {

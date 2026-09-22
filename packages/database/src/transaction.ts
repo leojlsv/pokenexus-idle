@@ -6,7 +6,7 @@ export interface TransactionOptions {
   readonly isolationLevel?: TransactionIsolationLevel;
 }
 
-type TransactionClient = Pick<Client, "query">;
+export type TransactionClient = Pick<Client, "query">;
 
 export async function withTransaction<T>(
   client: TransactionClient,

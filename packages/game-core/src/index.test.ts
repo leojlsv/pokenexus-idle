@@ -9,13 +9,23 @@ describe("game-core entrypoint", () => {
   it("keeps the runtime public surface limited to authoritative entrypoints and continuation helpers", () => {
     expect(Object.keys(publicApi).sort()).toEqual([
       "PACKAGE_NAME",
+      "PLAYER_PROGRESSION_RULE_ID",
+      "POKEMON_LEVEL_CAP",
+      "POKEMON_PROGRESSION_RULE_ID",
+      "POKEMON_XP_CAP",
       "advanceCadence",
       "cadenceParticipantKey",
       "createCadenceCarry",
       "createRngState",
       "deriveSimpleDamageMoveCooldownMs",
+      "evaluatePlayerXpGrant",
+      "evaluatePokemonXpGrant",
       "initializeBattle",
       "nextRngState",
+      "playerLevelForExperience",
+      "playerXpFloor",
+      "pokemonLevelForExperience",
+      "pokemonXpFloor",
       "resolveCombatStimulus",
     ].sort());
   });

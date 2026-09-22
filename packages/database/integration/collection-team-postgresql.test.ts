@@ -104,10 +104,10 @@ async function insertOwnedPokemon(
   const updatedAt = options.updatedAt ?? createdAt;
   await client.query(
     `INSERT INTO pokenexus.pokemon_instances (
-       pokemon_instance_id, owner_player_id, species_id, level,
+       pokemon_instance_id, owner_player_id, species_id, level, total_experience,
        iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe,
        row_version, created_at, updated_at
-     ) VALUES ($1, $2, $3, 50, 1, 2, 3, 4, 5, 6, $4, $5, $6)`,
+     ) VALUES ($1, $2, $3, 50, 124999, 1, 2, 3, 4, 5, 6, $4, $5, $6)`,
     [
       pokemonInstanceId,
       ownerPlayerId,
@@ -165,6 +165,7 @@ describe("TASK-020 SPEC-005 migration", () => {
       "0001_postgresql_schema_v1.sql",
       "0002_authentication_session_foundation.sql",
       "0003_collection_team_spec005.sql",
+      "0004_progression_inventory_reward.sql",
     ]);
 
     const before = await withClient(async (client) => {
@@ -177,7 +178,7 @@ describe("TASK-020 SPEC-005 migration", () => {
     });
     const result = await runMigrations({ connectionString: testDatabaseUrl });
     expect(result).toEqual({
-      applied: [canonical[2].id],
+      applied: [canonical[2].id, canonical[3].id],
       skipped: [canonical[0].id, canonical[1].id],
     });
     await expect(runMigrations({ connectionString: testDatabaseUrl })).resolves.toEqual({
