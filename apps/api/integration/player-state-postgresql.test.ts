@@ -25,6 +25,12 @@ import {
 import {
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
   MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
+  PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
+  PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+  PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
+  PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
   type MoveEligibilityContext,
 } from "../src/moves/context";
 import { PlayerApplication } from "../src/player/application";
@@ -49,7 +55,7 @@ const productionRulesVersion = "rules:task-025-production-http-integration";
 const ampharosSpeciesId = "candidate:species:pokedex-ampharos-181:b682912fc8";
 const dragonPulseMoveId = "candidate:move:dragon-pulse:54d897ab30";
 const takeDownMoveId = "candidate:move:take-down:790765ae8a";
-const chargeMoveId = "candidate:move:charge:97488fbab3";
+const tackleMoveId = "candidate:move:tackle:ceab38a5be";
 
 interface SessionFixture {
   readonly accountId: string;
@@ -115,6 +121,8 @@ function exactContext(): MoveEligibilityContext {
         sourceRecordIds: ["source:test"],
       })),
     ]]),
+    productionExecutableMoveIds: null,
+    productionCatalog: null,
   };
 }
 
@@ -468,6 +476,14 @@ describe("Player State API with PostgreSQL", () => {
       PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
         rulesVersion: productionRulesVersion,
         newOperationsAllowed: true,
+        productionSelectability: {
+          artifactId: PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
+          semanticHash: PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
+          supportProfileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
+          supportProfileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+          combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
+          combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+        },
       }]),
     };
     const fetchedPaths: string[] = [];
@@ -505,6 +521,44 @@ describe("Player State API with PostgreSQL", () => {
           allowedOrigins: [allowedOrigin],
         }),
       });
+
+      const unsupported = await app.request(
+        `/player/pokemon/${pokemonInstanceId}/moves`,
+        {
+          method: "PUT",
+          headers: commandHeaders(owner, true),
+          body: JSON.stringify({
+            expectedRowVersion: "1",
+            moveIds: [takeDownMoveId],
+          }),
+        },
+        env as never,
+      );
+
+      expect(unsupported.status).toBe(422);
+      await expect(unsupported.json()).resolves.toEqual({
+        error: "invalid_move_loadout",
+        reason: "ineligible_move",
+        moveId: takeDownMoveId,
+      });
+      await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+        await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
+          rowVersion: 1n,
+          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+        });
+      });
+      expect(fetchedPaths).toHaveLength(6);
+      expect(new Set(fetchedPaths.slice(1).map((path) => path.split("/").slice(-2).join("/")))).toEqual(
+        new Set([
+          "catalogs/species.json",
+          "catalogs/moves.json",
+          "catalogs/learnsets.json",
+          "catalogs/abilities.json",
+          "catalogs/types.json",
+        ]),
+      );
+
+      fetchedPaths.length = 0;
       const updated = await app.request(
         `/player/pokemon/${pokemonInstanceId}/moves`,
         {
@@ -512,7 +566,7 @@ describe("Player State API with PostgreSQL", () => {
           headers: commandHeaders(owner, true),
           body: JSON.stringify({
             expectedRowVersion: "1",
-            moveIds: [takeDownMoveId, chargeMoveId],
+            moveIds: [dragonPulseMoveId, tackleMoveId],
           }),
         },
         env as never,
@@ -521,7 +575,7 @@ describe("Player State API with PostgreSQL", () => {
       expect(updated.status).toBe(200);
       await expect(updated.json()).resolves.toEqual({
         pokemonInstanceId,
-        moveIds: [takeDownMoveId, chargeMoveId],
+        moveIds: [dragonPulseMoveId, tackleMoveId],
         rowVersion: "2",
       });
       await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
@@ -531,15 +585,56 @@ describe("Player State API with PostgreSQL", () => {
           rowVersion: 2n,
           moveLoadout: {
             state: "selected",
-            moveIds: [takeDownMoveId, chargeMoveId],
+            moveIds: [dragonPulseMoveId, tackleMoveId],
           },
         });
       });
-      expect(fetchedPaths).toHaveLength(4);
+      expect(fetchedPaths).toHaveLength(6);
       expect(fetchedPaths[0]).toMatch(/^version-[0-9a-f]{64}\/manifest\.json$/);
       expect(new Set(fetchedPaths.slice(1).map((path) => path.split("/").slice(-2).join("/")))).toEqual(
-        new Set(["catalogs/species.json", "catalogs/moves.json", "catalogs/learnsets.json"]),
+        new Set([
+          "catalogs/species.json",
+          "catalogs/moves.json",
+          "catalogs/learnsets.json",
+          "catalogs/abilities.json",
+          "catalogs/types.json",
+        ]),
       );
+
+      fetchedPaths.length = 0;
+      const wrongDescriptorEnv = {
+        ...env,
+        PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
+          rulesVersion: productionRulesVersion,
+          newOperationsAllowed: true,
+          productionSelectability: {
+            artifactId: PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
+            semanticHash: `sha256:${"f".repeat(64)}`,
+            supportProfileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
+            supportProfileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+            combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
+            combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+          },
+        }]),
+      };
+      const unavailable = await app.request(
+        `/player/pokemon/${pokemonInstanceId}/moves`,
+        {
+          method: "PUT",
+          headers: commandHeaders(owner, true),
+          body: JSON.stringify({ expectedRowVersion: "2", moveIds: [dragonPulseMoveId] }),
+        },
+        wrongDescriptorEnv as never,
+      );
+      expect(unavailable.status).toBe(503);
+      await expect(unavailable.json()).resolves.toEqual({ error: "authority_unavailable" });
+      expect(fetchedPaths).toEqual([]);
+      await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+        await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
+          rowVersion: 2n,
+          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId, tackleMoveId] },
+        });
+      });
     } finally {
       fetchSpy.mockRestore();
     }

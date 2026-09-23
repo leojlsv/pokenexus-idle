@@ -1,7 +1,9 @@
+import { PRODUCTION_COMBAT_RULE_CATALOG_V1 } from "@pokenexus/game-core";
 import { describe, expect, it, vi } from "vitest";
 import {
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
   MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
+  createConfiguredProductionCombatCatalogResolver,
   createMoveEligibilityContextLoader,
   type MoveEligibilityGameDataCatalog,
 } from "./context";
@@ -14,6 +16,7 @@ const PAIR = {
 function catalog(): MoveEligibilityGameDataCatalog {
   return {
     gameDataVersion: PAIR.gameDataVersion,
+    gameDataBundleHash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     species: [{
       id: "species:test" as never,
       sourceName: "Test",
@@ -49,6 +52,8 @@ function catalog(): MoveEligibilityGameDataCatalog {
       zaBaseCooldownMs: null,
       sourceRecordIds: ["source:test"],
     }],
+    abilities: [],
+    types: [],
     learnsets: [{
       speciesId: "species:test" as never,
       moveId: "move:test" as never,
@@ -112,6 +117,25 @@ function createHarness(overrides: {
 }
 
 describe("createMoveEligibilityContextLoader", () => {
+  it("recomputes the canonical production catalog hash before serving an approved identity", async () => {
+    const executableMoveId = PRODUCTION_COMBAT_RULE_CATALOG_V1.executableMoveIds[0];
+    const rule = PRODUCTION_COMBAT_RULE_CATALOG_V1.moveRules[executableMoveId];
+    if (!rule) throw new Error("test fixture requires an executable production Move");
+    const tamperedCatalog = {
+      ...PRODUCTION_COMBAT_RULE_CATALOG_V1,
+      moveRules: {
+        ...PRODUCTION_COMBAT_RULE_CATALOG_V1.moveRules,
+        [executableMoveId]: { ...rule, moveCooldownMs: rule.moveCooldownMs + 1 },
+      },
+    } as never;
+    const resolver = createConfiguredProductionCombatCatalogResolver([tamperedCatalog]);
+
+    await expect(resolver.resolve({
+      artifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileArtifactId,
+      contentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileContentHash,
+    })).rejects.toThrow(/content hash mismatch/);
+  });
+
   it("selects one exact server context and materializes indexed exact game data", async () => {
     const harness = createHarness();
     const context = await harness.loader.loadForNewOperation();
@@ -124,6 +148,22 @@ describe("createMoveEligibilityContextLoader", () => {
     expect(harness.staticContextPairs.resolve).toHaveBeenCalledWith(PAIR);
     expect(harness.rulesVersions.resolve).toHaveBeenCalledWith(PAIR.rulesVersion);
     expect(harness.gameDataVersions.resolve).toHaveBeenCalledWith(PAIR.gameDataVersion);
+    expect(harness.gameData.load).toHaveBeenCalledWith(PAIR.gameDataVersion);
+  });
+
+  it("preserves base-only SPEC-010 releases without requiring the production Ability catalog", async () => {
+    const baseOnlyCatalog = catalog();
+    baseOnlyCatalog.species[0].abilities = [{
+      abilityId: "ability:legacy" as never,
+      sourceAbilitySlot: "normal-1",
+    }];
+    const harness = createHarness({ loadedCatalog: baseOnlyCatalog });
+
+    await expect(harness.loader.loadForNewOperation()).resolves.toMatchObject({
+      pair: PAIR,
+      productionExecutableMoveIds: null,
+      productionCatalog: null,
+    });
     expect(harness.gameData.load).toHaveBeenCalledWith(PAIR.gameDataVersion);
   });
 

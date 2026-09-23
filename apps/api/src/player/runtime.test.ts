@@ -92,6 +92,34 @@ describe("Player Move runtime authority ordering", () => {
     }).replaceMoveLoadout(accountId, command)).resolves.toEqual({
       status: "authority_unavailable",
     });
+
+    await expect(app({
+      PLAYER_STATE_GAME_DATA_BASE_URL: "https://game-data.invalid/",
+      PLAYER_STATE_MOVE_GAME_DATA_VERSION: "game-data:test",
+      PLAYER_STATE_MOVE_RULES_VERSION: "rules:test",
+      PLAYER_STATE_MOVE_CONTEXT_RELEASES: JSON.stringify([{
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        newOperationsAllowed: true,
+      }]),
+      PLAYER_STATE_MOVE_GAME_DATA_RELEASES: JSON.stringify([{
+        gameDataVersion: "game-data:test",
+        newOperationsAllowed: true,
+      }]),
+      PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
+        rulesVersion: "rules:test",
+        newOperationsAllowed: true,
+        productionSelectability: {
+          artifactId: "artifact:test",
+          semanticHash: `sha256:${"a".repeat(64)}`,
+          supportProfileArtifactId: "profile:test",
+          supportProfileContentHash: `sha256:${"b".repeat(64)}`,
+          combatRuleCatalogArtifactId: "catalog:test",
+        },
+      }]),
+    }).replaceMoveLoadout(accountId, command)).resolves.toEqual({
+      status: "authority_unavailable",
+    });
   });
 
   it("does not convert repository infrastructure faults into Move authority failures", async () => {

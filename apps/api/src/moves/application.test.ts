@@ -24,11 +24,14 @@ function pokemon(overrides: Partial<OwnedPokemonRecord> = {}): OwnedPokemonRecor
   };
 }
 
-function context(levels: Record<string, number> = {
-  "move:one": 1,
-  "move:two": 5,
-  "move:later": 20,
-}): MoveEligibilityContext {
+function context(
+  levels: Record<string, number> = {
+    "move:one": 1,
+    "move:two": 5,
+    "move:later": 20,
+  },
+  productionExecutableMoveIds: readonly string[] | null = null,
+): MoveEligibilityContext {
   return {
     pair: { gameDataVersion: "game-data:test", rulesVersion: "rules:test" },
     rules: {
@@ -52,6 +55,10 @@ function context(levels: Record<string, number> = {
         sourceRecordIds: ["source:test"],
       })),
     ]]),
+    productionExecutableMoveIds: productionExecutableMoveIds === null
+      ? null
+      : [...productionExecutableMoveIds],
+    productionCatalog: null,
   };
 }
 
@@ -161,6 +168,20 @@ describe("MoveEligibilityApplicationService.replaceMoveLoadout", () => {
       reason: "ineligible_move",
       moveId: "move:later",
     });
+
+    const unsupported = harness({ context: context(undefined, ["move:one"]) });
+    await expect(unsupported.service.replaceMoveLoadout({
+      ownerPlayerId: pokemon().ownerPlayerId,
+      pokemonInstanceId: pokemon().pokemonInstanceId,
+      expectedRowVersion: 7n,
+      moveIds: ["move:two"],
+      now: NOW,
+    })).resolves.toEqual({
+      status: "invalid",
+      reason: "ineligible_move",
+      moveId: "move:two",
+    });
+    expect(unsupported.repository.replaceOwnedPokemonMoveLoadout).not.toHaveBeenCalled();
   });
 
   it("preserves selected-only grandfathering but does not carry a legacy-ineligible Move through replacement", async () => {
@@ -253,6 +274,38 @@ describe("MoveEligibilityApplicationService.bootstrapMoveLoadout", () => {
       moveIds: ["move:a", "move:b", "move:c", "move:d"],
       now: NOW,
     });
+  });
+
+  it("bootstraps only the level-eligible intersection with exact executable production support", async () => {
+    const h = harness({
+      pokemon: pokemon({ level: 10 }),
+      context: context({
+        "move:a": 10,
+        "move:b": 10,
+        "move:c": 7,
+        "move:d": 5,
+        "move:e": 1,
+      }, ["move:b", "move:d", "move:e"]),
+    });
+    await expect(h.service.bootstrapMoveLoadout({
+      ownerPlayerId: pokemon().ownerPlayerId,
+      pokemonInstanceId: pokemon().pokemonInstanceId,
+      now: NOW,
+    })).resolves.toEqual({
+      status: "updated",
+      rowVersion: 8n,
+      moveIds: ["move:b", "move:d", "move:e"],
+    });
+  });
+
+  it("fails a production bootstrap closed with the existing ineligible result when the intersection is empty", async () => {
+    const h = harness({ context: context({ "move:one": 1 }, []) });
+    await expect(h.service.bootstrapMoveLoadout({
+      ownerPlayerId: pokemon().ownerPlayerId,
+      pokemonInstanceId: pokemon().pokemonInstanceId,
+      now: NOW,
+    })).resolves.toEqual({ status: "invalid", reason: "ineligible_move" });
+    expect(h.repository.replaceOwnedPokemonMoveLoadout).not.toHaveBeenCalled();
   });
 
   it("fails closed when the exact context has no currently eligible bootstrap Move", async () => {

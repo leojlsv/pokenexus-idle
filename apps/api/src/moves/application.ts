@@ -119,7 +119,10 @@ export class MoveEligibilityApplicationService {
     });
     const eligibleMoveIds = new Set(eligibleMoves.map(({ moveId }) => moveId));
     for (const moveId of input.moveIds) {
-      if (!eligibleMoveIds.has(moveId)) {
+      if (
+        !eligibleMoveIds.has(moveId)
+        || (context.productionExecutableMoveIds !== null && !context.productionExecutableMoveIds.includes(moveId))
+      ) {
         return { status: "invalid", reason: "ineligible_move", moveId };
       }
     }
@@ -161,7 +164,13 @@ export class MoveEligibilityApplicationService {
       currentLevel: pokemon.level,
       learnset: context.learnsetsBySpecies.get(pokemon.speciesId) ?? [],
     });
-    const moveIds = selectBootstrapMoveLoadout(eligibleMoves);
+    const productionSelectableMoves = context.productionExecutableMoveIds === null
+      ? eligibleMoves
+      : eligibleMoves.filter(({ moveId }) => context.productionExecutableMoveIds?.includes(moveId));
+    if (context.productionExecutableMoveIds !== null && productionSelectableMoves.length === 0) {
+      return { status: "invalid", reason: "ineligible_move" };
+    }
+    const moveIds = selectBootstrapMoveLoadout(productionSelectableMoves);
     for (const moveId of moveIds) {
       if (!context.moveIds.has(moveId)) {
         return { status: "invalid", reason: "unresolved_move", moveId };

@@ -11,6 +11,7 @@ import {
   MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
   MoveAuthorityUnavailableError,
   createConfiguredMoveEligibilityRulesVersionResolver,
+  createDefaultProductionCombatCatalogResolver,
   createMoveEligibilityContextLoader,
   createRuntimeMoveEligibilityGameDataLoader,
 } from "../moves/context";
@@ -46,6 +47,14 @@ interface GameDataRelease {
 interface RulesRelease {
   readonly rulesVersion: string;
   readonly newOperationsAllowed: boolean;
+  readonly productionSelectability?: {
+    readonly artifactId: string;
+    readonly semanticHash: string;
+    readonly supportProfileArtifactId: string;
+    readonly supportProfileContentHash: string;
+    readonly combatRuleCatalogArtifactId: string;
+    readonly combatRuleCatalogContentHash: string;
+  };
 }
 
 function required(value: string | undefined, name: string): string {
@@ -119,9 +128,14 @@ function parseGameDataReleases(raw: string | undefined): readonly GameDataReleas
 
 function parseRulesReleases(raw: string | undefined): readonly RulesRelease[] {
   return parseJsonArray(raw, "PLAYER_STATE_MOVE_RULE_RELEASES").map((entry) => {
-    if (!isRecord(entry) || !exactKeys(entry, ["rulesVersion", "newOperationsAllowed"])) {
+    if (!isRecord(entry)) {
       throw new Error("PLAYER_STATE_MOVE_RULE_RELEASES contains an invalid release");
     }
+    const hasProductionSelectability = Object.prototype.hasOwnProperty.call(entry, "productionSelectability");
+    const expectedKeys = hasProductionSelectability
+      ? ["rulesVersion", "newOperationsAllowed", "productionSelectability"]
+      : ["rulesVersion", "newOperationsAllowed"];
+    if (!exactKeys(entry, expectedKeys)) throw new Error("PLAYER_STATE_MOVE_RULE_RELEASES contains an invalid release");
     if (
       typeof entry.rulesVersion !== "string"
       || entry.rulesVersion.length === 0
@@ -129,9 +143,45 @@ function parseRulesReleases(raw: string | undefined): readonly RulesRelease[] {
     ) {
       throw new Error("PLAYER_STATE_MOVE_RULE_RELEASES contains an invalid release");
     }
+    let productionSelectability: RulesRelease["productionSelectability"];
+    if (hasProductionSelectability) {
+      if (
+        !isRecord(entry.productionSelectability)
+        || !exactKeys(entry.productionSelectability, [
+          "artifactId",
+          "semanticHash",
+          "supportProfileArtifactId",
+          "supportProfileContentHash",
+          "combatRuleCatalogArtifactId",
+          "combatRuleCatalogContentHash",
+        ])
+      ) {
+        throw new Error("PLAYER_STATE_MOVE_RULE_RELEASES contains an invalid production selectability descriptor");
+      }
+      const descriptor = entry.productionSelectability;
+      if (
+        typeof descriptor.artifactId !== "string" || descriptor.artifactId.length === 0
+        || typeof descriptor.semanticHash !== "string" || descriptor.semanticHash.length === 0
+        || typeof descriptor.supportProfileArtifactId !== "string" || descriptor.supportProfileArtifactId.length === 0
+        || typeof descriptor.supportProfileContentHash !== "string" || descriptor.supportProfileContentHash.length === 0
+        || typeof descriptor.combatRuleCatalogArtifactId !== "string" || descriptor.combatRuleCatalogArtifactId.length === 0
+        || typeof descriptor.combatRuleCatalogContentHash !== "string" || descriptor.combatRuleCatalogContentHash.length === 0
+      ) {
+        throw new Error("PLAYER_STATE_MOVE_RULE_RELEASES contains an invalid production selectability descriptor");
+      }
+      productionSelectability = {
+        artifactId: descriptor.artifactId,
+        semanticHash: descriptor.semanticHash,
+        supportProfileArtifactId: descriptor.supportProfileArtifactId,
+        supportProfileContentHash: descriptor.supportProfileContentHash,
+        combatRuleCatalogArtifactId: descriptor.combatRuleCatalogArtifactId,
+        combatRuleCatalogContentHash: descriptor.combatRuleCatalogContentHash,
+      };
+    }
     return {
       rulesVersion: entry.rulesVersion,
       newOperationsAllowed: entry.newOperationsAllowed,
+      productionSelectability,
     };
   });
 }
@@ -201,6 +251,9 @@ function createConfiguredMoveContextLoader(env: PlayerStateEnvironment): MoveEli
           rulesVersion: release.rulesVersion,
           moveEligibilityRuleArtifactId: MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
           moveEligibilityRuleSemanticsHash: MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
+          productionSelectability: release.productionSelectability
+            ? { ...release.productionSelectability }
+            : undefined,
         },
         newOperationsAllowed: release.newOperationsAllowed,
       })),
@@ -214,6 +267,7 @@ function createConfiguredMoveContextLoader(env: PlayerStateEnvironment): MoveEli
       gameDataVersions,
       rulesVersions,
       gameData: createRuntimeMoveEligibilityGameDataLoader(gameDataReader),
+      productionCatalogs: createDefaultProductionCombatCatalogResolver(),
     });
   } catch (error) {
     if (error instanceof MoveAuthorityUnavailableError) throw error;

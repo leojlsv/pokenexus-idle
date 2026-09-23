@@ -106,6 +106,8 @@ function exactContext(): MoveEligibilityContext {
         sourceRecordIds: ["source:test"],
       })),
     ]]),
+    productionExecutableMoveIds: null,
+    productionCatalog: null,
   };
 }
 
