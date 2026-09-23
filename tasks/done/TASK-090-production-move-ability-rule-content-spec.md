@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -16,7 +16,7 @@
 - Related specs: SPEC-002, SPEC-003, SPEC-005, SPEC-010, SPEC-011
 - Related ADRs: ADR-004
 - Related tasks: TASK-006, TASK-008, TASK-009, TASK-011, TASK-025, TASK-087, TASK-088, TASK-089, TASK-091, TASK-033, TASK-035
-- Branch: `main` canonical governance worktree; no TASK-090 Git/history mutation authorized
+- Branch: `main` canonical governance worktree; Human Owner authorized repository/history completion on 2026-09-23
 - Worktree: `.worktrees/main-governance-integration`
 
 ## Objective
@@ -157,17 +157,19 @@ No production TypeScript, catalog artifact, migration or API implementation belo
 
 ## Current execution state
 
-TASK-090 is in ACCEPTANCE. Required GSC initially returned **ADVISORY CONCERN**; after materializing the
+TASK-090 is DONE. Required GSC initially returned **ADVISORY CONCERN**; after materializing the
 Move-selectability intersection, zero-Ability baseline, production-subset playability boundary,
 per-Species quality gate and exact support profile, final GSC delta re-gate returned **ADVISORY
 PASS** with no remaining product correction. Technical feasibility delta is **PASS** and final
 independent QA delta is **READY 0/0/0/0**, both with no remaining correction. TASK-090 is therefore
 semantically accepted by the Human Owner; SPEC-012 is APPROVED and the six first-release decisions
-are frozen. TASK-091 may now reach READY once its implementation task satisfies the Definition of
-Ready. Repository/history completion for TASK-090 remains a separate Human authorization.
+are frozen. TASK-091 has also completed its implementation and acceptance path. On 2026-09-23 the
+Human Owner separately authorized repository/history completion; the accepted SPEC-012 + TASK-091
+implementation snapshot was committed to canonical `main` at `658ca9e`.
 
 ## Completion
 
 SPEC-012 is APPROVED after GSC **ADVISORY PASS**, technical feasibility **PASS**, independent QA
-**READY 0/0/0/0**, and explicit Human Owner acceptance of all six first-release decisions. TASK-090
-remains in ACCEPTANCE only because repository/history completion has not been separately authorized.
+**READY 0/0/0/0**, and explicit Human Owner acceptance of all six first-release decisions. The Human
+Owner separately authorized repository/history completion on 2026-09-23; the accepted snapshot is
+versioned at `658ca9e`. TASK-090 is therefore closed as DONE.

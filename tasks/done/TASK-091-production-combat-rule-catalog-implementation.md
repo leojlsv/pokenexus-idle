@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker
@@ -17,7 +17,7 @@
 - Related ADRs: ADR-004
 - Related tasks: TASK-006, TASK-008, TASK-009, TASK-010, TASK-011, TASK-025, TASK-087, TASK-088,
   TASK-089, TASK-090, TASK-033, TASK-034, TASK-035
-- Branch: task-scoped implementation history pending Human authorization
+- Branch: `main` canonical governance worktree; Human Owner authorized repository/history completion on 2026-09-23
 - Worktree: `.worktrees/main-governance-integration` for the current reviewable snapshot
 
 ## Objective
@@ -258,8 +258,7 @@ merge or other Git-history mutation is authorized by this ACCEPTANCE transition.
 - TASK-088 / SPEC-010 — DONE / APPROVED.
 - TASK-089 — DONE.
 - TASK-025 / SPEC-011 — DONE / APPROVED.
-- TASK-090 — semantic gate accepted; SPEC-012 APPROVED. TASK-090 repository/history completion is
-  tracked separately and does not alter this accepted semantic dependency.
+- TASK-090 — DONE; SPEC-012 APPROVED.
 
 ## Risks / irreversible actions
 
@@ -271,7 +270,8 @@ merge or other Git-history mutation is authorized by this ACCEPTANCE transition.
   compatibility/migration decision provides a player-visible recovery path.
 - Coverage percentages alone can hide unplayable Species/levels; the per-Species/per-level report is
   mandatory evidence.
-- No destructive migration is expected. Git/history mutation remains separately gated.
+- No destructive migration was required. Repository/history completion was separately authorized by
+  the Human Owner on 2026-09-23.
 
 ## READY basis
 
@@ -279,5 +279,20 @@ SPEC-012 is APPROVED after GSC ADVISORY PASS, technical-feasibility PASS, indepe
 0/0/0/0 and explicit Human Owner acceptance of all six first-release semantic decisions. Scope,
 owner, reviewer, validation, dependencies, risks and exact implementation contract are defined.
 TASK-091 reached READY, completed implementation/owner validation, independent QA, delegated Class B
-acceptance and Human content-sample validation, and is now in ACCEPTANCE on the exact uncommitted
-snapshot. Git/history remains separately gated.
+acceptance and Human content-sample validation. The Human Owner then separately authorized
+repository/history completion on 2026-09-23. The accepted implementation snapshot was committed to
+canonical `main` as `658ca9e`; TASK-091 is now DONE.
+
+## DONE closure
+
+The Human Owner explicitly authorized TASK-090/TASK-091 repository/history completion on 2026-09-23.
+The accepted SPEC-012 + production combat-rule implementation snapshot was committed to `main` as
+`658ca9e` (`feat(combat): publish production rule catalog`). The pre-commit exact-byte Git packaging
+re-gate returned **READY 0/0/0/0** and independently confirmed both immutable companion blobs remain
+230,244 bytes with approved SHA-256
+`1462b33b35e38224b505240dbf5205104e98dae1310d0bc630e2aa02fb31879e` after Git checkout filtering.
+
+TASK-091 is therefore closed as DONE. The historical `700,000` boundaries/s reference-environment
+floor remains explicitly not satisfied on the current host; the exact pre-task control also misses
+that floor, and the accepted same-environment TASK-091 deltas remain below the 30% regression alarm.
+This closure does not record the absolute floor as passed or waived.

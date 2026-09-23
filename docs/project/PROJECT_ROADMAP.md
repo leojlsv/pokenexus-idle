@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, baseline progression/Inventory/Reward persistence, authoritative Move eligibility, and the Player State API implementation are integrated. SPEC-012 production Move/Ability semantics are approved and TASK-091 has implemented and accepted the immutable production rule catalog pending repository/history completion.
+**Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, baseline progression/Inventory/Reward persistence, authoritative Move eligibility, Player State API, and the SPEC-012 production combat-rule catalog are integrated.
 
-**Current work:** `TASK-090 — Production Move & Ability Rule Content Spec` and `TASK-091 — Production Combat Rule Catalog Implementation` are both in **ACCEPTANCE**. SPEC-012 is APPROVED; TASK-091 has independent QA **READY 0/0/0/0**, delegated Class B **ACCEPT 0/0/0/0**, and Human Owner content-sample **APPROVED**. Exact `27` simple / `18` authored / `408` unsupported Move profile, 147 inactive Abilities, immutable/hash-bound catalog, TASK-089/TASK-025 production-selectability integration, all-293 evidence and PostgreSQL/Worker/workspace gates are complete.
+**Current work:** `TASK-090 — Production Move & Ability Rule Content Spec` and `TASK-091 — Production Combat Rule Catalog Implementation` are **DONE**. SPEC-012 is APPROVED; the exact `27` simple / `18` authored / `408` unsupported Move profile, 147 inactive Abilities, immutable/hash-bound catalog, TASK-089/TASK-025 production-selectability integration, all-293 evidence and PostgreSQL/Worker/workspace gates are integrated at `658ca9e`.
 
-**Current action:** TASK-090/TASK-091 repository/history completion is the remaining separate Human Owner gate. No Git-history mutation is authorized yet.
+**Current action:** No downstream task was auto-activated by this closure. `TASK-033 — PvE World/Map, Zone & Solo Hunt Rules/Lifecycle Spec` is the next planned product/rules gate and remains PLANNED pending normal activation.
 
-**Next task after TASK-003 acceptance:** TASK-090 and TASK-091 are in ACCEPTANCE pending repository/history completion; downstream Solo Hunt production admission work must consume the accepted TASK-091 content rather than redefine it.
+**Next task after TASK-003 acceptance:** TASK-033 remains PLANNED as the next product/rules gate after the completed TASK-090/TASK-091 closure. Downstream Solo Hunt rules/content must consume the accepted TASK-091 production combat-rule authority rather than redefine it.
 
 **Portfolio status snapshot:**
 
@@ -48,25 +48,25 @@
 | `TASK-094` Player State API Contract Spec | DONE — SPEC-011 APPROVED by Human Owner on 2026-09-22 after fresh 6-Team QA READY + IA PASS `0/0/0/0` and reconciled GSC ADVISORY PASS; repository/history completion separately authorized; approved snapshot integrated at `190ef09` |
 
 | `TASK-025` Player State API Integration | DONE — final QA READY + IA PASS `0/0/0/0`; delegated Class B ACCEPT; Human Owner authorized repository/history completion on 2026-09-23; accepted implementation committed at `871c6a7` |
-| `TASK-090` Production Move & Ability Rule Content Spec | ACCEPTANCE — SPEC-012 APPROVED; exact profile accepted (`27` simple / `18` authored / `408` unsupported; 147 Abilities inactive-by-policy); GSC ADVISORY PASS, TECH FEASIBILITY PASS, QA READY `0/0/0/0`; repository/history completion separately gated |
-| `TASK-091` Production Combat Rule Catalog Implementation | ACCEPTANCE — owner validation complete; independent QA **READY 0/0/0/0**; delegated Class B **ACCEPT 0/0/0/0**; Human Owner content-sample **APPROVED**; exact profile + TASK-089/TASK-025 integration + PG17/Worker/workspace evidence complete; repository/history separately gated |
+| `TASK-090` Production Move & Ability Rule Content Spec | DONE — SPEC-012 APPROVED; exact profile accepted (`27` simple / `18` authored / `408` unsupported; 147 Abilities inactive-by-policy); GSC ADVISORY PASS, TECH FEASIBILITY PASS, QA READY `0/0/0/0`; Human Owner authorized repository/history completion on 2026-09-23; accepted snapshot integrated at `658ca9e` |
+| `TASK-091` Production Combat Rule Catalog Implementation | DONE — owner validation complete; independent QA **READY 0/0/0/0** plus exact-byte packaging re-gate **READY 0/0/0/0**; delegated Class B **ACCEPT 0/0/0/0**; Human Owner content-sample **APPROVED** and repository/history completion authorized 2026-09-23; accepted implementation integrated at `658ca9e` |
 
-**Next product milestone:** implement and accept the immutable production combat-rule catalog through TASK-091 before Solo Hunt production content consumes it.
+**Next product milestone:** define and accept Solo Hunt world/zone/lifecycle rules through TASK-033 before TASK-034/035 consume the integrated production combat-rule catalog.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-094`.
-- DONE: 32.
+- DONE: 34.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 2.
+- ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 61.
-- Task-count completion: **32 / 95 = 33.7%**.
+- Task-count completion: **34 / 95 = 35.8%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -296,7 +296,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 
 ### EPIC-01 — Core Domain & Universal Combat Foundation
 
-**Status:** IN PROGRESS — accepted domain/data/combat contracts and Combat Engine are complete; TASK-092/SPEC-008 and TASK-087 canonical static data are integrated; TASK-090/SPEC-012 semantics are approved and TASK-091 production combat-rule implementation is in REVIEW
+**Status:** IN PROGRESS — accepted domain/data/combat contracts and Combat Engine are complete; TASK-092/SPEC-008 and TASK-087 canonical static data are integrated; TASK-090/SPEC-012 and TASK-091 production combat-rule content are DONE/integrated
 **Outcome:** stable domain vocabulary/data contracts and the single deterministic Combat Engine used by all battle content.
 **Why first:** every later battle mode depends on this layer; building content before it would duplicate rules and create migration debt.
 
@@ -412,12 +412,12 @@ implementation Task before code is written.
 | `TASK-009` Deterministic Combat Engine v1 | B | DONE | LD → ChatGPT delegated worker | QA | `SK-TDD`, `SK-GAME-ARCH` | Completed — PM accepted; Human sample-result validation complete; repository completion authorized/completed | TASK-008 | Seeded RNG; explicit clock; combat state; validate legality/targets and resolve supplied ActionIntents; shared deterministic effect-rule evaluator reusable for active-Battle and cadence advancement; versioned event/consequence output; outcome; no mode-specific branches, AI decision policy or parallel Hunt effect resolver |
 | `TASK-010` Combat Fixtures, Replay & Property Harness | B | DONE | SD → Codex | QA | `SK-TDD` | Completed — independent QA clear; PM accepted; repository completion authorized/completed | TASK-009 | Golden deterministic cases; same initial state + pinned data/rules/event-schema identity + combat RNG state + ordered CombatStimulus stream = same event sequence/final state/outcome; historical immutable-version replay; policy-independent replay when intents are stored; event ordering; time-partition invariance; HP/domain bounds; terminal KO/victory/draw invariants; serialization round-trip; metadata-only cross-orchestrator equivalence for identical normalized combat inputs; regression corpus |
 | `TASK-011` Combat Performance Baseline | B | DONE | LD → ChatGPT delegated worker | QA; IA optional | `SK-GAME-PERF` | Completed — Human Owner accepted performance budget + periodic-content recommendation; repository completion authorized/completed | TASK-009/010 | Combats/sec; p95 wall/CPU; retained heap/RSS/GC evidence; cadence-effect boundary throughput; realistic and pathological periodic-schedule cases; 1h/8h simulation benchmark; allocation profiling when materially constrained; measured performance-budget + content-publication limit decision record |
-| `TASK-090` Production Move & Ability Rule Content Spec | A | ACCEPTANCE | PM → ChatGPT project coordination | GSC **ADVISORY PASS** + TECH FEASIBILITY **PASS** + independent QA **READY 0/0/0/0**; IA N/A | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | **COMPLETED — Human Owner accepted all six SPEC-012 production decisions** | TASK-006/008/011/087; informed by TASK-088/089/025 | SPEC-012 APPROVED + exact companion profile: all 453 v2 level-up Moves classified (`27` simple / `18` authored / `408` unsupported), all 147 Abilities explicit inactive-by-policy; enemy-normalized target option 2; level-up ∩ executable production selection; production-subset + per-Species/per-level gate; repository/history completion separately gated |
-| `TASK-091` Production Combat Rule Catalog Implementation | B | ACCEPTANCE | LD → ChatGPT delegated implementation worker | Independent QA **READY 0/0/0/0**; delegated PM Class B **ACCEPT 0/0/0/0** | `SK-TDD`, `SK-GAME-ARCH`, `SK-GAME-PERF` | **COMPLETED — Human Owner content sample APPROVED 2026-09-23** | TASK-090 / APPROVED SPEC-012 | Exact profile materialized and hash-bound: 453 Moves (`27` simple / `18` authored / `408` unsupported), 147 inactive Abilities; level-up ∩ executable integrated through TASK-089/TASK-025; all-293/all-level evidence + replay + PG17/Worker/workspace gates PASS. TASK-011 current-condition control shows no TASK-091 regression; historical absolute cadence floor is not reproducible today even on exact pre-task HEAD and remains explicitly qualified. Repository/history separately gated |
+| `TASK-090` Production Move & Ability Rule Content Spec | A | DONE | PM → ChatGPT project coordination | GSC **ADVISORY PASS** + TECH FEASIBILITY **PASS** + independent QA **READY 0/0/0/0**; IA N/A | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | **COMPLETED — Human Owner accepted all six SPEC-012 decisions and authorized repository/history completion 2026-09-23** | TASK-006/008/011/087; informed by TASK-088/089/025 | SPEC-012 APPROVED + exact companion profile: all 453 v2 level-up Moves classified (`27` simple / `18` authored / `408` unsupported), all 147 Abilities explicit inactive-by-policy; enemy-normalized target option 2; level-up ∩ executable production selection; production-subset + per-Species/per-level gate; integrated at `658ca9e` |
+| `TASK-091` Production Combat Rule Catalog Implementation | B | DONE | LD → ChatGPT delegated implementation worker | Independent QA **READY 0/0/0/0** + exact-byte packaging re-gate **READY 0/0/0/0**; delegated PM Class B **ACCEPT 0/0/0/0** | `SK-TDD`, `SK-GAME-ARCH`, `SK-GAME-PERF` | **COMPLETED — Human Owner content sample APPROVED and repository/history completion authorized 2026-09-23** | TASK-090 / APPROVED SPEC-012 | Exact profile materialized and hash-bound: 453 Moves (`27` simple / `18` authored / `408` unsupported), 147 inactive Abilities; level-up ∩ executable integrated through TASK-089/TASK-025; all-293/all-level evidence + replay + PG17/Worker/workspace gates PASS; integrated at `658ca9e`. TASK-011 current-condition control shows no TASK-091 regression; historical absolute cadence floor is not reproducible today even on exact pre-task HEAD and remains explicitly qualified |
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089, TASK-094 and TASK-025 are integrated. SPEC-012 is approved and TASK-091 may implement only that exact production-content baseline. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089, TASK-094, TASK-025, TASK-090 and TASK-091 are integrated. Solo Hunt work may consume the accepted SPEC-012/TASK-091 baseline but must not invent replacement combat semantics or static-data authority.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
