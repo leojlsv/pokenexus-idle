@@ -5,9 +5,13 @@ import { Client } from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   createOwnedTeam,
+  createOwnedTeamIdempotent,
   deleteOwnedTeam,
+  deleteOwnedTeamWithCreateTombstone,
   listOwnedPokemon,
+  listOwnedPokemonPage,
   listOwnedTeams,
+  listOwnedTeamsPage,
   loadOwnedPokemon,
   loadOwnedTeam,
   replaceOwnedPokemonMoveLoadout,
@@ -166,6 +170,7 @@ describe("TASK-020 SPEC-005 migration", () => {
       "0002_authentication_session_foundation.sql",
       "0003_collection_team_spec005.sql",
       "0004_progression_inventory_reward.sql",
+      "0005_player_state_api_spec011.sql",
     ]);
 
     const before = await withClient(async (client) => {
@@ -178,7 +183,7 @@ describe("TASK-020 SPEC-005 migration", () => {
     });
     const result = await runMigrations({ connectionString: testDatabaseUrl });
     expect(result).toEqual({
-      applied: [canonical[2].id, canonical[3].id],
+      applied: [canonical[2].id, canonical[3].id, canonical[4].id],
       skipped: [canonical[0].id, canonical[1].id],
     });
     await expect(runMigrations({ connectionString: testDatabaseUrl })).resolves.toEqual({
@@ -717,5 +722,332 @@ describe("TASK-020 Collection and Team persistence", () => {
     } finally {
       await Promise.all([rosterClientA.end(), rosterClientB.end()]);
     }
+  });
+});
+
+describe("TASK-025 Player State Collection and Team persistence", () => {
+  it("pages owned Collection and Team summaries with stable keysets", async () => {
+    await prepareCanonicalSchema();
+    await withClient(async (client) => {
+      const owner = await createPlayer(client);
+      const pokemonIds = [
+        await insertOwnedPokemon(client, owner),
+        await insertOwnedPokemon(client, owner),
+        await insertOwnedPokemon(client, owner),
+      ];
+      const teamIds = [
+        (await createOwnedTeam(client, owner, new Date("2026-09-22T20:00:00.000Z"))).teamId,
+        (await createOwnedTeam(client, owner, new Date("2026-09-22T20:00:00.001Z"))).teamId,
+        (await createOwnedTeam(client, owner, new Date("2026-09-22T20:00:00.002Z"))).teamId,
+      ];
+
+      const collectionFirst = await listOwnedPokemonPage(client, {
+        ownerPlayerId: owner,
+        afterPokemonInstanceId: null,
+        limit: 2,
+      });
+      expect(collectionFirst.items).toHaveLength(2);
+      expect(collectionFirst.nextAfterPokemonInstanceId).not.toBeNull();
+      const collectionSecond = await listOwnedPokemonPage(client, {
+        ownerPlayerId: owner,
+        afterPokemonInstanceId: collectionFirst.nextAfterPokemonInstanceId,
+        limit: 2,
+      });
+      expect([
+        ...collectionFirst.items.map(({ pokemonInstanceId }) => pokemonInstanceId),
+        ...collectionSecond.items.map(({ pokemonInstanceId }) => pokemonInstanceId),
+      ]).toEqual([...pokemonIds].sort());
+      expect(collectionSecond.nextAfterPokemonInstanceId).toBeNull();
+
+      const teamsFirst = await listOwnedTeamsPage(client, {
+        ownerPlayerId: owner,
+        afterTeamId: null,
+        limit: 2,
+      });
+      expect(teamsFirst.teams).toHaveLength(2);
+      expect(teamsFirst.nextAfterTeamId).not.toBeNull();
+      const teamsSecond = await listOwnedTeamsPage(client, {
+        ownerPlayerId: owner,
+        afterTeamId: teamsFirst.nextAfterTeamId,
+        limit: 2,
+      });
+      expect([
+        ...teamsFirst.teams.map(({ teamId }) => teamId),
+        ...teamsSecond.teams.map(({ teamId }) => teamId),
+      ]).toEqual([...teamIds].sort());
+      expect(teamsSecond.nextAfterTeamId).toBeNull();
+
+      await expect(
+        listOwnedPokemonPage(client, {
+          ownerPlayerId: owner,
+          afterPokemonInstanceId: null,
+          limit: 101,
+        }),
+      ).rejects.toThrow(/1 and 100/);
+      await expect(
+        listOwnedTeamsPage(client, {
+          ownerPlayerId: owner,
+          afterTeamId: null,
+          limit: 0,
+        }),
+      ).rejects.toThrow(/1 and 100/);
+    });
+  });
+
+  it("converges same-key creates and serializes distinct keys at the sixth live Team", async () => {
+    await prepareCanonicalSchema();
+    const owner = await withClient((client) => createPlayer(client));
+    const sameKey = generateUuidV7();
+    const now = new Date("2026-09-22T20:10:00.000Z");
+    const sameKeyResults = await Promise.all([
+      withClient((client) =>
+        createOwnedTeamIdempotent(client, { ownerPlayerId: owner, idempotencyKey: sameKey, now }),
+      ),
+      withClient((client) =>
+        createOwnedTeamIdempotent(client, { ownerPlayerId: owner, idempotencyKey: sameKey, now }),
+      ),
+    ]);
+    expect(sameKeyResults.every(({ status }) => status === "accepted")).toBe(true);
+    const acceptedSameKey = sameKeyResults.filter(
+      (result): result is Extract<typeof result, { status: "accepted" }> => result.status === "accepted",
+    );
+    expect(new Set(acceptedSameKey.map(({ teamId }) => teamId)).size).toBe(1);
+    expect(acceptedSameKey.map(({ replay }) => replay).sort()).toEqual([false, true]);
+
+    await withClient(async (client) => {
+      for (let index = 0; index < 4; index += 1) {
+        await createOwnedTeam(client, owner, new Date(now.getTime() + index + 1));
+      }
+    });
+    const distinctResults = await Promise.all([
+      withClient((client) =>
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: owner,
+          idempotencyKey: generateUuidV7(),
+          now: new Date("2026-09-22T20:11:00.000Z"),
+        }),
+      ),
+      withClient((client) =>
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: owner,
+          idempotencyKey: generateUuidV7(),
+          now: new Date("2026-09-22T20:11:00.000Z"),
+        }),
+      ),
+    ]);
+    expect(distinctResults.filter(({ status }) => status === "accepted")).toHaveLength(1);
+    expect(distinctResults.filter(({ status }) => status === "team_limit_reached")).toHaveLength(1);
+
+    await withClient(async (client) => {
+      const teams = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.pokemon_teams WHERE owner_player_id = $1",
+        [owner],
+      );
+      const commands = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.team_create_commands WHERE player_id = $1",
+        [owner],
+      );
+      expect(teams.rows[0]?.count).toBe("6");
+      expect(commands.rows[0]?.count).toBe("2");
+    });
+  });
+
+  it("enforces the rolling accepted-create limit while exact replay bypasses it", async () => {
+    await prepareCanonicalSchema();
+    await withClient(async (client) => {
+      const owner = await createPlayer(client);
+      const now = new Date("2026-09-22T21:00:00.000Z");
+      const replayKey = generateUuidV7();
+      for (let index = 0; index < 64; index += 1) {
+        const acceptedAt = new Date(now.getTime() - 60 * 60 * 1_000 + index);
+        await client.query(
+          `INSERT INTO pokenexus.team_create_commands (
+             player_id, idempotency_key, team_id, accepted_at, deleted_at
+           ) VALUES ($1, $2, NULL, $3, $4)`,
+          [
+            owner,
+            index === 0 ? replayKey : generateUuidV7(),
+            acceptedAt,
+            new Date(acceptedAt.getTime() + 1),
+          ],
+        );
+      }
+
+      await expect(
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: owner,
+          idempotencyKey: generateUuidV7(),
+          now,
+        }),
+      ).resolves.toMatchObject({ status: "rate_limited" });
+      await expect(
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: owner,
+          idempotencyKey: replayKey,
+          now,
+        }),
+      ).resolves.toEqual({ status: "idempotency_gone" });
+      const commands = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.team_create_commands WHERE player_id = $1",
+        [owner],
+      );
+      expect(commands.rows[0]?.count).toBe("64");
+    });
+  });
+
+  it("tombstones public Team deletion and lets another Player operation compact expired tombstones", async () => {
+    await prepareCanonicalSchema();
+    await withClient(async (client) => {
+      const ownerA = await createPlayer(client);
+      const ownerB = await createPlayer(client);
+      const keyA = generateUuidV7();
+      const createdAt = new Date("2026-08-01T12:00:00.000Z");
+      const created = await createOwnedTeamIdempotent(client, {
+        ownerPlayerId: ownerA,
+        idempotencyKey: keyA,
+        now: createdAt,
+      });
+      expect(created.status).toBe("accepted");
+      if (created.status !== "accepted") throw new Error("Team create unexpectedly rejected");
+      const deletedAt = new Date("2026-08-02T12:00:00.000Z");
+      await expect(
+        deleteOwnedTeamWithCreateTombstone(client, {
+          ownerPlayerId: ownerA,
+          teamId: created.teamId,
+          expectedRowVersion: 0n,
+          now: deletedAt,
+        }),
+      ).resolves.toEqual({ status: "deleted" });
+      await expect(
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: ownerA,
+          idempotencyKey: keyA,
+          now: new Date("2026-08-31T11:59:59.999Z"),
+        }),
+      ).resolves.toEqual({ status: "idempotency_gone" });
+
+      await expect(
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: ownerB,
+          idempotencyKey: generateUuidV7(),
+          now: new Date("2026-09-01T12:00:00.000Z"),
+        }),
+      ).resolves.toMatchObject({ status: "accepted", replay: false });
+      const expired = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.team_create_commands WHERE player_id = $1 AND idempotency_key = $2",
+        [ownerA, keyA],
+      );
+      expect(expired.rows[0]?.count).toBe("0");
+    });
+  });
+
+  it("serializes exact replay against public Team deletion without recreating the Team", async () => {
+    await prepareCanonicalSchema();
+    const seeded = await withClient(async (client) => {
+      const ownerPlayerId = await createPlayer(client);
+      const idempotencyKey = generateUuidV7();
+      const created = await createOwnedTeamIdempotent(client, {
+        ownerPlayerId,
+        idempotencyKey,
+        now: new Date("2026-09-22T21:30:00.000Z"),
+      });
+      if (created.status !== "accepted") throw new Error("Team create unexpectedly rejected");
+      return { ownerPlayerId, idempotencyKey, teamId: created.teamId };
+    });
+
+    const [deleted, replay] = await Promise.all([
+      withClient((client) =>
+        deleteOwnedTeamWithCreateTombstone(client, {
+          ownerPlayerId: seeded.ownerPlayerId,
+          teamId: seeded.teamId,
+          expectedRowVersion: 0n,
+          now: new Date("2026-09-22T21:31:00.000Z"),
+        }),
+      ),
+      withClient((client) =>
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: seeded.ownerPlayerId,
+          idempotencyKey: seeded.idempotencyKey,
+          now: new Date("2026-09-22T21:31:00.000Z"),
+        }),
+      ),
+    ]);
+    expect(deleted).toEqual({ status: "deleted" });
+    expect(
+      replay.status === "idempotency_gone"
+        || (replay.status === "accepted" && replay.replay && replay.teamId === seeded.teamId),
+    ).toBe(true);
+
+    await withClient(async (client) => {
+      await expect(loadOwnedTeam(client, seeded.ownerPlayerId, seeded.teamId)).resolves.toBeNull();
+      await expect(
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: seeded.ownerPlayerId,
+          idempotencyKey: seeded.idempotencyKey,
+          now: new Date("2026-09-22T21:31:01.000Z"),
+        }),
+      ).resolves.toEqual({ status: "idempotency_gone" });
+      const teamCount = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.pokemon_teams WHERE owner_player_id = $1",
+        [seeded.ownerPlayerId],
+      );
+      expect(teamCount.rows[0]?.count).toBe("0");
+    });
+  });
+
+  it("keeps historical over-quota Teams fully pageable and editable while blocking new public create", async () => {
+    await prepareCanonicalSchema();
+    await withClient(async (client) => {
+      const owner = await createPlayer(client);
+      const teamIds: string[] = [];
+      for (let index = 0; index < 7; index += 1) {
+        teamIds.push(
+          (
+            await createOwnedTeam(
+              client,
+              owner,
+              new Date(new Date("2026-09-22T22:00:00.000Z").getTime() + index),
+            )
+          ).teamId,
+        );
+      }
+
+      const observed: string[] = [];
+      let afterTeamId: string | null = null;
+      do {
+        const page = await listOwnedTeamsPage(client, {
+          ownerPlayerId: owner,
+          afterTeamId,
+          limit: 3,
+        });
+        observed.push(...page.teams.map(({ teamId }) => teamId));
+        afterTeamId = page.nextAfterTeamId;
+      } while (afterTeamId !== null);
+      expect(observed).toEqual([...teamIds].sort());
+
+      const editableTeamId = observed[observed.length - 1];
+      if (!editableTeamId) throw new Error("Expected historical Team");
+      await expect(
+        replaceOwnedTeamRoster(client, {
+          ownerPlayerId: owner,
+          teamId: editableTeamId,
+          expectedRowVersion: 0n,
+          pokemonInstanceIds: [],
+          now: new Date("2026-09-22T22:01:00.000Z"),
+        }),
+      ).resolves.toEqual({ status: "updated", rowVersion: 1n });
+      await expect(loadOwnedTeam(client, owner, editableTeamId)).resolves.toMatchObject({
+        rowVersion: 1n,
+        pokemonInstanceIds: [],
+      });
+
+      await expect(
+        createOwnedTeamIdempotent(client, {
+          ownerPlayerId: owner,
+          idempotencyKey: generateUuidV7(),
+          now: new Date("2026-09-22T22:02:00.000Z"),
+        }),
+      ).resolves.toEqual({ status: "team_limit_reached" });
+    });
   });
 });

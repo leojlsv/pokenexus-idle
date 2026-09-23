@@ -92,6 +92,16 @@ export interface MoveEligibilityContextLoader {
   loadForNewOperation(): Promise<MoveEligibilityContext>;
 }
 
+export class MoveAuthorityUnavailableError extends Error {
+  readonly authorityCause: unknown;
+
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : "Move authority is unavailable");
+    this.name = "MoveAuthorityUnavailableError";
+    this.authorityCause = cause;
+  }
+}
+
 export function createRuntimeMoveEligibilityGameDataLoader(
   reader: RuntimeGameDataReader,
 ): ExactMoveEligibilityGameDataLoader {
@@ -134,77 +144,82 @@ export function createMoveEligibilityContextLoader(input: {
 }): MoveEligibilityContextLoader {
   return {
     async loadForNewOperation() {
-      const pair = await input.selector.select();
+      try {
+        const pair = await input.selector.select();
 
-      const resolvedPair = await input.staticContextPairs.resolve(pair);
-      if (
-        resolvedPair === null
-        || resolvedPair.compatibility.gameDataVersion !== pair.gameDataVersion
-        || resolvedPair.compatibility.rulesVersion !== pair.rulesVersion
-      ) {
-        throw new Error(
-          `Static context pair is not exactly resolvable: ${pair.gameDataVersion} + ${pair.rulesVersion}`,
-        );
-      }
-      if (resolvedPair.newOperationsAllowed !== true) {
-        throw new Error("Static context pair is deprecated for new Move operations");
-      }
-
-      const resolvedRules = await input.rulesVersions.resolve(pair.rulesVersion);
-      if (
-        resolvedRules === null
-        || resolvedRules.rules.rulesVersion !== pair.rulesVersion
-      ) {
-        throw new Error(`Move rulesVersion is not exactly resolvable: ${pair.rulesVersion}`);
-      }
-      if (resolvedRules.newOperationsAllowed !== true) {
-        throw new Error("Move rulesVersion is deprecated for new Move operations");
-      }
-      if (
-        resolvedRules.rules.moveEligibilityRuleArtifactId !== MOVE_ELIGIBILITY_RULE_ARTIFACT_ID
-        || resolvedRules.rules.moveEligibilityRuleSemanticsHash !== MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH
-      ) {
-        throw new Error("Move rulesVersion does not resolve the accepted Move-eligibility semantics");
-      }
-
-      const gameDataLifecycle = await input.gameDataVersions.resolve(pair.gameDataVersion);
-      if (
-        gameDataLifecycle === null
-        || gameDataLifecycle.gameDataVersion !== pair.gameDataVersion
-      ) {
-        throw new Error(`gameDataVersion is not exactly resolvable: ${pair.gameDataVersion}`);
-      }
-      if (gameDataLifecycle.newOperationsAllowed !== true) {
-        throw new Error("gameDataVersion is deprecated for new Move operations");
-      }
-
-      const catalog = await input.gameData.load(pair.gameDataVersion);
-      if (catalog.gameDataVersion !== pair.gameDataVersion) {
-        throw new Error("Exact game-data loader returned a different gameDataVersion");
-      }
-
-      const speciesIds = assertUniqueIds(catalog.species, "Species");
-      const moveIds = assertUniqueIds(catalog.moves, "Move");
-      const learnsetsBySpecies = new Map<string, LearnsetEntryV1[]>();
-      for (const row of catalog.learnsets) {
-        if (!speciesIds.has(row.speciesId)) {
-          throw new Error(`Learnset references unresolved SpeciesId: ${row.speciesId}`);
+        const resolvedPair = await input.staticContextPairs.resolve(pair);
+        if (
+          resolvedPair === null
+          || resolvedPair.compatibility.gameDataVersion !== pair.gameDataVersion
+          || resolvedPair.compatibility.rulesVersion !== pair.rulesVersion
+        ) {
+          throw new Error(
+            `Static context pair is not exactly resolvable: ${pair.gameDataVersion} + ${pair.rulesVersion}`,
+          );
         }
-        if (!moveIds.has(row.moveId)) {
-          throw new Error(`Learnset references unresolved MoveId: ${row.moveId}`);
+        if (resolvedPair.newOperationsAllowed !== true) {
+          throw new Error("Static context pair is deprecated for new Move operations");
         }
-        const rows = learnsetsBySpecies.get(row.speciesId);
-        if (rows) rows.push(row);
-        else learnsetsBySpecies.set(row.speciesId, [row]);
-      }
 
-      return {
-        pair,
-        rules: resolvedRules.rules,
-        speciesIds,
-        moveIds,
-        learnsetsBySpecies,
-      };
+        const resolvedRules = await input.rulesVersions.resolve(pair.rulesVersion);
+        if (
+          resolvedRules === null
+          || resolvedRules.rules.rulesVersion !== pair.rulesVersion
+        ) {
+          throw new Error(`Move rulesVersion is not exactly resolvable: ${pair.rulesVersion}`);
+        }
+        if (resolvedRules.newOperationsAllowed !== true) {
+          throw new Error("Move rulesVersion is deprecated for new Move operations");
+        }
+        if (
+          resolvedRules.rules.moveEligibilityRuleArtifactId !== MOVE_ELIGIBILITY_RULE_ARTIFACT_ID
+          || resolvedRules.rules.moveEligibilityRuleSemanticsHash !== MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH
+        ) {
+          throw new Error("Move rulesVersion does not resolve the accepted Move-eligibility semantics");
+        }
+
+        const gameDataLifecycle = await input.gameDataVersions.resolve(pair.gameDataVersion);
+        if (
+          gameDataLifecycle === null
+          || gameDataLifecycle.gameDataVersion !== pair.gameDataVersion
+        ) {
+          throw new Error(`gameDataVersion is not exactly resolvable: ${pair.gameDataVersion}`);
+        }
+        if (gameDataLifecycle.newOperationsAllowed !== true) {
+          throw new Error("gameDataVersion is deprecated for new Move operations");
+        }
+
+        const catalog = await input.gameData.load(pair.gameDataVersion);
+        if (catalog.gameDataVersion !== pair.gameDataVersion) {
+          throw new Error("Exact game-data loader returned a different gameDataVersion");
+        }
+
+        const speciesIds = assertUniqueIds(catalog.species, "Species");
+        const moveIds = assertUniqueIds(catalog.moves, "Move");
+        const learnsetsBySpecies = new Map<string, LearnsetEntryV1[]>();
+        for (const row of catalog.learnsets) {
+          if (!speciesIds.has(row.speciesId)) {
+            throw new Error(`Learnset references unresolved SpeciesId: ${row.speciesId}`);
+          }
+          if (!moveIds.has(row.moveId)) {
+            throw new Error(`Learnset references unresolved MoveId: ${row.moveId}`);
+          }
+          const rows = learnsetsBySpecies.get(row.speciesId);
+          if (rows) rows.push(row);
+          else learnsetsBySpecies.set(row.speciesId, [row]);
+        }
+
+        return {
+          pair,
+          rules: resolvedRules.rules,
+          speciesIds,
+          moveIds,
+          learnsetsBySpecies,
+        };
+      } catch (error) {
+        if (error instanceof MoveAuthorityUnavailableError) throw error;
+        throw new MoveAuthorityUnavailableError(error);
+      }
     },
   };
 }

@@ -11,6 +11,7 @@ import {
   generateUuidV7,
   grantInventoryEntries,
   loadInventory,
+  loadInventoryPage,
   loadOwnedPokemonProgression,
   loadPlayerProgression,
   loadRewardResolutionById,
@@ -310,6 +311,73 @@ describe("TASK-024 Inventory persistence", () => {
         rowVersion: 0n,
       });
       expect(await loadInventory(client, playerId)).toMatchObject({ rowVersion: 0n, entries: [] });
+    });
+  });
+
+  it("pages one coherent Inventory root version and rejects stale continuation", async () => {
+    await withClient(async (client) => {
+      const playerId = await createPlayer(client);
+      await expect(
+        grantInventoryEntries(client, {
+          playerId,
+          expectedRowVersion: 0n,
+          grants: [
+            { itemId: "item:a", quantity: 1n },
+            { itemId: "item:b", quantity: 2n },
+            { itemId: "item:c", quantity: 3n },
+          ],
+          now: new Date("2026-09-22T13:00:00Z"),
+        }),
+      ).resolves.toEqual({ status: "updated", rowVersion: 1n });
+
+      const first = await loadInventoryPage(client, {
+        playerId,
+        expectedRowVersion: null,
+        afterItemId: null,
+        limit: 2,
+      });
+      expect(first).toMatchObject({
+        status: "ok",
+        rowVersion: 1n,
+        entries: [
+          { itemId: "item:a", quantity: 1n },
+          { itemId: "item:b", quantity: 2n },
+        ],
+      });
+      if (first.status !== "ok") throw new Error("Inventory first page unexpectedly failed");
+      expect(first.nextAfterItemId).toBe("item:b");
+
+      const second = await loadInventoryPage(client, {
+        playerId,
+        expectedRowVersion: first.rowVersion,
+        afterItemId: first.nextAfterItemId,
+        limit: 2,
+      });
+      expect(second).toEqual({
+        status: "ok",
+        playerId,
+        rowVersion: 1n,
+        entries: [{ itemId: "item:c", quantity: 3n }],
+        nextAfterItemId: null,
+      });
+
+      await expect(
+        grantInventoryEntries(client, {
+          playerId,
+          expectedRowVersion: 1n,
+          grants: [{ itemId: "item:d", quantity: 4n }],
+          now: new Date("2026-09-22T13:01:00Z"),
+        }),
+      ).resolves.toEqual({ status: "updated", rowVersion: 2n });
+
+      await expect(
+        loadInventoryPage(client, {
+          playerId,
+          expectedRowVersion: 1n,
+          afterItemId: first.nextAfterItemId,
+          limit: 2,
+        }),
+      ).resolves.toEqual({ status: "pagination_stale", rowVersion: 2n });
     });
   });
 });

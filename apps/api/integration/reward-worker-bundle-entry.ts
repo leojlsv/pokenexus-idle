@@ -11,6 +11,10 @@ import {
   createRuntimeMoveEligibilityGameDataLoader,
 } from "../src/moves/context";
 import { createConfiguredStaticContextAuthority } from "../src/static-context/authority";
+import {
+  createPlayerApplicationFromEnvironment,
+  createPlayerCursorCodecFromEnvironment,
+} from "../src/player/runtime";
 
 export default {
   fetch(): Response {
@@ -22,6 +26,8 @@ export default {
       createMoveEligibilityContextLoader.name,
       createRuntimeMoveEligibilityGameDataLoader.name,
       createConfiguredStaticContextAuthority.name,
+      createPlayerApplicationFromEnvironment.name,
+      createPlayerCursorCodecFromEnvironment.name,
     ].join(":"));
   },
 };

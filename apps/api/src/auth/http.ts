@@ -15,14 +15,20 @@ import {
   createUnavailableEmailActionSender,
   type EmailActionSender,
 } from "./email-sender";
-import { PlayerApplication, type PlayerHttpApplication } from "../player/application";
+import type { PlayerHttpApplication } from "../player/application";
 import { registerPlayerRoutes } from "../player/http";
+import type { PlayerCursorCodec } from "../player/protocol";
+import {
+  createPlayerApplicationFromEnvironment,
+  createPlayerCursorCodecFromEnvironment,
+  type PlayerStateEnvironment,
+} from "../player/runtime";
 
 export const SESSION_COOKIE_NAME = "__Host-pokenexus_session";
 export const RESTRICTED_COOKIE_NAME = "__Host-pokenexus_restricted";
 export const CSRF_HEADER_NAME = "X-CSRF-Token";
 
-export type ApiBindings = AuthEnvironment;
+export type ApiBindings = AuthEnvironment & PlayerStateEnvironment;
 export interface ApiVariables {
   securityAuditCorrelationId: string;
 }
@@ -69,7 +75,8 @@ export interface AuthHttpRuntime {
 
 export interface CreateApiAppOptions {
   readonly resolveAuthRuntime?: (env: AuthEnvironment) => AuthHttpRuntime;
-  readonly resolvePlayerApplication?: (env: AuthEnvironment) => PlayerHttpApplication;
+  readonly resolvePlayerApplication?: (env: ApiBindings) => PlayerHttpApplication;
+  readonly resolvePlayerCursorCodec?: (env: ApiBindings) => PlayerCursorCodec;
   readonly emailSender?: EmailActionSender;
   readonly deferPublicWork?: (work: Promise<void>) => void;
   readonly createSecurityAuditCorrelationId?: () => string;
@@ -303,18 +310,11 @@ function defaultRuntimeResolver(emailSender: EmailActionSender) {
   };
 }
 
-function defaultPlayerApplicationResolver(env: AuthEnvironment): PlayerHttpApplication {
-  const connectionString = env.HYPERDRIVE?.connectionString;
-  if (!connectionString) {
-    throw new Error("HYPERDRIVE connectionString is required");
-  }
-  return new PlayerApplication(connectionString);
-}
-
 function applyCredentialedCors(
   c: ApiContext,
   runtime: AuthHttpRuntime,
   allowedMethods: string,
+  allowedHeaders = `Content-Type, ${CSRF_HEADER_NAME}`,
 ): Response | null {
   const origin = c.req.header("Origin");
   if (!origin || !runtime.allowedOrigins.includes(origin)) {
@@ -325,7 +325,7 @@ function applyCredentialedCors(
   c.header("Vary", "Origin");
   if (c.req.method === "OPTIONS") {
     c.header("Access-Control-Allow-Methods", allowedMethods);
-    c.header("Access-Control-Allow-Headers", `Content-Type, ${CSRF_HEADER_NAME}`);
+    c.header("Access-Control-Allow-Headers", allowedHeaders);
     return c.body(null, 204);
   }
   return null;
@@ -336,7 +336,9 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
     options.resolveAuthRuntime ??
     defaultRuntimeResolver(options.emailSender ?? createUnavailableEmailActionSender());
   const resolvePlayerApplication =
-    options.resolvePlayerApplication ?? defaultPlayerApplicationResolver;
+    options.resolvePlayerApplication ?? createPlayerApplicationFromEnvironment;
+  const resolvePlayerCursorCodec =
+    options.resolvePlayerCursorCodec ?? createPlayerCursorCodecFromEnvironment;
   const app = new Hono<{ Bindings: ApiBindings; Variables: ApiVariables }>();
   const createSecurityAuditCorrelationId =
     options.createSecurityAuditCorrelationId ?? (() => crypto.randomUUID());
@@ -344,6 +346,7 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
 
   const runtimeFor = (c: ApiContext): AuthHttpRuntime => resolveAuthRuntime(c.env);
   const playerFor = (c: ApiContext): PlayerHttpApplication => resolvePlayerApplication(c.env);
+  const playerCursorFor = (c: ApiContext): PlayerCursorCodec => resolvePlayerCursorCodec(c.env);
 
   app.use("/auth/*", async (c, next) => {
     c.set("securityAuditCorrelationId", createSecurityAuditCorrelationId());
@@ -354,7 +357,12 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
   });
 
   app.use("/player/*", async (c, next) => {
-    const preflight = applyCredentialedCors(c, runtimeFor(c), "GET, PUT");
+    const preflight = applyCredentialedCors(
+      c,
+      runtimeFor(c),
+      "GET, POST, PUT, DELETE, OPTIONS",
+      `Content-Type, ${CSRF_HEADER_NAME}, Idempotency-Key`,
+    );
     if (preflight) return preflight;
     await next();
   });
@@ -363,9 +371,11 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
 
   registerPlayerRoutes(app, {
     playerFor,
+    cursorFor: playerCursorFor,
     security: {
       requireSession: (c) => requireSession(c, runtimeFor(c), false),
       requireSessionMutation: (c) => requireSessionMutation(c, runtimeFor(c), false),
+      requireCommandSession: (c) => requireSessionMutation(c, runtimeFor(c), true),
     },
   });
 

@@ -157,6 +157,7 @@ describe("PostgreSQL 17 migration foundation", () => {
       "0002_authentication_session_foundation.sql",
       "0003_collection_team_spec005.sql",
       "0004_progression_inventory_reward.sql",
+      "0005_player_state_api_spec011.sql",
     ]);
     const [persistenceMigration, authMigration] = canonical;
 

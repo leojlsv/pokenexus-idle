@@ -264,6 +264,17 @@ describe("authentication HTTP boundary", () => {
           playerCreates.push(accountId);
           return { playerId: "0199472a-0000-7000-8000-000000000010" };
         },
+        listCollection: async () => null,
+        loadPokemon: async () => null,
+        loadPokemonProgression: async () => null,
+        loadProgression: async () => null,
+        loadInventoryPage: async () => ({ status: "not_found" }),
+        listTeams: async () => null,
+        loadTeam: async () => null,
+        createTeam: async () => ({ status: "not_found" }),
+        replaceTeamRoster: async () => ({ status: "not_found" }),
+        deleteTeam: async () => ({ status: "not_found" }),
+        replaceMoveLoadout: async () => ({ status: "not_found" }),
       }),
       deferPublicWork: (work) => deferredWork.push(work),
       createSecurityAuditCorrelationId: () => "0199472a-0000-7000-8000-000000000099",
@@ -672,8 +683,47 @@ describe("authentication HTTP boundary", () => {
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get("access-control-allow-origin")).toBe(allowedOrigin);
     expect(preflight.headers.get("access-control-allow-credentials")).toBe("true");
-    expect(preflight.headers.get("access-control-allow-methods")).toBe("GET, PUT");
-    expect(preflight.headers.get("access-control-allow-headers")).toContain(CSRF_HEADER_NAME);
+    expect(preflight.headers.get("access-control-allow-methods")).toBe("GET, POST, PUT, DELETE, OPTIONS");
+    expect(preflight.headers.get("access-control-allow-headers")).toBe(
+      `Content-Type, ${CSRF_HEADER_NAME}, Idempotency-Key`,
+    );
+  });
+
+  it("classifies Team commands as session activity while keeping profile creation non-activity", async () => {
+    const profile = await app.request(
+      "/player/profile",
+      {
+        method: "PUT",
+        headers: requestHeaders({
+          Cookie: `${SESSION_COOKIE_NAME}=bearer`,
+          [CSRF_HEADER_NAME]: "session-csrf",
+        }),
+      },
+      env,
+    );
+    expect(profile.status).toBe(200);
+
+    const playerRead = await app.request(
+      "/player/pokemon/0199472a-0000-7000-8000-000000000012",
+      { headers: { Cookie: `${SESSION_COOKIE_NAME}=bearer` } },
+      env,
+    );
+    expect(playerRead.status).toBe(404);
+
+    const team = await app.request(
+      "/player/teams",
+      {
+        method: "POST",
+        headers: requestHeaders({
+          Cookie: `${SESSION_COOKIE_NAME}=bearer`,
+          [CSRF_HEADER_NAME]: "session-csrf",
+          "Idempotency-Key": "0199472a-0000-7000-8000-000000000011",
+        }),
+      },
+      env,
+    );
+    expect(team.status).toBe(404);
+    expect(auth.sessionTouches).toEqual([false, false, true]);
   });
 
   it("rejects invalid profile sessions before persistence", async () => {
@@ -691,7 +741,7 @@ describe("authentication HTTP boundary", () => {
   });
 
   it("enforces Origin and session-bound CSRF on every cookie-authenticated unsafe route", async () => {
-    const routes: Array<{ method: "POST" | "DELETE"; path: string }> = [
+    const routes: Array<{ method: "POST" | "PUT" | "DELETE"; path: string }> = [
       { method: "POST", path: "/auth/logout" },
       { method: "POST", path: "/auth/passkey/reauth/options" },
       { method: "POST", path: "/auth/passkey/reauth/verify" },
@@ -703,6 +753,10 @@ describe("authentication HTTP boundary", () => {
       { method: "DELETE", path: "/auth/sessions/other" },
       { method: "POST", path: "/auth/sessions/revoke-all" },
       { method: "POST", path: "/auth/account/delete" },
+      { method: "POST", path: "/player/teams" },
+      { method: "PUT", path: "/player/teams/0199472a-0000-7000-8000-000000000011/roster" },
+      { method: "DELETE", path: "/player/teams/0199472a-0000-7000-8000-000000000011?expectedRowVersion=0" },
+      { method: "PUT", path: "/player/pokemon/0199472a-0000-7000-8000-000000000012/moves" },
     ];
     for (const route of routes) {
       const missingCsrf = await app.request(
