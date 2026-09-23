@@ -8,13 +8,13 @@
 
 ## 1. Current position
 
-**Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, baseline progression/Inventory/Reward persistence, authoritative Move eligibility, and the Player State API implementation are integrated in the current uncommitted acceptance snapshot. Production Move/Ability content remains separately planned.
+**Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, baseline progression/Inventory/Reward persistence, authoritative Move eligibility, and the Player State API implementation are integrated. Production Move/Ability content remains separately planned.
 
-**Current work:** `TASK-025 — Player State API Integration` is **ACCEPTANCE**. The corrected production-runtime HTTP Move evidence closed the sole QA P2; final QA is **READY 0/0/0/0**, IA is **PASS 0/0/0/0**, and delegated independent Class B functional/architectural acceptance is **ACCEPT** with no blockers. Player State PG is `4/4`, full API PG is `32/32`, DB PG is `58/58`, and API unit is `88/88`.
+**Current work:** `TASK-025 — Player State API Integration` is **DONE** after final QA **READY 0/0/0/0**, IA **PASS 0/0/0/0**, delegated independent Class B **ACCEPT** with no blockers, and explicit Human Owner repository/history completion authorization on 2026-09-23. The accepted implementation snapshot is committed at `871c6a7`.
 
-**Current action:** await separate Human Owner authorization for TASK-025 repository/history completion; no TASK-025 commit/push is authorized yet. TASK-090 remains independently **PLANNED**.
+**Current action:** TASK-025 is closed. No downstream task is auto-activated; TASK-090 remains independently **PLANNED** pending normal activation.
 
-**Next task after TASK-003 acceptance:** TASK-025 is at ACCEPTANCE pending repository/history completion authorization; TASK-090 remains a separate planned content path.
+**Next task after TASK-003 acceptance:** TASK-025 is DONE. TASK-090 remains a separate planned content path and is not auto-activated by this closure.
 
 **Portfolio status snapshot:**
 
@@ -47,22 +47,24 @@
 | `TASK-089` Move Acquisition / Eligibility Implementation | DONE — accepted implementation integrated at `bd3d036`; historical QA/TECH P2 + IA P3 were evidence-only and are now closed by fresh disposable-PG17 `4/4` PASS; Human Owner authorized repository history/completion |
 | `TASK-094` Player State API Contract Spec | DONE — SPEC-011 APPROVED by Human Owner on 2026-09-22 after fresh 6-Team QA READY + IA PASS `0/0/0/0` and reconciled GSC ADVISORY PASS; repository/history completion separately authorized; approved snapshot integrated at `190ef09` |
 
-**Next product milestone:** close TASK-025 repository/history after its accepted Player State API snapshot; production Move/Ability rule-content coverage remains separately owned by TASK-090/091 before Solo Hunt production content consumes it.
+| `TASK-025` Player State API Integration | DONE — final QA READY + IA PASS `0/0/0/0`; delegated Class B ACCEPT; Human Owner authorized repository/history completion on 2026-09-23; accepted implementation committed at `871c6a7` |
+
+**Next product milestone:** production Move/Ability rule-content coverage remains separately owned by TASK-090/091 before Solo Hunt production content consumes it; TASK-090 remains PLANNED pending normal activation.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-094`.
-- DONE: 31.
+- DONE: 32.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 1.
+- ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 63.
-- Task-count completion: **31 / 95 = 32.6%**.
+- Task-count completion: **32 / 95 = 33.7%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -413,7 +415,7 @@ implementation Task before code is written.
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089 and TASK-094 are integrated. TASK-025 has completed implementation/review and is at ACCEPTANCE pending separate repository/history authorization; TASK-090 remains independently PLANNED/inactive, and TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089, TASK-094 and TASK-025 are integrated. TASK-090 remains independently PLANNED/inactive, and TASK-091 follows TASK-090. Client design exploration may run in parallel but must not invent combat semantics or static-data authority.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
@@ -456,7 +458,7 @@ content relies on those mechanics.
 
 ### EPIC-03 — Trainer, Collection, Team, Inventory & Progression
 
-**Status:** IN PROGRESS — TASK-089 authoritative Move eligibility and TASK-094 / APPROVED SPEC-011 are DONE; TASK-025 is at ACCEPTANCE with QA/IA/Class B gates clear and repository/history completion still pending Human authorization
+**Status:** IN PROGRESS — TASK-089 authoritative Move eligibility, TASK-094 / APPROVED SPEC-011, and TASK-025 Player State API Integration are DONE; production Move/Ability content remains separately planned
 **Outcome:** a persistent trainer owns Pokémon/items, builds teams and progresses through server-authoritative rules.
 
 #### STORY-03.1 — Pokémon ownership and team model
@@ -477,7 +479,7 @@ content relies on those mechanics.
 | `TASK-088` Move Acquisition / Eligibility Rules Spec | A | DONE | PM → ChatGPT | GSC **PASS** + QA **READY**, P0/P1/P2/P3 `0/0/0/0` | `SK-GAME-ARCH`, `SK-GAME-BAL`; `SK-PKM-DEX` reference-only | Completed — Human Owner approved SPEC-010 in full and authorized repository history/completion on 2026-09-22 | TASK-006/019/021/022 | **APPROVED SPEC-010 integrated at `72039d8`:** level-up-only derived eligibility; deterministic bootstrap; server-selected exact pair + retained rule-artifact semantics; no automatic loadout rewrite; no learned-set persistence; selected-only grandfathering; machine/TM/tutor/egg/evolution/transfer/reminder acquisition deferred |
 | `TASK-089` Move Acquisition / Eligibility Implementation | B | DONE | LD → ChatGPT delegated implementation worker | QA/TECH **READY / PASS WITH P2** `0/0/1/0` + **IA PASS** `0/0/0/1` at REVIEW; sole evidence gap subsequently closed by disposable PG17 `4/4` PASS, no code correction | `SK-TDD`, `SK-PG`, `SK-GAME-ARCH` | Completed — PM accepted exact REVIEW snapshot; Human Owner authorized repository history/completion on 2026-09-22 | TASK-020/024/087/088 | Integrated at `bd3d036`. APPROVED SPEC-010 implemented: Level-derived eligibility from one exact Learnset context; exact server-selected pair + retained compatibility/new-use checks + exact artifact/hash; deterministic bootstrap; complete replacement via shared Pokémon OCC; catalog/Worker/workspace/PostgreSQL gates PASS; no public endpoint, learned/acquired persistence or machine/TM Item hooks |
 | `TASK-094` Player State API Contract Spec | A | DONE | PM → ChatGPT | Fresh 6-Team delta QA READY + IA PASS `0/0/0/0`; reconciled GSC delta ADVISORY PASS, no remaining correction | `SK-API-SEC`, `SK-PG`, `SK-GAME-ARCH` reference-only | Completed — Human Owner accepted SPEC-011 and separately authorized repository history/completion on 2026-09-22 | TASK-017/020/024/089 | **APPROVED SPEC-011 integrated at `190ef09`:** self-scoped Player State routes/payloads/errors, lossless integer encoding, session activity + CSRF/Origin, bounded Collection/Team/Inventory paging, deliberate player-visible **6-live-Team preset capacity** + separate 64-create/24h abuse control, serialized durable Team-create idempotency with 30-day deletion replay window, OCC no-hidden-retry and TASK-089 Move-authority handoff |
-| `TASK-025` Player State API Integration | B | ACCEPTANCE | LD → ChatGPT project implementation session | Final QA **READY 0/0/0/0** + IA **PASS 0/0/0/0**; delegated independent Class B **ACCEPT**, blockers none; Player State PG `4/4`, full API PG `32/32`, DB PG `58/58`, API unit `88/88`, Worker/workspace gates PASS | `SK-TDD`, `SK-CF-WBP`, `SK-PG`, `SK-API-SEC` reference-only | Awaiting separate Human Owner repository/history completion authorization; no commit/push authorized yet | TASK-020/024/089/094 | APPROVED SPEC-011 implemented without scope widening; production-runtime Move HTTP evidence proves real env/release + immutable published bundle path; no production-code correction was required for the sole QA evidence P2 |
+| `TASK-025` Player State API Integration | B | DONE | LD → ChatGPT project implementation session | Final QA **READY 0/0/0/0** + IA **PASS 0/0/0/0**; delegated independent Class B **ACCEPT**, blockers none; Player State PG `4/4`, full API PG `32/32`, DB PG `58/58`, API unit `88/88`, Worker/workspace gates PASS | `SK-TDD`, `SK-CF-WBP`, `SK-PG`, `SK-API-SEC` reference-only | Completed — Human Owner authorized repository/history completion on 2026-09-23 | TASK-020/024/089/094 | Integrated implementation at `871c6a7`; APPROVED SPEC-011 implemented without scope widening; production-runtime Move HTTP evidence proves real env/release + immutable published bundle path; no production-code correction was required for the sole QA evidence P2 |
 
 **Exit criteria:** authenticated players have authoritative collection/team/inventory/progression state suitable for gameplay rewards and team selection.
 

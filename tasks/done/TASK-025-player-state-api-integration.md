@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT project implementation session
@@ -16,7 +16,7 @@
 - Related specs: SPEC-004, SPEC-005, SPEC-006, SPEC-007, SPEC-010
 - Related ADRs: ADR-005, ADR-006
 - Related tasks: TASK-017, TASK-020, TASK-024, TASK-089, TASK-094
-- Branch: `main` canonical implementation worktree; no TASK-025 Git/history mutation authorized yet
+- Branch: `main` canonical implementation worktree; Human Owner authorized repository/history completion on 2026-09-23
 - Worktree: `.worktrees/main-governance-integration`
 
 ## Objective
@@ -290,6 +290,11 @@ required independent gates:
 - `git diff --check`: **PASS** on the ACCEPTANCE snapshot.
 
 The accepted snapshot remains within APPROVED SPEC-011 scope. No unresolved functional,
-architectural, QA or IA finding remains. TASK-025 repository/history mutation has **not** been
-authorized; the task remains in `tasks/active/` at ACCEPTANCE pending separate Human Owner
-repository/history completion authorization.
+architectural, QA or IA finding remains.
+
+## DONE closure
+
+The Human Owner explicitly approved TASK-025 repository/history completion on 2026-09-23.
+The accepted implementation/ACCEPTANCE snapshot was committed to `main` as `871c6a7`
+(`feat(api): integrate player state API`). TASK-025 is therefore closed as DONE with no scope
+widening and no downstream task automatically activated.
