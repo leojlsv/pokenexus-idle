@@ -25,12 +25,10 @@ import {
 import {
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
   MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
-  PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
-  PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
-  PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
-  PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
-  PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
-  PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
+  PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_V2_RULES_VERSION,
+  PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_V3_RULES_VERSION,
   type MoveEligibilityContext,
 } from "../src/moves/context";
 import { PlayerApplication } from "../src/player/application";
@@ -50,8 +48,8 @@ const now = new Date("2026-09-22T22:00:00.000Z");
 const cursorCodec = createPlayerCursorCodec("player-state-cross-package-cursor-secret-material-32-bytes");
 const publishedGameDataRoot = resolve(process.cwd(), "../../packages/game-data/published");
 const productionGameDataBaseUrl = "https://player-state-game-data.test/";
-const productionGameDataVersion = "game-data-core-kanto-johto-v2";
-const productionRulesVersion = "rules:task-025-production-http-integration";
+const V2 = "game-data-core-kanto-johto-v2";
+const V3 = "game-data-core-kanto-johto-v3";
 const ampharosSpeciesId = "candidate:species:pokedex-ampharos-181:b682912fc8";
 const dragonPulseMoveId = "candidate:move:dragon-pulse:54d897ab30";
 const takeDownMoveId = "candidate:move:take-down:790765ae8a";
@@ -157,6 +155,44 @@ function commandHeaders(
     Cookie: `${SESSION_COOKIE_NAME}=${session.bearer}`,
     [CSRF_HEADER_NAME]: session.csrf,
     ...(contentType ? { "Content-Type": "application/json" } : {}),
+  };
+}
+
+function productionEnvironment(gameDataVersion: string, rulesVersion: string) {
+  return {
+    HYPERDRIVE: { connectionString: testDatabaseUrl },
+    PLAYER_STATE_CURSOR_HMAC_KEY: "player-state-production-cursor-secret-material-32-bytes",
+    PLAYER_STATE_GAME_DATA_BASE_URL: productionGameDataBaseUrl,
+    PLAYER_STATE_MOVE_GAME_DATA_VERSION: gameDataVersion,
+    PLAYER_STATE_MOVE_RULES_VERSION: rulesVersion,
+    PLAYER_STATE_MOVE_CONTEXT_RELEASES: JSON.stringify([
+      {
+        gameDataVersion: V2,
+        rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
+        newOperationsAllowed: true,
+      },
+      {
+        gameDataVersion: V3,
+        rulesVersion: PRODUCTION_COMBAT_V3_RULES_VERSION,
+        newOperationsAllowed: true,
+      },
+    ]),
+    PLAYER_STATE_MOVE_GAME_DATA_RELEASES: JSON.stringify([
+      { gameDataVersion: V2, newOperationsAllowed: true },
+      { gameDataVersion: V3, newOperationsAllowed: true },
+    ]),
+    PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([
+      {
+        rulesVersion: PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR.rulesVersion,
+        newOperationsAllowed: true,
+        productionSelectability: PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+      },
+      {
+        rulesVersion: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.rulesVersion,
+        newOperationsAllowed: true,
+        productionSelectability: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+      },
+    ]),
   };
 }
 
@@ -440,7 +476,7 @@ describe("Player State API with PostgreSQL", () => {
     await expect(unresolvedSpecies.json()).resolves.toEqual({ error: "authority_unavailable" });
   });
 
-  it("runs Move replacement through the production env/release/runtime composition over the published bundle", async () => {
+  it("runs Move replacement through retained v2 and exact v3 production pairs over published bundles", async () => {
     const owner = await createPlayerFixture("production-move-owner");
     const pokemonInstanceId = await createPokemon(owner.playerId, {
       speciesId: ampharosSpeciesId,
@@ -458,34 +494,8 @@ describe("Player State API with PostgreSQL", () => {
 
     const auth = new FakeSessionAuth();
     auth.add(owner);
-    const env = {
-      HYPERDRIVE: { connectionString: testDatabaseUrl },
-      PLAYER_STATE_CURSOR_HMAC_KEY: "player-state-production-cursor-secret-material-32-bytes",
-      PLAYER_STATE_GAME_DATA_BASE_URL: productionGameDataBaseUrl,
-      PLAYER_STATE_MOVE_GAME_DATA_VERSION: productionGameDataVersion,
-      PLAYER_STATE_MOVE_RULES_VERSION: productionRulesVersion,
-      PLAYER_STATE_MOVE_CONTEXT_RELEASES: JSON.stringify([{
-        gameDataVersion: productionGameDataVersion,
-        rulesVersion: productionRulesVersion,
-        newOperationsAllowed: true,
-      }]),
-      PLAYER_STATE_MOVE_GAME_DATA_RELEASES: JSON.stringify([{
-        gameDataVersion: productionGameDataVersion,
-        newOperationsAllowed: true,
-      }]),
-      PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
-        rulesVersion: productionRulesVersion,
-        newOperationsAllowed: true,
-        productionSelectability: {
-          artifactId: PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
-          semanticHash: PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
-          supportProfileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
-          supportProfileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
-          combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
-          combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
-        },
-      }]),
-    };
+    const retainedEnv = productionEnvironment(V2, PRODUCTION_COMBAT_V2_RULES_VERSION);
+    const env = productionEnvironment(V3, PRODUCTION_COMBAT_V3_RULES_VERSION);
     const fetchedPaths: string[] = [];
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = new URL(
@@ -522,13 +532,37 @@ describe("Player State API with PostgreSQL", () => {
         }),
       });
 
-      const unsupported = await app.request(
+      const retainedUpdated = await app.request(
         `/player/pokemon/${pokemonInstanceId}/moves`,
         {
           method: "PUT",
           headers: commandHeaders(owner, true),
           body: JSON.stringify({
             expectedRowVersion: "1",
+            moveIds: [dragonPulseMoveId, tackleMoveId],
+          }),
+        },
+        retainedEnv as never,
+      );
+
+      expect(retainedUpdated.status).toBe(200);
+      await expect(retainedUpdated.json()).resolves.toEqual({
+        pokemonInstanceId,
+        moveIds: [dragonPulseMoveId, tackleMoveId],
+        rowVersion: "2",
+      });
+      expect(fetchedPaths).toHaveLength(6);
+      expect(fetchedPaths[0]).toMatch(/^version-[0-9a-f]{64}\/manifest\.json$/);
+
+      fetchedPaths.length = 0;
+
+      const unsupported = await app.request(
+        `/player/pokemon/${pokemonInstanceId}/moves`,
+        {
+          method: "PUT",
+          headers: commandHeaders(owner, true),
+          body: JSON.stringify({
+            expectedRowVersion: "2",
             moveIds: [takeDownMoveId],
           }),
         },
@@ -543,8 +577,8 @@ describe("Player State API with PostgreSQL", () => {
       });
       await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
         await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
-          rowVersion: 1n,
-          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+          rowVersion: 2n,
+          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId, tackleMoveId] },
         });
       });
       expect(fetchedPaths).toHaveLength(6);
@@ -565,8 +599,8 @@ describe("Player State API with PostgreSQL", () => {
           method: "PUT",
           headers: commandHeaders(owner, true),
           body: JSON.stringify({
-            expectedRowVersion: "1",
-            moveIds: [dragonPulseMoveId, tackleMoveId],
+            expectedRowVersion: "2",
+            moveIds: [dragonPulseMoveId],
           }),
         },
         env as never,
@@ -575,17 +609,17 @@ describe("Player State API with PostgreSQL", () => {
       expect(updated.status).toBe(200);
       await expect(updated.json()).resolves.toEqual({
         pokemonInstanceId,
-        moveIds: [dragonPulseMoveId, tackleMoveId],
-        rowVersion: "2",
+        moveIds: [dragonPulseMoveId],
+        rowVersion: "3",
       });
       await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
         await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
           speciesId: ampharosSpeciesId,
           level: 20,
-          rowVersion: 2n,
+          rowVersion: 3n,
           moveLoadout: {
             state: "selected",
-            moveIds: [dragonPulseMoveId, tackleMoveId],
+            moveIds: [dragonPulseMoveId],
           },
         });
       });
@@ -602,18 +636,137 @@ describe("Player State API with PostgreSQL", () => {
       );
 
       fetchedPaths.length = 0;
+      const crossPairEnv = {
+        ...env,
+        PLAYER_STATE_MOVE_RULES_VERSION: PRODUCTION_COMBAT_V2_RULES_VERSION,
+      };
+      const crossPairUnavailable = await app.request(
+        `/player/pokemon/${pokemonInstanceId}/moves`,
+        {
+          method: "PUT",
+          headers: commandHeaders(owner, true),
+          body: JSON.stringify({ expectedRowVersion: "3", moveIds: [dragonPulseMoveId, tackleMoveId] }),
+        },
+        crossPairEnv as never,
+      );
+      expect(crossPairUnavailable.status).toBe(503);
+      await expect(crossPairUnavailable.json()).resolves.toEqual({ error: "authority_unavailable" });
+      expect(fetchedPaths).toEqual([]);
+
+      const persistedAfterCrossPair = await withPgClient({ connectionString: testDatabaseUrl }, async (client) =>
+        loadOwnedPokemon(client, owner.playerId, pokemonInstanceId));
+      expect(persistedAfterCrossPair).toMatchObject({
+        rowVersion: 3n,
+        moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+      });
+
+      const explicitCrossPairEnv = {
+        ...env,
+        PLAYER_STATE_MOVE_RULES_VERSION: PRODUCTION_COMBAT_V2_RULES_VERSION,
+        PLAYER_STATE_MOVE_CONTEXT_RELEASES: JSON.stringify([{
+          gameDataVersion: V3,
+          rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
+          newOperationsAllowed: true,
+        }]),
+        PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
+          rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
+          newOperationsAllowed: true,
+          productionSelectability: PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+        }]),
+      };
+      const explicitCrossPairUnavailable = await app.request(
+        `/player/pokemon/${pokemonInstanceId}/moves`,
+        {
+          method: "PUT",
+          headers: commandHeaders(owner, true),
+          body: JSON.stringify({ expectedRowVersion: "3", moveIds: [dragonPulseMoveId, tackleMoveId] }),
+        },
+        explicitCrossPairEnv as never,
+      );
+      expect(explicitCrossPairUnavailable.status).toBe(503);
+      await expect(explicitCrossPairUnavailable.json()).resolves.toEqual({ error: "authority_unavailable" });
+      expect(fetchedPaths).toEqual([]);
+      await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+        await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
+          rowVersion: 3n,
+          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+        });
+      });
+
+      const swappedDescriptorEnv = {
+        ...env,
+        PLAYER_STATE_MOVE_RULES_VERSION: PRODUCTION_COMBAT_V2_RULES_VERSION,
+        PLAYER_STATE_MOVE_CONTEXT_RELEASES: JSON.stringify([{
+          gameDataVersion: V3,
+          rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
+          newOperationsAllowed: true,
+        }]),
+        PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
+          rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
+          newOperationsAllowed: true,
+          productionSelectability: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+        }]),
+      };
+      const swappedDescriptorUnavailable = await app.request(
+        `/player/pokemon/${pokemonInstanceId}/moves`,
+        {
+          method: "PUT",
+          headers: commandHeaders(owner, true),
+          body: JSON.stringify({ expectedRowVersion: "3", moveIds: [dragonPulseMoveId, tackleMoveId] }),
+        },
+        swappedDescriptorEnv as never,
+      );
+      expect(swappedDescriptorUnavailable.status).toBe(503);
+      await expect(swappedDescriptorUnavailable.json()).resolves.toEqual({ error: "authority_unavailable" });
+      expect(fetchedPaths).toEqual([]);
+      await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+        await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
+          rowVersion: 3n,
+          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+        });
+      });
+
+      const aliasedRulesEnv = {
+        ...env,
+        PLAYER_STATE_MOVE_RULES_VERSION: "rules:production-alias",
+        PLAYER_STATE_MOVE_CONTEXT_RELEASES: JSON.stringify([{
+          gameDataVersion: V3,
+          rulesVersion: "rules:production-alias",
+          newOperationsAllowed: true,
+        }]),
+        PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
+          rulesVersion: "rules:production-alias",
+          newOperationsAllowed: true,
+          productionSelectability: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+        }]),
+      };
+      const aliasedRulesUnavailable = await app.request(
+        `/player/pokemon/${pokemonInstanceId}/moves`,
+        {
+          method: "PUT",
+          headers: commandHeaders(owner, true),
+          body: JSON.stringify({ expectedRowVersion: "3", moveIds: [dragonPulseMoveId, tackleMoveId] }),
+        },
+        aliasedRulesEnv as never,
+      );
+      expect(aliasedRulesUnavailable.status).toBe(503);
+      await expect(aliasedRulesUnavailable.json()).resolves.toEqual({ error: "authority_unavailable" });
+      expect(fetchedPaths).toEqual([]);
+      await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+        await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
+          rowVersion: 3n,
+          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+        });
+      });
+
       const wrongDescriptorEnv = {
         ...env,
         PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([{
-          rulesVersion: productionRulesVersion,
+          rulesVersion: PRODUCTION_COMBAT_V3_RULES_VERSION,
           newOperationsAllowed: true,
           productionSelectability: {
-            artifactId: PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
+            ...PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability,
             semanticHash: `sha256:${"f".repeat(64)}`,
-            supportProfileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
-            supportProfileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
-            combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
-            combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
           },
         }]),
       };
@@ -622,7 +775,7 @@ describe("Player State API with PostgreSQL", () => {
         {
           method: "PUT",
           headers: commandHeaders(owner, true),
-          body: JSON.stringify({ expectedRowVersion: "2", moveIds: [dragonPulseMoveId] }),
+          body: JSON.stringify({ expectedRowVersion: "3", moveIds: [dragonPulseMoveId] }),
         },
         wrongDescriptorEnv as never,
       );
@@ -631,8 +784,8 @@ describe("Player State API with PostgreSQL", () => {
       expect(fetchedPaths).toEqual([]);
       await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
         await expect(loadOwnedPokemon(client, owner.playerId, pokemonInstanceId)).resolves.toMatchObject({
-          rowVersion: 2n,
-          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId, tackleMoveId] },
+          rowVersion: 3n,
+          moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
         });
       });
     } finally {

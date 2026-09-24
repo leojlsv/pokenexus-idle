@@ -1,4 +1,5 @@
-import rawProductionMoveSupportProfile from "./production-move-support-v1.json" with { type: "json" };
+import rawProductionMoveSupportProfileV1 from "./production-move-support-v1.json" with { type: "json" };
+import rawProductionMoveSupportProfileV2 from "./production-move-support-v2.json" with { type: "json" };
 import { compareUtf8Bytes } from "./combat-math";
 import { deriveSimpleDamageMoveCooldownMs } from "./cooldown";
 import { deriveLevelAvailableMoves, type MoveEligibilityLearnsetEntry } from "./move-eligibility";
@@ -37,6 +38,47 @@ export const PRODUCTION_COMBAT_GAME_DATA_VERSION = "game-data-core-kanto-johto-v
 
 export const PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH =
   "sha256:fc4ecaacb486b496ca2539666201cf73ace40b6ff352f210783a6fadedf052b4" as const;
+
+export const PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2 =
+  "spec-012-production-move-support-v2" as const;
+
+export const PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2 =
+  "sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57" as const;
+
+export const PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2 =
+  "pokenexus.production-combat-rule-catalog.v2" as const;
+
+export const PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2 =
+  "sha256:6f58481ff9abe468cd12a760f05177ac6f2c322d9308fedab6ca53784010287a" as const;
+
+export const PRODUCTION_COMBAT_GAME_DATA_VERSION_V2 = "game-data-core-kanto-johto-v3" as const;
+
+export const PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2 =
+  "sha256:a7ee6337f8f41986ca7fc4608e8f75f49fb1a42d54d66aeb18b5ae56208c6559" as const;
+
+export type ProductionCombatRuleCatalogArtifactId =
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2;
+
+export type ProductionCombatRuleCatalogCanonicalHash =
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2;
+
+export type ProductionCombatSupportProfileArtifactId =
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2;
+
+export type ProductionCombatSupportProfileContentHash =
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2;
+
+export type ProductionCombatGameDataVersion =
+  | typeof PRODUCTION_COMBAT_GAME_DATA_VERSION
+  | typeof PRODUCTION_COMBAT_GAME_DATA_VERSION_V2;
+
+export type ProductionCombatGameDataBundleHash =
+  | typeof PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH
+  | typeof PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2;
 
 export type ProductionMoveSupportState = "executable-simple" | "executable-authored" | "unsupported";
 export type ProductionAbilitySupportState = "inactive-by-policy" | "executable-authored" | "unsupported";
@@ -87,12 +129,12 @@ export interface ProductionAbilitySupportRecord {
 }
 
 export interface ProductionCombatRuleCatalog {
-  readonly artifactId: typeof PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID;
-  readonly canonicalContentHash: typeof PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH;
-  readonly profileArtifactId: typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID;
-  readonly profileContentHash: typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH;
-  readonly gameDataVersion: typeof PRODUCTION_COMBAT_GAME_DATA_VERSION;
-  readonly gameDataBundleHash: typeof PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH;
+  readonly artifactId: ProductionCombatRuleCatalogArtifactId;
+  readonly canonicalContentHash: ProductionCombatRuleCatalogCanonicalHash;
+  readonly profileArtifactId: ProductionCombatSupportProfileArtifactId;
+  readonly profileContentHash: ProductionCombatSupportProfileContentHash;
+  readonly gameDataVersion: ProductionCombatGameDataVersion;
+  readonly gameDataBundleHash: ProductionCombatGameDataBundleHash;
   readonly targetPolicy: "enemy-normalized-v1";
   readonly abilityPolicy: "all-inactive-by-policy-v1";
   readonly productionSelectabilityRuleArtifact: {
@@ -163,8 +205,8 @@ export interface ProductionMoveCoverageRow {
 }
 
 export interface ProductionMoveCoverageReport {
-  readonly profileArtifactId: typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID;
-  readonly profileContentHash: typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH;
+  readonly profileArtifactId: ProductionCombatSupportProfileArtifactId;
+  readonly profileContentHash: ProductionCombatSupportProfileContentHash;
   readonly gameDataVersion: string;
   readonly speciesCount: number;
   readonly rows: readonly ProductionMoveCoverageRow[];
@@ -368,17 +410,47 @@ function exactCount(record: Record<string, unknown>, key: string, expected: numb
   if (requiredInteger(record[key], `${label}.${key}`) !== expected) throw new Error(`${label}.${key} does not match materialized content`);
 }
 
-function materializeProductionCombatRuleCatalog(value: unknown): ProductionCombatRuleCatalog {
+interface ProductionCombatReleaseIdentity {
+  readonly catalogArtifactId: ProductionCombatRuleCatalogArtifactId;
+  readonly catalogCanonicalHash: ProductionCombatRuleCatalogCanonicalHash;
+  readonly profileArtifactId: ProductionCombatSupportProfileArtifactId;
+  readonly profileContentHash: ProductionCombatSupportProfileContentHash;
+  readonly gameDataVersion: ProductionCombatGameDataVersion;
+  readonly gameDataBundleHash: ProductionCombatGameDataBundleHash;
+}
+
+const PRODUCTION_COMBAT_RELEASE_V1: ProductionCombatReleaseIdentity = {
+  catalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
+  catalogCanonicalHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+  profileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
+  profileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+  gameDataVersion: PRODUCTION_COMBAT_GAME_DATA_VERSION,
+  gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH,
+};
+
+const PRODUCTION_COMBAT_RELEASE_V2: ProductionCombatReleaseIdentity = {
+  catalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2,
+  catalogCanonicalHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2,
+  profileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2,
+  profileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2,
+  gameDataVersion: PRODUCTION_COMBAT_GAME_DATA_VERSION_V2,
+  gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2,
+};
+
+function materializeProductionCombatRuleCatalog(
+  value: unknown,
+  identity: ProductionCombatReleaseIdentity,
+): ProductionCombatRuleCatalog {
   assertRecord(value, "profile");
   assertExactKeys(value, [
     "schemaVersion", "status", "gameDataVersion", "gameDataBundleHash", "rulesContract", "targetPolicy", "abilityPolicy",
     "mechanicsAdvisoryEvidence", "classificationCount", "supportCounts", "unsupportedReasonCounts", "moves",
     "productionSelectabilityRuleArtifact", "abilityCount", "abilitySupportCounts", "abilities",
   ], "profile");
-  if (value.schemaVersion !== PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID) throw new Error("production profile schemaVersion mismatch");
+  if (value.schemaVersion !== identity.profileArtifactId) throw new Error("production profile schemaVersion mismatch");
   if (value.status !== "APPROVED" || value.rulesContract !== "SPEC-012") throw new Error("production profile is not the accepted SPEC-012 artifact");
-  if (value.gameDataVersion !== PRODUCTION_COMBAT_GAME_DATA_VERSION) throw new Error("production profile gameDataVersion mismatch");
-  if (value.gameDataBundleHash !== PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH) throw new Error("production profile gameDataBundleHash mismatch");
+  if (value.gameDataVersion !== identity.gameDataVersion) throw new Error("production profile gameDataVersion mismatch");
+  if (value.gameDataBundleHash !== identity.gameDataBundleHash) throw new Error("production profile gameDataBundleHash mismatch");
   if (value.targetPolicy !== "enemy-normalized-v1" || value.abilityPolicy !== "all-inactive-by-policy-v1") {
     throw new Error("production profile policy mismatch");
   }
@@ -449,8 +521,8 @@ function materializeProductionCombatRuleCatalog(value: unknown): ProductionComba
     moveRules[record.moveId] = record.rule;
   }
   const structuralError = validateContext({
-    gameDataVersion: PRODUCTION_COMBAT_GAME_DATA_VERSION as never,
-    rulesVersion: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID as never,
+    gameDataVersion: identity.gameDataVersion as never,
+    rulesVersion: identity.profileArtifactId as never,
     combatEventSchemaVersion: "production-rule-catalog-validation" as never,
     moveRules,
     abilityRules: {},
@@ -459,12 +531,12 @@ function materializeProductionCombatRuleCatalog(value: unknown): ProductionComba
   });
   if (structuralError) throw new Error(`production combat rule catalog is structurally invalid: ${structuralError}`);
   return deepFreeze({
-    artifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
-    canonicalContentHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
-    profileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
-    profileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
-    gameDataVersion: PRODUCTION_COMBAT_GAME_DATA_VERSION,
-    gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH,
+    artifactId: identity.catalogArtifactId,
+    canonicalContentHash: identity.catalogCanonicalHash,
+    profileArtifactId: identity.profileArtifactId,
+    profileContentHash: identity.profileContentHash,
+    gameDataVersion: identity.gameDataVersion,
+    gameDataBundleHash: identity.gameDataBundleHash,
     targetPolicy: "enemy-normalized-v1" as const,
     abilityPolicy: "all-inactive-by-policy-v1" as const,
     productionSelectabilityRuleArtifact: Object.freeze({
@@ -485,7 +557,13 @@ function materializeProductionCombatRuleCatalog(value: unknown): ProductionComba
 }
 
 export const PRODUCTION_COMBAT_RULE_CATALOG_V1 = materializeProductionCombatRuleCatalog(
-  rawProductionMoveSupportProfile as unknown,
+  rawProductionMoveSupportProfileV1 as unknown,
+  PRODUCTION_COMBAT_RELEASE_V1,
+);
+
+export const PRODUCTION_COMBAT_RULE_CATALOG_V2 = materializeProductionCombatRuleCatalog(
+  rawProductionMoveSupportProfileV2 as unknown,
+  PRODUCTION_COMBAT_RELEASE_V2,
 );
 
 function exactUniverse(label: string, expected: ReadonlySet<string>, actual: Readonly<Record<string, unknown>>): void {
@@ -730,7 +808,11 @@ export async function hashCanonicalProductionCombatRuleCatalog(
 }
 
 export function validateProductionCombatSupportProfile(value: unknown): void {
-  materializeProductionCombatRuleCatalog(value);
+  materializeProductionCombatRuleCatalog(value, PRODUCTION_COMBAT_RELEASE_V1);
+}
+
+export function validateProductionCombatSupportProfileV2(value: unknown): void {
+  materializeProductionCombatRuleCatalog(value, PRODUCTION_COMBAT_RELEASE_V2);
 }
 
 export async function loadApprovedProductionCombatRuleCatalogV1(
@@ -740,8 +822,28 @@ export async function loadApprovedProductionCombatRuleCatalogV1(
     throw new Error("production combat support profile content hash mismatch");
   }
   const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  const catalog = materializeProductionCombatRuleCatalog(JSON.parse(text) as unknown);
+  const catalog = materializeProductionCombatRuleCatalog(
+    JSON.parse(text) as unknown,
+    PRODUCTION_COMBAT_RELEASE_V1,
+  );
   if (await hashCanonicalProductionCombatRuleCatalog(catalog) !== PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH) {
+    throw new Error("production combat rule catalog canonical hash mismatch");
+  }
+  return catalog;
+}
+
+export async function loadApprovedProductionCombatRuleCatalogV2(
+  bytes: Uint8Array,
+): Promise<ProductionCombatRuleCatalog> {
+  if (await sha256Bytes(bytes) !== PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2) {
+    throw new Error("production combat support profile content hash mismatch");
+  }
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  const catalog = materializeProductionCombatRuleCatalog(
+    JSON.parse(text) as unknown,
+    PRODUCTION_COMBAT_RELEASE_V2,
+  );
+  if (await hashCanonicalProductionCombatRuleCatalog(catalog) !== PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2) {
     throw new Error("production combat rule catalog canonical hash mismatch");
   }
   return catalog;

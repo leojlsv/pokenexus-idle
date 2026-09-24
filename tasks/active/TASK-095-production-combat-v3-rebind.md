@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: READY
+- State: ACCEPTANCE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT implementation worker after activation
@@ -117,24 +117,24 @@ that v3 retains the seven v2 factual artifacts byte-for-byte.
 
 ## Acceptance criteria
 
-- [ ] Existing TASK-091 v1 support profile/catalog bytes and hashes are unchanged.
-- [ ] Existing exact v2 data/rules pair still resolves and replays.
-- [ ] New immutable support/profile catalog binds exactly to game-data-core-kanto-johto-v3 + bundle
+- [x] Existing TASK-091 v1 support profile/catalog bytes and hashes are unchanged.
+- [x] Existing exact v2 data/rules pair still resolves and replays.
+- [x] New immutable support/profile catalog binds exactly to game-data-core-kanto-johto-v3 + bundle
       sha256:a7ee6337f8f41986ca7fc4608e8f75f49fb1a42d54d66aeb18b5ae56208c6559.
-- [ ] Wrong v3 version/hash, wrong profile/catalog identity/hash and unlisted cross-pairs fail closed.
-- [ ] v3 support universe is exactly 453 Moves / 147 Abilities with unchanged
+- [x] Wrong v3 version/hash, wrong profile/catalog identity/hash and unlisted cross-pairs fail closed.
+- [x] v3 support universe is exactly 453 Moves / 147 Abilities with unchanged
       27 simple / 18 authored / 408 unsupported / 147 inactive-by-policy.
-- [ ] New profile/catalog identities and canonical hashes are deterministic and immutable.
-- [ ] A new immutable rules release references the new v3-bound artifacts; old rules release remains
+- [x] New profile/catalog identities and canonical hashes are deterministic and immutable.
+- [x] A new immutable rules release references the new v3-bound artifacts; old rules release remains
       unchanged.
-- [ ] Exact v3 + newRulesVersion compatibility is explicit; v2 + oldRulesVersion remains retained.
-- [ ] All-293/all-level coverage/playability evidence is regenerated for v3 with no semantic drift.
-- [ ] TASK-034 Verdant Edge nine admitted Species/Level slots retain their accepted progress-capable
+- [x] Exact v3 + newRulesVersion compatibility is explicit; v2 + oldRulesVersion remains retained.
+- [x] All-293/all-level coverage/playability evidence is regenerated for v3 with no semantic drift.
+- [x] TASK-034 Verdant Edge nine admitted Species/Level slots retain their accepted progress-capable
       counts.
-- [ ] No latest/current fallback or inferred factual-subcatalog compatibility is introduced.
-- [ ] Relevant game-core/API/integration/Worker/package/workspace tests pass.
-- [ ] Independent QA has no unresolved P0/P1.
-- [ ] Independent Class-B PM/Architecture acceptance confirms no SPEC-012 semantic drift.
+- [x] No latest/current fallback or inferred factual-subcatalog compatibility is introduced.
+- [x] Relevant game-core/API/integration/Worker/package/workspace tests pass.
+- [x] Independent QA has no unresolved P0/P1.
+- [x] Independent Class-B PM/Architecture acceptance confirms no SPEC-012 semantic drift.
 
 ## Validation / tests
 
@@ -201,3 +201,70 @@ The exact v3 data identity, retained v2 production release, scope, owner, review
 fail-closed constraints are fully known. TASK-095 is therefore READY as a task definition, but it must
 remain inactive until TASK-034 is integrated into canonical repository history so its own worktree can
 start from the exact published v3 bytes without copying unintegrated state.
+
+## Current execution state
+
+TASK-095 is in ACCEPTANCE on `feat/TASK-095-production-combat-v3-rebind`, created from canonical
+`main` after TASK-034 completed at `e57e4e9`. Implementation, deterministic evidence, independent
+QA and independent Class-B PM/Architecture acceptance are complete on the current uncommitted
+snapshot. No repository/history mutation is authorized by this ACCEPTANCE transition; that remains
+the sole Human Owner gate.
+
+## REVIEW evidence
+
+- Retained support profile remains byte-identical across approved docs, runtime source and built output:
+  `230244` bytes / `sha256:1462b33b35e38224b505240dbf5205104e98dae1310d0bc630e2aa02fb31879e`.
+- New v3-bound support profile is byte-identical across runtime source and built output:
+  `230244` bytes / `sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`.
+- Retained catalog remains `pokenexus.production-combat-rule-catalog.v1` /
+  `sha256:dead91de25034fb9dbbb36856a4aad4df164074803c357d2c9e00dd3bc7dd7ce`, exactly bound to
+  `game-data-core-kanto-johto-v2` /
+  `sha256:fc4ecaacb486b496ca2539666201cf73ace40b6ff352f210783a6fadedf052b4`.
+- New catalog is `pokenexus.production-combat-rule-catalog.v2` /
+  `sha256:6f58481ff9abe468cd12a760f05177ac6f2c322d9308fedab6ca53784010287a`, exactly bound to
+  `game-data-core-kanto-johto-v3` /
+  `sha256:a7ee6337f8f41986ca7fc4608e8f75f49fb1a42d54d66aeb18b5ae56208c6559`.
+- The rulesVersion authority is explicit and immutable: retained v2 uses catalog artifact `.v1`; v3
+  uses catalog artifact `.v2`. Runtime pair authority contains only those two exact pairs, and the
+  production catalog resolver keys the complete support-profile ID/hash + catalog ID/hash identity.
+- Production rules authority additionally fails closed against configuration aliasing: any rules
+  descriptor carrying `productionSelectability` must use a `rulesVersion` equal to its combat-rule
+  catalog artifact ID; canonical `.v1` / `.v2` rulesVersions must exactly match their frozen release
+  descriptors; the loader reapplies that invariant after rules resolution; and canonical
+  `.v1 -> game-data-v2` / `.v2 -> game-data-v3` binding is enforced before game-data authority or
+  fetch. Explicit cross-pairs, descriptor swaps and arbitrary production rules aliases all fail
+  before fetch/write.
+- New deterministic revalidation receipt:
+  `packages/game-data/reviews/task-095/production-combat-v3-rebind.json`, `4099` bytes,
+  `sha256:a918974974281852e3cf31736e6204b73faa96eaac8dd25180e91b6a3fea1bc5`.
+  It records 293 Species/forms, 3274 all-level threshold rows and coverage-row hash
+  `sha256:ea4013853e925618bd9492f5df76046848292af77f9e3e532aaeab010f3caa39`; the rows are exactly
+  equal to retained v2 coverage. Verdant Edge remains Rattata L3/L4/L5 = `1`, Spearow L3/L4/L5 =
+  `1`, Hoothoot L3/L4/L5 = `2` progress-capable choices, with no admitted zero-progress slot.
+- Support inventory revalidates exactly as 453 Moves (`27` executable-simple / `18`
+  executable-authored / `408` unsupported) and 147 Abilities (`147` inactive-by-policy).
+- Real disposable `postgres:17-alpine` validation on `pokenexus_test_task095`: Player State PostgreSQL
+  `4/4 PASS`; full API integration `35/35 PASS`. The production path proves retained v2 + old rules
+  succeeds, exact v3 + new rules succeeds, unsupported Move stays `422` without mutation, v3 + old
+  rules returns `503 authority_unavailable` before game-data fetch/write, explicitly listed
+  cross-pairs fail before fetch/write, descriptor swaps fail before fetch/write, arbitrary
+  production-rules aliases fail before fetch/write, and a wrong production descriptor also returns
+  `503` before fetch/write.
+- Workspace gates PASS on the REVIEW snapshot: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`,
+  `roadmap:check`, `git diff --check`; game-core `288/288`, game-data `365/365` plus one intentional
+  live-ingestion skip, API unit `103/103`; focused API context/runtime `22/22`; Wrangler `4.136.1`
+  API build dry-run and
+  `test:worker-compat` PASS.
+- Corrective independent review found and closed three authority/version hardening gaps before
+  acceptance: descriptor swapping under a known production rulesVersion, explicitly listed
+  production cross-pairs reaching game-data resolution, and an arbitrary rulesVersion alias reusing a
+  production catalog descriptor. All three now have adversarial unit/runtime/PostgreSQL coverage and
+  fail closed before game-data fetch/write.
+- Final independent QA re-gate on tracked diff
+  `sha256:c1c3a68f88d1aea0760ecf76e0693afe77a3af777856ff5d2a28beb7b74880fa`:
+  **READY — P0/P1/P2/P3 = 0/0/0/0**.
+- Final independent Class-B PM/Architecture re-gate on the same diff:
+  **ACCEPT — no architectural blockers**. It confirms no SPEC-012 semantic drift and no Class-A
+  escalation; the corrective remains Class-B authority/version hardening.
+- No new Human semantic gate is required while SPEC-012 behavior remains unchanged.
+  Repository/history completion is now the sole remaining Human Owner gate.

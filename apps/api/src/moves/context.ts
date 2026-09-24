@@ -1,10 +1,17 @@
 import {
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
+  PRODUCTION_COMBAT_GAME_DATA_VERSION,
+  PRODUCTION_COMBAT_GAME_DATA_VERSION_V2,
   PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
+  PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2,
   PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+  PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2,
   PRODUCTION_COMBAT_RULE_CATALOG_V1,
+  PRODUCTION_COMBAT_RULE_CATALOG_V2,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2,
   PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
   PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
   hashCanonicalProductionCombatRuleCatalog,
@@ -31,9 +38,13 @@ import type {
 export {
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
   PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
+  PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2,
   PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+  PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2,
   PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
   PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
 } from "@pokenexus/game-core";
@@ -59,11 +70,103 @@ export interface MoveEligibilityRulesDescriptor {
   };
 }
 
+export const PRODUCTION_COMBAT_V2_RULES_VERSION =
+  PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID;
+
+export const PRODUCTION_COMBAT_V3_RULES_VERSION =
+  PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2;
+
+export const PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR: MoveEligibilityRulesDescriptor =
+  Object.freeze({
+    rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
+    moveEligibilityRuleArtifactId: MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
+    moveEligibilityRuleSemanticsHash: MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
+    productionSelectability: Object.freeze({
+      artifactId: PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
+      semanticHash: PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
+      supportProfileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID,
+      supportProfileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+      combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID,
+      combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+    }),
+  });
+
+export const PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR: MoveEligibilityRulesDescriptor =
+  Object.freeze({
+    rulesVersion: PRODUCTION_COMBAT_V3_RULES_VERSION,
+    moveEligibilityRuleArtifactId: MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
+    moveEligibilityRuleSemanticsHash: MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
+    productionSelectability: Object.freeze({
+      artifactId: PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
+      semanticHash: PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
+      supportProfileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2,
+      supportProfileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2,
+      combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2,
+      combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2,
+    }),
+  });
+
 export interface ExactMoveEligibilityRulesVersionResolver {
   resolve(rulesVersion: string): Promise<{
     readonly rules: MoveEligibilityRulesDescriptor;
     readonly newOperationsAllowed: boolean;
   } | null>;
+}
+
+function productionSelectabilityDescriptorsEqual(
+  left: MoveEligibilityRulesDescriptor["productionSelectability"],
+  right: MoveEligibilityRulesDescriptor["productionSelectability"],
+): boolean {
+  if (left === undefined || right === undefined) return left === right;
+  return left.artifactId === right.artifactId
+    && left.semanticHash === right.semanticHash
+    && left.supportProfileArtifactId === right.supportProfileArtifactId
+    && left.supportProfileContentHash === right.supportProfileContentHash
+    && left.combatRuleCatalogArtifactId === right.combatRuleCatalogArtifactId
+    && left.combatRuleCatalogContentHash === right.combatRuleCatalogContentHash;
+}
+
+function assertImmutableProductionRulesReleaseDescriptor(
+  rules: MoveEligibilityRulesDescriptor,
+): void {
+  if (
+    rules.productionSelectability !== undefined
+    && rules.rulesVersion !== rules.productionSelectability.combatRuleCatalogArtifactId
+  ) {
+    throw new Error(
+      `Production rulesVersion must equal its combat rule catalog artifact identity: ${rules.rulesVersion}`,
+    );
+  }
+  const expected = rules.rulesVersion === PRODUCTION_COMBAT_V2_RULES_VERSION
+    ? PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR
+    : rules.rulesVersion === PRODUCTION_COMBAT_V3_RULES_VERSION
+      ? PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR
+      : null;
+  if (expected === null) return;
+  if (
+    rules.moveEligibilityRuleArtifactId !== expected.moveEligibilityRuleArtifactId
+    || rules.moveEligibilityRuleSemanticsHash !== expected.moveEligibilityRuleSemanticsHash
+    || !productionSelectabilityDescriptorsEqual(
+      rules.productionSelectability,
+      expected.productionSelectability,
+    )
+  ) {
+    throw new Error(
+      `Production rulesVersion does not match its immutable release descriptor: ${rules.rulesVersion}`,
+    );
+  }
+}
+
+function expectedGameDataVersionForProductionRulesVersion(
+  rulesVersion: string,
+): string | null {
+  if (rulesVersion === PRODUCTION_COMBAT_V2_RULES_VERSION) {
+    return PRODUCTION_COMBAT_GAME_DATA_VERSION;
+  }
+  if (rulesVersion === PRODUCTION_COMBAT_V3_RULES_VERSION) {
+    return PRODUCTION_COMBAT_GAME_DATA_VERSION_V2;
+  }
+  return null;
 }
 
 export function createConfiguredMoveEligibilityRulesVersionResolver(
@@ -77,6 +180,7 @@ export function createConfiguredMoveEligibilityRulesVersionResolver(
     readonly newOperationsAllowed: boolean;
   }>();
   for (const release of releases) {
+    assertImmutableProductionRulesReleaseDescriptor(release.rules);
     if (byVersion.has(release.rules.rulesVersion)) {
       throw new Error(`Duplicate Move rulesVersion release: ${release.rules.rulesVersion}`);
     }
@@ -150,13 +254,25 @@ export class MoveAuthorityUnavailableError extends Error {
 
 export interface ExactProductionCombatCatalogResolver {
   resolve(input: {
-    readonly artifactId: string;
-    readonly contentHash: string;
+    readonly supportProfileArtifactId: string;
+    readonly supportProfileContentHash: string;
+    readonly combatRuleCatalogArtifactId: string;
+    readonly combatRuleCatalogContentHash: string;
   }): Promise<ProductionCombatRuleCatalog | null>;
 }
 
-function productionCatalogKey(artifactId: string, contentHash: string): string {
-  return JSON.stringify([artifactId, contentHash]);
+function productionCatalogKey(input: {
+  readonly supportProfileArtifactId: string;
+  readonly supportProfileContentHash: string;
+  readonly combatRuleCatalogArtifactId: string;
+  readonly combatRuleCatalogContentHash: string;
+}): string {
+  return JSON.stringify([
+    input.supportProfileArtifactId,
+    input.supportProfileContentHash,
+    input.combatRuleCatalogArtifactId,
+    input.combatRuleCatalogContentHash,
+  ]);
 }
 
 export function createConfiguredProductionCombatCatalogResolver(
@@ -165,13 +281,18 @@ export function createConfiguredProductionCombatCatalogResolver(
   const byIdentity = new Map<string, ProductionCombatRuleCatalog>();
   const verifiedIdentities = new Set<string>();
   for (const catalog of catalogs) {
-    const key = productionCatalogKey(catalog.profileArtifactId, catalog.profileContentHash);
+    const key = productionCatalogKey({
+      supportProfileArtifactId: catalog.profileArtifactId,
+      supportProfileContentHash: catalog.profileContentHash,
+      combatRuleCatalogArtifactId: catalog.artifactId,
+      combatRuleCatalogContentHash: catalog.canonicalContentHash,
+    });
     if (byIdentity.has(key)) throw new Error(`Duplicate production combat catalog: ${catalog.profileArtifactId}`);
     byIdentity.set(key, catalog);
   }
   return {
-    async resolve({ artifactId, contentHash }) {
-      const key = productionCatalogKey(artifactId, contentHash);
+    async resolve(identity) {
+      const key = productionCatalogKey(identity);
       const catalog = byIdentity.get(key) ?? null;
       if (catalog === null) return null;
       if (!verifiedIdentities.has(key)) {
@@ -188,6 +309,7 @@ export function createConfiguredProductionCombatCatalogResolver(
 
 const DEFAULT_PRODUCTION_COMBAT_CATALOG_RESOLVER = createConfiguredProductionCombatCatalogResolver([
   PRODUCTION_COMBAT_RULE_CATALOG_V1,
+  PRODUCTION_COMBAT_RULE_CATALOG_V2,
 ]);
 
 export function createDefaultProductionCombatCatalogResolver(): ExactProductionCombatCatalogResolver {
@@ -273,6 +395,7 @@ export function createMoveEligibilityContextLoader(input: {
         if (resolvedRules.newOperationsAllowed !== true) {
           throw new Error("Move rulesVersion is deprecated for new Move operations");
         }
+        assertImmutableProductionRulesReleaseDescriptor(resolvedRules.rules);
         if (
           resolvedRules.rules.moveEligibilityRuleArtifactId !== MOVE_ELIGIBILITY_RULE_ARTIFACT_ID
           || resolvedRules.rules.moveEligibilityRuleSemanticsHash !== MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH
@@ -283,12 +406,19 @@ export function createMoveEligibilityContextLoader(input: {
         if (productionSelectability !== null && (
           productionSelectability.artifactId !== PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID
           || productionSelectability.semanticHash !== PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH
-          || productionSelectability.supportProfileArtifactId !== PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID
-          || productionSelectability.supportProfileContentHash !== PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH
-          || productionSelectability.combatRuleCatalogArtifactId !== PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID
-          || productionSelectability.combatRuleCatalogContentHash !== PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH
         )) {
           throw new Error("Move rulesVersion does not resolve the accepted production-selectability semantics");
+        }
+        const expectedProductionGameDataVersion = expectedGameDataVersionForProductionRulesVersion(
+          pair.rulesVersion,
+        );
+        if (
+          expectedProductionGameDataVersion !== null
+          && pair.gameDataVersion !== expectedProductionGameDataVersion
+        ) {
+          throw new Error(
+            `Production rulesVersion is not compatible with selected gameDataVersion: ${pair.rulesVersion} + ${pair.gameDataVersion}`,
+          );
         }
 
         const gameDataLifecycle = await input.gameDataVersions.resolve(pair.gameDataVersion);
@@ -338,8 +468,10 @@ export function createMoveEligibilityContextLoader(input: {
         if (productionSelectability !== null) {
           if (!input.productionCatalogs) throw new Error("Production combat catalog authority is unavailable");
           productionCatalog = await input.productionCatalogs.resolve({
-            artifactId: productionSelectability.supportProfileArtifactId,
-            contentHash: productionSelectability.supportProfileContentHash,
+            supportProfileArtifactId: productionSelectability.supportProfileArtifactId,
+            supportProfileContentHash: productionSelectability.supportProfileContentHash,
+            combatRuleCatalogArtifactId: productionSelectability.combatRuleCatalogArtifactId,
+            combatRuleCatalogContentHash: productionSelectability.combatRuleCatalogContentHash,
           });
           if (productionCatalog === null) throw new Error("Production combat support profile is not exactly resolvable");
           if (

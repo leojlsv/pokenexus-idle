@@ -1,8 +1,16 @@
-import { PRODUCTION_COMBAT_RULE_CATALOG_V1 } from "@pokenexus/game-core";
+import {
+  PRODUCTION_COMBAT_RULE_CATALOG_V1,
+  PRODUCTION_COMBAT_RULE_CATALOG_V2,
+} from "@pokenexus/game-core";
 import { describe, expect, it, vi } from "vitest";
 import {
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
   MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
+  PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_V2_RULES_VERSION,
+  PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_V3_RULES_VERSION,
+  createConfiguredMoveEligibilityRulesVersionResolver,
   createConfiguredProductionCombatCatalogResolver,
   createMoveEligibilityContextLoader,
   type MoveEligibilityGameDataCatalog,
@@ -117,6 +125,132 @@ function createHarness(overrides: {
 }
 
 describe("createMoveEligibilityContextLoader", () => {
+  it("publishes distinct immutable retained-v2 and new-v3 rules release descriptors", () => {
+    expect(PRODUCTION_COMBAT_V2_RULES_VERSION).toBe(PRODUCTION_COMBAT_RULE_CATALOG_V1.artifactId);
+    expect(PRODUCTION_COMBAT_V3_RULES_VERSION).toBe(PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId);
+    expect(PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR).toMatchObject({
+      rulesVersion: PRODUCTION_COMBAT_RULE_CATALOG_V1.artifactId,
+      productionSelectability: {
+        supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileArtifactId,
+        supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileContentHash,
+        combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.artifactId,
+        combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.canonicalContentHash,
+      },
+    });
+    expect(PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR).toMatchObject({
+      rulesVersion: PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId,
+      productionSelectability: {
+        supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V2.profileArtifactId,
+        supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V2.profileContentHash,
+        combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId,
+        combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V2.canonicalContentHash,
+      },
+    });
+    expect(PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.moveEligibilityRuleSemanticsHash).toBe(
+      PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR.moveEligibilityRuleSemanticsHash,
+    );
+    expect(PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability?.semanticHash).toBe(
+      PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR.productionSelectability?.semanticHash,
+    );
+  });
+
+  it("rejects descriptor swapping under either immutable production rulesVersion", () => {
+    const swappedV3UnderRetainedV2 = {
+      ...PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
+      rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
+    };
+    const swappedV2UnderNewV3 = {
+      ...PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR,
+      rulesVersion: PRODUCTION_COMBAT_V3_RULES_VERSION,
+    };
+
+    for (const rules of [swappedV3UnderRetainedV2, swappedV2UnderNewV3]) {
+      expect(() => createConfiguredMoveEligibilityRulesVersionResolver([
+        { rules, newOperationsAllowed: true },
+      ])).toThrow(/combat rule catalog artifact identity/);
+    }
+  });
+
+  it("rejects production catalog aliases under an unpublished rulesVersion", () => {
+    const aliasedRules = {
+      ...PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
+      rulesVersion: "rules:production-alias",
+    };
+
+    expect(() => createConfiguredMoveEligibilityRulesVersionResolver([
+      { rules: aliasedRules, newOperationsAllowed: true },
+    ])).toThrow(/combat rule catalog artifact identity/);
+  });
+
+  it("rejects a production alias returned by a custom rules resolver before game-data resolution", async () => {
+    const rulesVersion = "rules:production-alias";
+    const pair = {
+      gameDataVersion: PRODUCTION_COMBAT_RULE_CATALOG_V2.gameDataVersion,
+      rulesVersion,
+    };
+    const gameDataVersions = {
+      resolve: vi.fn(async () => ({ gameDataVersion: pair.gameDataVersion, newOperationsAllowed: true })),
+    };
+    const gameData = { load: vi.fn(async () => catalog()) };
+    const loader = createMoveEligibilityContextLoader({
+      selector: { select: vi.fn(async () => pair) },
+      staticContextPairs: {
+        resolve: vi.fn(async () => ({ compatibility: pair, newOperationsAllowed: true })),
+      },
+      rulesVersions: {
+        resolve: vi.fn(async () => ({
+          rules: {
+            ...PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
+            rulesVersion,
+          },
+          newOperationsAllowed: true,
+        })),
+      },
+      gameDataVersions,
+      gameData,
+    });
+
+    await expect(loader.loadForNewOperation()).rejects.toThrow(/combat rule catalog artifact identity/);
+    expect(gameDataVersions.resolve).not.toHaveBeenCalled();
+    expect(gameData.load).not.toHaveBeenCalled();
+  });
+
+  it("rejects explicitly listed production cross-pairs before game-data resolution or fetch", async () => {
+    const crossPairs = [
+      {
+        gameDataVersion: PRODUCTION_COMBAT_RULE_CATALOG_V2.gameDataVersion,
+        rules: PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR,
+      },
+      {
+        gameDataVersion: PRODUCTION_COMBAT_RULE_CATALOG_V1.gameDataVersion,
+        rules: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
+      },
+    ];
+
+    for (const { gameDataVersion, rules } of crossPairs) {
+      const pair = { gameDataVersion, rulesVersion: rules.rulesVersion };
+      const gameDataVersions = {
+        resolve: vi.fn(async () => ({ gameDataVersion, newOperationsAllowed: true })),
+      };
+      const gameData = { load: vi.fn(async () => catalog()) };
+      const loader = createMoveEligibilityContextLoader({
+        selector: { select: vi.fn(async () => pair) },
+        staticContextPairs: {
+          resolve: vi.fn(async () => ({ compatibility: pair, newOperationsAllowed: true })),
+        },
+        rulesVersions: createConfiguredMoveEligibilityRulesVersionResolver([
+          { rules, newOperationsAllowed: true },
+        ]),
+        gameDataVersions,
+        gameData,
+      });
+
+      await expect(loader.loadForNewOperation()).rejects.toThrow(/not compatible with selected gameDataVersion/);
+      expect(gameDataVersions.resolve).not.toHaveBeenCalled();
+      expect(gameData.load).not.toHaveBeenCalled();
+    }
+  });
+
   it("recomputes the canonical production catalog hash before serving an approved identity", async () => {
     const executableMoveId = PRODUCTION_COMBAT_RULE_CATALOG_V1.executableMoveIds[0];
     const rule = PRODUCTION_COMBAT_RULE_CATALOG_V1.moveRules[executableMoveId];
@@ -131,9 +265,41 @@ describe("createMoveEligibilityContextLoader", () => {
     const resolver = createConfiguredProductionCombatCatalogResolver([tamperedCatalog]);
 
     await expect(resolver.resolve({
-      artifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileArtifactId,
-      contentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileContentHash,
+      supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileArtifactId,
+      supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileContentHash,
+      combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.artifactId,
+      combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.canonicalContentHash,
     })).rejects.toThrow(/content hash mismatch/);
+  });
+
+  it("resolves both immutable production releases only by their full four-field identities", async () => {
+    const resolver = createConfiguredProductionCombatCatalogResolver([
+      PRODUCTION_COMBAT_RULE_CATALOG_V1,
+      PRODUCTION_COMBAT_RULE_CATALOG_V2,
+    ]);
+    const identityFor = (catalog: typeof PRODUCTION_COMBAT_RULE_CATALOG_V1 | typeof PRODUCTION_COMBAT_RULE_CATALOG_V2) => ({
+      supportProfileArtifactId: catalog.profileArtifactId,
+      supportProfileContentHash: catalog.profileContentHash,
+      combatRuleCatalogArtifactId: catalog.artifactId,
+      combatRuleCatalogContentHash: catalog.canonicalContentHash,
+    });
+
+    await expect(resolver.resolve(identityFor(PRODUCTION_COMBAT_RULE_CATALOG_V1))).resolves.toBe(
+      PRODUCTION_COMBAT_RULE_CATALOG_V1,
+    );
+    await expect(resolver.resolve(identityFor(PRODUCTION_COMBAT_RULE_CATALOG_V2))).resolves.toBe(
+      PRODUCTION_COMBAT_RULE_CATALOG_V2,
+    );
+
+    const newIdentity = identityFor(PRODUCTION_COMBAT_RULE_CATALOG_V2);
+    for (const drifted of [
+      { ...newIdentity, supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileArtifactId },
+      { ...newIdentity, supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileContentHash },
+      { ...newIdentity, combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.artifactId },
+      { ...newIdentity, combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.canonicalContentHash },
+    ]) {
+      await expect(resolver.resolve(drifted)).resolves.toBeNull();
+    }
   });
 
   it("selects one exact server context and materializes indexed exact game data", async () => {

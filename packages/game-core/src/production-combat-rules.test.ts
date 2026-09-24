@@ -4,13 +4,20 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { initializeBattle, resolveCombatStimulus } from "./battle";
 import rawProfile from "./production-move-support-v1.json";
+import rawProfileV2 from "./production-move-support-v2.json";
 import {
   assertProductionMoveLoadoutExecutable,
   PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH,
+  PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2,
   PRODUCTION_COMBAT_GAME_DATA_VERSION,
+  PRODUCTION_COMBAT_GAME_DATA_VERSION_V2,
   PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
+  PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2,
   PRODUCTION_COMBAT_RULE_CATALOG_V1,
+  PRODUCTION_COMBAT_RULE_CATALOG_V2,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2,
   PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
   PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
   PRODUCTION_TARGET_DISPOSITIONS_V1,
@@ -18,10 +25,12 @@ import {
   canonicalSerializeProductionCombatRuleCatalog,
   hashCanonicalProductionCombatRuleCatalog,
   loadApprovedProductionCombatRuleCatalogV1,
+  loadApprovedProductionCombatRuleCatalogV2,
   resolveProductionBattleAbility,
   resolveProductionAbilityRuleForBattle,
   validateProductionCombatRuleCatalogAgainstGameData,
   validateProductionCombatSupportProfile,
+  validateProductionCombatSupportProfileV2,
   type ProductionCombatGameDataFacts,
 } from "./production-combat-rules";
 
@@ -30,22 +39,42 @@ const V2_DIRECTORY = resolve(
   PACKAGE_ROOT,
   "../game-data/published/version-a583d33f46879d427da91e8a25ad1cedb4824df3f9adf584b2504506d0724e40",
 );
+const V3_DIRECTORY = resolve(
+  PACKAGE_ROOT,
+  "../game-data/published/version-e7903d8b32ee60805f55ef36c8fe735a517c858f700e92459c3b239a7560e1e2",
+);
 
 function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
 }
 
-function v2Facts(): ProductionCombatGameDataFacts {
-  const manifest = readJson<{ gameDataVersion: string; bundleHash: string }>(resolve(V2_DIRECTORY, "manifest.json"));
+function facts(directory: string): ProductionCombatGameDataFacts {
+  const manifest = readJson<{ gameDataVersion: string; bundleHash: string }>(resolve(directory, "manifest.json"));
   return {
     gameDataVersion: manifest.gameDataVersion,
     gameDataBundleHash: manifest.bundleHash,
-    species: readJson<ProductionCombatGameDataFacts["species"]>(resolve(V2_DIRECTORY, "catalogs/species.json")),
-    moves: readJson<ProductionCombatGameDataFacts["moves"]>(resolve(V2_DIRECTORY, "catalogs/moves.json")),
-    abilities: readJson<ProductionCombatGameDataFacts["abilities"]>(resolve(V2_DIRECTORY, "catalogs/abilities.json")),
-    types: readJson<ProductionCombatGameDataFacts["types"]>(resolve(V2_DIRECTORY, "catalogs/types.json")),
-    learnsets: readJson<ProductionCombatGameDataFacts["learnsets"]>(resolve(V2_DIRECTORY, "catalogs/learnsets.json")),
+    species: readJson<ProductionCombatGameDataFacts["species"]>(resolve(directory, "catalogs/species.json")),
+    moves: readJson<ProductionCombatGameDataFacts["moves"]>(resolve(directory, "catalogs/moves.json")),
+    abilities: readJson<ProductionCombatGameDataFacts["abilities"]>(resolve(directory, "catalogs/abilities.json")),
+    types: readJson<ProductionCombatGameDataFacts["types"]>(resolve(directory, "catalogs/types.json")),
+    learnsets: readJson<ProductionCombatGameDataFacts["learnsets"]>(resolve(directory, "catalogs/learnsets.json")),
   };
+}
+
+function v2Facts(): ProductionCombatGameDataFacts {
+  return facts(V2_DIRECTORY);
+}
+
+function v3Facts(): ProductionCombatGameDataFacts {
+  return facts(V3_DIRECTORY);
+}
+
+function profileSemantics(value: Record<string, unknown>): Record<string, unknown> {
+  const clone = structuredClone(value);
+  delete clone.schemaVersion;
+  delete clone.gameDataVersion;
+  delete clone.gameDataBundleHash;
+  return clone;
 }
 
 describe("SPEC-012 production combat rule catalog", () => {
@@ -55,6 +84,25 @@ describe("SPEC-012 production combat rule catalog", () => {
     expect(runtimeBytes.equals(approvedBytes)).toBe(true);
     expect(`sha256:${createHash("sha256").update(runtimeBytes).digest("hex")}`).toBe(
       PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
+    );
+  });
+
+  it("freezes the v3-bound profile without changing SPEC-012 semantics", async () => {
+    const runtimeBytes = readFileSync(resolve(PACKAGE_ROOT, "src/production-move-support-v2.json"));
+    expect("sha256:" + createHash("sha256").update(runtimeBytes).digest("hex")).toBe(
+      PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2,
+    );
+    expect(rawProfileV2).toMatchObject({
+      schemaVersion: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2,
+      gameDataVersion: PRODUCTION_COMBAT_GAME_DATA_VERSION_V2,
+      gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2,
+    });
+    expect(profileSemantics(rawProfileV2 as unknown as Record<string, unknown>)).toEqual(
+      profileSemantics(rawProfile as unknown as Record<string, unknown>),
+    );
+    expect(() => validateProductionCombatSupportProfileV2(rawProfileV2)).not.toThrow();
+    await expect(loadApprovedProductionCombatRuleCatalogV2(runtimeBytes)).resolves.toEqual(
+      PRODUCTION_COMBAT_RULE_CATALOG_V2,
     );
   });
 
@@ -78,6 +126,24 @@ describe("SPEC-012 production combat rule catalog", () => {
       semanticHash: PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
       candidatePolicy: "level-up-eligibility-intersect-executable-support",
     });
+  });
+
+  it("materializes the v3-bound release with identical executable semantics and distinct binding metadata", () => {
+    const oldCatalog = PRODUCTION_COMBAT_RULE_CATALOG_V1;
+    const catalog = PRODUCTION_COMBAT_RULE_CATALOG_V2;
+    expect(catalog.gameDataVersion).toBe(PRODUCTION_COMBAT_GAME_DATA_VERSION_V2);
+    expect(catalog.gameDataBundleHash).toBe(PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2);
+    expect(catalog.profileArtifactId).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2);
+    expect(catalog.profileContentHash).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2);
+    expect(catalog.moveSupport).toEqual(oldCatalog.moveSupport);
+    expect(catalog.abilitySupport).toEqual(oldCatalog.abilitySupport);
+    expect(catalog.moveRules).toEqual(oldCatalog.moveRules);
+    expect(catalog.abilityRules).toEqual(oldCatalog.abilityRules);
+    expect(catalog.effectRules).toEqual(oldCatalog.effectRules);
+    expect(catalog.executableMoveIds).toEqual(oldCatalog.executableMoveIds);
+    expect(catalog.productionSelectabilityRuleArtifact).toEqual(
+      oldCatalog.productionSelectabilityRuleArtifact,
+    );
   });
 
   it("freezes the complete enemy-normalized target disposition vocabulary", () => {
@@ -139,6 +205,29 @@ describe("SPEC-012 production combat rule catalog", () => {
     if (!referencedTypeId) throw new Error("test fixture must contain a referenced TypeId");
     const missingType = { ...facts, types: facts.types.filter(({ id }) => id !== referencedTypeId) };
     expect(() => validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V1, missingType)).toThrow(/unresolved TypeId/);
+  });
+
+  it("validates only the retained-v2 and new-v3 exact catalog/data bindings", () => {
+    const oldFacts = v2Facts();
+    const newFacts = v3Facts();
+    expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V1, oldFacts)
+    ).not.toThrow();
+    expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V2, newFacts)
+    ).not.toThrow();
+    expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V1, newFacts)
+    ).toThrow(/gameDataVersion mismatch/);
+    expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V2, oldFacts)
+    ).toThrow(/gameDataVersion mismatch/);
+    expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V2, {
+        ...newFacts,
+        gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH,
+      })
+    ).toThrow(/gameDataBundleHash mismatch/);
   });
 
   it("omits inactive Abilities from battle composition without synthesizing a no-op rule", () => {
@@ -262,11 +351,50 @@ describe("SPEC-012 production combat rule catalog", () => {
     })).toThrow(/gameDataVersion mismatch/);
   });
 
+  it("rebinds all-293 coverage to v3 without semantic drift and preserves Verdant Edge playability", () => {
+    const oldFacts = v2Facts();
+    const newFacts = v3Facts();
+    const oldCoverage = buildProductionMoveCoverageReport({
+      catalog: PRODUCTION_COMBAT_RULE_CATALOG_V1,
+      gameDataVersion: oldFacts.gameDataVersion,
+      species: oldFacts.species,
+      learnsets: oldFacts.learnsets,
+    });
+    const newCoverage = buildProductionMoveCoverageReport({
+      catalog: PRODUCTION_COMBAT_RULE_CATALOG_V2,
+      gameDataVersion: newFacts.gameDataVersion,
+      species: newFacts.species,
+      learnsets: newFacts.learnsets,
+    });
+    expect(newCoverage.speciesCount).toBe(293);
+    expect(newCoverage.rows).toEqual(oldCoverage.rows);
+    expect(newCoverage.profileArtifactId).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2);
+    expect(newCoverage.profileContentHash).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2);
+    expect(newCoverage.gameDataVersion).toBe(PRODUCTION_COMBAT_GAME_DATA_VERSION_V2);
+
+    const progressAt = (speciesId: string, level: number) => {
+      const row = newCoverage.rows
+        .filter((candidate) => candidate.speciesId === speciesId && candidate.level <= level)
+        .sort((left, right) => right.level - left.level)[0];
+      if (!row) throw new Error("Missing production coverage row for " + speciesId + " at level " + level);
+      return row.progressCapableExecutableCount;
+    };
+    for (const level of [3, 4, 5]) {
+      expect(progressAt("candidate:species:pokedex-rattata-19:9975b0175c", level)).toBe(1);
+      expect(progressAt("candidate:species:pokedex-spearow-21:0ddd44d801", level)).toBe(1);
+      expect(progressAt("candidate:species:pokedex-hoothoot-163:3ecad094b2", level)).toBe(2);
+    }
+  });
+
   it("canonically serializes and hashes the materialized catalog deterministically", async () => {
     const serialized = canonicalSerializeProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V1);
     expect(serialized).toBe(canonicalSerializeProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V1));
     const hash = await hashCanonicalProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V1);
     expect(hash).toBe(PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH);
     expect(hash).toBe(await hashCanonicalProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V1));
+    const v2Hash = await hashCanonicalProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V2);
+    expect(v2Hash).toBe(PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2);
+    expect(v2Hash).not.toBe(hash);
+    expect(v2Hash).toBe(await hashCanonicalProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V2));
   });
 });
