@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: fresh ChatGPT implementation worker with explicit Lead Developer assignment
@@ -455,6 +455,27 @@ Independent pre-REVIEW QA/acceptance probing found checkpoint-integrity P1s befo
 - Required REVIEW gates are therefore complete and TASK-035 is promoted to `ACCEPTANCE`. The Human
   functional approval and task-scoped Git/history authorization recorded above remain in force; no
   new Class-A or product-semantic gate was introduced by the canonical TASK-095 repair.
+
+### Canonical integration / closure
+
+- Accepted TASK-035 snapshot was reconciled with repaired canonical `main` in merge commit
+  `4679d42 merge: reconcile task 035 with repaired main`, published on
+  `feat/TASK-035-solo-hunt-simulation-engine`, then fast-forward integrated into canonical `main` under
+  the previously recorded task-scoped Human Git/history authorization.
+- Post-integration canonical validation on `main`:
+  - focused Solo Hunt + entrypoint: **35/35 PASS**;
+  - game-core full: **354/354 PASS**;
+  - API full unit suite: **103/103 PASS**;
+  - game-data package isolated: **365/365 + 1 intentional live skip**;
+  - game-core postbuild preserves exact production artifacts: v1
+    `1462b33b35e38224b505240dbf5205104e98dae1310d0bc630e2aa02fb31879e`, v2
+    `6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`;
+  - roadmap check and `git diff --check`: PASS.
+- The root workspace-test concurrency timeout remains explicitly documented as a pre-existing game-data
+  timing flake; no TASK-035 assertion/content failure remains. Formal QA and Class-B acceptance both
+  closed with P0/P1/P2/P3 `0/0/0/0`.
+- TASK-035 is therefore `DONE`. Downstream TASK-036/037/038/041 remain separately governed and are not
+  activated by this closure.
 
 ### Baseline packaging blocker discovered during activation
 
