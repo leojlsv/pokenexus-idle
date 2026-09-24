@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT implementation worker after activation
@@ -204,11 +204,12 @@ start from the exact published v3 bytes without copying unintegrated state.
 
 ## Current execution state
 
-TASK-095 is in ACCEPTANCE on `feat/TASK-095-production-combat-v3-rebind`, created from canonical
-`main` after TASK-034 completed at `e57e4e9`. Implementation, deterministic evidence, independent
-QA and independent Class-B PM/Architecture acceptance are complete on the current uncommitted
-snapshot. No repository/history mutation is authorized by this ACCEPTANCE transition; that remains
-the sole Human Owner gate.
+TASK-095 is DONE. The accepted technical snapshot was committed as
+`f482904 feat(game-core): rebind production combat to game data v3` and fast-forward integrated into
+canonical `main` from the TASK-034 baseline `e57e4e9`. The retained v2 production release remains
+unchanged, the exact v3 + production-rules v2 pair is now canonical repository history, and TASK-035
+is no longer blocked by TASK-095 itself. TASK-035 remains PLANNED until separately activated through
+normal task governance.
 
 ## REVIEW evidence
 
@@ -267,4 +268,14 @@ the sole Human Owner gate.
   **ACCEPT — no architectural blockers**. It confirms no SPEC-012 semantic drift and no Class-A
   escalation; the corrective remains Class-B authority/version hardening.
 - No new Human semantic gate is required while SPEC-012 behavior remains unchanged.
-  Repository/history completion is now the sole remaining Human Owner gate.
+  Repository/history completion was separately authorized by the Human Owner and completed.
+
+## Repository/history authorization
+
+- Authorized by: Human Owner
+- Authorized at: `2026-09-24T08:51:53Z`
+- Human response: `APROVADO`
+- Authorization scope: commit the accepted TASK-095 technical snapshot, fast-forward integrate it into
+  canonical `main`, complete TASK-095 lifecycle/history closure, and push the resulting canonical
+  history. No new product/semantic decision was authorized or required.
+- Accepted technical commit: `f482904 feat(game-core): rebind production combat to game data v3`.
