@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT prime/direct implementation (explicit Lead Developer assignment;
@@ -13,8 +13,8 @@
 - Auditor execution surface: N/A
 - Consultants: N/A
 - Consultant execution surface(s): N/A
-- Human gate: content-sample validation before final acceptance, canonical publication/promotion or
-  repository/history integration
+- Human gate: COMPLETED — content sample approved 2026-09-24 and repository/history integration
+  authorized 2026-09-24
 - Specs:
   - `docs/specs/SPEC-002-static-game-data-and-versioning.md`
   - `docs/specs/SPEC-013-pve-world-map-zone-solo-hunt-rules-lifecycle.md`
@@ -244,9 +244,9 @@ snapshot completed every technical, QA and Human content gate:
 - publication is atomic/idempotent and the publication receipt binds the Human approval to the final
   immutable v3 release.
 
-Repository/history completion remains a separate Human Owner authorization gate. No commit, push,
-merge or other Git-history mutation is authorized by this ACCEPTANCE transition. TASK-095 is
-materialized READY but must not activate until TASK-034 is integrated into canonical main.
+At ACCEPTANCE time repository/history completion remained a separate Human Owner authorization gate.
+That gate was later explicitly approved and the accepted implementation snapshot was integrated into
+canonical `main` as `91f06de`. TASK-095 may activate only from that integrated baseline.
 
 ### Repository/history authorization
 
@@ -278,13 +278,13 @@ materialized READY but must not activate until TASK-034 is integrated into canon
 - Reward/recovery numbers are player-facing balance content and require the explicit Human sample gate.
 - Existing item catalog coverage may not contain a suitable baseline reward item; empty drop tables are
   safer than inventing unsupported inventory semantics.
-- Canonical publication was completed only after the Human sample approval; Git/history integration
-  remains the sole separately gated irreversible repository action.
+- Canonical publication occurred only after Human sample approval, and Git/history integration occurred
+  only after the separate Human authorization recorded above.
 
 ## Expected files / boundaries
 
 ```text
-tasks/active/TASK-034-pve-world-zone-encounter-hunt-data.md
+tasks/done/TASK-034-pve-world-zone-encounter-hunt-data.md
 packages/game-types/src/**
 packages/game-data/src/**
 packages/game-data/integration/**
@@ -296,11 +296,17 @@ docs/project/PROJECT_ROADMAP.html
 
 ## Current execution state
 
-TASK-034 is in ACCEPTANCE on `feat/TASK-034-pve-world-zone-hunt-data`. The Human content sample is approved
-and the exact schema-v4 release is canonically published locally as `game-data-core-kanto-johto-v3`
-with bundle `sha256:a7ee6337f8f41986ca7fc4608e8f75f49fb1a42d54d66aeb18b5ae56208c6559`.
-Post-publication independent QA is READY with P0/P1/P2/P3 = 0/0/0/0. Git/history integration is the
-sole remaining TASK-034 closure gate and remains separately gated. TASK-095 is READY but inactive until
-that integration; it must publish the exact v3 production-combat catalog/rules rebind before TASK-035
-may perform authoritative Solo Hunt operations. The existing v2 production binding is not reused by
-inference.
+TASK-034 is DONE. The Human-approved schema-v4 release is canonical as
+`game-data-core-kanto-johto-v3` with bundle
+`sha256:a7ee6337f8f41986ca7fc4608e8f75f49fb1a42d54d66aeb18b5ae56208c6559`; post-publication QA is
+READY with P0/P1/P2/P3 = 0/0/0/0; and the accepted implementation snapshot is integrated into
+canonical `main` as `91f06de`. TASK-095 is the next authoritative prerequisite and must publish the
+exact v3 production-combat catalog/rules rebind before TASK-035 starts.
+
+## DONE closure
+
+The Human Owner explicitly authorized repository/history completion at
+`2026-09-24T01:53:29Z`. The accepted TASK-034 implementation/publication snapshot was committed as
+`91f06de` (`feat(game-data): publish pve world hunt data`) and fast-forward integrated into canonical
+`main`. This closes TASK-034 as DONE without changing the retained v1/v2 publications or the existing
+TASK-091 v2 production-combat binding.
