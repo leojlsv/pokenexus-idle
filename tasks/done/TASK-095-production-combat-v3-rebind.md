@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT implementation worker after activation
@@ -229,6 +229,16 @@ The corrective scope is intentionally narrow:
 
 TASK-035 remains externally blocked from lifecycle integration until this corrective reaches the
 required review/acceptance and repository-history gates.
+
+Post-integration corrective closure: the accepted byte-hardening snapshot was committed as
+`de75e1a fix(game-core): preserve production support v2 bytes`, published on
+`fix/TASK-095-post-integration-byte-hardening`, and fast-forward integrated into canonical `main` under
+the Human Owner authorization recorded below. Canonical `main` now materializes
+`packages/game-core/src/production-move-support-v2.json` as exactly `230244` bytes /
+`sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`; `git ls-files --eol`
+reports `attr/-text`, and the canonical game-core postbuild exact-byte guard passes with retained v1
+`1462b33b35e38224b505240dbf5205104e98dae1310d0bc630e2aa02fb31879e` plus accepted v2 hash.
+TASK-095 is therefore DONE again and no longer blocks TASK-035.
 
 ## REVIEW evidence
 
