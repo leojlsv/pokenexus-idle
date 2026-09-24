@@ -14,3 +14,4 @@
 # Keep their accepted CRLF payload unchanged in the Git object database on every platform.
 docs/specs/SPEC-012-production-move-support-v1.json -text whitespace=cr-at-eol
 packages/game-core/src/production-move-support-v1.json -text whitespace=cr-at-eol
+packages/game-core/src/production-move-support-v2.json -text whitespace=cr-at-eol
