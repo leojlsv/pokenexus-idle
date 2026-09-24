@@ -19,8 +19,8 @@
   - docs/specs/SPEC-012-production-move-ability-rule-content.md
 - Related specs: SPEC-010, SPEC-011, SPEC-013
 - Related tasks: TASK-025, TASK-034, TASK-035, TASK-089, TASK-090, TASK-091
-- Planned branch: feat/TASK-095-production-combat-v3-rebind
-- Planned worktree: .worktrees/TASK-095-production-combat-v3-rebind
+- Branch: fix/TASK-095-post-integration-byte-hardening
+- Worktree: .worktrees/TASK-095-post-integration-byte-hardening
 - Activation constraint: do not move READY → ACTIVE until TASK-034 repository/history integration is
   complete and canonical main contains the immutable v3 publication.
 
@@ -204,12 +204,41 @@ start from the exact published v3 bytes without copying unintegrated state.
 
 ## Current execution state
 
-TASK-095 is DONE. The accepted technical snapshot was committed as
-`f482904 feat(game-core): rebind production combat to game data v3` and fast-forward integrated into
-canonical `main` from the TASK-034 baseline `e57e4e9`. The retained v2 production release remains
-unchanged, the exact v3 + production-rules v2 pair is now canonical repository history, and TASK-035
-is no longer blocked by TASK-095 itself. TASK-035 remains PLANNED until separately activated through
-normal task governance.
+TASK-095 is reopened in `FIX` for a bounded post-integration packaging corrective. The accepted
+technical implementation remains `f482904 feat(game-core): rebind production combat to game data v3`;
+no Move/Ability/selectability semantics are being changed.
+
+The defect is repository materialization only: the accepted v2 source payload is `230244` bytes /
+`sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`, but the blob stored by
+`f482904`/canonical `main` was normalized to LF at `224537` bytes /
+`sha256:852e386633f7e2470f1d310ff1cab77e7df0d7da7cc4d2fe311adf37fb2564e7`. The original accepted
+TASK-095 worktree retained the correct mixed-EOL payload only in its working tree because the path was
+still governed by `text=auto eol=lf`.
+
+The corrective scope is intentionally narrow:
+
+- mark `packages/game-core/src/production-move-support-v2.json` as `-text whitespace=cr-at-eol`,
+  matching the byte-immutable treatment already used by the retained v1 support companions;
+- restore exactly the accepted `230244`-byte v2 payload and prove the Git index/blob preserves its
+  exact SHA-256;
+- prove a fresh materialization/build sees the accepted v2 bytes and still passes the existing
+  postbuild exact-byte guard;
+- retain the already-correct canonical `rulesVersion -> productionSelectability` binding and its
+  descriptor-swap/cross-pair/alias regressions unchanged;
+- make no TASK-035, SPEC-012, gameplay, content, API contract or product-semantic change.
+
+TASK-035 remains externally blocked from lifecycle integration until this corrective reaches the
+required review/acceptance and repository-history gates.
+
+Post-integration corrective closure: the accepted byte-hardening snapshot was committed as
+`de75e1a fix(game-core): preserve production support v2 bytes`, published on
+`fix/TASK-095-post-integration-byte-hardening`, and fast-forward integrated into canonical `main` under
+the Human Owner authorization recorded below. Canonical `main` now materializes
+`packages/game-core/src/production-move-support-v2.json` as exactly `230244` bytes /
+`sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`; `git ls-files --eol`
+reports `attr/-text`, and the canonical game-core postbuild exact-byte guard passes with retained v1
+`1462b33b35e38224b505240dbf5205104e98dae1310d0bc630e2aa02fb31879e` plus accepted v2 hash.
+TASK-095 is therefore DONE again and no longer blocks TASK-035.
 
 ## REVIEW evidence
 
@@ -279,3 +308,40 @@ normal task governance.
   canonical `main`, complete TASK-095 lifecycle/history closure, and push the resulting canonical
   history. No new product/semantic decision was authorized or required.
 - Accepted technical commit: `f482904 feat(game-core): rebind production combat to game data v3`.
+
+## Post-integration byte-materialization corrective
+
+- Corrective branch/worktree: `fix/TASK-095-post-integration-byte-hardening` /
+  `.worktrees/TASK-095-post-integration-byte-hardening`.
+- Classification remains Class B hardening because no accepted combat/product semantics change.
+- The original TASK-095 repository/history authorization closed the original accepted snapshot only;
+  it is not treated as blanket authorization for this new corrective commit/push/merge sequence.
+- Corrective implementation/review is complete; new repository-history publication remains a
+  separate Human Owner gate for this accepted corrective snapshot.
+- Root cause reproduced on canonical `main` `6383d12`: `@pokenexus/game-core` postbuild fails because
+  source v2 materializes as `224537` bytes / `sha256:852e386633f7e2470f1d310ff1cab77e7df0d7da7cc4d2fe311adf37fb2564e7`
+  while the immutable guard requires `6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`.
+- Corrective staged Git blob: `230244` bytes /
+  `sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`.
+- `git check-attr --cached` reports `text: unset` and `whitespace: cr-at-eol`; staged-vs-HEAD semantic
+  JSON content is unchanged apart from byte/EOL preservation.
+- Index materialization via `git checkout-index` reproduces exactly `230244` bytes /
+  `sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`.
+- Independent QA additionally verified `git cat-file --filters` under `core.autocrlf=false`, `true`
+  and `input`; all three materialize the same accepted 230244-byte payload.
+- Owner gates on the corrective snapshot: game-core build/postbuild PASS with v1
+  `1462b33b35e38224b505240dbf5205104e98dae1310d0bc630e2aa02fb31879e` and accepted v2 hash;
+  game-core **288/288**; API context/runtime **22/22**; API full **103/103**; Worker compatibility PASS;
+  workspace lint/typecheck/test/build PASS with game-data **365/365 + 1 intentional skip**;
+  roadmap check and staged/working `git diff --check` PASS.
+- Final independent corrective QA: **READY — P0/P1/P2/P3 = 0/0/0/0**. No hidden cross-platform EOL
+  materialization issue found; canonical descriptor-swap/cross-pair/production-alias protections remain
+  present and unchanged.
+- Final independent corrective Class-B architecture/acceptance: **ACCEPT — P0/P1/P2/P3 = 0/0/0/0**.
+  No SPEC-012 semantic drift and no Class-A escalation trigger; TASK-035 remains blocked until this
+  accepted corrective is integrated into canonical repository history.
+- Corrective repository/history authorization granted by the Human Owner via explicit `autorizado` at
+  **2026-09-24T14:20:43Z**. Authorization scope is this accepted
+  `fix/TASK-095-post-integration-byte-hardening` corrective: commit, publish branch, integrate into
+  canonical `main`, validate the canonical materialization, and close the corrective lifecycle if the
+  validated integrated bytes/gates remain exact.

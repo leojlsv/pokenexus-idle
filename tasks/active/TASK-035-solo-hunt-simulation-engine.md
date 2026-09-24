@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACTIVE
+- State: ACCEPTANCE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: fresh ChatGPT implementation worker with explicit Lead Developer assignment
@@ -378,15 +378,19 @@ Latest owner validation on the exact current snapshot:
 - game-core typecheck/lint/build: PASS;
 - TASK-095 production v2/v3 regression included in the full game-core suite: PASS;
 - workspace lint/typecheck: PASS;
-- workspace test: PASS on rerun — game-data **365/365 + 1 intentional live skip**, API **103/103**,
-  game-core **354/354**. The first final workspace run had one pre-existing
-  `publication-sanity.test.ts` 5-second concurrency timeout at **5031 ms**; the file then passed
-  **22/22** in isolation with the affected case at **1874 ms**, and the second complete workspace rerun
-  passed;
+- formal REVIEW workspace lint/typecheck/build: PASS;
+- formal REVIEW root `corepack pnpm test` was attempted three times. Each run had the same pre-existing
+  `packages/game-data/src/publication-sanity.test.ts` 5-second concurrency timeout on
+  `accepts the Human-approved published v2 with the canonical mapping roster` at **5007 ms**,
+  **5023 ms** and **5041 ms** respectively; there were no assertion/content failures and game-core
+  remained **354/354** in every run. The exact file passed **22/22** in isolation with the affected case
+  at **2181 ms**, and the complete `@pokenexus/game-data` package passed **365/365 + 1 intentional live
+  skip** in isolation with the same case at **4161 ms**. This is recorded as the existing concurrency
+  timing flake and is not altered under TASK-035 scope;
+- API full unit suite on the reconciled REVIEW snapshot: **103/103 PASS**;
 - workspace build: PASS, including API/realtime Wrangler dry-run builds;
 - API Worker compatibility dry-run: PASS;
-- `corepack pnpm roadmap:check`: PASS, 96 tasks, source
-  `42c38a159dc410328b3818106900164f229cfcf27ea97fe1a28724e78d0772b6`;
+- `corepack pnpm roadmap:check`: PASS, 96 tasks;
 - `git diff --check`: PASS;
 - current physical `production-move-support-v2.json`: **230244 bytes**,
   `sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`.
@@ -417,8 +421,8 @@ Independent pre-REVIEW QA/acceptance probing found checkpoint-integrity P1s befo
   participant rewriting, fabricated replacement activation, later-Encounter participant rewriting, and
   skip-past-policy-boundary time advancement;
 - final independent pre-REVIEW Class-B/QA re-gate: **ACCEPT — P0/P1/P2/P3 = 0/0/0/0**, read-only with
-  no edits or Git/history mutation. Formal lifecycle promotion remains intentionally blocked by the
-  separate TASK-095 repository-packaging/history issue below.
+  no edits or Git/history mutation. The former TASK-095 packaging blocker is now resolved in canonical
+  history, so this evidence is being revalidated formally after promotion to REVIEW.
 
 ### Human Owner approval
 
@@ -428,10 +432,29 @@ Independent pre-REVIEW QA/acceptance probing found checkpoint-integrity P1s befo
 - A second explicit `Aprovado` at **2026-09-24T13:32:39Z**, immediately after the repository-history
   gate was called out, authorizes task-scoped Git/history publication for TASK-035. This authorization
   permits the focused task commit/branch publication but does not override lifecycle/dependency gates.
-- Merge/integration remains blocked until the external TASK-095 artifact materialization/history defect
-  is corrected and TASK-035 can proceed through the normal REVIEW/ACCEPTANCE lifecycle.
-- TASK-035 remains `ACTIVE` and is not promoted to `REVIEW` while the pre-existing TASK-095 canonical
-  artifact materialization/history blocker below is unresolved.
+- The external TASK-095 artifact materialization/history defect was corrected under
+  `fix/TASK-095-post-integration-byte-hardening`, integrated into canonical `main` at `de75e1a`, and
+  revalidated there at exact `230244` bytes /
+  `sha256:6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57`.
+- TASK-035 has now been reconciled with that repaired canonical history and is promoted to `REVIEW` for
+  the formal post-promotion independent QA/Class-B gates required by lifecycle.
+
+### Formal REVIEW result
+
+- Independent QA on the exact reconciled REVIEW snapshot: **READY — P0/P1/P2/P3 = 0/0/0/0**.
+  It confirmed the effective delta versus repaired canonical `main` is TASK-035/lifecycle only and
+  revalidated opponent-template authority, separate policy RNG, no-free-reroll, fresh-Hunt reset,
+  Combat Engine delegation, deterministic replay/cutoff/cadence behavior, sole-player-victory
+  completion, participant/selection provenance, atomic fail-closed checkpoint validation and
+  capture/reward handoff-only semantics.
+- Independent Class-B architecture/functional acceptance on the same exact REVIEW snapshot:
+  **ACCEPT — P0/P1/P2/P3 = 0/0/0/0**. It confirmed zero SPEC-013/TASK-009/TASK-095 semantic drift,
+  explicit caller-resolved opponent templates, explicit `interBattleGapMs`, policy/Combat RNG
+  separation, replay policy-boundary hardening, opponent cadence pruning, exact cutoff semantics and no
+  downstream reward/capture authority leakage.
+- Required REVIEW gates are therefore complete and TASK-035 is promoted to `ACCEPTANCE`. The Human
+  functional approval and task-scoped Git/history authorization recorded above remain in force; no
+  new Class-A or product-semantic gate was introduced by the canonical TASK-095 repair.
 
 ### Baseline packaging blocker discovered during activation
 
@@ -443,9 +466,9 @@ constant and accepted pre-commit snapshot require
 worktree still contains the accepted `230244`-byte payload with the expected hash, so the drift was
 introduced by Git text normalization during history materialization rather than by TASK-035.
 
-TASK-035 will not silently mutate that immutable release or `.gitattributes`. This is a pre-existing
-repository-packaging/history blocker that requires a separately owned corrective snapshot and
-repository-history gate before TASK-035 can enter REVIEW.
+TASK-035 did not mutate that immutable release or `.gitattributes`. The pre-existing blocker was
+resolved by TASK-095 itself and inherited through the canonical merge. The repaired artifact bytes and
+packaging authority must remain unchanged through TASK-035 REVIEW/ACCEPTANCE.
 
 ## Completion
 
