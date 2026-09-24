@@ -322,7 +322,7 @@ function validateSide(side: BattleSideInit): string | undefined {
   return undefined;
 }
 
-function validateCombatant(
+export function validateBattleCombatantInit(
   combatant: BattleCombatantInit,
   context: ResolvedCombatContext,
 ): string | undefined {
@@ -409,7 +409,7 @@ export function validateBattleInit(input: BattleInitInput): string | undefined {
     if (!sideOwners.has(combatantId)) return `combatant is not owned by a side: ${combatantId}`;
   }
   for (const combatant of input.combatants) {
-    const error = validateCombatant(combatant, input.context);
+    const error = validateBattleCombatantInit(combatant, input.context);
     if (error) return error;
   }
   const bindings = input.cadenceBindings ?? {};

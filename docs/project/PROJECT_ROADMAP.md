@@ -10,9 +10,9 @@
 
 **Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, baseline progression/Inventory/Reward persistence, authoritative Move eligibility, Player State API, and the SPEC-012 production combat-rule catalog are integrated.
 
-**Current work:** no implementation task is active. `TASK-095 — Exact Production Combat Rebind for Game Data v3` is **DONE**; its accepted technical snapshot is integrated at `f482904`, with retained v2 production history preserved and exact v3 + production-rules v2 authority now canonical.
+**Current work:** `TASK-035 — Solo Hunt Simulation Engine` is **ACTIVE** on `feat/TASK-035-solo-hunt-simulation-engine`. Implementation and final independent Class-B/QA re-gate are complete at **ACCEPT 0/0/0/0** with Human Owner approval; lifecycle promotion is waiting on the separate TASK-095 canonical artifact materialization/history corrective.
 
-**Current action:** TASK-035 Solo Hunt Simulation Engine is the next PvE implementation milestone but remains **PLANNED** until separately activated through normal governance. TASK-095 no longer blocks it.
+**Current action:** preserve the accepted TASK-035 snapshot and resolve the separate TASK-095 repository-packaging/history blocker before TASK-035 enters normal REVIEW/ACCEPTANCE integration.
 
 **Next task after TASK-003 acceptance:** `TASK-035 — Solo Hunt Simulation Engine`, consuming the exact accepted TASK-091/095 production combat pair for v3 after separate task activation.
 
@@ -61,13 +61,13 @@
 - DONE: 37.
 - DRAFT: 0.
 - READY: 0.
-- ACTIVE: 0.
+- ACTIVE: 1.
 - REVIEW: 0.
 - FIX: 0.
 - ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
-- PLANNED: 59.
+- PLANNED: 58.
 - Task-count completion: **37 / 96 = 38.5%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
@@ -531,7 +531,7 @@ content relies on those mechanics.
 |---|---|---|---|---|---|---|---|---|
 | `TASK-033` PvE World/Map, Zone & Solo Hunt Rules/Lifecycle Spec | A | DONE | PM → ChatGPT | Prior GSC/PXE **ADVISORY PASS**; post-acceptance IA **FAIL 0/1/0/0**; corrective IA **PASS 0/0/0/0**; corrective GSC/PXE **ADVISORY PASS**; corrective QA **READY 0/0/0/0** | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | **Completed — baseline accepted, corrective mapping reaffirmed and repository/history completion authorized 2026-09-23** | TASK-008/019/021/023 plus integrated TASK-022/024/091 constraints | APPROVED SPEC-013 defines minimal Zone topology, one active Hunt, no-free-reroll/recovery, retained rewards, participant XP and Capture **Option B**, plus exact SPEC-003 outcome mapping: only player-side sole victory successfully completes an Encounter; opposing-side victory/draw grant no completion reward/capture, leave `PendingEncounterSelection` unconsumed and terminalize the Hunt at that logical boundary. TASK-034 materialized, published and integrated that accepted static-content boundary |
 | `TASK-034` PvE World/Zone, Encounter & Hunt Data | B | DONE | LD → ChatGPT | **Pre-publication QA READY 0/0/0/0; post-publication QA READY 0/0/0/0** | `SK-TDD` | **COMPLETED — Human sample APPROVED and repository/history integration authorized 2026-09-24** | TASK-006/033/087 | Immutable schema-v4 `game-data-core-kanto-johto-v3` / `sha256:a7ee6337…c6559` integrated at `91f06de`; v1/v2 retained; Verdant Edge 1 Zone/1 Hunt/9 slots; TASK-091 playability gate; deterministic review/publication receipts; schema3/4 sanity/runtime compatibility; post-publication QA clear |
-| `TASK-035` Solo Hunt Simulation Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-009/033/034/091/095 | Event-driven encounter loop; Hunt orchestration/AI policy executes the accepted ordered Move-sequence policy using the exact TASK-091/095 production Move/Ability rule release paired to v3, carries actor GCD/per-Move readiness/sequence cursor and cadence-scoped effect state across encounters, advances inter-Battle effects through the shared TASK-009 rule evaluator, handles pre-next-Battle KO, deterministically continues with the next living eligible Pokémon when available or auto-terminalizes the Hunt at the exact no-living boundary before any new Battle, and supplies versioned ActionIntents to shared Combat Engine; no realtime tick or parallel effect math |
+| `TASK-035` Solo Hunt Simulation Engine | B | ACTIVE | LD → fresh ChatGPT implementation worker | QA / Class-B final **ACCEPT 0/0/0/0** | `SK-TDD`, `SK-GAME-PERF` | **Human Owner approved implementation 2026-09-24 and authorized task-scoped repository history** | TASK-009/033/034/091/095 | Implementation technically complete: deterministic event-driven Hunt orchestration, exact replay/checkpoint provenance, automatic Move-policy boundary enforcement, cadence carry/pruning, pending-selection no-free-reroll and capture/reward handoff only. Focused 35/35; game-core 354/354; final workspace rerun green. Remains ACTIVE only because the external TASK-095 canonical v2 artifact materialization/history defect blocks REVIEW/integration |
 | `TASK-036` Capture & Reward Resolution | B | PLANNED | LD → Copilot CLI | QA + IA reward-integrity spot-check | `SK-TDD`, `SK-THREAT` | **HUMAN validates rule outcomes** | TASK-023/024/033/034/035 | Capture rolls/rules; resolve XP/item drops/currency-if-approved from accepted versioned rules/content; idempotent grants through the reward/inventory authority path; event output |
 | `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-035/036 | `startedAt`/checkpoint/rulesVersion/gameDataVersion or content checksum/seed; referenced-version retention; cadence cooldown/effect continuation state; 1h/8h advancement; safe caps; replay equality |
 
