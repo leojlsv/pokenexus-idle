@@ -12,6 +12,7 @@ export type ItemId = NominalId<"ItemId">;
 export type EffectId = NominalId<"EffectId">;
 export type TeamId = NominalId<"TeamId">;
 export type PlayerId = NominalId<"PlayerId">;
+export type HuntDefinitionId = NominalId<"HuntDefinitionId">;
 export type EncounterDefinitionId = NominalId<"EncounterDefinitionId">;
 export type EncounterId = NominalId<"EncounterId">;
 export type BattleId = NominalId<"BattleId">;

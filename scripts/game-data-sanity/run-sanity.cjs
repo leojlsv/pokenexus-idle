@@ -7,7 +7,7 @@ const scriptDir = __dirname;
 const repoRoot = path.resolve(scriptDir, "..", "..");
 const outDir = path.join(repoRoot, ".tmp-game-data-sanity");
 const publishedRoot = path.join(repoRoot, "packages", "game-data", "published");
-const artifactPaths = {
+const factualArtifactPaths = {
   "catalogs/species": "catalogs/species.json",
   "catalogs/moves": "catalogs/moves.json",
   "catalogs/types": "catalogs/types.json",
@@ -16,11 +16,20 @@ const artifactPaths = {
   "catalogs/learnsets": "catalogs/learnsets.json",
   "referenceData/currentTypeEffectiveness": "reference-data/current-type-effectiveness.json",
 };
-const requiredArtifactLogicalNames = Object.keys(artifactPaths).sort();
-const supportedSchemaVersion = "3";
+const pveArtifactPaths = {
+  "catalogs/zones": "catalogs/zones.json",
+  "catalogs/hunts": "catalogs/hunts.json",
+  "catalogs/encounter-definitions": "catalogs/encounter-definitions.json",
+};
+const artifactPaths = { ...factualArtifactPaths, ...pveArtifactPaths };
+const requiredArtifactLogicalNamesBySchema = {
+  "3": Object.keys(factualArtifactPaths).sort(),
+  "4": Object.keys(artifactPaths).sort(),
+};
+const supportedSchemaVersions = new Set(Object.keys(requiredArtifactLogicalNamesBySchema));
 const supportedNormalizerVersion = "pokenexus-static-normalizer-v5";
 const sha256Pattern = /^sha256:[0-9a-f]{64}$/u;
-const catalogCountArtifacts = {
+const factualCatalogCountArtifacts = {
   species: "catalogs/species",
   moves: "catalogs/moves",
   types: "catalogs/types",
@@ -28,6 +37,15 @@ const catalogCountArtifacts = {
   items: "catalogs/items",
   learnsets: "catalogs/learnsets",
   currentTypeEffectiveness: "referenceData/currentTypeEffectiveness",
+};
+const catalogCountArtifactsBySchema = {
+  "3": factualCatalogCountArtifacts,
+  "4": {
+    ...factualCatalogCountArtifacts,
+    zones: "catalogs/zones",
+    hunts: "catalogs/hunts",
+    encounterDefinitions: "catalogs/encounter-definitions",
+  },
 };
 
 function canonicalValue(value, context = "$") {
@@ -103,8 +121,13 @@ function requireNonNegativeInteger(value, label) {
 
 function validatePublishedManifestContract(manifest, manifestPath) {
   assertRecord(manifest, "Published manifest");
-  if (manifest.schemaVersion !== supportedSchemaVersion) {
+  if (!supportedSchemaVersions.has(manifest.schemaVersion)) {
     throw new Error("Unsupported published schemaVersion " + String(manifest.schemaVersion));
+  }
+  if (manifest.schemaVersion === "4" && manifest.pveContentSchemaVersion !== "1") {
+    throw new Error(
+      "Unsupported pveContentSchemaVersion " + String(manifest.pveContentSchemaVersion),
+    );
   }
   requireNonEmptyString(manifest.gameDataVersion, "manifest.gameDataVersion");
   requireSha256(manifest.bundleHash, "manifest.bundleHash");
@@ -159,6 +182,7 @@ function validatePublishedManifestContract(manifest, manifestPath) {
   }
 
   assertRecord(manifest.catalogCounts, "manifest.catalogCounts");
+  const catalogCountArtifacts = catalogCountArtifactsBySchema[manifest.schemaVersion];
   for (const key of Object.keys(catalogCountArtifacts)) {
     requireNonNegativeInteger(manifest.catalogCounts[key], "manifest.catalogCounts." + key);
   }
@@ -264,6 +288,8 @@ function verifyPublishedBundleIntegrity(gameDataDir, manifest) {
   }
   validatePublishedManifestContract(manifest, manifestPath);
 
+  const requiredArtifactLogicalNames =
+    requiredArtifactLogicalNamesBySchema[manifest.schemaVersion];
   const actualLogicalNames = manifest.artifacts.map((descriptor) => descriptor.logicalName).sort();
   if (
     actualLogicalNames.length !== requiredArtifactLogicalNames.length ||
@@ -284,6 +310,7 @@ function verifyPublishedBundleIntegrity(gameDataDir, manifest) {
   const descriptorsByLogicalName = new Map(
     manifest.artifacts.map((descriptor) => [descriptor.logicalName, descriptor]),
   );
+  const catalogCountArtifacts = catalogCountArtifactsBySchema[manifest.schemaVersion];
   for (const [catalogCountName, logicalName] of Object.entries(catalogCountArtifacts)) {
     if (
       manifest.catalogCounts[catalogCountName] !==
@@ -297,6 +324,9 @@ function verifyPublishedBundleIntegrity(gameDataDir, manifest) {
 
   for (const descriptor of manifest.artifacts) {
     const relativePath = artifactPaths[descriptor.logicalName];
+    if (!relativePath) {
+      throw new Error("Unsupported published artifact logical name: " + descriptor.logicalName);
+    }
     const artifactPath = path.join(gameDataDir, relativePath);
     const bytes = fs.readFileSync(artifactPath);
     if (sha256Bytes(bytes) !== descriptor.contentHash) {

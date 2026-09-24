@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PACKAGE_NAME } from "./index";
 import type {
+  HuntDefinitionId,
   MoveId,
   SpeciesId,
   StatBlock,
@@ -39,12 +40,18 @@ describe("game-types entrypoint", () => {
 
 const speciesId = "" as SpeciesId;
 const moveId = "" as MoveId;
+const huntDefinitionId = "" as HuntDefinitionId;
 void speciesId;
 void moveId;
+void huntDefinitionId;
 
 // @ts-expect-error Canonical ID brands prevent assigning one identity kind to another.
 const invalidIdAssignment: SpeciesId = moveId;
 void invalidIdAssignment;
+
+// @ts-expect-error Hunt-definition identity is distinct from Species identity.
+const invalidHuntIdAssignment: SpeciesId = huntDefinitionId;
+void invalidHuntIdAssignment;
 
 // @ts-expect-error StatKey is limited to the six canonical keys.
 const invalidStatKey: StatKey = "accuracy";

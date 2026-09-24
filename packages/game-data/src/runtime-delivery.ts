@@ -10,6 +10,17 @@ import {
   parseTypeEffectivenessEntry,
   type GameDataManifest,
 } from "./schema.js";
+import {
+  GAME_DATA_SCHEMA_V4,
+  GAME_DATA_V4_ARTIFACT_PATHS,
+  parseGameDataManifestV4,
+  type GameDataManifestV4,
+} from "./pve-manifest.js";
+import {
+  parseEncounterDefinitionV1,
+  parseHuntDefinitionV1,
+  parseZoneDefinitionV1,
+} from "./pve-content-schema.js";
 
 export const RUNTIME_ARTIFACT_PATHS = {
   "catalogs/species": "catalogs/species.json",
@@ -19,9 +30,22 @@ export const RUNTIME_ARTIFACT_PATHS = {
   "catalogs/items": "catalogs/items.json",
   "catalogs/learnsets": "catalogs/learnsets.json",
   "referenceData/currentTypeEffectiveness": "reference-data/current-type-effectiveness.json",
+  "catalogs/zones": "catalogs/zones.json",
+  "catalogs/hunts": "catalogs/hunts.json",
+  "catalogs/encounter-definitions": "catalogs/encounter-definitions.json",
 } as const;
 
 export type RuntimeArtifactLogicalName = keyof typeof RUNTIME_ARTIFACT_PATHS;
+
+const RUNTIME_V3_ARTIFACT_LOGICAL_NAMES = [
+  "catalogs/species",
+  "catalogs/moves",
+  "catalogs/types",
+  "catalogs/abilities",
+  "catalogs/items",
+  "catalogs/learnsets",
+  "referenceData/currentTypeEffectiveness",
+] as const;
 
 export interface RuntimeGameDataReader {
   read(path: string): Promise<Uint8Array>;
@@ -53,7 +77,20 @@ export function createHttpGameDataReader(
 export interface RuntimeGameDataVersion {
   gameDataVersion: string;
   directoryName: string;
-  manifest: GameDataManifest;
+  manifest: GameDataManifest | GameDataManifestV4;
+}
+
+function assertRuntimeV3ArtifactSet(manifest: GameDataManifest): void {
+  const expected = [...RUNTIME_V3_ARTIFACT_LOGICAL_NAMES].sort();
+  const actual = manifest.artifacts.map(({ logicalName }) => logicalName).sort();
+  if (
+    actual.length !== expected.length ||
+    actual.some((logicalName, index) => logicalName !== expected[index])
+  ) {
+    throw new Error(
+      `schema-v3 runtime manifest must contain exactly ${expected.join(", ")}`,
+    );
+  }
 }
 
 const textEncoder = new TextEncoder();
@@ -97,9 +134,21 @@ export async function loadRuntimeGameDataVersion(
   const normalized = gameDataVersion.normalize("NFC");
   const directoryName = await runtimeVersionDirectoryName(normalized);
   const manifestBytes = await reader.read(joinPath(directoryName, "manifest.json"));
-  const manifest = parseGameDataManifest(
-    await parseCanonicalJson(manifestBytes, "published manifest"),
-  );
+  const manifestValue = await parseCanonicalJson(manifestBytes, "published manifest");
+  if (
+    manifestValue === null ||
+    typeof manifestValue !== "object" ||
+    Array.isArray(manifestValue)
+  ) {
+    throw new Error("published manifest must be an object");
+  }
+  const schemaVersion = (manifestValue as Record<string, unknown>).schemaVersion;
+  const manifest = schemaVersion === GAME_DATA_SCHEMA_V4
+    ? parseGameDataManifestV4(manifestValue)
+    : parseGameDataManifest(manifestValue);
+  if (manifest.schemaVersion !== GAME_DATA_SCHEMA_V4) {
+    assertRuntimeV3ArtifactSet(manifest);
+  }
   if (manifest.gameDataVersion !== normalized) {
     throw new Error("published manifest gameDataVersion does not match requested version");
   }
@@ -128,6 +177,9 @@ function parserFor(logicalName: RuntimeArtifactLogicalName): (value: unknown) =>
     case "catalogs/items": return parseItemDefinitionV1;
     case "catalogs/learnsets": return parseLearnsetEntryV1;
     case "referenceData/currentTypeEffectiveness": return parseTypeEffectivenessEntry;
+    case "catalogs/zones": return parseZoneDefinitionV1;
+    case "catalogs/hunts": return parseHuntDefinitionV1;
+    case "catalogs/encounter-definitions": return parseEncounterDefinitionV1;
   }
 }
 
@@ -141,7 +193,12 @@ export async function loadRuntimeGameDataArtifact(
     throw new Error(`manifest must contain exactly one ${logicalName} artifact descriptor`);
   }
   const bytes = await reader.read(
-    joinPath(version.directoryName, RUNTIME_ARTIFACT_PATHS[logicalName]),
+    joinPath(
+      version.directoryName,
+      version.manifest.schemaVersion === GAME_DATA_SCHEMA_V4
+        ? GAME_DATA_V4_ARTIFACT_PATHS[logicalName]
+        : RUNTIME_ARTIFACT_PATHS[logicalName],
+    ),
   );
   if (await sha256(bytes) !== descriptors[0].contentHash) {
     throw new Error(`${logicalName} content hash mismatch`);

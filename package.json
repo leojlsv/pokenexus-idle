@@ -11,7 +11,9 @@
     "typecheck": "corepack pnpm -r typecheck",
     "lint": "eslint .",
     "roadmap:generate": "node scripts/project-roadmap.mjs generate",
-    "roadmap:check": "node scripts/project-roadmap.mjs check"
+    "roadmap:check": "node scripts/project-roadmap.mjs check",
+    "task-034:review": "corepack pnpm --filter @pokenexus/game-types build && corepack pnpm --filter @pokenexus/game-data exec vitest run --config integration/vitest.task034.config.ts",
+    "task-034:publish": "corepack pnpm --filter @pokenexus/game-types build && corepack pnpm --filter @pokenexus/game-data exec vitest run --config integration/vitest.task034.publish.config.ts"
   },
   "engines": {
     "node": "24.x"
