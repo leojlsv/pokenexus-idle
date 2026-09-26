@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: current ChatGPT implementation session
@@ -522,8 +522,9 @@ publication-test timeouts, both passed in isolation and the complete rerun passe
   residual/new finding. Confirmed reward-source authenticity, capture snapshot authority, production Move
   support, RNG-origin replay binding, atomic persistence and database uniqueness boundaries.
 
-TASK-036 therefore enters **ACCEPTANCE**. Repository/history completion, deploy and production cutover are
-separate gates and remain unauthorized in this session.
+TASK-036 therefore entered **ACCEPTANCE** on the reviewed snapshot. Repository/history completion was then
+explicitly authorized by the Human Owner on 2026-09-26 and integrated into canonical `main`. Deploy and
+production cutover remain separate gates and are not implied by this completion.
 
 ## Dependencies
 

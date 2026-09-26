@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: current ChatGPT implementation session
@@ -292,4 +292,6 @@ There is no pity/protection RNG state in the MVP: no Epic+, Apex or capture prot
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`. No Git/history action without the normal authorization gate.
+Repository/history completion was explicitly authorized by the Human Owner on 2026-09-26 and integrated
+into canonical `main` together with the accepted downstream TASK-036 snapshot. No deploy or production
+cutover is implied by this completion.
