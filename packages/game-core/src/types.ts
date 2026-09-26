@@ -193,6 +193,7 @@ export type BattleCombatantInit = {
   level: number;
   baseStats: StatBlock<number>;
   ivs: StatBlock<number>;
+  geneticBonuses?: StatBlock<number>;
   types: ReadonlyArray<TypeId>;
   startingHp: number;
   moveLoadout: ReadonlyArray<MoveId>;

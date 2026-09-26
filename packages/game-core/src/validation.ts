@@ -8,6 +8,10 @@ import type {
 import { cadenceParticipantKey } from "./types";
 import { validateRngState } from "./rng";
 import { ownGet } from "./record-utils";
+import {
+  GENETIC_COMBAT_RULES_RELEASE_V1,
+  GENETIC_COMBAT_RULES_VERSION_V1,
+} from "./genetic-combat-rules";
 
 const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 const MAX_LEVEL = 200;
@@ -74,6 +78,41 @@ export function deriveStats(
   for (const key of STAT_KEYS) {
     if (!isNonNegativeInteger(baseStats[key]) || !isInteger(ivs[key])) return undefined;
     const raw = ((2n * BigInt(baseStats[key]) + BigInt(ivs[key])) * BigInt(level)) / 100n;
+    const derived = key === "hp" ? raw + BigInt(level) + 10n : raw + 5n;
+    if (derived < 1n || derived > BigInt(Number.MAX_SAFE_INTEGER)) return undefined;
+    result[key] = Number(derived);
+  }
+  return result;
+}
+
+export function deriveStatsForRulesVersion(
+  rulesVersion: ResolvedCombatContext["rulesVersion"],
+  baseStats: BattleCombatantInit["baseStats"],
+  ivs: BattleCombatantInit["ivs"],
+  level: number,
+  geneticBonuses?: BattleCombatantInit["geneticBonuses"],
+): BattleCombatantInit["baseStats"] | undefined {
+  if (rulesVersion !== GENETIC_COMBAT_RULES_VERSION_V1) {
+    if (geneticBonuses !== undefined) return undefined;
+    return deriveStats(baseStats, ivs, level);
+  }
+  if (!geneticBonuses || !isPositiveInteger(level) || level > MAX_LEVEL) return undefined;
+  let geneticBudget = 0;
+  const result = {} as BattleCombatantInit["baseStats"];
+  for (const key of STAT_KEYS) {
+    if (
+      !isNonNegativeInteger(baseStats[key])
+      || !isInteger(ivs[key])
+      || ivs[key] < 0
+      || ivs[key] > 31
+      || !isNonNegativeInteger(geneticBonuses[key])
+    ) return undefined;
+    geneticBudget += geneticBonuses[key];
+    if (geneticBudget > GENETIC_COMBAT_RULES_RELEASE_V1.derivedStats.geneticBudgetMax) return undefined;
+    const raw = (
+      (2n * BigInt(baseStats[key]) + BigInt(ivs[key]) + BigInt(geneticBonuses[key]))
+      * BigInt(level)
+    ) / 100n;
     const derived = key === "hp" ? raw + BigInt(level) + 10n : raw + 5n;
     if (derived < 1n || derived > BigInt(Number.MAX_SAFE_INTEGER)) return undefined;
     result[key] = Number(derived);
@@ -369,7 +408,13 @@ export function validateBattleCombatantInit(
     !isNonEmptyString(combatant.cadenceParticipant.identity))) {
     return `cadence participant invalid: ${combatant.combatantId}`;
   }
-  const derived = deriveStats(combatant.baseStats, combatant.ivs, combatant.level);
+  const derived = deriveStatsForRulesVersion(
+    context.rulesVersion,
+    combatant.baseStats,
+    combatant.ivs,
+    combatant.level,
+    combatant.geneticBonuses,
+  );
   if (!derived) {
     return `derived stats invalid: ${combatant.combatantId}`;
   }
@@ -451,7 +496,13 @@ export function validateBattleInit(input: BattleInitInput): string | undefined {
     for (const combatant of input.combatants) {
       if (!combatant.cadenceParticipant) continue;
       const participantKey = cadenceParticipantKey(combatant.cadenceParticipant);
-      const derived = deriveStats(combatant.baseStats, combatant.ivs, combatant.level);
+      const derived = deriveStatsForRulesVersion(
+        input.context.rulesVersion,
+        combatant.baseStats,
+        combatant.ivs,
+        combatant.level,
+        combatant.geneticBonuses,
+      );
       const carriedMaxHp = ownGet(input.cadenceCarry.maxHpByParticipant, participantKey);
       const carriedHp = ownGet(input.cadenceCarry.hpByParticipant, participantKey);
       const readiness = ownGet(input.cadenceCarry.readinessByParticipant, participantKey);

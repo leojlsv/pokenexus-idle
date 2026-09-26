@@ -14,6 +14,30 @@ export interface PokemonIvs {
   readonly spe: number;
 }
 
+export type PersistedGeneticProfile =
+  | "Harmony"
+  | "Might"
+  | "Clarity"
+  | "Endurance"
+  | "Resilience";
+
+export interface OwnedPokemonIndividualization {
+  readonly geneticScore: number;
+  readonly compatibleProfiles: readonly [PersistedGeneticProfile, PersistedGeneticProfile];
+  readonly birthProfile: PersistedGeneticProfile;
+  readonly expressedProfile: PersistedGeneticProfile;
+  readonly shiny: boolean;
+  readonly individualizationRulesVersion: string;
+  readonly derivationAuthorityVersion: string;
+  readonly derivationAuthorityKeyId: string;
+  readonly originPendingSelectionIdentity: string;
+  readonly individualizationSnapshotIdentity: string;
+  readonly individualizationSnapshotCommitment: string;
+  readonly contentVersion: string;
+  readonly contentHash: string;
+  readonly gameDataVersion: string;
+}
+
 export type PokemonMoveLoadout =
   | { readonly state: "uninitialized"; readonly moveIds: readonly [] }
   | { readonly state: "selected"; readonly moveIds: readonly string[] };
@@ -24,6 +48,7 @@ export interface OwnedPokemonRecord {
   readonly speciesId: string;
   readonly level: number;
   readonly ivs: PokemonIvs;
+  readonly individualization: OwnedPokemonIndividualization;
   readonly selectedAbilityId: string | null;
   readonly moveLoadout: PokemonMoveLoadout;
   readonly rowVersion: bigint;
@@ -108,6 +133,21 @@ interface PokemonAggregateRow {
   readonly iv_spa: number;
   readonly iv_spd: number;
   readonly iv_spe: number;
+  readonly genetic_score: number;
+  readonly genetic_profile_a: PersistedGeneticProfile;
+  readonly genetic_profile_b: PersistedGeneticProfile;
+  readonly birth_profile: PersistedGeneticProfile;
+  readonly expressed_profile: PersistedGeneticProfile;
+  readonly shiny: boolean;
+  readonly individualization_rules_version: Buffer;
+  readonly derivation_authority_version: Buffer;
+  readonly derivation_authority_key_id: Buffer;
+  readonly origin_pending_selection_identity: Buffer;
+  readonly individualization_snapshot_identity: Buffer;
+  readonly individualization_snapshot_commitment: Buffer;
+  readonly individualization_content_version: Buffer;
+  readonly individualization_content_hash: Buffer;
+  readonly individualization_game_data_version: Buffer;
   readonly selected_ability_id: Buffer | null;
   readonly row_version: string;
   readonly created_at: Date;
@@ -249,6 +289,49 @@ function mapPokemonAggregate(rows: readonly PokemonAggregateRow[]): OwnedPokemon
       spd: first.iv_spd,
       spe: first.iv_spe,
     },
+    individualization: {
+      geneticScore: first.genetic_score,
+      compatibleProfiles: [first.genetic_profile_a, first.genetic_profile_b],
+      birthProfile: first.birth_profile,
+      expressedProfile: first.expressed_profile,
+      shiny: first.shiny,
+      individualizationRulesVersion: decodeRequiredOpaqueId(
+        first.individualization_rules_version,
+        "IndividualizationRulesVersion",
+      ),
+      derivationAuthorityVersion: decodeRequiredOpaqueId(
+        first.derivation_authority_version,
+        "DerivationAuthorityVersion",
+      ),
+      derivationAuthorityKeyId: decodeRequiredOpaqueId(
+        first.derivation_authority_key_id,
+        "DerivationAuthorityKeyId",
+      ),
+      originPendingSelectionIdentity: decodeRequiredOpaqueId(
+        first.origin_pending_selection_identity,
+        "PendingSelectionIdentity",
+      ),
+      individualizationSnapshotIdentity: decodeRequiredOpaqueId(
+        first.individualization_snapshot_identity,
+        "IndividualizationSnapshotIdentity",
+      ),
+      individualizationSnapshotCommitment: decodeRequiredOpaqueId(
+        first.individualization_snapshot_commitment,
+        "IndividualizationSnapshotCommitment",
+      ),
+      contentVersion: decodeRequiredOpaqueId(
+        first.individualization_content_version,
+        "IndividualizationContentVersion",
+      ),
+      contentHash: decodeRequiredOpaqueId(
+        first.individualization_content_hash,
+        "IndividualizationContentHash",
+      ),
+      gameDataVersion: decodeRequiredOpaqueId(
+        first.individualization_game_data_version,
+        "IndividualizationGameDataVersion",
+      ),
+    },
     selectedAbilityId:
       first.selected_ability_id === null
         ? null
@@ -386,6 +469,13 @@ export async function loadOwnedPokemon(
   const result = await client.query<PokemonAggregateRow>(
     `SELECT p.pokemon_instance_id, p.owner_player_id, p.species_id, p.level,
             p.iv_hp, p.iv_atk, p.iv_def, p.iv_spa, p.iv_spd, p.iv_spe,
+            p.genetic_score, p.genetic_profile_a, p.genetic_profile_b,
+            p.birth_profile, p.expressed_profile, p.shiny,
+            p.individualization_rules_version, p.derivation_authority_version,
+            p.derivation_authority_key_id,
+            p.origin_pending_selection_identity, p.individualization_snapshot_identity,
+            p.individualization_snapshot_commitment, p.individualization_content_version,
+            p.individualization_content_hash, p.individualization_game_data_version,
             p.selected_ability_id, p.row_version, p.created_at, p.updated_at,
             l.slot, l.move_id
      FROM pokenexus.pokemon_instances p

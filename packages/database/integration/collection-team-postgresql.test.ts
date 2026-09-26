@@ -106,12 +106,22 @@ async function insertOwnedPokemon(
   const pokemonInstanceId = options.pokemonInstanceId ?? generateUuidV7();
   const createdAt = options.createdAt ?? new Date("2026-09-17T20:00:00.000Z");
   const updatedAt = options.updatedAt ?? createdAt;
+  const opaque = (value: string) => Buffer.from(encodeOpaqueStringDbV1(value));
   await client.query(
     `INSERT INTO pokenexus.pokemon_instances (
        pokemon_instance_id, owner_player_id, species_id, level, total_experience,
        iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe,
-       row_version, created_at, updated_at
-     ) VALUES ($1, $2, $3, 50, 124999, 1, 2, 3, 4, 5, 6, $4, $5, $6)`,
+       row_version, created_at, updated_at,
+       genetic_score, genetic_profile_a, genetic_profile_b, birth_profile, expressed_profile, shiny,
+       individualization_rules_version, derivation_authority_version, derivation_authority_key_id,
+       origin_pending_selection_identity,
+       individualization_snapshot_identity, individualization_snapshot_commitment,
+       individualization_content_version, individualization_content_hash, individualization_game_data_version
+     ) VALUES (
+       $1, $2, $3, 50, 124999, 1, 2, 3, 4, 5, 6, $4, $5, $6,
+       50, 'Harmony', 'Endurance', 'Harmony', 'Harmony', false,
+       $7, $8, $9, $10, $11, $12, $13, $14, $15
+     )`,
     [
       pokemonInstanceId,
       ownerPlayerId,
@@ -119,6 +129,15 @@ async function insertOwnedPokemon(
       (options.rowVersion ?? 0n).toString(),
       createdAt,
       updatedAt,
+      opaque("encounter-individualization-v1"),
+      opaque("authority-v1"),
+      opaque("key-v1:test"),
+      opaque(`pending:${pokemonInstanceId}`),
+      opaque(`indv1:${pokemonInstanceId}`),
+      opaque(`sha256:${pokemonInstanceId}`),
+      opaque("content:test"),
+      opaque("sha256:content-test"),
+      opaque("game-data:test"),
     ],
   );
   return pokemonInstanceId;
@@ -171,6 +190,8 @@ describe("TASK-020 SPEC-005 migration", () => {
       "0003_collection_team_spec005.sql",
       "0004_progression_inventory_reward.sql",
       "0005_player_state_api_spec011.sql",
+      "0006_encounter_individualization_genetics.sql",
+      "0007_capture_resolution.sql",
     ]);
 
     const before = await withClient(async (client) => {
@@ -181,14 +202,21 @@ describe("TASK-020 SPEC-005 migration", () => {
       );
       return { ...seeded, rowVersion: pokemon.rows[0]?.row_version };
     });
-    const result = await runMigrations({ connectionString: testDatabaseUrl });
+    const through0005 = await migrationDirectoryThrough(5);
+    const result = await runMigrations({
+      connectionString: testDatabaseUrl,
+      migrationsDirectory: through0005,
+    });
     expect(result).toEqual({
       applied: [canonical[2].id, canonical[3].id, canonical[4].id],
       skipped: [canonical[0].id, canonical[1].id],
     });
-    await expect(runMigrations({ connectionString: testDatabaseUrl })).resolves.toEqual({
+    await expect(runMigrations({
+      connectionString: testDatabaseUrl,
+      migrationsDirectory: through0005,
+    })).resolves.toEqual({
       applied: [],
-      skipped: canonical.map(({ id }) => id),
+      skipped: canonical.slice(0, 5).map(({ id }) => id),
     });
 
     await withClient(async (client) => {

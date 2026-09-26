@@ -107,7 +107,6 @@ function normalizeEnvelope(input: RewardResolutionEnvelope): RewardResolutionEnv
   if (input.rulesVersion === null && input.gameDataVersion === null) {
     throw new Error("Reward Resolution requires pinned rulesVersion and/or gameDataVersion");
   }
-  if (input.effects.length === 0) throw new Error("Reward Resolution requires at least one effect");
   if (
     input.rulesVersion === null
     && input.effects.some((effect) => effect.kind === "pokemon_xp" || effect.kind === "player_xp")

@@ -59,17 +59,36 @@ async function createPokemon(
   return withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
     const pokemonInstanceId = generateUuidV7();
     const totalExperience = BigInt(level) ** 3n - 1n;
+    const opaque = (value: string) => Buffer.from(encodeOpaqueStringDbV1(value));
     await client.query(
       `INSERT INTO pokenexus.pokemon_instances (
          pokemon_instance_id, owner_player_id, species_id, level, total_experience,
-         iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe
-       ) VALUES ($1, $2, $3, $4, $5::bigint, 1, 2, 3, 4, 5, 6)`,
+         iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe,
+         genetic_score, genetic_profile_a, genetic_profile_b, birth_profile, expressed_profile, shiny,
+         individualization_rules_version, derivation_authority_version, derivation_authority_key_id,
+         origin_pending_selection_identity,
+         individualization_snapshot_identity, individualization_snapshot_commitment,
+         individualization_content_version, individualization_content_hash, individualization_game_data_version
+       ) VALUES (
+         $1, $2, $3, $4, $5::bigint, 1, 2, 3, 4, 5, 6,
+         50, 'Harmony', 'Endurance', 'Harmony', 'Harmony', false,
+         $6, $7, $8, $9, $10, $11, $12, $13, $14
+       )`,
       [
         pokemonInstanceId,
         ownerPlayerId,
         Buffer.from(encodeOpaqueStringDbV1(speciesId)),
         level,
         totalExperience.toString(),
+        opaque("encounter-individualization-v1"),
+        opaque("authority-v1"),
+        opaque("key-v1:test"),
+        opaque(`pending:${pokemonInstanceId}`),
+        opaque(`indv1:${pokemonInstanceId}`),
+        opaque(`sha256:${pokemonInstanceId}`),
+        opaque("content:test"),
+        opaque("sha256:content-test"),
+        opaque("game-data:test"),
       ],
     );
     return pokemonInstanceId;
@@ -92,6 +111,7 @@ function exactContext(): MoveEligibilityContext {
       moveEligibilityRuleSemanticsHash: MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
     },
     speciesIds: new Set(["species:test"]),
+    speciesById: new Map(),
     moveIds: new Set(rows.map(([moveId]) => moveId)),
     learnsetsBySpecies: new Map([[
       "species:test",

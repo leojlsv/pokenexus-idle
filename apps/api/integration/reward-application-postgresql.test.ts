@@ -2,6 +2,7 @@ import {
   ITEM_QUANTITY_MAX,
   claimRewardResolution,
   createOrLoadPlayerByAccountId,
+  encodeOpaqueStringDbV1,
   generateUuidV7,
   grantInventoryEntries,
   loadInventory,
@@ -103,12 +104,37 @@ async function createPokemon(ownerPlayerId: string, level: number): Promise<stri
   return withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
     const pokemonInstanceId = generateUuidV7();
     const totalExperience = BigInt(level) ** 3n - 1n;
+    const opaque = (value: string) => Buffer.from(encodeOpaqueStringDbV1(value));
     await client.query(
       `INSERT INTO pokenexus.pokemon_instances (
          pokemon_instance_id, owner_player_id, species_id, level, total_experience,
-         iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe
-       ) VALUES ($1, $2, $3, $4, $5::bigint, 1, 2, 3, 4, 5, 6)`,
-      [pokemonInstanceId, ownerPlayerId, Buffer.from("0073007000650063006900650073003a0074006500730074", "hex"), level, totalExperience.toString()],
+         iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe,
+         genetic_score, genetic_profile_a, genetic_profile_b, birth_profile, expressed_profile, shiny,
+         individualization_rules_version, derivation_authority_version, derivation_authority_key_id,
+         origin_pending_selection_identity,
+         individualization_snapshot_identity, individualization_snapshot_commitment,
+         individualization_content_version, individualization_content_hash, individualization_game_data_version
+       ) VALUES (
+         $1, $2, $3, $4, $5::bigint, 1, 2, 3, 4, 5, 6,
+         50, 'Harmony', 'Endurance', 'Harmony', 'Harmony', false,
+         $6, $7, $8, $9, $10, $11, $12, $13, $14
+       )`,
+      [
+        pokemonInstanceId,
+        ownerPlayerId,
+        opaque("species:test"),
+        level,
+        totalExperience.toString(),
+        opaque("encounter-individualization-v1"),
+        opaque("authority-v1"),
+        opaque("key-v1:test"),
+        opaque(`pending:${pokemonInstanceId}`),
+        opaque(`indv1:${pokemonInstanceId}`),
+        opaque(`sha256:${pokemonInstanceId}`),
+        opaque("content:test"),
+        opaque("sha256:content-test"),
+        opaque("game-data:test"),
+      ],
     );
     return pokemonInstanceId;
   });
@@ -479,6 +505,35 @@ describe("TASK-024 Reward application orchestration", () => {
         rowVersion: 0n,
         totalExperience: 7_999_999n,
       });
+    });
+  });
+
+  it("durably completes an authentic empty Reward Envelope and replays it without synthetic effects", async () => {
+    const playerId = await createPlayer();
+    const service = new RewardApplicationService(testDatabaseUrl, exactContextLoader());
+    const envelope = {
+      subjectPlayerId: playerId,
+      sourceAuthority: "pokenexus.solo-hunt.encounter-completion.v1",
+      sourceCorrelation: "reward:empty:test",
+      rulesVersion: "rules:retained-v1",
+      gameDataVersion: "game-data:test",
+      effects: [],
+    } as const;
+
+    const claim = await service.claimResolution(envelope);
+    expect(claim.status).toBe("created");
+    expect(await service.applyResolution(claim.resolution.resolutionId)).toMatchObject({
+      status: "completed",
+      replayed: false,
+    });
+    expect(await service.applyResolution(claim.resolution.resolutionId)).toMatchObject({
+      status: "completed",
+      replayed: true,
+    });
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const stored = await loadRewardResolutionById(client, claim.resolution.resolutionId);
+      expect(stored?.effects).toEqual([]);
+      expect(stored?.completion).not.toBeNull();
     });
   });
 

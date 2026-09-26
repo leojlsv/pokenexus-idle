@@ -1,8 +1,8 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { discoverMigrations } from "./migrations";
+import { canonicalMigrationsDirectory, discoverMigrations } from "./migrations";
 
 const temporaryDirectories: string[] = [];
 
@@ -47,5 +47,36 @@ describe("discoverMigrations", () => {
     await writeFile(join(directory, "0001_second.sql"), "SELECT 2;");
 
     await expect(discoverMigrations(directory)).rejects.toThrow(/Duplicate migration ID\/order/);
+  });
+
+  it("publishes TASK-097 Genetics migration with fail-closed legacy guards and no fabricated defaults", async () => {
+    const migrations = await discoverMigrations();
+    const migration = migrations.find(({ fileName }) => fileName === "0006_encounter_individualization_genetics.sql");
+    expect(migration?.fileName).toBe("0006_encounter_individualization_genetics.sql");
+    const sql = await readFile(
+      join(canonicalMigrationsDirectory, "0006_encounter_individualization_genetics.sql"),
+      "utf8",
+    );
+    expect(sql).toContain("LOCK TABLE pokenexus.pokemon_instances IN ACCESS EXCLUSIVE MODE");
+    expect(sql).toContain("LOCK TABLE pokenexus.hunt_checkpoints IN ACCESS EXCLUSIVE MODE");
+    expect(sql).toContain("refuses to fabricate Genetics/Shiny/provenance");
+    expect(sql).toContain("refuses to individualize pre-feature durable Hunt checkpoints");
+    expect(sql).toContain("ADD COLUMN genetic_score smallint NOT NULL");
+    expect(sql).toContain("ADD COLUMN shiny boolean NOT NULL");
+    expect(sql).toContain("ADD COLUMN derivation_authority_key_id bytea NOT NULL");
+    expect(sql).toContain("ADD COLUMN individualization_snapshot_identity bytea NOT NULL");
+    expect(sql).not.toMatch(/\bDEFAULT\b/i);
+  });
+
+  it("publishes TASK-036 capture attempt and Species Research authority after TASK-097", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.at(-1)?.fileName).toBe("0007_capture_resolution.sql");
+    const sql = await readFile(join(canonicalMigrationsDirectory, "0007_capture_resolution.sql"), "utf8");
+    expect(sql).toContain("CREATE TABLE pokenexus.capture_attempts");
+    expect(sql).toContain("UNIQUE (subject_player_id, attempt_correlation)");
+    expect(sql).toContain("UNIQUE (encounter_id)");
+    expect(sql).toContain("CREATE TABLE pokenexus.capture_attempt_moves");
+    expect(sql).toContain("CREATE TABLE pokenexus.capture_attempt_constructions");
+    expect(sql).toContain("CREATE TABLE pokenexus.species_research_counts");
   });
 });

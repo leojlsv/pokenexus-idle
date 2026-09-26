@@ -36,9 +36,22 @@ import { compareInitiative, compareUtf8Bytes, drawUniformInteger } from "./comba
 import { createCadenceCarry, initializeBattle, resolveCombatStimulus } from "./battle";
 import { advanceCadence } from "./effects";
 import { evaluateBattleLifecycle } from "./lifecycle";
-import { deriveStats, validateBattleCombatantInit } from "./validation";
+import { deriveStats, deriveStatsForRulesVersion, validateBattleCombatantInit } from "./validation";
 import { validateRngState } from "./rng";
 import { ownGet, safeRecordFromEntries, safeRecordWith } from "./record-utils";
+import {
+  ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
+  GENETIC_PROFILES,
+  deriveEncounterIndividualizationAuthorityKeyIdV1,
+  individualizeEncounter,
+  sameIndividualizationSnapshot,
+  type EncounterIndividualizationAuthority,
+  type EncounterIndividualizationSnapshot,
+  type GeneticProfile,
+} from "./encounter-individualization";
+import { GENETIC_COMBAT_RULES_VERSION_V1 } from "./genetic-combat-rules";
+
+const SOLO_HUNT_STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 
 export interface SoloHuntTeamMemberSnapshot {
   readonly pokemonInstanceId: PokemonInstanceId;
@@ -46,6 +59,7 @@ export interface SoloHuntTeamMemberSnapshot {
   readonly level: number;
   readonly baseStats: StatBlock<number>;
   readonly ivs: StatBlock<number>;
+  readonly geneticBonuses?: StatBlock<number>;
   readonly types: ReadonlyArray<TypeId>;
   readonly moveLoadout: ReadonlyArray<MoveId>;
   readonly abilityId?: AbilityId;
@@ -97,6 +111,7 @@ export interface SoloHuntOpponentTemplate {
   readonly rulesVersion: RulesVersion;
   readonly baseStats: StatBlock<number>;
   readonly ivs: StatBlock<number>;
+  readonly compatibleProfiles?: readonly [GeneticProfile, GeneticProfile];
   readonly types: ReadonlyArray<TypeId>;
   readonly moveLoadout: ReadonlyArray<MoveId>;
   readonly abilityId?: AbilityId;
@@ -116,6 +131,7 @@ export interface SoloHuntEncounterBattleInitInput {
   readonly opponentTemplates: ReadonlyArray<SoloHuntOpponentTemplate>;
   readonly context: ResolvedCombatContext;
   readonly deterministicState: DeterministicState;
+  readonly individualizationSnapshot?: EncounterIndividualizationSnapshot;
 }
 
 export type SoloHuntEncounterBattleInitResult =
@@ -197,6 +213,11 @@ export interface SoloHuntRuntimeInputs {
   readonly encounterOptions: ReadonlyArray<SoloHuntEncounterOption>;
   readonly opponentTemplates: ReadonlyArray<SoloHuntOpponentTemplate>;
   readonly interBattleGapMs: number;
+  /**
+   * Server-only runtime authority. secretKey is never copied into SoloHuntRuntimeState.
+   * Presence is required only by GENETIC_COMBAT_RULES_VERSION_V1.
+   */
+  readonly individualizationAuthority?: EncounterIndividualizationAuthority;
 }
 
 export interface SoloHuntPendingEncounterSelection {
@@ -213,6 +234,10 @@ export interface SoloHuntPendingEncounterSelection {
   readonly level: number;
   readonly policyRngBeforeSelection: DeterministicRngState;
   readonly policyRngAfterSelection: DeterministicRngState;
+  readonly compatibleProfiles?: readonly [GeneticProfile, GeneticProfile];
+  readonly individualizationRulesVersion?: typeof ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1;
+  readonly derivationAuthorityVersion?: string;
+  readonly derivationAuthorityKeyId?: string;
 }
 
 export interface SoloHuntCompletedEncounterEvidence {
@@ -232,6 +257,11 @@ export interface SoloHuntCompletedEncounterEvidence {
   readonly gameDataVersion: GameDataVersion;
   readonly rulesVersion: RulesVersion;
   readonly completedAtHuntTimeMs: number;
+  readonly individualizationSnapshotIdentity?: string;
+  readonly individualizationSnapshotCommitment?: string;
+  readonly individualizationRulesVersion?: typeof ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1;
+  readonly derivationAuthorityVersion?: string;
+  readonly derivationAuthorityKeyId?: string;
 }
 
 export type SoloHuntSelectionStreamOrigin =
@@ -262,6 +292,7 @@ export interface SoloHuntCompletedEncounterProvenance {
   readonly completedAtHuntTimeMs: number;
   readonly terminalBattleTimeMs: number;
   readonly terminalEventSequence: number;
+  readonly individualizationSnapshot?: EncounterIndividualizationSnapshot;
 }
 
 export interface SoloHuntPendingCaptureDecision {
@@ -273,6 +304,12 @@ export interface SoloHuntPendingCaptureDecision {
   readonly contentHash: string;
   readonly gameDataVersion: GameDataVersion;
   readonly rulesVersion: RulesVersion;
+  readonly pendingSelectionIdentity?: string;
+  readonly individualizationSnapshotIdentity?: string;
+  readonly individualizationSnapshotCommitment?: string;
+  readonly individualizationRulesVersion?: typeof ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1;
+  readonly derivationAuthorityVersion?: string;
+  readonly derivationAuthorityKeyId?: string;
 }
 
 type SoloHuntBattleOutcome = Extract<CombatEvent, { kind: "BattleEnded" }>["outcome"];
@@ -291,6 +328,7 @@ export interface SoloHuntCurrentEncounterRuntime {
   readonly participantActivations: ReadonlyArray<SoloHuntParticipantActivationProvenance>;
   readonly battleStimuli: ReadonlyArray<CombatStimulus>;
   readonly battleOutcome?: SoloHuntBattleOutcome;
+  readonly individualizationSnapshot?: EncounterIndividualizationSnapshot;
 }
 
 export interface SoloHuntInterBattleRuntime {
@@ -453,6 +491,8 @@ export function validateSoloHuntOpponentCatalog(
   }
 
   const seenKeys = new Set<string>();
+  const geneticRuntime = context.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1;
+  const zeroStats: StatBlock<number> = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
   for (const template of templates) {
     const key = opponentTemplateKey(template.encounterDefinitionId, template.level);
     if (seenKeys.has(key)) {
@@ -472,7 +512,27 @@ export function validateSoloHuntOpponentCatalog(
     ) {
       return { accepted: false, reason: `Solo Hunt opponent template combat context mismatch: ${key}` };
     }
-    const derived = deriveStats(template.baseStats, template.ivs, template.level);
+    if (geneticRuntime && !isValidCompatibleProfiles(template.compatibleProfiles)) {
+      return { accepted: false, reason: `Genetic Solo Hunt opponent template Profiles invalid: ${key}` };
+    }
+    if (
+      geneticRuntime
+      && SOLO_HUNT_STAT_KEYS.some((stat) => template.ivs[stat] !== 0)
+    ) {
+      return { accepted: false, reason: `Genetic Solo Hunt opponent template IV placeholders must be zero: ${key}` };
+    }
+    if (!geneticRuntime && template.compatibleProfiles !== undefined) {
+      return { accepted: false, reason: `Historical Solo Hunt opponent template cannot carry Genetic Profiles: ${key}` };
+    }
+    const preflightIvs = geneticRuntime ? zeroStats : template.ivs;
+    const preflightBonuses = geneticRuntime ? zeroStats : undefined;
+    const derived = deriveStatsForRulesVersion(
+      context.rulesVersion,
+      template.baseStats,
+      preflightIvs,
+      template.level,
+      preflightBonuses,
+    );
     if (!derived) {
       return { accepted: false, reason: `Solo Hunt opponent template derived stats invalid: ${key}` };
     }
@@ -482,7 +542,8 @@ export function validateSoloHuntOpponentCatalog(
         speciesId: template.speciesId,
         level: template.level,
         baseStats: template.baseStats,
-        ivs: template.ivs,
+        ivs: preflightIvs,
+        ...(preflightBonuses ? { geneticBonuses: preflightBonuses } : {}),
         types: template.types,
         startingHp: derived.hp,
         moveLoadout: template.moveLoadout,
@@ -578,6 +639,22 @@ export function initializeSoloHuntEncounterBattle(
   ) {
     return reject(`Solo Hunt opponent template does not match selected encounter/context: ${templateKey}`);
   }
+  const geneticRuntime = input.context.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1;
+  const individual = input.individualizationSnapshot;
+  if (geneticRuntime) {
+    if (
+      !individual
+      || individual.speciesId !== input.selection.speciesId
+      || individual.level !== input.selection.level
+      || !isValidCompatibleProfiles(template.compatibleProfiles)
+      || individual.compatibleProfiles[0] !== template.compatibleProfiles[0]
+      || individual.compatibleProfiles[1] !== template.compatibleProfiles[1]
+    ) {
+      return reject(`Solo Hunt individualization snapshot does not match selected encounter: ${templateKey}`);
+    }
+  } else if (individual !== undefined) {
+    return reject("Historical Solo Hunt Battle cannot receive an individualization snapshot");
+  }
 
   const playerKeys = input.team.map((member) => cadenceParticipantKey({
     kind: "pokemonInstance",
@@ -599,7 +676,15 @@ export function initializeSoloHuntEncounterBattle(
   });
   if (!activeMember) return reject("Solo Hunt has no living pinned Team member for the next Battle");
 
-  const opponentDerived = deriveStats(template.baseStats, template.ivs, template.level);
+  const opponentIvs = individual?.ivs ?? template.ivs;
+  const opponentGeneticBonuses = individual?.birthGeneticBonuses;
+  const opponentDerived = deriveStatsForRulesVersion(
+    input.context.rulesVersion,
+    template.baseStats,
+    opponentIvs,
+    template.level,
+    opponentGeneticBonuses,
+  );
   if (!opponentDerived) return reject(`Solo Hunt opponent template derived stats invalid: ${templateKey}`);
   const opponentParticipant = {
     kind: "nonPlayer" as const,
@@ -651,6 +736,7 @@ export function initializeSoloHuntEncounterBattle(
       level: member.level,
       baseStats: member.baseStats,
       ivs: member.ivs,
+      ...(member.geneticBonuses ? { geneticBonuses: member.geneticBonuses } : {}),
       types: member.types,
       startingHp: ownGet(cadence.hpByParticipant, key)!,
       moveLoadout: member.moveLoadout,
@@ -666,7 +752,8 @@ export function initializeSoloHuntEncounterBattle(
     speciesId: template.speciesId,
     level: template.level,
     baseStats: template.baseStats,
-    ivs: template.ivs,
+    ivs: opponentIvs,
+    ...(opponentGeneticBonuses ? { geneticBonuses: opponentGeneticBonuses } : {}),
     types: template.types,
     startingHp: opponentDerived.hp,
     moveLoadout: template.moveLoadout,
@@ -1023,6 +1110,14 @@ function samePinnedTeam(
       && member.level === other.level
       && sameStatBlock(member.baseStats, other.baseStats)
       && sameStatBlock(member.ivs, other.ivs)
+      && (
+        (member.geneticBonuses === undefined && other.geneticBonuses === undefined)
+        || (
+          member.geneticBonuses !== undefined
+          && other.geneticBonuses !== undefined
+          && sameStatBlock(member.geneticBonuses, other.geneticBonuses)
+        )
+      )
       && sameOrderedStrings(member.types, other.types)
       && sameOrderedStrings(member.moveLoadout, other.moveLoadout)
       && member.abilityId === other.abilityId;
@@ -1047,6 +1142,25 @@ function validateRuntimeInputs(inputs: SoloHuntRuntimeInputs): string | undefine
   if (!Number.isSafeInteger(inputs.interBattleGapMs) || inputs.interBattleGapMs < 0) {
     return "interBattleGapMs must be a non-negative safe integer";
   }
+  const geneticRuntime = usesGeneticIndividualization(inputs);
+  const authority = inputs.individualizationAuthority;
+  if (geneticRuntime) {
+    if (
+      !authority
+      || authority.rulesVersion !== ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1
+      || typeof authority.authorityVersion !== "string"
+      || authority.authorityVersion.length === 0
+      || typeof authority.keyId !== "string"
+      || authority.keyId.length === 0
+      || !(authority.secretKey instanceof Uint8Array)
+      || authority.secretKey.byteLength < 32
+      || authority.keyId !== deriveEncounterIndividualizationAuthorityKeyIdV1(authority.secretKey)
+    ) {
+      return "Genetic Solo Hunt requires a valid server-only individualization authority";
+    }
+  } else if (authority !== undefined) {
+    return "Historical Solo Hunt rules cannot receive individualization authority";
+  }
   const optionsValidation = validateSoloHuntEncounterOptions(inputs.encounterOptions);
   if (!optionsValidation.accepted) return optionsValidation.reason;
   const catalogValidation = validateSoloHuntOpponentCatalog(
@@ -1055,10 +1169,21 @@ function validateRuntimeInputs(inputs: SoloHuntRuntimeInputs): string | undefine
     inputs.context,
   );
   if (!catalogValidation.accepted) return catalogValidation.reason;
-  const fresh = createFreshSoloHuntCadence(inputs.team);
+  const fresh = createFreshSoloHuntCadence(inputs.team, inputs.context);
   if (!fresh.accepted) return fresh.reason;
   for (const member of inputs.team) {
-    const derived = deriveStats(member.baseStats, member.ivs, member.level);
+    if (geneticRuntime !== (member.geneticBonuses !== undefined)) {
+      return geneticRuntime
+        ? "Genetic Solo Hunt pinned Team member is missing Genetic Bonus vector: " + member.pokemonInstanceId
+        : "Historical Solo Hunt pinned Team member cannot carry Genetic Bonus vector: " + member.pokemonInstanceId;
+    }
+    const derived = deriveStatsForRulesVersion(
+      inputs.context.rulesVersion,
+      member.baseStats,
+      member.ivs,
+      member.level,
+      member.geneticBonuses,
+    );
     if (!derived) return "invalid derived stats for pinned Team member: " + member.pokemonInstanceId;
     const error = validateBattleCombatantInit(
       {
@@ -1067,6 +1192,7 @@ function validateRuntimeInputs(inputs: SoloHuntRuntimeInputs): string | undefine
         level: member.level,
         baseStats: member.baseStats,
         ivs: member.ivs,
+        ...(member.geneticBonuses ? { geneticBonuses: member.geneticBonuses } : {}),
         types: member.types,
         startingHp: derived.hp,
         moveLoadout: member.moveLoadout,
@@ -1147,7 +1273,7 @@ function pendingSelectionIdentity(
   policyRngBeforeSelection: DeterministicRngState,
   selection: SoloHuntEncounterSelection,
 ): string {
-  return JSON.stringify([
+  const legacyIdentity = [
     "soloHuntPendingSelection",
     inputs.playerId,
     inputs.zoneId,
@@ -1161,7 +1287,79 @@ function pendingSelectionIdentity(
     selection.encounterDefinitionId,
     selection.speciesId,
     selection.level,
+  ];
+  if (!inputs.individualizationAuthority) return JSON.stringify(legacyIdentity);
+  const template = resolveOpponentTemplate(inputs.opponentTemplates, selection);
+  if (!template || !isValidCompatibleProfiles(template.compatibleProfiles)) {
+    throw new Error("Genetic PendingEncounterSelection requires exactly two compatible Profiles");
+  }
+  return JSON.stringify([
+    ...legacyIdentity,
+    template.compatibleProfiles[0],
+    template.compatibleProfiles[1],
+    inputs.individualizationAuthority.rulesVersion,
+    inputs.individualizationAuthority.authorityVersion,
+    inputs.individualizationAuthority.keyId,
   ]);
+}
+
+function usesGeneticIndividualization(inputs: Pick<SoloHuntRuntimeInputs, "context" | "individualizationAuthority">): boolean {
+  return inputs.context.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1;
+}
+
+function isValidCompatibleProfiles(
+  value: SoloHuntOpponentTemplate["compatibleProfiles"],
+): value is readonly [GeneticProfile, GeneticProfile] {
+  return Array.isArray(value)
+    && value.length === 2
+    && value[0] !== value[1]
+    && GENETIC_PROFILES.includes(value[0] as GeneticProfile)
+    && GENETIC_PROFILES.includes(value[1] as GeneticProfile);
+}
+
+function resolveOpponentTemplate(
+  templates: ReadonlyArray<SoloHuntOpponentTemplate>,
+  selection: Pick<SoloHuntEncounterSelection, "encounterDefinitionId" | "speciesId" | "level">,
+): SoloHuntOpponentTemplate | undefined {
+  const matches = templates.filter((template) =>
+    template.encounterDefinitionId === selection.encounterDefinitionId
+    && template.speciesId === selection.speciesId
+    && template.level === selection.level);
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function individualizationForPending(
+  inputs: Pick<SoloHuntRuntimeInputs, "context" | "opponentTemplates" | "individualizationAuthority">,
+  pending: SoloHuntPendingEncounterSelection,
+  selection: SoloHuntEncounterSelection,
+): EncounterIndividualizationSnapshot | undefined {
+  if (!usesGeneticIndividualization(inputs)) return undefined;
+  const authority = inputs.individualizationAuthority;
+  if (!authority) throw new Error("Genetic Solo Hunt requires individualization authority");
+  const template = resolveOpponentTemplate(inputs.opponentTemplates, selection);
+  if (
+    !template
+    || !isValidCompatibleProfiles(template.compatibleProfiles)
+    || !isValidCompatibleProfiles(pending.compatibleProfiles)
+    || pending.compatibleProfiles[0] !== template.compatibleProfiles[0]
+    || pending.compatibleProfiles[1] !== template.compatibleProfiles[1]
+  ) {
+    throw new Error("Genetic Solo Hunt opponent template requires exactly two compatible Profiles");
+  }
+  if (
+    pending.individualizationRulesVersion !== authority.rulesVersion
+    || pending.derivationAuthorityVersion !== authority.authorityVersion
+    || pending.derivationAuthorityKeyId !== authority.keyId
+  ) {
+    throw new Error("PendingEncounterSelection individualization authority does not match runtime authority");
+  }
+  return individualizeEncounter({
+    pendingSelectionIdentity: pending.pendingSelectionIdentity,
+    speciesId: selection.speciesId,
+    level: selection.level,
+    compatibleProfiles: pending.compatibleProfiles,
+    authority,
+  });
 }
 
 function soloHuntEncounterId(huntRunIdentity: string, encounterOrdinal: number): EncounterId {
@@ -1197,6 +1395,25 @@ function validatePendingSelection(
   ) {
     return { accepted: false, reason: "PendingEncounterSelection exact context does not match the requested Hunt" };
   }
+  const authority = inputs.individualizationAuthority;
+  if (usesGeneticIndividualization(inputs)) {
+    if (
+      !authority
+      || !isValidCompatibleProfiles(pending.compatibleProfiles)
+      || pending.individualizationRulesVersion !== authority.rulesVersion
+      || pending.derivationAuthorityVersion !== authority.authorityVersion
+      || pending.derivationAuthorityKeyId !== authority.keyId
+    ) {
+      return { accepted: false, reason: "PendingEncounterSelection individualization authority does not match runtime authority" };
+    }
+  } else if (
+    pending.compatibleProfiles !== undefined
+    || pending.individualizationRulesVersion !== undefined
+    || pending.derivationAuthorityVersion !== undefined
+    || pending.derivationAuthorityKeyId !== undefined
+  ) {
+    return { accepted: false, reason: "Historical PendingEncounterSelection cannot carry individualization authority" };
+  }
   const beforeError = validateRngState(pending.policyRngBeforeSelection);
   const afterError = validateRngState(pending.policyRngAfterSelection);
   if (beforeError || afterError) {
@@ -1231,11 +1448,25 @@ function validateRuntimeCombatant(
   expectedCombatantId: CombatantId,
   expectedSideId: BattleSideId,
   expectedCadenceParticipant: CadenceParticipant,
+  context: ResolvedCombatContext,
+  override?: {
+    readonly ivs?: StatBlock<number>;
+    readonly geneticBonuses?: StatBlock<number>;
+  },
 ): string | undefined {
   if (!combatant || combatant.combatantId !== expectedCombatantId) {
     return "Solo Hunt Battle is missing expected Combatant: " + expectedCombatantId;
   }
-  const derived = deriveStats(expected.baseStats, expected.ivs, expected.level);
+  const expectedIvs = override?.ivs ?? expected.ivs;
+  const expectedGeneticBonuses = override?.geneticBonuses
+    ?? ("geneticBonuses" in expected ? expected.geneticBonuses : undefined);
+  const derived = deriveStatsForRulesVersion(
+    context.rulesVersion,
+    expected.baseStats,
+    expectedIvs,
+    expected.level,
+    expectedGeneticBonuses,
+  );
   if (!derived) return "Solo Hunt expected Combatant stats are invalid: " + expectedCombatantId;
   if (
     combatant.sideId !== expectedSideId
@@ -1387,6 +1618,7 @@ function validateCurrentEncounterBattleCheckpoint(
       combatantId,
       SOLO_HUNT_PLAYER_SIDE_ID,
       { kind: "pokemonInstance", identity: member.pokemonInstanceId },
+      inputs.context,
     );
     if (error) return error;
   }
@@ -1397,6 +1629,26 @@ function validateCurrentEncounterBattleCheckpoint(
   if (matchingTemplates.length !== 1) {
     return "Solo Hunt current Encounter opponent template does not resolve exactly once";
   }
+  const activePending = state.pendingEncounterSelection;
+  if (!activePending || activePending.pendingSelectionIdentity !== encounter.pendingSelectionIdentity) {
+    return "Solo Hunt current Encounter is not bound to the active PendingEncounterSelection";
+  }
+  let expectedIndividual: EncounterIndividualizationSnapshot | undefined;
+  try {
+    expectedIndividual = individualizationForPending(inputs, activePending, encounter.selection);
+  } catch (error) {
+    return error instanceof Error ? error.message : "Solo Hunt individualization replay failed";
+  }
+  if (
+    (expectedIndividual === undefined) !== (encounter.individualizationSnapshot === undefined)
+    || (
+      expectedIndividual
+      && encounter.individualizationSnapshot
+      && !sameIndividualizationSnapshot(expectedIndividual, encounter.individualizationSnapshot)
+    )
+  ) {
+    return "Solo Hunt current Encounter individualization snapshot does not replay exactly";
+  }
   const opponentError = validateRuntimeCombatant(
     ownGet(battle.combatants, expectedOpponentId),
     matchingTemplates[0]!,
@@ -1406,6 +1658,13 @@ function validateCurrentEncounterBattleCheckpoint(
       kind: "nonPlayer",
       identity: opponentCadenceIdentity(state.huntRunIdentity, encounter.encounterOrdinal),
     },
+    inputs.context,
+    expectedIndividual
+      ? {
+          ivs: expectedIndividual.ivs,
+          geneticBonuses: expectedIndividual.birthGeneticBonuses,
+        }
+      : undefined,
   );
   if (opponentError) return opponentError;
   const effectError = validateBattleEffectsCheckpoint(battle);
@@ -1533,6 +1792,27 @@ function validateCompletedEncounterEvidence(
     const pending = provenance.consumedPendingEncounterSelection;
     const pendingValidation = validatePendingSelection(inputs, pending);
     if (!pendingValidation.accepted) return pendingValidation.reason;
+    let expectedIndividual: EncounterIndividualizationSnapshot | undefined;
+    try {
+      expectedIndividual = individualizationForPending(inputs, pending, pendingValidation.selection);
+    } catch (error) {
+      return error instanceof Error ? error.message : "Solo Hunt completed individualization replay failed";
+    }
+    if (
+      (expectedIndividual === undefined) !== (provenance.individualizationSnapshot === undefined)
+      || (
+        expectedIndividual
+        && provenance.individualizationSnapshot
+        && !sameIndividualizationSnapshot(expectedIndividual, provenance.individualizationSnapshot)
+      )
+    ) {
+      return "Solo Hunt completed individualization snapshot does not replay exactly";
+    }
+    const expectedSnapshotIdentity = expectedIndividual?.individualizationSnapshotIdentity;
+    const expectedSnapshotCommitment = expectedIndividual?.individualizationSnapshotCommitment;
+    const expectedRulesVersion = expectedIndividual?.individualizationRulesVersion;
+    const expectedAuthorityVersion = expectedIndividual?.derivationAuthorityVersion;
+    const expectedAuthorityKeyId = expectedIndividual?.derivationAuthorityKeyId;
     if (
       index === 0
       && originPending
@@ -1567,6 +1847,11 @@ function validateCompletedEncounterEvidence(
       || evidence.huntRunIdentity !== state.huntRunIdentity
       || evidence.completionKind !== "defeat"
       || evidence.pendingSelectionIdentity !== pending.pendingSelectionIdentity
+      || evidence.individualizationSnapshotIdentity !== expectedSnapshotIdentity
+      || evidence.individualizationSnapshotCommitment !== expectedSnapshotCommitment
+      || evidence.individualizationRulesVersion !== expectedRulesVersion
+      || evidence.derivationAuthorityVersion !== expectedAuthorityVersion
+      || evidence.derivationAuthorityKeyId !== expectedAuthorityKeyId
       || provenance.completedAtHuntTimeMs !== evidence.completedAtHuntTimeMs
       || provenance.completedAtHuntTimeMs
         !== provenance.battleStartedAtHuntTimeMs + provenance.terminalBattleTimeMs
@@ -1642,6 +1927,7 @@ function replaySoloHuntEncounterStimuli(
   context: ResolvedCombatContext,
   deterministicState: DeterministicState,
   stimuli: ReadonlyArray<CombatStimulus>,
+  individualizationSnapshot?: EncounterIndividualizationSnapshot,
 ): SoloHuntEncounterReplayResult {
   const initialized = initializeSoloHuntEncounterBattle({
     huntRunIdentity,
@@ -1653,6 +1939,7 @@ function replaySoloHuntEncounterStimuli(
     opponentTemplates,
     context,
     deterministicState,
+    individualizationSnapshot,
   });
   if (!initialized.accepted) return { accepted: false, reason: initialized.reason };
   const initialActivation = initialParticipantActivation(initialized.state, initialized.playerSideId);
@@ -1759,7 +2046,7 @@ function validateReplayableHuntHistory(
 ): string | undefined {
   const originRngError = validateRngState(state.combatDeterministicOrigin.rng);
   if (originRngError) return originRngError;
-  const fresh = createFreshSoloHuntCadence(inputs.team);
+  const fresh = createFreshSoloHuntCadence(inputs.team, inputs.context);
   if (!fresh.accepted) return fresh.reason;
 
   let cadence = fresh.cadence;
@@ -1790,6 +2077,7 @@ function validateReplayableHuntHistory(
       inputs.context,
       deterministicState,
       provenance.battleStimuli,
+      provenance.individualizationSnapshot,
     );
     if (!replay.accepted) return replay.reason;
     const lifecycle = evaluateBattleLifecycle(replay.battle);
@@ -1888,6 +2176,7 @@ function validateReplayableHuntHistory(
     inputs.context,
     deterministicState,
     encounter.battleStimuli,
+    encounter.individualizationSnapshot,
   );
   if (!replay.accepted) return replay.reason;
   if (
@@ -2021,6 +2310,110 @@ function validateRuntimeState(
   return undefined;
 }
 
+export type ReplayValidatedSoloHuntRewardSourceResult =
+  | {
+      readonly accepted: true;
+      readonly source: {
+        readonly subjectPlayerId: PlayerId;
+        readonly evidence: SoloHuntCompletedEncounterEvidence;
+        readonly pinnedTeam: ReadonlyArray<SoloHuntTeamMemberSnapshot>;
+      };
+    }
+  | {
+      readonly accepted: false;
+      readonly reason: string;
+    };
+
+export function replayValidateSoloHuntRewardSource(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  rewardSourceIdentityToResolve: string,
+): ReplayValidatedSoloHuntRewardSourceResult {
+  if (typeof rewardSourceIdentityToResolve !== "string" || rewardSourceIdentityToResolve.length === 0) {
+    return { accepted: false, reason: "Solo Hunt reward source identity is required" };
+  }
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs);
+  if (stateError) return { accepted: false, reason: stateError };
+  const matches = state.completedEncounters.filter(
+    (evidence) => evidence.rewardSourceIdentity === rewardSourceIdentityToResolve,
+  );
+  if (matches.length !== 1) {
+    return {
+      accepted: false,
+      reason: matches.length === 0
+        ? "Solo Hunt reward source is absent from replay-validated completed Encounter history"
+        : "Solo Hunt reward source identity is not unique in replay-validated completed Encounter history",
+    };
+  }
+  return {
+    accepted: true,
+    source: {
+      subjectPlayerId: state.playerId,
+      evidence: matches[0]!,
+      pinnedTeam: state.pinnedTeam,
+    },
+  };
+}
+
+export type ReplayValidatedSoloHuntCaptureSourceResult =
+  | {
+      readonly accepted: true;
+      readonly source: {
+        readonly subjectPlayerId: PlayerId;
+        readonly pendingCapture: SoloHuntPendingCaptureDecision;
+        readonly snapshot: EncounterIndividualizationSnapshot;
+      };
+    }
+  | {
+      readonly accepted: false;
+      readonly reason: string;
+    };
+
+export function replayValidateSoloHuntCaptureSource(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  encounterIdToResolve: EncounterId,
+): ReplayValidatedSoloHuntCaptureSourceResult {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs);
+  if (stateError) return { accepted: false, reason: stateError };
+  const pendingCapture = state.pendingCaptureDecision;
+  if (!pendingCapture || pendingCapture.encounterId !== encounterIdToResolve) {
+    return {
+      accepted: false,
+      reason: "Solo Hunt Encounter is not the exact replay-validated pending capture decision",
+    };
+  }
+  const evidenceIndex = state.completedEncounters.findIndex(
+    (evidence) => evidence.encounterId === encounterIdToResolve,
+  );
+  if (evidenceIndex < 0) {
+    return {
+      accepted: false,
+      reason: "Solo Hunt pending capture has no replay-validated completed Encounter backing",
+    };
+  }
+  const provenance = state.completedEncounterProvenance[evidenceIndex];
+  const snapshot = provenance?.individualizationSnapshot;
+  if (!snapshot) {
+    return {
+      accepted: false,
+      reason: "Solo Hunt pending capture lacks authoritative TASK-097 individualization snapshot provenance",
+    };
+  }
+  return {
+    accepted: true,
+    source: {
+      subjectPlayerId: state.playerId,
+      pendingCapture,
+      snapshot,
+    },
+  };
+}
+
 function selectPendingEncounter(
   inputs: SoloHuntRuntimeInputs,
   policyRng: DeterministicRngState,
@@ -2035,6 +2428,13 @@ function selectPendingEncounter(
 } {
   const selected = selectSoloHuntEncounter(inputs.encounterOptions, policyRng);
   if (!selected.accepted) return { accepted: false, reason: selected.reason };
+  const selectedTemplate = inputs.individualizationAuthority
+    ? resolveOpponentTemplate(inputs.opponentTemplates, selected.selection)
+    : undefined;
+  const compatibleProfiles = selectedTemplate?.compatibleProfiles;
+  if (inputs.individualizationAuthority && !isValidCompatibleProfiles(compatibleProfiles)) {
+    return { accepted: false, reason: "Selected Genetic Encounter has no valid frozen Profile pair" };
+  }
   return {
     accepted: true,
     pending: {
@@ -2051,6 +2451,14 @@ function selectPendingEncounter(
       level: selected.selection.level,
       policyRngBeforeSelection: policyRng,
       policyRngAfterSelection: selected.rng,
+      ...(compatibleProfiles ? { compatibleProfiles } : {}),
+      ...(inputs.individualizationAuthority
+        ? {
+            individualizationRulesVersion: inputs.individualizationAuthority.rulesVersion,
+            derivationAuthorityVersion: inputs.individualizationAuthority.authorityVersion,
+            derivationAuthorityKeyId: inputs.individualizationAuthority.keyId,
+          }
+        : {}),
     },
     selection: selected.selection,
     policyRng: selected.rng,
@@ -2137,6 +2545,7 @@ function buildCurrentEncounter(
   opponentTemplates: ReadonlyArray<SoloHuntOpponentTemplate>,
   context: ResolvedCombatContext,
   deterministicState: DeterministicState,
+  individualizationAuthority?: EncounterIndividualizationAuthority,
 ): {
   readonly accepted: true;
   readonly encounter: SoloHuntCurrentEncounterRuntime;
@@ -2146,6 +2555,19 @@ function buildCurrentEncounter(
   readonly accepted: false;
   readonly reason: string;
 } {
+  let individualizationSnapshot: EncounterIndividualizationSnapshot | undefined;
+  try {
+    individualizationSnapshot = individualizationForPending(
+      { context, opponentTemplates, individualizationAuthority },
+      pending,
+      selection,
+    );
+  } catch (error) {
+    return {
+      accepted: false,
+      reason: error instanceof Error ? error.message : "Solo Hunt individualization failed",
+    };
+  }
   const initialized = initializeSoloHuntEncounterBattle({
     huntRunIdentity,
     encounterOrdinal,
@@ -2156,6 +2578,7 @@ function buildCurrentEncounter(
     opponentTemplates,
     context,
     deterministicState,
+    individualizationSnapshot,
   });
   if (!initialized.accepted) return { accepted: false, reason: initialized.reason };
   const encounterId = soloHuntEncounterId(huntRunIdentity, encounterOrdinal);
@@ -2177,6 +2600,7 @@ function buildCurrentEncounter(
     participantPokemonInstanceIds: [initialActivation.pokemonInstanceId],
     participantActivations: [initialActivation],
     battleStimuli: [],
+    ...(individualizationSnapshot ? { individualizationSnapshot } : {}),
     ...(outcome ? { battleOutcome: outcome } : {}),
   };
   return {
@@ -2204,7 +2628,7 @@ export function createSoloHuntRuntime(
       events: [],
     };
   }
-  const fresh = createFreshSoloHuntCadence(input.inputs.team);
+  const fresh = createFreshSoloHuntCadence(input.inputs.team, input.inputs.context);
   if (!fresh.accepted) return { accepted: false, reason: fresh.reason, events: [] };
 
   let pending: SoloHuntPendingEncounterSelection;
@@ -2236,6 +2660,7 @@ export function createSoloHuntRuntime(
     input.inputs.opponentTemplates,
     input.inputs.context,
     input.combatDeterministicState,
+    input.inputs.individualizationAuthority,
   );
   if (!built.accepted) return { accepted: false, reason: built.reason, events: [] };
   return {
@@ -2273,6 +2698,7 @@ function completeEncounterEvidence(
   state: SoloHuntRuntimeState,
   encounter: SoloHuntCurrentEncounterRuntime,
 ): SoloHuntCompletedEncounterEvidence {
+  const individual = encounter.individualizationSnapshot;
   return {
     rewardSourceIdentity: rewardSourceIdentity(state.huntRunIdentity, encounter.encounterOrdinal),
     huntRunIdentity: state.huntRunIdentity,
@@ -2290,6 +2716,15 @@ function completeEncounterEvidence(
     gameDataVersion: state.gameDataVersion,
     rulesVersion: state.rulesVersion,
     completedAtHuntTimeMs: state.logicalTimeMs,
+    ...(individual
+      ? {
+          individualizationSnapshotIdentity: individual.individualizationSnapshotIdentity,
+          individualizationSnapshotCommitment: individual.individualizationSnapshotCommitment,
+          individualizationRulesVersion: individual.individualizationRulesVersion,
+          derivationAuthorityVersion: individual.derivationAuthorityVersion,
+          derivationAuthorityKeyId: individual.derivationAuthorityKeyId,
+        }
+      : {}),
   };
 }
 
@@ -2308,6 +2743,9 @@ function completeEncounterProvenance(
     completedAtHuntTimeMs: state.logicalTimeMs,
     terminalBattleTimeMs: encounter.battle.combatTimeMs,
     terminalEventSequence: encounter.battle.eventSequence,
+    ...(encounter.individualizationSnapshot
+      ? { individualizationSnapshot: encounter.individualizationSnapshot }
+      : {}),
   };
 }
 
@@ -2323,6 +2761,16 @@ function captureDecisionFromEvidence(
     contentHash: evidence.contentHash,
     gameDataVersion: evidence.gameDataVersion,
     rulesVersion: evidence.rulesVersion,
+    ...(evidence.individualizationSnapshotIdentity
+      ? {
+          pendingSelectionIdentity: evidence.pendingSelectionIdentity,
+          individualizationSnapshotIdentity: evidence.individualizationSnapshotIdentity,
+          individualizationSnapshotCommitment: evidence.individualizationSnapshotCommitment!,
+          individualizationRulesVersion: evidence.individualizationRulesVersion!,
+          derivationAuthorityVersion: evidence.derivationAuthorityVersion!,
+          derivationAuthorityKeyId: evidence.derivationAuthorityKeyId!,
+        }
+      : {}),
   };
 }
 
@@ -2614,6 +3062,7 @@ export function advanceSoloHuntToCutoff(
         inputs.opponentTemplates,
         inputs.context,
         currentState.combatDeterministicState,
+        inputs.individualizationAuthority,
       );
       if (!built.accepted) return reject(built.reason);
       events.push(...built.events);
@@ -2639,6 +3088,7 @@ export interface SoloHuntMovePolicyState {
 
 export function createFreshSoloHuntCadence(
   team: ReadonlyArray<SoloHuntTeamMemberSnapshot>,
+  context?: ResolvedCombatContext,
 ): FreshSoloHuntCadenceResult {
   if (team.length === 0) {
     return { accepted: false, reason: "Solo Hunt requires at least one pinned Team member" };
@@ -2652,6 +3102,12 @@ export function createFreshSoloHuntCadence(
   const cursorEntries: Array<readonly [CadenceParticipantKey, number]> = [];
 
   for (const member of team) {
+    if (!context && member.geneticBonuses !== undefined) {
+      return {
+        accepted: false,
+        reason: `Genetic Bonus vector requires an explicit combat context: ${member.pokemonInstanceId}`,
+      };
+    }
     if (seenParticipants.has(member.pokemonInstanceId)) {
       return { accepted: false, reason: `duplicate pinned Team cadence identity: ${member.pokemonInstanceId}` };
     }
@@ -2668,7 +3124,15 @@ export function createFreshSoloHuntCadence(
       return { accepted: false, reason: `types required for pinned Team member: ${member.pokemonInstanceId}` };
     }
 
-    const derived = deriveStats(member.baseStats, member.ivs, member.level);
+    const derived = context
+      ? deriveStatsForRulesVersion(
+          context.rulesVersion,
+          member.baseStats,
+          member.ivs,
+          member.level,
+          member.geneticBonuses,
+        )
+      : deriveStats(member.baseStats, member.ivs, member.level);
     if (!derived) {
       return { accepted: false, reason: `invalid derived stats for pinned Team member: ${member.pokemonInstanceId}` };
     }

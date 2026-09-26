@@ -13,7 +13,7 @@ import type {
   UseMoveIntent,
 } from "./types";
 import { battleEffectKey, cadenceParticipantKey } from "./types";
-import { validateBattleInit, deriveStats } from "./validation";
+import { validateBattleInit, deriveStatsForRulesVersion } from "./validation";
 import { evaluateBattleLifecycle } from "./lifecycle";
 import {
   calculateBaseDamage,
@@ -138,7 +138,13 @@ export function initializeBattle(input: BattleInitInput): BattleInitResult {
     const cadenceActionLockRemainingMs = inputCombatant.cadenceParticipant
       ? (input.cadenceCarry ? ownGet(input.cadenceCarry.actionLockRemainingMsByParticipant, participantKey!) : undefined)
       : undefined;
-    const derivedStats = deriveStats(inputCombatant.baseStats, inputCombatant.ivs, inputCombatant.level);
+    const derivedStats = deriveStatsForRulesVersion(
+      input.context.rulesVersion,
+      inputCombatant.baseStats,
+      inputCombatant.ivs,
+      inputCombatant.level,
+      inputCombatant.geneticBonuses,
+    );
     if (!derivedStats) {
       return {
         accepted: false,

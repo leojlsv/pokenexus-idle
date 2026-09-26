@@ -8,6 +8,8 @@ import {
   MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
   PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_V2_RULES_VERSION,
+  PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
   PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_V3_RULES_VERSION,
   createConfiguredMoveEligibilityRulesVersionResolver,
@@ -152,6 +154,15 @@ describe("createMoveEligibilityContextLoader", () => {
     expect(PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability?.semanticHash).toBe(
       PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR.productionSelectability?.semanticHash,
     );
+    expect(PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR).toMatchObject({
+      rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
+      productionSelectability: {
+        supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V2.profileArtifactId,
+        supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V2.profileContentHash,
+        combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId,
+        combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V2.canonicalContentHash,
+      },
+    });
   });
 
   it("rejects descriptor swapping under either immutable production rulesVersion", () => {
@@ -167,8 +178,23 @@ describe("createMoveEligibilityContextLoader", () => {
     for (const rules of [swappedV3UnderRetainedV2, swappedV2UnderNewV3]) {
       expect(() => createConfiguredMoveEligibilityRulesVersionResolver([
         { rules, newOperationsAllowed: true },
-      ])).toThrow(/combat rule catalog artifact identity/);
+      ])).toThrow(/immutable release descriptor/);
     }
+  });
+
+  it("publishes only the explicit Genetic rulesVersion as a v3-catalog reuse", async () => {
+    const resolver = createConfiguredMoveEligibilityRulesVersionResolver([
+      { rules: PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR, newOperationsAllowed: true },
+    ]);
+    await expect(resolver.resolve(PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION)).resolves.toMatchObject({
+      rules: {
+        rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
+        productionSelectability: {
+          combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId,
+        },
+      },
+      newOperationsAllowed: true,
+    });
   });
 
   it("rejects production catalog aliases under an unpublished rulesVersion", () => {

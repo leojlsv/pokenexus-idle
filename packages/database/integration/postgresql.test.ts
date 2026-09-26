@@ -58,6 +58,18 @@ async function makeMigrationDirectory(): Promise<string> {
   return directory;
 }
 
+async function makeMigrationDirectoryThrough(count: number): Promise<string> {
+  const directory = await makeMigrationDirectory();
+  const migrations = await discoverMigrations();
+  for (const migration of migrations.slice(0, count)) {
+    await writeFile(
+      join(directory, migration.fileName),
+      await readFile(join(canonicalMigrationsDirectory, migration.fileName)),
+    );
+  }
+  return directory;
+}
+
 function encoded(value: string): Buffer {
   return Buffer.from(encodeOpaqueStringDbV1(value));
 }
@@ -92,11 +104,21 @@ async function insertPokemon(
   const id = values.id ?? generateUuidV7();
   const level = values.level ?? 100;
   const totalExperience = level * level * level - 1;
+  const opaque = (value: string) => Buffer.from(encodeOpaqueStringDbV1(value));
   await client.query(
     `INSERT INTO pokenexus.pokemon_instances (
       pokemon_instance_id, owner_player_id, species_id, level, total_experience,
-      iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe, row_version
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe, row_version,
+      genetic_score, genetic_profile_a, genetic_profile_b, birth_profile, expressed_profile, shiny,
+      individualization_rules_version, derivation_authority_version, derivation_authority_key_id,
+      origin_pending_selection_identity,
+      individualization_snapshot_identity, individualization_snapshot_commitment,
+      individualization_content_version, individualization_content_hash, individualization_game_data_version
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+      50, 'Harmony', 'Endurance', 'Harmony', 'Harmony', false,
+      $13, $14, $15, $16, $17, $18, $19, $20, $21
+    )`,
     [
       id,
       ownerPlayerId,
@@ -110,6 +132,15 @@ async function insertPokemon(
       values.ivSpd ?? 31,
       values.ivSpe ?? 31,
       values.rowVersion ?? 0,
+      opaque("encounter-individualization-v1"),
+      opaque("authority-v1"),
+      opaque("key-v1:test"),
+      opaque(`pending:${id}`),
+      opaque(`indv1:${id}`),
+      opaque(`sha256:${id}`),
+      opaque("content:test"),
+      opaque("sha256:content-test"),
+      opaque("game-data:test"),
     ],
   );
   return id;
@@ -158,6 +189,8 @@ describe("PostgreSQL 17 migration foundation", () => {
       "0003_collection_team_spec005.sql",
       "0004_progression_inventory_reward.sql",
       "0005_player_state_api_spec011.sql",
+      "0006_encounter_individualization_genetics.sql",
+      "0007_capture_resolution.sql",
     ]);
     const [persistenceMigration, authMigration] = canonical;
 
@@ -309,6 +342,100 @@ describe("PostgreSQL 17 migration foundation", () => {
     await expect(
       runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: directory }),
     ).rejects.toThrow(/contiguous local prefix/);
+  });
+});
+
+describe("TASK-097 encounter individualization migration", () => {
+  it("applies 0006 only after proving the pre-feature durable surfaces are empty", async () => {
+    await resetSchema();
+    const through0005 = await makeMigrationDirectoryThrough(5);
+    await runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: through0005 });
+
+    const through0006 = await makeMigrationDirectoryThrough(6);
+
+    await expect(runMigrations({
+      connectionString: testDatabaseUrl,
+      migrationsDirectory: through0006,
+    })).resolves.toMatchObject({
+      applied: ["0006_encounter_individualization_genetics"],
+    });
+
+    await withDirectClient(async (client) => {
+      const columns = await client.query<{ column_name: string; is_nullable: string }>(
+        `SELECT column_name, is_nullable
+         FROM information_schema.columns
+         WHERE table_schema = 'pokenexus'
+           AND table_name = 'pokemon_instances'
+           AND column_name IN (
+             'genetic_score',
+             'genetic_profile_a',
+             'genetic_profile_b',
+             'birth_profile',
+             'expressed_profile',
+             'shiny',
+             'individualization_rules_version',
+             'derivation_authority_key_id',
+             'origin_pending_selection_identity',
+             'individualization_snapshot_identity'
+           )
+         ORDER BY column_name`,
+      );
+      expect(columns.rows).toHaveLength(10);
+      expect(columns.rows.every(({ is_nullable }) => is_nullable === "NO")).toBe(true);
+    });
+  });
+
+  it("fails closed before 0006 when a pre-feature owned Pokémon exists", async () => {
+    await resetSchema();
+    const through0005 = await makeMigrationDirectoryThrough(5);
+    await runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: through0005 });
+    await withDirectClient(async (client) => {
+      const { playerId } = await createPlayer(client);
+      await client.query(
+        `INSERT INTO pokenexus.pokemon_instances (
+           pokemon_instance_id, owner_player_id, species_id, level, total_experience,
+           iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe
+         ) VALUES ($1, $2, $3, 5, 124, 1, 2, 3, 4, 5, 6)`,
+        [generateUuidV7(), playerId, encoded("species:legacy")],
+      );
+    });
+
+    await expect(runMigrations({ connectionString: testDatabaseUrl })).rejects.toThrow(
+      /refuses to fabricate Genetics\/Shiny\/provenance/,
+    );
+    await withDirectClient(async (client) => {
+      const ledger = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.schema_migrations WHERE migration_id = '0006_encounter_individualization_genetics'",
+      );
+      expect(ledger.rows[0]?.count).toBe("0");
+    });
+  });
+
+  it("fails closed before 0006 when a pre-feature Hunt checkpoint exists", async () => {
+    await resetSchema();
+    const through0005 = await makeMigrationDirectoryThrough(5);
+    await runMigrations({ connectionString: testDatabaseUrl, migrationsDirectory: through0005 });
+    await withDirectClient(async (client) => {
+      const { playerId } = await createPlayer(client);
+      await client.query(
+        `INSERT INTO pokenexus.hunt_checkpoints (
+           checkpoint_id, player_id, checkpoint_schema_version, game_data_version,
+           rules_version, logical_time_ms, checkpoint_state_bytes
+         ) VALUES ($1, $2, $3, $4, $5, 0, $6)`,
+        [
+          generateUuidV7(),
+          playerId,
+          encoded("checkpoint:v1"),
+          encoded("game-data:v3"),
+          encoded("rules:v3"),
+          Buffer.from([1]),
+        ],
+      );
+    });
+
+    await expect(runMigrations({ connectionString: testDatabaseUrl })).rejects.toThrow(
+      /refuses to individualize pre-feature durable Hunt checkpoints/,
+    );
   });
 });
 

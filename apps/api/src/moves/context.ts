@@ -1,4 +1,5 @@
 import {
+  GENETIC_COMBAT_RULES_VERSION_V1,
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
   PRODUCTION_COMBAT_GAME_DATA_VERSION,
   PRODUCTION_COMBAT_GAME_DATA_VERSION_V2,
@@ -76,6 +77,9 @@ export const PRODUCTION_COMBAT_V2_RULES_VERSION =
 export const PRODUCTION_COMBAT_V3_RULES_VERSION =
   PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2;
 
+export const PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION =
+  GENETIC_COMBAT_RULES_VERSION_V1;
+
 export const PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR: MoveEligibilityRulesDescriptor =
   Object.freeze({
     rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
@@ -106,6 +110,12 @@ export const PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR: MoveEligibilityRules
     }),
   });
 
+export const PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR: MoveEligibilityRulesDescriptor =
+  Object.freeze({
+    ...PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
+    rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
+  });
+
 export interface ExactMoveEligibilityRulesVersionResolver {
   resolve(rulesVersion: string): Promise<{
     readonly rules: MoveEligibilityRulesDescriptor;
@@ -129,20 +139,24 @@ function productionSelectabilityDescriptorsEqual(
 function assertImmutableProductionRulesReleaseDescriptor(
   rules: MoveEligibilityRulesDescriptor,
 ): void {
-  if (
-    rules.productionSelectability !== undefined
-    && rules.rulesVersion !== rules.productionSelectability.combatRuleCatalogArtifactId
-  ) {
-    throw new Error(
-      `Production rulesVersion must equal its combat rule catalog artifact identity: ${rules.rulesVersion}`,
-    );
-  }
   const expected = rules.rulesVersion === PRODUCTION_COMBAT_V2_RULES_VERSION
     ? PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR
     : rules.rulesVersion === PRODUCTION_COMBAT_V3_RULES_VERSION
       ? PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR
+      : rules.rulesVersion === PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION
+        ? PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR
       : null;
-  if (expected === null) return;
+  if (expected === null) {
+    if (
+      rules.productionSelectability !== undefined
+      && rules.rulesVersion !== rules.productionSelectability.combatRuleCatalogArtifactId
+    ) {
+      throw new Error(
+        `Production rulesVersion must equal its combat rule catalog artifact identity unless explicitly published: ${rules.rulesVersion}`,
+      );
+    }
+    return;
+  }
   if (
     rules.moveEligibilityRuleArtifactId !== expected.moveEligibilityRuleArtifactId
     || rules.moveEligibilityRuleSemanticsHash !== expected.moveEligibilityRuleSemanticsHash
@@ -164,6 +178,9 @@ function expectedGameDataVersionForProductionRulesVersion(
     return PRODUCTION_COMBAT_GAME_DATA_VERSION;
   }
   if (rulesVersion === PRODUCTION_COMBAT_V3_RULES_VERSION) {
+    return PRODUCTION_COMBAT_GAME_DATA_VERSION_V2;
+  }
+  if (rulesVersion === PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION) {
     return PRODUCTION_COMBAT_GAME_DATA_VERSION_V2;
   }
   return null;
@@ -232,6 +249,7 @@ export interface MoveEligibilityContext {
   readonly pair: StaticContextPairRef;
   readonly rules: MoveEligibilityRulesDescriptor;
   readonly speciesIds: ReadonlySet<string>;
+  readonly speciesById: ReadonlyMap<string, SpeciesDefinitionV2>;
   readonly moveIds: ReadonlySet<string>;
   readonly learnsetsBySpecies: ReadonlyMap<string, readonly LearnsetEntryV1[]>;
   readonly productionExecutableMoveIds: readonly string[] | null;
@@ -440,6 +458,7 @@ export function createMoveEligibilityContextLoader(input: {
         }
 
         const speciesIds = assertUniqueIds(catalog.species, "Species");
+        const speciesById = new Map(catalog.species.map((species) => [species.id, species] as const));
         const moveIds = assertUniqueIds(catalog.moves, "Move");
         if (productionSelectability !== null) {
           const abilityIds = assertUniqueIds(catalog.abilities, "Ability");
@@ -497,6 +516,7 @@ export function createMoveEligibilityContextLoader(input: {
           pair,
           rules: resolvedRules.rules,
           speciesIds,
+          speciesById,
           moveIds,
           learnsetsBySpecies,
           productionExecutableMoveIds: productionCatalog?.executableMoveIds ?? null,

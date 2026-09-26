@@ -37,6 +37,8 @@ import { createPlayerApplicationFromEnvironment, type PlayerStateEnvironment } f
 import {
   PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_V2_RULES_VERSION,
+  PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
   PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_V3_RULES_VERSION,
 } from "../moves/context";
@@ -58,6 +60,22 @@ function pokemon(rowVersion: bigint): OwnedPokemonRecord {
     speciesId: "species:test",
     level: 10,
     ivs: { hp: 1, atk: 1, def: 1, spa: 1, spd: 1, spe: 1 },
+    individualization: {
+      geneticScore: 50,
+      compatibleProfiles: ["Harmony", "Endurance"],
+      birthProfile: "Harmony",
+      expressedProfile: "Harmony",
+      shiny: false,
+      individualizationRulesVersion: "encounter-individualization-v1",
+      derivationAuthorityVersion: "authority-v1",
+      derivationAuthorityKeyId: "key-v1:test",
+      originPendingSelectionIdentity: "pending:test",
+      individualizationSnapshotIdentity: "indv1:test",
+      individualizationSnapshotCommitment: "sha256:test",
+      contentVersion: "content:test",
+      contentHash: "sha256:content",
+      gameDataVersion: "game-data:test",
+    },
     selectedAbilityId: null,
     moveLoadout: { state: "selected", moveIds: ["move:a"] },
     rowVersion,
@@ -98,6 +116,11 @@ function productionEnvironment(
         rulesVersion: PRODUCTION_COMBAT_V3_RULES_VERSION,
         newOperationsAllowed: true,
       },
+      {
+        gameDataVersion: V3,
+        rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
+        newOperationsAllowed: true,
+      },
     ]),
     PLAYER_STATE_MOVE_GAME_DATA_RELEASES: JSON.stringify([
       { gameDataVersion: V2, newOperationsAllowed: true },
@@ -113,6 +136,11 @@ function productionEnvironment(
         rulesVersion: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.rulesVersion,
         newOperationsAllowed: true,
         productionSelectability: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+      },
+      {
+        rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR.rulesVersion,
+        newOperationsAllowed: true,
+        productionSelectability: PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR.productionSelectability,
       },
     ]),
   };

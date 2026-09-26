@@ -4,7 +4,22 @@ export {
   resolveCombatStimulus,
 } from "./battle";
 export { deriveSimpleDamageMoveCooldownMs } from "./cooldown";
+export * from "./capture-reward";
 export { advanceCadence } from "./effects";
+export {
+  ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
+  GENETIC_PROFILES,
+  allocateGeneticBudget,
+  geneticBudgetForScore,
+  individualizeEncounter,
+  sameIndividualizationSnapshot,
+} from "./encounter-individualization";
+export type * from "./encounter-individualization";
+export {
+  GENETIC_COMBAT_RULES_RELEASE_V1,
+  GENETIC_COMBAT_RULES_SEMANTICS_HASH_V1,
+  GENETIC_COMBAT_RULES_VERSION_V1,
+} from "./genetic-combat-rules";
 export * from "./move-eligibility";
 export * from "./production-combat-rules";
 export { createRngState, nextRngState } from "./rng";
@@ -13,6 +28,8 @@ export {
   advanceSoloHuntToCutoff,
   createSoloHuntMovePolicyState,
   createSoloHuntRuntime,
+  replayValidateSoloHuntCaptureSource,
+  replayValidateSoloHuntRewardSource,
   resolveNextSoloHuntMove,
 } from "./solo-hunt";
 export type {
@@ -30,6 +47,8 @@ export type {
   SoloHuntPendingEncounterSelection,
   SoloHuntRuntimeInputs,
   SoloHuntRuntimeState,
+  ReplayValidatedSoloHuntRewardSourceResult,
+  ReplayValidatedSoloHuntCaptureSourceResult,
   SoloHuntSimulationEvent,
   SoloHuntSelectionStreamOrigin,
   SoloHuntTeamMemberSnapshot,

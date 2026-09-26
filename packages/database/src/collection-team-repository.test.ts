@@ -7,6 +7,7 @@ import {
   setOwnedPokemonSelectedAbility,
   type CollectionTeamDbClient,
 } from "./collection-team-repository";
+import { encodeOpaqueStringDbV1 } from "./opaque-string-db-codec";
 
 const ownerPlayerId = "0199472a-0000-7000-8000-000000000001";
 const pokemonInstanceId = "0199472a-0000-7000-8000-000000000002";
@@ -93,6 +94,21 @@ describe("collection/team repository", () => {
           iv_spa: 4,
           iv_spd: 5,
           iv_spe: 6,
+          genetic_score: 88,
+          genetic_profile_a: "Might",
+          genetic_profile_b: "Clarity",
+          birth_profile: "Might",
+          expressed_profile: "Might",
+          shiny: false,
+          individualization_rules_version: Buffer.from(encodeOpaqueStringDbV1("encounter-individualization-v1")),
+          derivation_authority_version: Buffer.from(encodeOpaqueStringDbV1("authority-v1")),
+          derivation_authority_key_id: Buffer.from(encodeOpaqueStringDbV1("key-v1:test")),
+          origin_pending_selection_identity: Buffer.from(encodeOpaqueStringDbV1("pending:one")),
+          individualization_snapshot_identity: Buffer.from(encodeOpaqueStringDbV1("indv1:abc")),
+          individualization_snapshot_commitment: Buffer.from(encodeOpaqueStringDbV1("sha256:def")),
+          individualization_content_version: Buffer.from(encodeOpaqueStringDbV1("content:v1")),
+          individualization_content_hash: Buffer.from(encodeOpaqueStringDbV1("sha256:content")),
+          individualization_game_data_version: Buffer.from(encodeOpaqueStringDbV1("game-data:v1")),
           selected_ability_id: null,
           row_version: "7",
           created_at: new Date("2026-09-17T19:00:00.000Z"),
@@ -110,6 +126,22 @@ describe("collection/team repository", () => {
       selectedAbilityId: null,
       rowVersion: 7n,
       moveLoadout: { state: "uninitialized", moveIds: [] },
+      individualization: {
+        geneticScore: 88,
+        compatibleProfiles: ["Might", "Clarity"],
+        birthProfile: "Might",
+        expressedProfile: "Might",
+        shiny: false,
+        individualizationRulesVersion: "encounter-individualization-v1",
+        derivationAuthorityVersion: "authority-v1",
+        derivationAuthorityKeyId: "key-v1:test",
+        originPendingSelectionIdentity: "pending:one",
+        individualizationSnapshotIdentity: "indv1:abc",
+        individualizationSnapshotCommitment: "sha256:def",
+        contentVersion: "content:v1",
+        contentHash: "sha256:content",
+        gameDataVersion: "game-data:v1",
+      },
     });
     expect(query).toHaveBeenCalledTimes(1);
     expect(query.mock.calls[0]?.[0]).toContain("LEFT JOIN pokenexus.pokemon_move_loadout");

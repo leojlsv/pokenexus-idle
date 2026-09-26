@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   cadenceParticipantKey,
   createRngState,
+  ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
+  GENETIC_COMBAT_RULES_VERSION_V1,
   initializeBattle,
   resolveCombatStimulus,
   type BattleInitInput,
@@ -16,6 +18,7 @@ import {
   type SpeciesId,
   type TypeId,
 } from "./index";
+import { deriveEncounterIndividualizationAuthorityKeyIdV1 } from "./encounter-individualization";
 import {
   createFreshSoloHuntCadence,
   initializeSoloHuntEncounterBattle,
@@ -23,6 +26,8 @@ import {
   advanceSoloHuntInterBattleCadence,
   advanceSoloHuntToCutoff,
   createSoloHuntRuntime,
+  replayValidateSoloHuntCaptureSource,
+  replayValidateSoloHuntRewardSource,
   resolveSoloHuntForcedReplacement,
   createSoloHuntMovePolicyState,
   resolveNextSoloHuntMove,
@@ -1069,6 +1074,31 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     } as const;
   }
 
+  function geneticRuntimeInputs() {
+    const geneticContext: ResolvedCombatContext = {
+      ...runtimeContext,
+      rulesVersion: GENETIC_COMBAT_RULES_VERSION_V1,
+    };
+    const secretKey = new Uint8Array(32).fill(41);
+    return {
+      ...runtimeInputs(geneticContext),
+      team: runtimeTeam.map((member) => ({
+        ...member,
+        geneticBonuses: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      })),
+      opponentTemplates: runtimeInputs(geneticContext).opponentTemplates.map((template) => ({
+        ...template,
+        compatibleProfiles: ["Might", "Clarity"] as const,
+      })),
+      individualizationAuthority: {
+        rulesVersion: ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
+        authorityVersion: "test-authority-v1",
+        keyId: deriveEncounterIndividualizationAuthorityKeyIdV1(secretKey),
+        secretKey,
+      },
+    };
+  }
+
   it("replays identically, carries GCD across Encounters, and never generates a Move exactly at cutoff L", () => {
     const inputs = runtimeInputs();
     const make = () => createSoloHuntRuntime({
@@ -1110,6 +1140,55 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
       && event.event.kind === "MoveUsed"
       && event.event.actorId === advanced.state.currentEncounter?.battle.sides[0].activeCombatantIds[0],
     )).toBe(false);
+  });
+
+  it("exposes reward source authority only from replay-validated completed Encounter history", () => {
+    const inputs = runtimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:reward-source-validation",
+      inputs,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    const advanced = advanceSoloHuntToCutoff(created.state, inputs, 2000);
+    expect(advanced.accepted).toBe(true);
+    if (!advanced.accepted) return;
+    const evidence = advanced.state.completedEncounters[0]!;
+
+    const validated = replayValidateSoloHuntRewardSource(
+      advanced.state,
+      inputs,
+      evidence.rewardSourceIdentity,
+    );
+    expect(validated).toMatchObject({
+      accepted: true,
+      source: {
+        subjectPlayerId: playerId,
+        evidence,
+        pinnedTeam: runtimeTeam,
+      },
+    });
+    expect(replayValidateSoloHuntRewardSource(
+      advanced.state,
+      inputs,
+      "reward:forged",
+    )).toEqual({
+      accepted: false,
+      reason: "Solo Hunt reward source is absent from replay-validated completed Encounter history",
+    });
+    expect(replayValidateSoloHuntRewardSource(
+      {
+        ...advanced.state,
+        completedEncounters: [{ ...evidence, rewardSourceIdentity: "reward:forged" }],
+      },
+      inputs,
+      "reward:forged",
+    )).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/completed Encounter|reward source|replay/i),
+    });
   });
 
   it("settles mandatory forced replacement exactly at cutoff L without generating a same-time Move", () => {
@@ -1800,6 +1879,180 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(atomicAdvance.accepted).toBe(false);
     if (atomicAdvance.accepted) return;
     expect(atomicAdvance.state).toBe(original.state);
+  });
+
+  it("binds one Genetic individual to PendingEncounterSelection across restart/new EncounterId and into capture", () => {
+    const inputs = geneticRuntimeInputs();
+    const original = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-origin",
+      inputs,
+      policyRng: createRngState(211),
+      combatDeterministicState: { rng: createRngState(212) },
+    });
+    expect(original.accepted).toBe(true);
+    if (!original.accepted || !original.state.currentEncounter) return;
+    const pending = original.state.pendingEncounterSelection;
+    const firstIndividual = original.state.currentEncounter.individualizationSnapshot;
+    const firstEncounterId = original.state.currentEncounter.encounterId;
+    expect(pending).toBeDefined();
+    expect(firstIndividual).toBeDefined();
+    if (!pending || !firstIndividual) return;
+    expect(pending.compatibleProfiles).toEqual(["Might", "Clarity"]);
+    expect(firstIndividual.compatibleProfiles).toEqual(pending.compatibleProfiles);
+
+    const restarted = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-restart",
+      inputs,
+      policyRng: createRngState(999_999),
+      combatDeterministicState: { rng: createRngState(213) },
+      pendingEncounterSelection: pending,
+    });
+    expect(restarted.accepted).toBe(true);
+    if (!restarted.accepted || !restarted.state.currentEncounter) return;
+    expect(restarted.state.currentEncounter.encounterId).not.toBe(firstEncounterId);
+    expect(restarted.state.currentEncounter.individualizationSnapshot).toEqual(firstIndividual);
+    expect(restarted.state.currentEncounter.pendingSelectionIdentity).toBe(pending.pendingSelectionIdentity);
+
+    const won = advanceSoloHuntToCutoff(restarted.state, inputs, 1);
+    expect(won.accepted).toBe(true);
+    if (!won.accepted) return;
+    const evidence = won.state.completedEncounters[0];
+    const provenance = won.state.completedEncounterProvenance[0];
+    expect(evidence).toMatchObject({
+      pendingSelectionIdentity: pending.pendingSelectionIdentity,
+      individualizationSnapshotIdentity: firstIndividual.individualizationSnapshotIdentity,
+      individualizationSnapshotCommitment: firstIndividual.individualizationSnapshotCommitment,
+      individualizationRulesVersion: firstIndividual.individualizationRulesVersion,
+      derivationAuthorityVersion: firstIndividual.derivationAuthorityVersion,
+      derivationAuthorityKeyId: firstIndividual.derivationAuthorityKeyId,
+    });
+    expect(provenance?.individualizationSnapshot).toEqual(firstIndividual);
+    expect(won.state.pendingCaptureDecision).toMatchObject({
+      pendingSelectionIdentity: pending.pendingSelectionIdentity,
+      individualizationSnapshotIdentity: firstIndividual.individualizationSnapshotIdentity,
+      individualizationSnapshotCommitment: firstIndividual.individualizationSnapshotCommitment,
+      individualizationRulesVersion: firstIndividual.individualizationRulesVersion,
+      derivationAuthorityVersion: firstIndividual.derivationAuthorityVersion,
+      derivationAuthorityKeyId: firstIndividual.derivationAuthorityKeyId,
+    });
+    const captureSource = replayValidateSoloHuntCaptureSource(
+      won.state,
+      inputs,
+      won.state.pendingCaptureDecision!.encounterId,
+    );
+    expect(captureSource).toMatchObject({
+      accepted: true,
+      source: {
+        subjectPlayerId: playerId,
+        pendingCapture: won.state.pendingCaptureDecision,
+        snapshot: firstIndividual,
+      },
+    });
+    expect(replayValidateSoloHuntCaptureSource(
+      {
+        ...won.state,
+        completedEncounterProvenance: won.state.completedEncounterProvenance.map((row, index) =>
+          index === 0 && row.individualizationSnapshot
+            ? {
+                ...row,
+                individualizationSnapshot: {
+                  ...row.individualizationSnapshot,
+                  geneticGrade: row.individualizationSnapshot.geneticGrade === "Apex" ? "Normal" : "Apex",
+                },
+              }
+            : row),
+      },
+      inputs,
+      won.state.pendingCaptureDecision!.encounterId,
+    )).toMatchObject({ accepted: false });
+  });
+
+  it("fails closed instead of rerolling when the authored Profile pair drifts for an unresolved pending token", () => {
+    const inputs = geneticRuntimeInputs();
+    const original = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-profile-origin",
+      inputs,
+      policyRng: createRngState(214),
+      combatDeterministicState: { rng: createRngState(215) },
+    });
+    expect(original.accepted).toBe(true);
+    if (!original.accepted || !original.state.pendingEncounterSelection) return;
+    const pending = original.state.pendingEncounterSelection;
+    expect(pending.compatibleProfiles).toEqual(["Might", "Clarity"]);
+
+    const driftedInputs = {
+      ...inputs,
+      opponentTemplates: inputs.opponentTemplates.map((template) => ({
+        ...template,
+        compatibleProfiles: ["Might", "Endurance"] as const,
+      })),
+    };
+    const restarted = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-profile-drift",
+      inputs: driftedInputs,
+      policyRng: createRngState(999_998),
+      combatDeterministicState: { rng: createRngState(216) },
+      pendingEncounterSelection: pending,
+    });
+    expect(restarted.accepted).toBe(false);
+    if (restarted.accepted) return;
+    expect(restarted.reason).toMatch(/PendingEncounterSelection|Profile|pending selection/i);
+  });
+
+  it("rejects forward opponent templates with non-zero IV placeholders and cadence without explicit Genetic context", () => {
+    const inputs = geneticRuntimeInputs();
+    const invalidTemplateInputs = {
+      ...inputs,
+      opponentTemplates: inputs.opponentTemplates.map((template) => ({
+        ...template,
+        ivs: { ...template.ivs, hp: 1 },
+      })),
+    };
+    const invalidTemplate = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-template-iv",
+      inputs: invalidTemplateInputs,
+      policyRng: createRngState(217),
+      combatDeterministicState: { rng: createRngState(218) },
+    });
+    expect(invalidTemplate).toMatchObject({
+      accepted: false,
+      reason: expect.stringContaining("IV placeholders must be zero"),
+    });
+
+    const cadenceWithoutContext = createFreshSoloHuntCadence(inputs.team);
+    expect(cadenceWithoutContext).toMatchObject({
+      accepted: false,
+      reason: expect.stringContaining("requires an explicit combat context"),
+    });
+  });
+
+  it("fails closed if a persisted current Genetic snapshot is tampered", () => {
+    const inputs = geneticRuntimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-tamper",
+      inputs,
+      policyRng: createRngState(221),
+      combatDeterministicState: { rng: createRngState(222) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted || !created.state.currentEncounter?.individualizationSnapshot) return;
+    const current = created.state.currentEncounter;
+    const individual = current.individualizationSnapshot!;
+    const forged = {
+      ...created.state,
+      currentEncounter: {
+        ...current,
+        individualizationSnapshot: {
+          ...individual,
+          geneticScore: individual.geneticScore === 100 ? 99 : individual.geneticScore + 1,
+        },
+      },
+    };
+    const advanced = advanceSoloHuntToCutoff(forged, inputs, forged.logicalTimeMs);
+    expect(advanced.accepted).toBe(false);
+    if (advanced.accepted) return;
+    expect(advanced.reason).toContain("individualization snapshot does not replay exactly");
+    expect(advanced.state).toBe(forged);
   });
 
   it("maps opposing victory and draw to terminal Hunt without completion evidence or pending-selection consumption", () => {
