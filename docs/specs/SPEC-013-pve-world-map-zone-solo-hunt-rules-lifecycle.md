@@ -647,3 +647,116 @@ same logical boundary.
 Repository/history completion was separately authorized by the Human Owner on 2026-09-23; that separate
 authorization is recorded in TASK-033 and is not implied by either prior semantic acceptance or
 corrective re-acceptance.
+
+## 16. Forward amendment — SPEC-014 acquisition integration
+
+> **Status:** APPROVED forward amendment — Human Owner accepted the consolidated Class-A packet on
+> 2026-09-25T22:55:35Z. Sections 1–15 remain the approved historical SPEC-013 baseline and are not
+> reinterpreted.
+
+This amendment composes the Human-approved SPEC-014 acquisition model with the existing Hunt lifecycle
+without rewriting canonical TASK-035 history.
+
+### 16.1 Encounter individualization lifecycle
+
+Under the forward Genetics/Shiny rules, the existing server-authoritative
+`PendingEncounterSelection` remains the no-free-reroll identity for the unresolved selected encounter.
+
+After Species/form + Level selection is fixed and before the first Battle for that pending selection:
+
+1. TASK-097 binds to/individualizes from the exact immutable `PendingEncounterSelection` without
+   consuming it;
+2. TASK-097 creates or deterministically reproduces exactly one immutable Encounter-individual snapshot;
+3. that snapshot freezes canonical IVs, Genetics, birth Profile, Shiny, Ascendant derivation authority,
+   individualization-rules identity and replay provenance;
+4. the opponent Battle snapshot is constructed from that exact individual under the new immutable
+   Genetic-aware combat rules version;
+5. Battle may then start.
+
+The individual is bound to the pending-selection token rather than to a particular
+`huntRunIdentity`/Encounter occurrence. Therefore retreat, stop, reload or restart that preserves the
+same unresolved `PendingEncounterSelection` must preserve/reproduce the same individual even if the
+next execution receives a new Hunt-run identity or `EncounterId`.
+
+`EncounterId` and encounter ordinal remain authoritative execution/reward/capture correlations once an
+occurrence starts, but they are not allowed to become a Genetics/Shiny reroll source.
+
+TASK-097 individualization uses a separately versioned deterministic root and domain-separated
+substreams. Its root incorporates server-only non-exportable deterministic derivation authority so
+client-visible pending-selection data cannot be used to derive hidden Genetics/IV/Profile/Shiny. Root,
+secret authority and substream state are never public/client checkpoint data. It does not advance
+TASK-035 policy/selection RNG, Combat Engine RNG or TASK-036 capture RNG.
+
+On player-side sole-victory completion, **before or atomically with** consumption of the
+`PendingEncounterSelection`, the completion/capture handoff must retain the exact originating
+pending-selection identity, internal individualization snapshot identity/commitment,
+`individualizationRulesVersion` and sufficient internal provenance to verify/reload the same snapshot.
+The post-Encounter manual decision or automatic attempt is therefore cryptographically/structurally
+bound to the exact individual that fought the Battle; matching only Species/form/Level is insufficient.
+
+Checkpoint/offline state must preserve either the exact immutable individual snapshot or sufficient
+versioned provenance to reproduce it byte-for-byte. A pre-feature durable pending selection/checkpoint
+**or pending-capture decision** that lacks accepted individualization authority is a cutover blocker: it
+may not be silently assigned a new individual after deployment.
+
+### 16.2 Standing auto-capture forward behavior
+
+SPEC-014 supersedes the baseline manual-only/offline-no-attempt rule only for Hunts running under the new
+forward acquisition authority.
+
+When auto-capture is **disabled**, the existing explicit post-Encounter pending-decision path remains
+available: a successful Encounter may create the bounded manual `attempt | skip` decision and no Ball is
+consumed until an attempt is accepted.
+
+When auto-capture is **enabled**, the accepted standing player authorization is evaluated immediately at
+the successful Encounter-completion logical boundary:
+
+1. evaluate the player's pinned/versioned auto-capture policy using only visible frozen Encounter facts;
+2. hidden Genetics, Grade, Score, birth/expressed Profile and hidden Ascendant state may not branch Ball
+   selection;
+3. select only a Ball whose auto-use is explicitly enabled and whose inventory quantity would remain at
+   or above its configured minimum reserve after one-unit debit;
+4. VIP auto-use defaults OFF and may participate only through an explicit eligible visible-condition
+   rule authored/accepted by the player;
+5. freeze the selected Ball and exact policy/configuration identity into the attempt intent before
+   TASK-036 resolution;
+6. invoke at most one accepted TASK-036 attempt for that `EncounterId`, using the same capture formula as
+   the manual path.
+
+If no eligible Ball resolves while auto-capture is enabled:
+
+- no Ball is fabricated or debited;
+- no capture attempt occurs;
+- no manual fallback is silently created;
+- no pending/protection queue is retained for later recovery of that opportunity.
+
+The opportunity therefore closes without capture. This is an intentional consequence of the player's
+standing policy, not capture protection.
+
+TASK-038 must present an explicit player-facing warning before enabling/saving this standing policy that
+uncovered, unavailable or reserve-blocked opportunities close permanently with no manual fallback,
+including visible Shiny encounters. The same disclosure must state that later configuration changes are
+forward-only and do not recover already resolved opportunities. Where practical, settings UX should
+surface known rule/reserve coverage gaps before save.
+
+An accepted automatic attempt consumes exactly one selected Ball on success or failure. Retry/replay of
+the same logical attempt reuses its frozen intent/outcome and cannot choose another fallback, debit a
+second Ball or reroll.
+
+### 16.3 Offline/checkpoint and configuration timing
+
+TASK-037 may execute standing auto-capture during deterministic offline advancement only from a
+configuration identity/version that is authoritative for that logical interval. TASK-038 owns persistence,
+commands and API orchestration for that configuration.
+
+A configuration change accepted after elapsed logical history cannot retroactively alter already
+simulated encounters or Ball choices. The next authoritative interval/checkpoint boundary must pin the
+new configuration before it can affect future auto-capture decisions.
+
+Manual and automatic capture continue to share:
+
+- one accepted attempt maximum per `EncounterId`;
+- one TASK-036 capture probability authority;
+- the same frozen TASK-097 individual;
+- atomic Ball debit/outcome semantics;
+- idempotent replay/correlation rules.

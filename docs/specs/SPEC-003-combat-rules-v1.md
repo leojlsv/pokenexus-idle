@@ -1429,3 +1429,46 @@ Accepting SPEC-003 ratifies at least these product/game-rule decisions:
 37. Solo Hunt carries a continuing player's current HP through the inter-Battle cadence gap; cadence
     effects mutate that HP and the next Battle receives the resulting value. Battle transition itself
     is not an automatic heal/reset boundary.
+
+## 27. Forward amendment — Genetic-aware derived stats
+
+> **Status:** APPROVED forward integration amendment — Human Owner accepted the consolidated Class-A
+> packet on 2026-09-25T22:55:35Z. The approved combat-v1 rules and all existing immutable production
+> rules artifacts remain unchanged and continue to use section 2.3 exactly as published.
+
+The Human Owner approved the following formula for a **new immutable combat rules version** used only by
+individuals created under the SPEC-014 Genetics model.
+
+For base stat `B`, canonical IV `I`, resolved per-stat Genetic Bonus `G` and level `L`:
+
+```text
+maxHp =
+  floor(((2 * B + I + G) * L) / 100)
+  + L
+  + 10
+
+otherStat =
+  floor(((2 * B + I + G) * L) / 100)
+  + 5
+```
+
+`otherStat` is evaluated independently for `atk / def / spa / spd / spe`.
+
+Forward invariants:
+
+- canonical IV remains exactly `0..31`; Genetics never increases, overwrites or reinterprets IV;
+- `G` is a separate non-negative integer input resolved from the SPEC-014 Genetic Budget/Profile
+  authority;
+- the six `G` values sum exactly to that individual's immutable Genetic Budget;
+- Genetics is not a percentage multiplier over final stats and is not doubled as
+  `2 * (BaseStat + G)`;
+- integer/floor semantics remain exact and do not depend on binary floating-point rounding;
+- Battle initialization receives the exact six-value Genetic Bonus vector frozen for that activity;
+- non-Ascendant Pokémon use the immutable birth Profile allocation;
+- Ascendant Pokémon may select either frozen compatible Profile outside active content, but the chosen
+  Profile and exact six-value `G` vector are frozen for the entire Hunt/Expedition/PvP/Battle snapshot;
+- no mid-content Profile switch can mutate an initialized/carrying combat snapshot.
+
+The new combat `rulesVersion` is a separate authority from SPEC-014 individualization rules and
+TASK-036 capture rules. Replays under historical rulesVersion values must continue to use their original
+section-2.3 semantics; runtime may never reinterpret an old rulesVersion by injecting `G`.

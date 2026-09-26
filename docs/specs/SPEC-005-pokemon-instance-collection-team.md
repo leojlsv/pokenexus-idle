@@ -465,3 +465,80 @@ The following decisions are frozen for SPEC-005 v1 by the Human Owner acceptance
 16. existing unordered Team membership is not assigned gameplay order by UUID, timestamp or physical
     row order; migration requires empty-table proof or a separately reviewed conversion decision.
 17. baseline saved Team has no display-name field.
+
+## 15. Accepted forward amendment — Genetics, Shiny and Ascendant persistence
+
+The Human Owner accepted this forward additive amendment on 2026-09-25 for Pokémon Instances created
+under the SPEC-014 acquisition model. It does not reinterpret or mutate the accepted SPEC-005 v1
+historical decisions above.
+
+### 15.1 Authoritative owned-Pokémon facts
+
+For every newly acquired Pokémon created under the new individualization rules, durable authority must
+preserve:
+
+- the existing six canonical IVs, each still exactly `0..31`;
+- `geneticScore` in the accepted `0..100` domain;
+- the exact two Species/form-compatible Genetic Profiles frozen at Encounter birth, in canonical
+  birth-time order;
+- immutable `birthProfile`, which must be one of those two compatible Profiles;
+- immutable `shiny`;
+- immutable `individualizationRulesVersion`;
+- immutable provenance sufficient to audit/replay the Encounter individualization under its pinned
+  content/rules identities;
+- immutable lineage/reference tying the owned Pokémon to the exact internal individualization snapshot
+  accepted by the completed Encounter/capture attempt;
+- mutable `expressedProfile` as owned-Pokémon configuration.
+
+`expressedProfile` follows these invariants:
+
+- for a non-Ascendant Pokémon, it must remain equal to `birthProfile`;
+- for an Ascendant Pokémon, it may be either member of the frozen two-Profile set and may change only
+  outside active gameplay content;
+- changing `expressedProfile` never mutates `birthProfile`, Genetic Score, IVs, Shiny or the frozen
+  compatible-Profile set.
+
+The exact relational column/table representation is owned by the downstream persistence implementation;
+it may normalize these facts differently only if the semantic authority and replay invariants above are
+preserved exactly.
+
+Replay/security provenance may retain an internal authority/key identifier or opaque derivation reference,
+but raw individualization roots, secret keyed-derivation material and field substreams are server-only
+operational authority and are never part of public owned-Pokémon/API state.
+
+### 15.2 Derived values are not independent mutable truth
+
+The following values are derived under the pinned individualization rules and must not become independent
+mutable authority:
+
+- Genetic Grade, derived from `geneticScore`;
+- Genetic Budget, derived from `geneticScore + individualizationRulesVersion`;
+- Ascendant state, derived from `shiny && Genetic Grade == Apex`;
+- the six per-stat Genetic Bonus values, deterministically reproduced from Genetic Budget + selected
+  Profile under the pinned `individualizationRulesVersion` / Profile-allocation authority.
+
+Combat `rulesVersion` consumes the already resolved six-value Genetic Bonus vector; it is not the
+authority that reinterprets Genetic Score/Profile into a different allocation.
+
+An implementation may materialize/cache a derived representation for performance only if it is
+version-bound, mechanically reproducible from the authoritative facts and cannot diverge as a second
+source of truth.
+
+### 15.3 Legacy migration is fail-closed
+
+No historical Pokémon Instance may receive fabricated Genetics, Profile or Shiny values.
+
+Before a forward migration makes the new acquisition fields mandatory, it must take an appropriate
+schema/data lock and prove that the authoritative `pokenexus.pokemon_instances` relation contains no
+pre-Genetics durable rows requiring conversion.
+
+If any such row exists, the migration must fail before assigning defaults or inferred values. It must
+not synthesize:
+
+- `geneticScore`;
+- compatible Profiles or `birthProfile`;
+- `shiny = false`;
+- Genetic Bonus values;
+- individualization provenance.
+
+Supporting an existing legacy population requires a separate explicit Human-approved conversion policy.
