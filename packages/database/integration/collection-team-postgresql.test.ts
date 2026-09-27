@@ -192,6 +192,7 @@ describe("TASK-020 SPEC-005 migration", () => {
       "0005_player_state_api_spec011.sql",
       "0006_encounter_individualization_genetics.sql",
       "0007_capture_resolution.sql",
+      "0008_hunt_checkpoint_claim.sql",
     ]);
 
     const before = await withClient(async (client) => {

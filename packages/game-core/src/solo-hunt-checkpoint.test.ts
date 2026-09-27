@@ -1,0 +1,391 @@
+import { describe, expect, it } from "vitest";
+import type { SoloHuntRuntimeState } from "./solo-hunt";
+import {
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
+  decodeSoloHuntCheckpointV1,
+  encodeSoloHuntCheckpointV1,
+} from "./solo-hunt-checkpoint";
+
+function checkpointState(): SoloHuntRuntimeState {
+  return {
+    huntRunIdentity: "hunt-run:checkpoint",
+    playerId: "player:checkpoint",
+    zoneId: "zone:test",
+    huntDefinitionId: "hunt:test",
+    contentVersion: "pve-content:test",
+    contentHash: "sha256:test",
+    gameDataVersion: "game:v3",
+    rulesVersion: "rules:v4",
+    interBattleGapMs: 0,
+    pinnedTeam: [],
+    logicalTimeMs: 123,
+    nextEncounterOrdinal: 2,
+    selectionStreamOrigin: { kind: "rng", policyRng: { algorithm: "xorshift32-v1", state: 11 } },
+    combatDeterministicOrigin: { rng: { algorithm: "xorshift32-v1", state: 8 } },
+    policyRng: { algorithm: "xorshift32-v1", state: 12 },
+    combatDeterministicState: { rng: { algorithm: "xorshift32-v1", state: 10 } },
+    interBattle: {
+      cadence: {
+        effects: [],
+        hpByParticipant: {},
+        maxHpByParticipant: {},
+        readinessByParticipant: {},
+        actionLockRemainingMsByParticipant: {},
+      },
+      policy: { nextMoveSlotByParticipant: {} },
+      remainingGapMs: 0,
+    },
+    completedEncounters: [{
+      rewardSourceIdentity: "[\"soloHuntEncounterReward\",\"hunt-run:checkpoint\",1]",
+      huntRunIdentity: "hunt-run:checkpoint",
+      encounterId: "[\"soloHuntEncounter\",\"hunt-run:checkpoint\",1]",
+      encounterOrdinal: 1,
+      pendingSelectionIdentity: "pending:1",
+      encounterDefinitionId: "encounter-definition:1",
+      speciesId: "species:1",
+      level: 5,
+      completionKind: "defeat",
+      participantPokemonInstanceIds: [],
+      rewardEnvelope: { exact: 5n },
+      contentVersion: "pve-content:test",
+      contentHash: "sha256:test",
+      gameDataVersion: "game:v3",
+      rulesVersion: "rules:v4",
+      completedAtHuntTimeMs: 100,
+    }],
+    completedEncounterProvenance: [{
+      encounterId: "[\"soloHuntEncounter\",\"hunt-run:checkpoint\",1]",
+      encounterOrdinal: 1,
+      consumedPendingEncounterSelection: {
+        pendingSelectionIdentity: "pending:1",
+        playerId: "player:checkpoint",
+        zoneId: "zone:test",
+        huntDefinitionId: "hunt:test",
+        contentVersion: "pve-content:test",
+        contentHash: "sha256:test",
+        gameDataVersion: "game:v3",
+        rulesVersion: "rules:v4",
+        encounterDefinitionId: "encounter-definition:1",
+        speciesId: "species:1",
+        level: 5,
+        policyRngBeforeSelection: { algorithm: "xorshift32-v1", state: 11 },
+        policyRngAfterSelection: { algorithm: "xorshift32-v1", state: 12 },
+      },
+      participantActivations: [],
+      battleStimuli: [],
+      battleStartedAtHuntTimeMs: 0,
+      completedAtHuntTimeMs: 100,
+      terminalBattleTimeMs: 100,
+      terminalEventSequence: 1,
+    }],
+    status: "active",
+  } as unknown as SoloHuntRuntimeState;
+}
+
+function geneticCheckpointState(): SoloHuntRuntimeState {
+  const source = checkpointState();
+  const provenance = source.completedEncounterProvenance[0]!;
+  const consumedPendingEncounterSelection = {
+    ...provenance.consumedPendingEncounterSelection,
+    compatibleProfiles: ["Might", "Clarity"] as const,
+    individualizationRulesVersion: "encounter-individualization-v1" as const,
+    derivationAuthorityVersion: "authority:v1",
+    derivationAuthorityKeyId: "key:v1",
+  };
+  const individualizationSnapshot = {
+    pendingSelectionIdentity: "pending:1",
+    speciesId: "species:1",
+    level: 5,
+    ivs: { hp: 10, atk: 11, def: 12, spa: 13, spd: 14, spe: 15 },
+    geneticScore: 83,
+    geneticGrade: "Epic" as const,
+    geneticBudget: 35,
+    compatibleProfiles: ["Might", "Clarity"] as const,
+    birthProfile: "Might" as const,
+    birthGeneticBonuses: { hp: 5, atk: 10, def: 5, spa: 4, spd: 5, spe: 6 },
+    profileAllocations: [
+      { profile: "Might" as const, bonuses: { hp: 5, atk: 10, def: 5, spa: 4, spd: 5, spe: 6 } },
+      { profile: "Clarity" as const, bonuses: { hp: 5, atk: 4, def: 5, spa: 10, spd: 5, spe: 6 } },
+    ] as const,
+    shiny: false,
+    isAscendant: false,
+    individualizationRulesVersion: "encounter-individualization-v1" as const,
+    derivationAuthorityVersion: "authority:v1",
+    derivationAuthorityKeyId: "key:v1",
+    individualizationSnapshotIdentity: "snapshot:1",
+    individualizationSnapshotCommitment: "commitment:1",
+  };
+  return {
+    ...source,
+    completedEncounters: [{
+      ...source.completedEncounters[0]!,
+      individualizationSnapshotIdentity: "snapshot:1",
+      individualizationSnapshotCommitment: "commitment:1",
+      individualizationRulesVersion: "encounter-individualization-v1",
+      derivationAuthorityVersion: "authority:v1",
+      derivationAuthorityKeyId: "key:v1",
+    }],
+    completedEncounterProvenance: [{
+      ...provenance,
+      consumedPendingEncounterSelection,
+      individualizationSnapshot,
+    }],
+  } as unknown as SoloHuntRuntimeState;
+}
+
+describe("Solo Hunt checkpoint codec", () => {
+  it("round-trips canonical state deterministically, including bigint evidence", () => {
+    const source = checkpointState();
+    const first = encodeSoloHuntCheckpointV1(source);
+    const second = encodeSoloHuntCheckpointV1(source);
+    expect(first).toEqual(second);
+    const decoded = decodeSoloHuntCheckpointV1(first);
+    expect(decoded).toEqual({ accepted: true, state: source });
+  });
+
+  it("is independent of object insertion order", () => {
+    const source = checkpointState();
+    const reordered = Object.fromEntries(Object.entries(source).reverse()) as unknown as SoloHuntRuntimeState;
+    expect(encodeSoloHuntCheckpointV1(reordered)).toEqual(encodeSoloHuntCheckpointV1(source));
+  });
+
+  it("fails closed for malformed or unknown schemas", () => {
+    expect(decodeSoloHuntCheckpointV1(new Uint8Array())).toMatchObject({ accepted: false });
+    expect(decodeSoloHuntCheckpointV1(new TextEncoder().encode("not-json"))).toMatchObject({ accepted: false });
+    expect(decodeSoloHuntCheckpointV1(new TextEncoder().encode(JSON.stringify({
+      schemaVersion: `${SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1}:future`,
+      state: ["null"],
+    })))).toEqual({ accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" });
+  });
+
+  it("rejects alternate non-canonical byte representations of the same state", () => {
+    const canonical = new TextDecoder().decode(encodeSoloHuntCheckpointV1(checkpointState()));
+    expect(decodeSoloHuntCheckpointV1(new TextEncoder().encode(` ${canonical}`))).toEqual({
+      accepted: false,
+      reason: "Solo Hunt checkpoint bytes are not canonical",
+    });
+  });
+
+  it.each([
+    ["missing policy RNG", { policyRng: undefined }],
+    ["missing deterministic origin", { combatDeterministicOrigin: undefined }],
+    ["missing runtime phase", { interBattle: undefined }],
+    ["two runtime phases", { currentEncounter: {}, interBattle: {} }],
+    ["malformed selection origin", { selectionStreamOrigin: { kind: "rng" } }],
+  ] as const)("fails closed for canonical bytes with %s", (_label, override) => {
+    const malformed = { ...checkpointState(), ...override } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({ accepted: false });
+  });
+
+  it("fails closed for unknown v1 runtime fields", () => {
+    const malformed = { ...checkpointState(), futureField: "future" } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/unknown field futureField/),
+    });
+  });
+
+  it("fails closed for malformed nested cadence entries before replay", () => {
+    const source = checkpointState() as unknown as Record<string, unknown>;
+    const interBattle = source.interBattle as Record<string, unknown>;
+    const cadence = interBattle.cadence as Record<string, unknown>;
+    const malformed = {
+      ...source,
+      interBattle: {
+        ...interBattle,
+        cadence: {
+          ...cadence,
+          readinessByParticipant: { malformed: {} },
+        },
+      },
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({ accepted: false });
+  });
+
+  it("fails closed when completed Encounter evidence loses matching provenance", () => {
+    const malformed = {
+      ...checkpointState(),
+      completedEncounterProvenance: [],
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/evidence\/provenance length mismatch/),
+    });
+  });
+
+  it("fails closed when an inter-Battle checkpoint retains a pending selection", () => {
+    const source = checkpointState();
+    const malformed = {
+      ...source,
+      pendingEncounterSelection: source.completedEncounterProvenance[0]!.consumedPendingEncounterSelection,
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/inter-Battle phase cannot retain a pending selection/),
+    });
+  });
+
+  it("fails closed when pending capture is not bound to its completed Encounter evidence", () => {
+    const source = checkpointState();
+    const malformed = {
+      ...source,
+      pendingCaptureDecision: {
+        encounterId: "[\"soloHuntEncounter\",\"hunt-run:checkpoint\",1]",
+        encounterDefinitionId: "encounter-definition:1",
+        speciesId: "species:forged",
+        level: 5,
+        contentVersion: "pve-content:test",
+        contentHash: "sha256:test",
+        gameDataVersion: "game:v3",
+        rulesVersion: "rules:v4",
+      },
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/pending capture does not match completed Encounter evidence/),
+    });
+  });
+
+  it("fails closed when completed selection provenance carries a forged runtime context", () => {
+    const source = checkpointState();
+    const provenance = source.completedEncounterProvenance[0]!;
+    const malformed = {
+      ...source,
+      completedEncounterProvenance: [{
+        ...provenance,
+        consumedPendingEncounterSelection: {
+          ...provenance.consumedPendingEncounterSelection,
+          zoneId: "zone:forged",
+        },
+      }],
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/evidence\/provenance is context-incompatible/),
+    });
+  });
+
+  it("fails closed when completed Encounter count does not match next ordinal", () => {
+    const malformed = {
+      ...checkpointState(),
+      nextEncounterOrdinal: 3,
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/count does not match encounter progression/),
+    });
+  });
+
+  it("fails closed for an unsupported individualization rules version", () => {
+    const source = geneticCheckpointState();
+    const provenance = source.completedEncounterProvenance[0]!;
+    const malformed = {
+      ...source,
+      completedEncounterProvenance: [{
+        ...provenance,
+        consumedPendingEncounterSelection: {
+          ...provenance.consumedPendingEncounterSelection,
+          individualizationRulesVersion: "encounter-individualization-v2",
+        },
+      }],
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/unsupported individualizationRulesVersion/),
+    });
+  });
+
+  it("fails closed for unsupported or duplicate compatible Genetic Profiles", () => {
+    const source = geneticCheckpointState();
+    const provenance = source.completedEncounterProvenance[0]!;
+    for (const compatibleProfiles of [["Might", "Unknown"], ["Might", "Might"]]) {
+      const malformed = {
+        ...source,
+        completedEncounterProvenance: [{
+          ...provenance,
+          consumedPendingEncounterSelection: {
+            ...provenance.consumedPendingEncounterSelection,
+            compatibleProfiles,
+          },
+        }],
+      } as unknown as SoloHuntRuntimeState;
+      expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+        accepted: false,
+        reason: expect.stringMatching(/two distinct supported Profiles/),
+      });
+    }
+  });
+
+  it("fails closed for an unsupported Genetic Grade in an individualization snapshot", () => {
+    const source = geneticCheckpointState();
+    const provenance = source.completedEncounterProvenance[0]!;
+    const malformed = {
+      ...source,
+      completedEncounterProvenance: [{
+        ...provenance,
+        individualizationSnapshot: {
+          ...provenance.individualizationSnapshot!,
+          geneticGrade: "Legendary",
+        },
+      }],
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/unsupported geneticGrade/),
+    });
+  });
+
+  it("fails closed when the birth Profile is outside compatible Profiles", () => {
+    const source = geneticCheckpointState();
+    const provenance = source.completedEncounterProvenance[0]!;
+    const malformed = {
+      ...source,
+      completedEncounterProvenance: [{
+        ...provenance,
+        individualizationSnapshot: {
+          ...provenance.individualizationSnapshot!,
+          birthProfile: "Endurance",
+        },
+      }],
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/birthProfile is not compatible/),
+    });
+  });
+
+  it("fails closed when Profile allocations disagree with compatible Profiles", () => {
+    const source = geneticCheckpointState();
+    const provenance = source.completedEncounterProvenance[0]!;
+    const snapshot = provenance.individualizationSnapshot!;
+    const malformed = {
+      ...source,
+      completedEncounterProvenance: [{
+        ...provenance,
+        individualizationSnapshot: {
+          ...snapshot,
+          profileAllocations: [snapshot.profileAllocations[1], snapshot.profileAllocations[0]],
+        },
+      }],
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/profileAllocations do not match compatibleProfiles/),
+    });
+  });
+
+  it("fails closed when completed participants disagree with participant activation provenance", () => {
+    const source = checkpointState();
+    const malformed = {
+      ...source,
+      completedEncounters: [{
+        ...source.completedEncounters[0]!,
+        participantPokemonInstanceIds: ["pokemon:forged"],
+      }],
+    } as unknown as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/evidence\/provenance is context-incompatible/),
+    });
+  });
+});

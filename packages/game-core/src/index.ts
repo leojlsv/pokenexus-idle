@@ -22,6 +22,14 @@ export {
 } from "./genetic-combat-rules";
 export * from "./move-eligibility";
 export * from "./production-combat-rules";
+export {
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
+  SOLO_HUNT_DEFAULT_SEGMENT_MS,
+  advanceSoloHuntSegmentedToCutoff,
+  decodeSoloHuntCheckpointV1,
+  encodeSoloHuntCheckpointV1,
+} from "./solo-hunt-checkpoint";
+export type { SoloHuntCheckpointDecodeResult } from "./solo-hunt-checkpoint";
 export { createRngState, nextRngState } from "./rng";
 export * from "./progression";
 export {

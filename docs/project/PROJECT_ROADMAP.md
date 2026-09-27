@@ -12,9 +12,9 @@
 
 **Current work:** `TASK-096 — Idle/Gacha Progression & Acquisition Model`, `TASK-097 — Encounter Individualization & Genetics Runtime`, and `TASK-036 — Capture & Reward Resolution` are **DONE** and integrated into canonical `main` after explicit Human Owner repository/history authorization. The integrated implementation preserves correlation-first durable capture replay with frozen RNG-origin binding, exact production-executable Move authority, replay-validated reward-source authenticity, and authoritative TASK-097 IV/Genetics/Profile/Shiny provenance. Atomic Ball debit/Pokémon creation/Species Research/attempt evidence, PostgreSQL concurrency/rollback coverage, Worker compatibility and workspace validation are green. Deploy and production cutover remain separate gates. TASK-035 remains DONE/canonical. The approved acquisition authority includes Genetics/Shiny separation, Hunt-authored encounter rates, structural auto-capture, no Epic+/Apex/capture protection, final Genetic Profiles `Harmony / Might / Clarity / Endurance / Resilience` with exactly two compatible Profiles per Species/form selected 50/50, center-weighted canonical IV generation `U[0,15] + U[0,16]` per stat, exact Genetic Score→Budget bands/interpolation, the Genetic-aware stat formula `2*BaseStat + IV + perStatGeneticBonus` under a new immutable combat rules version, default Genetic Grade probabilities `55/28/12/4/1%`, Shiny `1/16384`, Species Research count-only duplicate progression, fail-closed Genetics/Shiny/Ascendant persistence/legacy authority, the 8–82% capture curve, Genetic capture modifiers, Ball ladder `Poké 1.00 / Great 1.25 / Super 1.50 / Ultra 2.00 / VIP 2.25`, supply hierarchy and reserve-aware visible-condition auto-capture. Human-approved **Ascendant** is `Shiny + Apex` with Resonance across the two frozen compatible Profiles and no higher Score/Budget/stat ceiling.
 
-**Current action:** proceed to downstream `TASK-037 — Offline / Elapsed-Time Checkpoint & Claim Engine`. Deploy and production cutover remain separately gated.
+**Current action:** `TASK-037 — Offline / Elapsed-Time Checkpoint & Claim Engine` is in **ACCEPTANCE** in its dedicated worktree after final QA/IA/Class-B gates cleared `0/0/0/0`. Repository/history completion remains a separate Human Owner gate. Deploy and production cutover remain separately gated.
 
-**Next task after TASK-003 acceptance:** `TASK-037 — Offline / Elapsed-Time Checkpoint & Claim Engine`.
+**Next task after TASK-003 acceptance:** `TASK-037` is in ACCEPTANCE pending repository/history completion; after that gate, proceed to `TASK-038 — Authoritative Hunt API / Persistence Orchestration`.
 
 **Portfolio status snapshot:**
 
@@ -57,7 +57,7 @@
 | `TASK-097` Encounter Individualization & Genetics Runtime | DONE — implementation, PostgreSQL integration, QA/IA/Class-B `0/0/0/0`; repository/history completion authorized and integrated 2026-09-26 |
 | `TASK-036` Capture & Reward Resolution | DONE — final QA READY, IA PASS and Class-B ACCEPT `0/0/0/0`; repository/history completion authorized and integrated 2026-09-26 |
 
-**Next product milestone:** proceed to checkpoint/claim (`TASK-037`) and then authoritative Hunt API/persistence orchestration (`TASK-038`).
+**Next product milestone:** complete TASK-037 repository/history integration, then proceed to authoritative Hunt API/persistence orchestration (`TASK-038`).
 
 ### Portfolio progress
 
@@ -68,10 +68,10 @@
 - ACTIVE: 0.
 - REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 0.
+- ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 0.
-- PLANNED: 57.
+- PLANNED: 56.
 - Task-count completion: **41 / 98 = 41.8%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
@@ -424,7 +424,7 @@ implementation Task before code is written.
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089, TASK-094, TASK-025, TASK-090, TASK-091, TASK-095, TASK-035 and TASK-096 are DONE. TASK-097 and TASK-036 are both in ACCEPTANCE with independent gates green; repository/history completion remains separately gated. TASK-037/038 remain downstream and no public capture orchestration was added by TASK-036.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089, TASK-094, TASK-025, TASK-090, TASK-091, TASK-095, TASK-035, TASK-096, TASK-097 and TASK-036 are DONE. TASK-037 is the active downstream checkpoint/offline work; TASK-038 remains downstream and no public capture orchestration was added by TASK-036.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
@@ -539,7 +539,7 @@ content relies on those mechanics.
 | `TASK-096` Idle/Gacha Progression & Acquisition Model | A | DONE | PM → ChatGPT project coordination | Exact-current **QA/ARCH READY 0/0/0/0; IA PASS 0/0/0/0; PXE READY 0/0/0/0; GSC ADVISORY PASS 0/0/0/0** | `SK-GAME-ARCH`, `SK-GAME-BAL` | **COMPLETED — final consolidated Class-A Human acceptance plus repository/history integration authorized 2026-09-26** | TASK-008/019/022/023/033/034/035/093 | APPROVED SPEC-014 + forward SPEC-003/005/013 authority bind one individual to the stable TASK-035 PendingEncounterSelection before Battle using server-only non-exportable deterministic authority, preserve exact snapshot lineage into capture, define standing auto-capture/no-eligible-Ball closure, Species Research count-only duplicates and fail-closed legacy. Exact prices/stock/faucets remain downstream tuning |
 | `TASK-097` Encounter Individualization & Genetics Runtime | B | DONE | LD → ChatGPT implementation | Final QA **READY 0/0/0/0** + IA **PASS 0/0/0/0** + fresh independent Class-B **ACCEPT 0/0/0/0** | `SK-TDD`, `SK-GAME-ARCH` | **COMPLETED — repository/history authorized and integrated 2026-09-26; deploy separately gated** | TASK-096/008/019/033/035/095 | Integrated exact PendingEncounterSelection → one immutable IV/Genetics/Profile/Shiny snapshot before Battle; server-only keyed/domain-separated individualization with retained authority-key identity and fixed conformance vector; same pending token cannot reroll across restart/EncounterId changes; immutable Genetic-aware combat-rules release + persistence/legacy guards preserve TASK-095/TASK-035 history |
 | `TASK-036` Capture & Reward Resolution | B | DONE | LD → current ChatGPT implementation session | Final QA **READY 0/0/0/0** + IA **PASS 0/0/0/0** + independent Class-B **ACCEPT 0/0/0/0** | `SK-TDD`, `SK-THREAT` | **COMPLETED — Human product gate plus repository/history integration authorized 2026-09-26; deploy separately gated** | TASK-023/024/033/034/035/089/090/091/095/096/097 | Integrated correlation-first durable capture replay, frozen RNG-origin matching, mandatory exact production-executable Move authority, replay-validated TASK-035 reward-source authenticity and replay-validated TASK-097 capture snapshot provenance. Atomic capture/Research persistence and TASK-024 Reward application are green. Exact standard Ball ItemId publication/faucets remain downstream content/release work |
-| `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-PERF` | PM acceptance | TASK-035/036/096/097 | Preserve/reproduce pending TASK-097 individual snapshot/provenance; `startedAt`/checkpoint/pinned versions; cadence continuation; execute standing auto-capture only from configuration authoritative for that logical interval; no retroactive settings changes; 1h/8h advancement; safe caps; replay equality |
+| `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | B | ACCEPTANCE | LD → current ChatGPT implementation session | Final QA **READY 0/0/0/0** + IA **PASS 0/0/0/0** + independent Class-B **ACCEPT 0/0/0/0** | `SK-TDD`, `SK-GAME-PERF` | **ACCEPTANCE — repository/history authorization pending** | TASK-035/036/096/097 | Canonical fail-closed checkpoint codec with exact TASK-097 provenance; fixed-cutoff correlation replay; OCC + PostgreSQL atomic progress/commit; deterministic direct/segmented 1h/8h advancement; stale/superseded no-double-advance behavior; TASK-036 replay-valid reward/capture handoff; no public Hunt route or player auto-capture settings introduced |
 
 #### STORY-05.2 — Authoritative Hunt integration and presentation
 

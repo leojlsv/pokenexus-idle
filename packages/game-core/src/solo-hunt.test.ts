@@ -20,6 +20,11 @@ import {
 } from "./index";
 import { deriveEncounterIndividualizationAuthorityKeyIdV1 } from "./encounter-individualization";
 import {
+  advanceSoloHuntSegmentedToCutoff,
+  decodeSoloHuntCheckpointV1,
+  encodeSoloHuntCheckpointV1,
+} from "./solo-hunt-checkpoint";
+import {
   createFreshSoloHuntCadence,
   initializeSoloHuntEncounterBattle,
   pruneSoloHuntEndedOpponentCadence,
@@ -32,6 +37,7 @@ import {
   createSoloHuntMovePolicyState,
   resolveNextSoloHuntMove,
   selectSoloHuntEncounter,
+  type SoloHuntRuntimeState,
   validateSoloHuntOpponentCatalog,
 } from "./solo-hunt";
 import type {
@@ -1140,6 +1146,171 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
       && event.event.kind === "MoveUsed"
       && event.event.actorId === advanced.state.currentEncounter?.battle.sides[0].activeCombatantIds[0],
     )).toBe(false);
+  });
+
+  it.each([
+    ["1h", 60 * 60 * 1000],
+    ["8h", 8 * 60 * 60 * 1000],
+  ] as const)("keeps direct and segmented %s advancement exactly equivalent", (_label, cutoffMs) => {
+    const inputs = {
+      ...runtimeInputs(),
+      // Keep the fixture alive for the full wall-clock horizon while still producing Encounters.
+      // The gap fully clears the carried 2s player cooldown before the next fresh opponent appears.
+      interBattleGapMs: 60_000,
+    };
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: `hunt-run:segmented:${cutoffMs}`,
+      inputs,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+
+    const direct = advanceSoloHuntToCutoff(created.state, inputs, cutoffMs);
+    const segmented = advanceSoloHuntSegmentedToCutoff(
+      created.state,
+      inputs,
+      cutoffMs,
+      15 * 60 * 1000,
+    );
+    expect(direct.accepted).toBe(true);
+    expect(segmented.accepted).toBe(true);
+    if (!direct.accepted || !segmented.accepted) return;
+    expect(direct.state.status).toBe("active");
+    expect(direct.state.logicalTimeMs).toBe(cutoffMs);
+    expect(direct.state.completedEncounters.length).toBeGreaterThanOrEqual(
+      cutoffMs === 60 * 60 * 1000 ? 50 : 400,
+    );
+    expect(segmented.state).toEqual(direct.state);
+    expect(segmented.stopReason).toBe(direct.stopReason);
+    expect(segmented.events).toEqual(direct.events);
+  }, 20_000);
+
+  it("round-trips a live Genetic Hunt checkpoint with exact individualization provenance", () => {
+    const inputs = geneticRuntimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-checkpoint-codec",
+      inputs,
+      policyRng: createRngState(211),
+      combatDeterministicState: { rng: createRngState(212) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    const advanced = advanceSoloHuntToCutoff(created.state, inputs, 1);
+    expect(advanced.accepted).toBe(true);
+    if (!advanced.accepted) return;
+
+    const encoded = encodeSoloHuntCheckpointV1(advanced.state);
+    const decoded = decodeSoloHuntCheckpointV1(encoded);
+    expect(decoded).toEqual({ accepted: true, state: advanced.state });
+    if (!decoded.accepted) return;
+    expect(decoded.state.completedEncounterProvenance).toEqual(advanced.state.completedEncounterProvenance);
+    expect(decoded.state.pendingCaptureDecision).toEqual(advanced.state.pendingCaptureDecision);
+    const restoredEvidence = decoded.state.completedEncounters[0];
+    const restoredPendingCapture = decoded.state.pendingCaptureDecision;
+    expect(restoredEvidence).toBeDefined();
+    expect(restoredPendingCapture).toBeDefined();
+    if (!restoredEvidence || !restoredPendingCapture) return;
+    const restoredReward = replayValidateSoloHuntRewardSource(
+      decoded.state,
+      inputs,
+      restoredEvidence.rewardSourceIdentity,
+    );
+    expect(
+      restoredReward.accepted,
+      restoredReward.accepted ? undefined : restoredReward.reason,
+    ).toBe(true);
+    const restoredCapture = replayValidateSoloHuntCaptureSource(
+      decoded.state,
+      inputs,
+      restoredPendingCapture.encounterId,
+    );
+    expect(
+      restoredCapture.accepted,
+      restoredCapture.accepted ? undefined : restoredCapture.reason,
+    ).toBe(true);
+  });
+
+  it("rejects a checkpoint whose current Battle context no longer matches the Hunt context", () => {
+    const inputs = geneticRuntimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:checkpoint-context-forgery",
+      inputs,
+      policyRng: createRngState(213),
+      combatDeterministicState: { rng: createRngState(214) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted || !created.state.currentEncounter) return;
+    const currentEncounter = created.state.currentEncounter;
+    const malformed = {
+      ...created.state,
+      currentEncounter: {
+        ...currentEncounter,
+        battle: {
+          ...currentEncounter.battle,
+          context: {
+            ...currentEncounter.battle.context,
+            rulesVersion: "rules:forged",
+          },
+        },
+      },
+    } as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/current Encounter does not match its pending selection/),
+    });
+  });
+
+  it("rejects a checkpoint whose current Battle id no longer matches Hunt identity and ordinal", () => {
+    const inputs = geneticRuntimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:checkpoint-battle-id-forgery",
+      inputs,
+      policyRng: createRngState(215),
+      combatDeterministicState: { rng: createRngState(216) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted || !created.state.currentEncounter) return;
+    const currentEncounter = created.state.currentEncounter;
+    const malformed = {
+      ...created.state,
+      currentEncounter: {
+        ...currentEncounter,
+        battle: {
+          ...currentEncounter.battle,
+          battleId: "battle:forged",
+        },
+      },
+    } as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/current Encounter does not match its pending selection/),
+    });
+  });
+
+  it("rejects a checkpoint whose current participant summary disagrees with activation provenance", () => {
+    const inputs = geneticRuntimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:checkpoint-current-participant-forgery",
+      inputs,
+      policyRng: createRngState(217),
+      combatDeterministicState: { rng: createRngState(218) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted || !created.state.currentEncounter) return;
+    const currentEncounter = created.state.currentEncounter;
+    const malformed = {
+      ...created.state,
+      currentEncounter: {
+        ...currentEncounter,
+        participantPokemonInstanceIds: ["pokemon:forged" as PokemonInstanceId],
+      },
+    } as SoloHuntRuntimeState;
+    expect(decodeSoloHuntCheckpointV1(encodeSoloHuntCheckpointV1(malformed))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/current Encounter does not match its pending selection/),
+    });
   });
 
   it("exposes reward source authority only from replay-validated completed Encounter history", () => {

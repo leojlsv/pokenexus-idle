@@ -70,7 +70,8 @@ describe("discoverMigrations", () => {
 
   it("publishes TASK-036 capture attempt and Species Research authority after TASK-097", async () => {
     const migrations = await discoverMigrations();
-    expect(migrations.at(-1)?.fileName).toBe("0007_capture_resolution.sql");
+    expect(migrations.find(({ fileName }) => fileName === "0007_capture_resolution.sql")?.fileName)
+      .toBe("0007_capture_resolution.sql");
     const sql = await readFile(join(canonicalMigrationsDirectory, "0007_capture_resolution.sql"), "utf8");
     expect(sql).toContain("CREATE TABLE pokenexus.capture_attempts");
     expect(sql).toContain("UNIQUE (subject_player_id, attempt_correlation)");
@@ -78,5 +79,19 @@ describe("discoverMigrations", () => {
     expect(sql).toContain("CREATE TABLE pokenexus.capture_attempt_moves");
     expect(sql).toContain("CREATE TABLE pokenexus.capture_attempt_constructions");
     expect(sql).toContain("CREATE TABLE pokenexus.species_research_counts");
+  });
+
+  it("publishes TASK-037 checkpoint claim authority after capture resolution", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.at(-1)?.fileName).toBe("0008_hunt_checkpoint_claim.sql");
+    const sql = await readFile(join(canonicalMigrationsDirectory, "0008_hunt_checkpoint_claim.sql"), "utf8");
+    expect(sql).toContain("ADD COLUMN hunt_run_identity bytea NOT NULL");
+    expect(sql).toContain("ADD COLUMN logical_time_anchor_at timestamptz NOT NULL");
+    expect(sql).toContain("UNIQUE (player_id, hunt_run_identity)");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_checkpoint_advance_commands");
+    expect(sql).toContain("UNIQUE (subject_player_id, command_correlation)");
+    expect(sql).toContain("target_wall_clock_at timestamptz NOT NULL");
+    expect(sql).toContain("command_status text NOT NULL");
+    expect(sql).toContain("result_state_bytes bytea");
   });
 });

@@ -191,6 +191,7 @@ describe("PostgreSQL 17 migration foundation", () => {
       "0005_player_state_api_spec011.sql",
       "0006_encounter_individualization_genetics.sql",
       "0007_capture_resolution.sql",
+      "0008_hunt_checkpoint_claim.sql",
     ]);
     const [persistenceMigration, authMigration] = canonical;
 
@@ -913,32 +914,42 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
       const baseValues = [
         checkpointId,
         playerId,
+        encoded("hunt-run:checkpoint-schema-test"),
         encoded("checkpoint:v1"),
         encoded("game-data:v1"),
         encoded("rules:v1"),
         "9007199254740991",
+        new Date("2026-09-26T23:20:00.000Z"),
         Buffer.from([0, 1, 2]),
       ];
       const insertSql = `INSERT INTO pokenexus.hunt_checkpoints (
-        checkpoint_id, player_id, checkpoint_schema_version, game_data_version,
-        rules_version, logical_time_ms, checkpoint_state_bytes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+        checkpoint_id, player_id, hunt_run_identity, checkpoint_schema_version, game_data_version,
+        rules_version, logical_time_ms, logical_time_anchor_at, checkpoint_state_bytes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
       await client.query(insertSql, baseValues);
 
       await expect(
         client.query(
           `INSERT INTO pokenexus.hunt_checkpoints (
-            checkpoint_id, player_id, checkpoint_schema_version, game_data_version,
-            rules_version, logical_time_ms, checkpoint_state_bytes, row_version
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, -1)`,
-          [generateUuidV7(), ...baseValues.slice(1)],
+            checkpoint_id, player_id, hunt_run_identity, checkpoint_schema_version, game_data_version,
+            rules_version, logical_time_ms, logical_time_anchor_at, checkpoint_state_bytes, row_version
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, -1)`,
+          [
+            generateUuidV7(),
+            playerId,
+            encoded("hunt-run:negative-row-version"),
+            ...baseValues.slice(3),
+          ],
         ),
       ).rejects.toMatchObject({ code: "23514" });
 
-      for (const invalidIndex of [2, 3, 4]) {
+      for (const invalidIndex of [2, 3, 4, 5]) {
         for (const malformedBytes of [Buffer.alloc(0), Buffer.from([0])]) {
           const invalidValues = [...baseValues];
           invalidValues[0] = generateUuidV7();
+          if (invalidIndex !== 2) {
+            invalidValues[2] = encoded(`hunt-run:malformed-${invalidIndex}-${malformedBytes.length}`);
+          }
           invalidValues[invalidIndex] = malformedBytes;
           await expect(client.query(insertSql, invalidValues)).rejects.toMatchObject({ code: "23514" });
         }
@@ -946,11 +957,13 @@ describe("PostgreSQL 17 SPEC-004 schema", () => {
 
       const tooLarge = [...baseValues];
       tooLarge[0] = generateUuidV7();
-      tooLarge[5] = "9007199254740992";
+      tooLarge[2] = encoded("hunt-run:too-large");
+      tooLarge[6] = "9007199254740992";
       await expect(client.query(insertSql, tooLarge)).rejects.toMatchObject({ code: "23514" });
       const negative = [...baseValues];
       negative[0] = generateUuidV7();
-      negative[5] = "-1";
+      negative[2] = encoded("hunt-run:negative-time");
+      negative[6] = "-1";
       await expect(client.query(insertSql, negative)).rejects.toMatchObject({ code: "23514" });
 
       const current = await client.query<{ row_version: string }>(

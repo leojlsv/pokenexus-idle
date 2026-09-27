@@ -288,5 +288,33 @@ export function sameIndividualizationSnapshot(
   left: EncounterIndividualizationSnapshot,
   right: EncounterIndividualizationSnapshot,
 ): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  const sameStats = (leftStats: StatBlock<number>, rightStats: StatBlock<number>): boolean =>
+    STAT_KEYS.every((stat) => leftStats[stat] === rightStats[stat]);
+  const sameAllocation = (
+    leftAllocation: GeneticProfileAllocation,
+    rightAllocation: GeneticProfileAllocation,
+  ): boolean =>
+    leftAllocation.profile === rightAllocation.profile
+    && sameStats(leftAllocation.bonuses, rightAllocation.bonuses);
+
+  return left.pendingSelectionIdentity === right.pendingSelectionIdentity
+    && left.speciesId === right.speciesId
+    && left.level === right.level
+    && sameStats(left.ivs, right.ivs)
+    && left.geneticScore === right.geneticScore
+    && left.geneticGrade === right.geneticGrade
+    && left.geneticBudget === right.geneticBudget
+    && left.compatibleProfiles[0] === right.compatibleProfiles[0]
+    && left.compatibleProfiles[1] === right.compatibleProfiles[1]
+    && left.birthProfile === right.birthProfile
+    && sameStats(left.birthGeneticBonuses, right.birthGeneticBonuses)
+    && sameAllocation(left.profileAllocations[0], right.profileAllocations[0])
+    && sameAllocation(left.profileAllocations[1], right.profileAllocations[1])
+    && left.shiny === right.shiny
+    && left.isAscendant === right.isAscendant
+    && left.individualizationRulesVersion === right.individualizationRulesVersion
+    && left.derivationAuthorityVersion === right.derivationAuthorityVersion
+    && left.derivationAuthorityKeyId === right.derivationAuthorityKeyId
+    && left.individualizationSnapshotIdentity === right.individualizationSnapshotIdentity
+    && left.individualizationSnapshotCommitment === right.individualizationSnapshotCommitment;
 }
