@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Lead Developer
 - Owner execution surface: current ChatGPT implementation session
@@ -210,4 +210,4 @@ must not invent a second reward/capture authority.
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`. Repository/history completion remains a separate Human gate.
+Use `docs/agents/handoff-protocol.md`. Human Owner repository/history authorization completed 2026-09-27; canonical integration completed on `main`. Deploy and production cutover remain separately gated.
