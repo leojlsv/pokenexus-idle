@@ -11,6 +11,7 @@ import {
   loadRewardResolutionById,
   updatePlayerProgression,
   withPgClient,
+  withTransaction,
 } from "@pokenexus/database";
 import { runMigrations } from "@pokenexus/database/migrations";
 import {
@@ -154,6 +155,45 @@ afterAll(resetSchema);
 beforeEach(prepareSchema);
 
 describe("TASK-024 Reward application orchestration", () => {
+  it("participates in a caller transaction so claim, effects, and Completion roll back together", async () => {
+    const playerId = await createPlayer();
+    const service = new RewardApplicationService(testDatabaseUrl, exactContextLoader());
+    const envelope = {
+      subjectPlayerId: playerId,
+      sourceAuthority: "hunt:test",
+      sourceCorrelation: "outcome:caller-tx-rollback",
+      rulesVersion: "rules:retained-v1",
+      gameDataVersion: "game-data:retained-v1",
+      effects: [
+        { kind: "player_xp" as const, playerId, amount: 25n },
+        { kind: "item_grant" as const, itemId: "potion", quantity: 2n },
+      ],
+    };
+    let resolutionId: string | null = null;
+
+    await expect(withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const claimed = await service.claimResolution(envelope, transaction);
+        resolutionId = claimed.resolution.resolutionId;
+        expect(await service.applyResolution(claimed.resolution.resolutionId, transaction))
+          .toMatchObject({ status: "completed", replayed: false });
+        expect(await loadPlayerProgression(transaction, playerId))
+          .toMatchObject({ totalExperience: 25n, rowVersion: 1n });
+        expect(await loadInventory(transaction, playerId))
+          .toMatchObject({ rowVersion: 1n, entries: [{ itemId: "potion", quantity: 2n }] });
+        throw new Error("force outer boundary rollback");
+      }))).rejects.toThrow("force outer boundary rollback");
+
+    expect(resolutionId).not.toBeNull();
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      expect(await loadPlayerProgression(client, playerId))
+        .toMatchObject({ totalExperience: 0n, rowVersion: 0n });
+      expect(await loadInventory(client, playerId))
+        .toMatchObject({ rowVersion: 0n, entries: [] });
+      expect(await loadRewardResolutionById(client, resolutionId!)).toBeNull();
+    });
+  });
+
   it("commits multi-aggregate siblings once and replays the same Completion after response loss", async () => {
     const playerId = await createPlayer();
     const pokemonA = await createPokemon(playerId, 50);

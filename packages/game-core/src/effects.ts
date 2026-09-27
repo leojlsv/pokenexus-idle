@@ -37,6 +37,36 @@ function safeAmount(value: bigint): number {
   return Number(value);
 }
 
+export interface InstantHpHealingResult {
+  readonly amount: number;
+  readonly resultingHp: number;
+}
+
+/**
+ * Shared deterministic instant HP-healing primitive used by combat effects and explicit item orchestration.
+ * Callers own eligibility/inventory; this function owns exact integer/rational magnitude and HP clamping.
+ */
+export function evaluateInstantHpHealing(
+  currentHp: number,
+  maxHp: number,
+  magnitude: EffectMagnitude,
+): InstantHpHealingResult {
+  if (!Number.isSafeInteger(currentHp) || !Number.isSafeInteger(maxHp) || maxHp < 1 || currentHp < 0 || currentHp > maxHp) {
+    throw new RangeError("invalid HP domain for healing");
+  }
+  if (currentHp <= 0 || currentHp >= maxHp) {
+    return { amount: 0, resultingHp: currentHp };
+  }
+  const current = BigInt(currentHp);
+  const maximum = BigInt(maxHp);
+  const requested = exactMagnitude(maxHp, magnitude);
+  const resulting = current + requested >= maximum ? maximum : current + requested;
+  return {
+    amount: safeAmount(resulting - current),
+    resultingHp: safeAmount(resulting),
+  };
+}
+
 function evaluatePeriodicConsequence(
   currentHp: number,
   maxHp: number,
@@ -85,12 +115,11 @@ function applyInstruction(mutable: MutableState, actorId: string, targetId: stri
 
   if (recipient.currentHp <= 0) return;
   if (instruction.kind === "heal") {
-    const currentHp = BigInt(next.currentHp);
-    const maxHp = BigInt(next.maxHp);
-    const requested = exactMagnitude(next.maxHp, instruction.magnitude);
-    const resulting = currentHp + requested >= maxHp ? maxHp : currentHp + requested;
-    const resultingHp = safeAmount(resulting);
-    const amount = safeAmount(resulting - currentHp);
+    const { amount, resultingHp } = evaluateInstantHpHealing(
+      next.currentHp,
+      next.maxHp,
+      instruction.magnitude,
+    );
     next.currentHp = resultingHp;
     combatants[next.combatantId] = next;
     mutable.state = { ...mutable.state, combatants };

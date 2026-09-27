@@ -258,6 +258,7 @@ export interface MoveEligibilityContext {
 
 export interface MoveEligibilityContextLoader {
   loadForNewOperation(): Promise<MoveEligibilityContext>;
+  loadExactRetained?(pair: StaticContextPairRef): Promise<MoveEligibilityContext>;
 }
 
 export class MoveAuthorityUnavailableError extends Error {
@@ -384,10 +385,11 @@ export function createMoveEligibilityContextLoader(input: {
   readonly gameData: ExactMoveEligibilityGameDataLoader;
   readonly productionCatalogs?: ExactProductionCombatCatalogResolver;
 }): MoveEligibilityContextLoader {
-  return {
-    async loadForNewOperation() {
-      try {
-        const pair = await input.selector.select();
+  async function loadPair(
+    pair: StaticContextPairRef,
+    requireNewOperationsAllowed: boolean,
+  ): Promise<MoveEligibilityContext> {
+    try {
 
         const resolvedPair = await input.staticContextPairs.resolve(pair);
         if (
@@ -399,7 +401,7 @@ export function createMoveEligibilityContextLoader(input: {
             `Static context pair is not exactly resolvable: ${pair.gameDataVersion} + ${pair.rulesVersion}`,
           );
         }
-        if (resolvedPair.newOperationsAllowed !== true) {
+        if (requireNewOperationsAllowed && resolvedPair.newOperationsAllowed !== true) {
           throw new Error("Static context pair is deprecated for new Move operations");
         }
 
@@ -410,7 +412,7 @@ export function createMoveEligibilityContextLoader(input: {
         ) {
           throw new Error(`Move rulesVersion is not exactly resolvable: ${pair.rulesVersion}`);
         }
-        if (resolvedRules.newOperationsAllowed !== true) {
+        if (requireNewOperationsAllowed && resolvedRules.newOperationsAllowed !== true) {
           throw new Error("Move rulesVersion is deprecated for new Move operations");
         }
         assertImmutableProductionRulesReleaseDescriptor(resolvedRules.rules);
@@ -446,7 +448,7 @@ export function createMoveEligibilityContextLoader(input: {
         ) {
           throw new Error(`gameDataVersion is not exactly resolvable: ${pair.gameDataVersion}`);
         }
-        if (gameDataLifecycle.newOperationsAllowed !== true) {
+        if (requireNewOperationsAllowed && gameDataLifecycle.newOperationsAllowed !== true) {
           throw new Error("gameDataVersion is deprecated for new Move operations");
         }
 
@@ -522,10 +524,19 @@ export function createMoveEligibilityContextLoader(input: {
           productionExecutableMoveIds: productionCatalog?.executableMoveIds ?? null,
           productionCatalog,
         };
-      } catch (error) {
-        if (error instanceof MoveAuthorityUnavailableError) throw error;
-        throw new MoveAuthorityUnavailableError(error);
-      }
+    } catch (error) {
+      if (error instanceof MoveAuthorityUnavailableError) throw error;
+      throw new MoveAuthorityUnavailableError(error);
+    }
+  }
+
+  return {
+    async loadForNewOperation() {
+      const pair = await input.selector.select();
+      return loadPair(pair, true);
+    },
+    async loadExactRetained(pair) {
+      return loadPair(pair, false);
     },
   };
 }

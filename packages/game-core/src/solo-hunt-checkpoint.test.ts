@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { SoloHuntRuntimeState } from "./solo-hunt";
 import {
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
   decodeSoloHuntCheckpointV1,
+  decodeSoloHuntCheckpointV2,
   encodeSoloHuntCheckpointV1,
+  encodeSoloHuntCheckpointV2,
 } from "./solo-hunt-checkpoint";
 
 function checkpointState(): SoloHuntRuntimeState {
@@ -147,6 +150,38 @@ describe("Solo Hunt checkpoint codec", () => {
     const source = checkpointState();
     const reordered = Object.fromEntries(Object.entries(source).reverse()) as unknown as SoloHuntRuntimeState;
     expect(encodeSoloHuntCheckpointV1(reordered)).toEqual(encodeSoloHuntCheckpointV1(source));
+  });
+
+  it("keeps v1 immutable and uses v2 for explicit healing provenance", () => {
+    const source = checkpointState();
+    const healingState = {
+      ...source,
+      pinnedTeam: [{
+        pokemonInstanceId: "pokemon:1",
+        speciesId: "species:1",
+        level: 5,
+        baseStats: { hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 },
+        ivs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+        geneticBonuses: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+        types: ["type:grass"],
+        moveLoadout: ["move:tackle"],
+      }],
+      appliedHealingEvents: [{
+        sourceIdentity: "heal:1",
+        acceptanceSequence: "1",
+        afterEncounterId: source.completedEncounters[0]!.encounterId,
+        afterEncounterOrdinal: 1,
+        appliedAtHuntTimeMs: 100,
+        targetPokemonInstanceId: "pokemon:1",
+        magnitude: { kind: "integer" as const, amount: 5 },
+        healedHp: 5,
+      }],
+    } as unknown as SoloHuntRuntimeState;
+
+    expect(() => encodeSoloHuntCheckpointV1(healingState)).toThrow(/v1 cannot encode explicit healing/);
+    const bytes = encodeSoloHuntCheckpointV2(healingState);
+    expect(new TextDecoder().decode(bytes)).toContain(SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2);
+    expect(decodeSoloHuntCheckpointV2(bytes)).toEqual({ accepted: true, state: healingState });
   });
 
   it("fails closed for malformed or unknown schemas", () => {

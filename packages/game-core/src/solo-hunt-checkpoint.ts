@@ -13,6 +13,7 @@ import { validateRngState } from "./rng";
 import type { DeterministicRngState } from "./types";
 
 export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1 = "pokenexus.solo-hunt-checkpoint.v1" as const;
+export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2 = "pokenexus.solo-hunt-checkpoint.v2" as const;
 export const SOLO_HUNT_DEFAULT_SEGMENT_MS = 60 * 60 * 1000;
 
 const GENETIC_GRADES = ["Normal", "Uncommon", "Rare", "Epic", "Apex"] as const;
@@ -626,6 +627,55 @@ function assertInterBattle(value: unknown, interBattleGapMs: number): void {
   }
 }
 
+function assertAppliedHealingEvent(value: unknown, label: string): void {
+  assertRecord(value, label);
+  assertAllowedKeys(value, [
+    "sourceIdentity",
+    "acceptanceSequence",
+    "afterEncounterId",
+    "afterEncounterOrdinal",
+    "appliedAtHuntTimeMs",
+    "targetPokemonInstanceId",
+    "magnitude",
+    "healedHp",
+  ], label);
+  assertNonEmptyString(value, "sourceIdentity", label);
+  assertNonEmptyString(value, "acceptanceSequence", label);
+  assertNonEmptyString(value, "afterEncounterId", label);
+  if (!Number.isSafeInteger(value.afterEncounterOrdinal) || (value.afterEncounterOrdinal as number) < 1) {
+    throw new Error(`Solo Hunt checkpoint ${label}.afterEncounterOrdinal must be a positive safe integer`);
+  }
+  if (!/^[1-9][0-9]*$/u.test(value.acceptanceSequence as string)) {
+    throw new Error(`Solo Hunt checkpoint ${label}.acceptanceSequence is invalid`);
+  }
+  assertNonNegativeSafeInteger(value, "appliedAtHuntTimeMs", label);
+  assertNonEmptyString(value, "targetPokemonInstanceId", label);
+  if (!Number.isSafeInteger(value.healedHp) || (value.healedHp as number) <= 0) {
+    throw new Error(`Solo Hunt checkpoint ${label}.healedHp must be a positive safe integer`);
+  }
+  assertRecord(value.magnitude, `${label}.magnitude`);
+  if (value.magnitude.kind === "integer") {
+    assertAllowedKeys(value.magnitude, ["kind", "amount"], `${label}.magnitude`);
+    if (!Number.isSafeInteger(value.magnitude.amount) || (value.magnitude.amount as number) <= 0) {
+      throw new Error(`Solo Hunt checkpoint ${label}.magnitude.amount must be a positive safe integer`);
+    }
+    return;
+  }
+  if (value.magnitude.kind === "maxHpFraction") {
+    assertAllowedKeys(value.magnitude, ["kind", "numerator", "denominator"], `${label}.magnitude`);
+    if (
+      !Number.isSafeInteger(value.magnitude.numerator)
+      || (value.magnitude.numerator as number) <= 0
+      || !Number.isSafeInteger(value.magnitude.denominator)
+      || (value.magnitude.denominator as number) <= 0
+    ) {
+      throw new Error(`Solo Hunt checkpoint ${label}.magnitude fraction must be positive safe integers`);
+    }
+    return;
+  }
+  throw new Error(`Solo Hunt checkpoint ${label}.magnitude has invalid kind`);
+}
+
 function assertCompletedEncounter(value: unknown, label: string): void {
   assertRecord(value, label);
   assertAllowedKeys(value, [
@@ -998,15 +1048,20 @@ function assertDecodedRuntimeConsistency(value: Record<string, unknown>): void {
   }
 }
 
-function assertDecodedRuntimeState(value: unknown): asserts value is SoloHuntRuntimeState {
+function assertDecodedRuntimeState(
+  value: unknown,
+  schemaVersion: typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1 | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+): asserts value is SoloHuntRuntimeState {
   if (!isRecord(value)) throw new Error("Solo Hunt checkpoint state must be an object");
-  assertAllowedKeys(value, [
+  const allowedKeys = [
     "huntRunIdentity", "playerId", "zoneId", "huntDefinitionId", "contentVersion", "contentHash",
     "gameDataVersion", "rulesVersion", "interBattleGapMs", "pinnedTeam", "logicalTimeMs", "nextEncounterOrdinal",
     "selectionStreamOrigin", "combatDeterministicOrigin", "policyRng", "combatDeterministicState", "currentEncounter",
     "interBattle", "pendingEncounterSelection", "completedEncounters", "completedEncounterProvenance",
     "pendingCaptureDecision", "status", "terminalReason",
-  ], "state");
+    ...(schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2 ? ["appliedHealingEvents"] : []),
+  ];
+  assertAllowedKeys(value, allowedKeys, "state");
   for (const key of [
     "huntRunIdentity",
     "playerId",
@@ -1044,6 +1099,60 @@ function assertDecodedRuntimeState(value: unknown): asserts value is SoloHuntRun
   }
   for (const [index, provenance] of value.completedEncounterProvenance.entries()) {
     assertCompletedEncounterProvenance(provenance, `completedEncounterProvenance[${index}]`);
+  }
+  if (schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2) {
+    if (!Array.isArray(value.appliedHealingEvents)) {
+      throw new Error("Solo Hunt checkpoint v2 state is missing appliedHealingEvents");
+    }
+    assertRecordArray(value.appliedHealingEvents, "appliedHealingEvents");
+    const pinned = new Set(
+      value.pinnedTeam.map((member) => (member as Record<string, unknown>).pokemonInstanceId),
+    );
+    const seenSources = new Set<string>();
+    let previousEncounterOrdinal = 0;
+    let previousTime = -1;
+    let previousSequence: bigint | null = null;
+    for (const [index, event] of value.appliedHealingEvents.entries()) {
+      assertAppliedHealingEvent(event, `appliedHealingEvents[${index}]`);
+      const sourceIdentity = event.sourceIdentity as string;
+      const encounterOrdinal = event.afterEncounterOrdinal as number;
+      const time = event.appliedAtHuntTimeMs as number;
+      const sequence = BigInt(event.acceptanceSequence as string);
+      if (seenSources.has(sourceIdentity)) {
+        throw new Error("Solo Hunt checkpoint applied healing source identity is duplicated");
+      }
+      if (time > (value.logicalTimeMs as number)) {
+        throw new Error("Solo Hunt checkpoint applied healing occurs after checkpoint logical time");
+      }
+      const boundary = (value.completedEncounters as Array<Record<string, unknown>>).find((entry) =>
+        entry.encounterId === event.afterEncounterId && entry.encounterOrdinal === encounterOrdinal);
+      if (
+        !boundary
+        || (boundary.completedAtHuntTimeMs as number) > time
+        || time > (boundary.completedAtHuntTimeMs as number) + (value.interBattleGapMs as number)
+      ) {
+        throw new Error("Solo Hunt checkpoint applied healing lacks its exact completed Encounter boundary");
+      }
+      if (!pinned.has(event.targetPokemonInstanceId)) {
+        throw new Error("Solo Hunt checkpoint applied healing target is not in the pinned Team");
+      }
+      if (
+        encounterOrdinal < previousEncounterOrdinal
+        || (encounterOrdinal === previousEncounterOrdinal && time < previousTime)
+        || (
+          encounterOrdinal === previousEncounterOrdinal
+          && time === previousTime
+          && previousSequence !== null
+          && sequence <= previousSequence
+        )
+      ) {
+        throw new Error("Solo Hunt checkpoint applied healing events are not in deterministic order");
+      }
+      seenSources.add(sourceIdentity);
+      previousEncounterOrdinal = encounterOrdinal;
+      previousTime = time;
+      previousSequence = sequence;
+    }
   }
   assertSelectionOrigin(value.selectionStreamOrigin);
   assertRecord(value.combatDeterministicOrigin, "combatDeterministicOrigin");
@@ -1087,9 +1196,24 @@ function assertDecodedRuntimeState(value: unknown): asserts value is SoloHuntRun
 }
 
 export function encodeSoloHuntCheckpointV1(state: SoloHuntRuntimeState): Uint8Array {
+  if (state.appliedHealingEvents !== undefined) {
+    throw new Error("Solo Hunt checkpoint v1 cannot encode explicit healing provenance");
+  }
   const payload = {
     schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
     state: canonicalize(state),
+  };
+  return new TextEncoder().encode(JSON.stringify(payload));
+}
+
+export function encodeSoloHuntCheckpointV2(state: SoloHuntRuntimeState): Uint8Array {
+  const normalized: SoloHuntRuntimeState = {
+    ...state,
+    appliedHealingEvents: state.appliedHealingEvents ?? [],
+  };
+  const payload = {
+    schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+    state: canonicalize(normalized),
   };
   return new TextEncoder().encode(JSON.stringify(payload));
 }
@@ -1118,11 +1242,56 @@ export function decodeSoloHuntCheckpointV1(bytes: Uint8Array): SoloHuntCheckpoin
     }
     assertAllowedKeys(parsed, ["schemaVersion", "state"], "payload");
     const state = decanonicalize(parsed.state);
-    assertDecodedRuntimeState(state);
+    assertDecodedRuntimeState(state, SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1);
     if (!sameBytes(bytes, encodeSoloHuntCheckpointV1(state))) {
       return { accepted: false, reason: "Solo Hunt checkpoint bytes are not canonical" };
     }
     return { accepted: true, state };
+  } catch (error) {
+    return {
+      accepted: false,
+      reason: error instanceof Error ? error.message : "Malformed Solo Hunt checkpoint",
+    };
+  }
+}
+
+
+export function decodeSoloHuntCheckpointV2(bytes: Uint8Array): SoloHuntCheckpointDecodeResult {
+  try {
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
+      return { accepted: false, reason: "Solo Hunt checkpoint bytes are required" };
+    }
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const parsed = JSON.parse(text) as unknown;
+    if (!isRecord(parsed) || parsed.schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2) {
+      return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
+    }
+    assertAllowedKeys(parsed, ["schemaVersion", "state"], "payload");
+    const state = decanonicalize(parsed.state);
+    assertDecodedRuntimeState(state, SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2);
+    if (!sameBytes(bytes, encodeSoloHuntCheckpointV2(state))) {
+      return { accepted: false, reason: "Solo Hunt checkpoint bytes are not canonical" };
+    }
+    return { accepted: true, state };
+  } catch (error) {
+    return {
+      accepted: false,
+      reason: error instanceof Error ? error.message : "Malformed Solo Hunt checkpoint",
+    };
+  }
+}
+
+export function decodeSoloHuntCheckpoint(bytes: Uint8Array): SoloHuntCheckpointDecodeResult {
+  try {
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
+      return { accepted: false, reason: "Solo Hunt checkpoint bytes are required" };
+    }
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const parsed = JSON.parse(text) as unknown;
+    if (!isRecord(parsed)) return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
+    if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1) return decodeSoloHuntCheckpointV1(bytes);
+    if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2) return decodeSoloHuntCheckpointV2(bytes);
+    return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
   } catch (error) {
     return {
       accepted: false,

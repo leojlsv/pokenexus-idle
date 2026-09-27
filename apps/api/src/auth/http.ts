@@ -23,12 +23,18 @@ import {
   createPlayerCursorCodecFromEnvironment,
   type PlayerStateEnvironment,
 } from "../player/runtime";
+import type { HuntHttpApplication } from "../hunts/application";
+import { registerHuntRoutes } from "../hunts/http";
+import {
+  createHuntApplicationFromEnvironment,
+  type HuntRuntimeEnvironment,
+} from "../hunts/runtime";
 
 export const SESSION_COOKIE_NAME = "__Host-pokenexus_session";
 export const RESTRICTED_COOKIE_NAME = "__Host-pokenexus_restricted";
 export const CSRF_HEADER_NAME = "X-CSRF-Token";
 
-export type ApiBindings = AuthEnvironment & PlayerStateEnvironment;
+export type ApiBindings = AuthEnvironment & PlayerStateEnvironment & HuntRuntimeEnvironment;
 export interface ApiVariables {
   securityAuditCorrelationId: string;
 }
@@ -77,6 +83,7 @@ export interface CreateApiAppOptions {
   readonly resolveAuthRuntime?: (env: AuthEnvironment) => AuthHttpRuntime;
   readonly resolvePlayerApplication?: (env: ApiBindings) => PlayerHttpApplication;
   readonly resolvePlayerCursorCodec?: (env: ApiBindings) => PlayerCursorCodec;
+  readonly resolveHuntApplication?: (env: ApiBindings) => HuntHttpApplication;
   readonly emailSender?: EmailActionSender;
   readonly deferPublicWork?: (work: Promise<void>) => void;
   readonly createSecurityAuditCorrelationId?: () => string;
@@ -339,6 +346,8 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
     options.resolvePlayerApplication ?? createPlayerApplicationFromEnvironment;
   const resolvePlayerCursorCodec =
     options.resolvePlayerCursorCodec ?? createPlayerCursorCodecFromEnvironment;
+  const resolveHuntApplication =
+    options.resolveHuntApplication ?? createHuntApplicationFromEnvironment;
   const app = new Hono<{ Bindings: ApiBindings; Variables: ApiVariables }>();
   const createSecurityAuditCorrelationId =
     options.createSecurityAuditCorrelationId ?? (() => crypto.randomUUID());
@@ -347,11 +356,27 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
   const runtimeFor = (c: ApiContext): AuthHttpRuntime => resolveAuthRuntime(c.env);
   const playerFor = (c: ApiContext): PlayerHttpApplication => resolvePlayerApplication(c.env);
   const playerCursorFor = (c: ApiContext): PlayerCursorCodec => resolvePlayerCursorCodec(c.env);
+  const huntFor = (c: ApiContext): HuntHttpApplication => resolveHuntApplication(c.env);
 
   app.use("/auth/*", async (c, next) => {
     c.set("securityAuditCorrelationId", createSecurityAuditCorrelationId());
     const runtime = runtimeFor(c);
     const preflight = applyCredentialedCors(c, runtime, "GET, POST, DELETE");
+    if (preflight) return preflight;
+    await next();
+  });
+
+  app.use("/player/hunts/*", async (c, next) => {
+    if (c.req.method !== "OPTIONS") {
+      await next();
+      return;
+    }
+    const preflight = applyCredentialedCors(
+      c,
+      runtimeFor(c),
+      "GET, POST, PUT, OPTIONS",
+      `Content-Type, ${CSRF_HEADER_NAME}, Idempotency-Key`,
+    );
     if (preflight) return preflight;
     await next();
   });
@@ -375,6 +400,15 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
     security: {
       requireSession: (c) => requireSession(c, runtimeFor(c), false),
       requireSessionMutation: (c) => requireSessionMutation(c, runtimeFor(c), false),
+      requireCommandSession: (c) => requireSessionMutation(c, runtimeFor(c), true),
+    },
+  });
+
+  registerHuntRoutes(app, {
+    huntFor,
+    playerIdFor: async (c, accountId) => (await playerFor(c).loadProfile(accountId))?.playerId ?? null,
+    security: {
+      requireSession: (c) => requireSession(c, runtimeFor(c), false),
       requireCommandSession: (c) => requireSessionMutation(c, runtimeFor(c), true),
     },
   });

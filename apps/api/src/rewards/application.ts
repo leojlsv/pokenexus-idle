@@ -1,5 +1,6 @@
 import {
   claimRewardResolution,
+  claimRewardResolutionInTransaction,
   grantInventoryEntriesInTransaction,
   insertRewardCompletion,
   loadInventory,
@@ -13,6 +14,7 @@ import {
   withTransaction,
   type RewardResolutionEnvelope,
   type RewardResolutionRecord,
+  type TransactionClient,
 } from "@pokenexus/database";
 import {
   PLAYER_PROGRESSION_RULE_ID,
@@ -270,145 +272,159 @@ export class RewardApplicationService {
 
   async claimResolution(
     envelope: RewardResolutionEnvelope,
+    transaction?: TransactionClient,
   ): Promise<{ readonly status: "created" | "existing"; readonly resolution: RewardResolutionRecord }> {
-    const existing = await withPgClient({ connectionString: this.connectionString }, (client) =>
-      loadRewardResolutionBySourceKey(client, envelope));
-    if (existing) {
-      return withPgClient({ connectionString: this.connectionString }, (client) =>
-        claimRewardResolution(client, envelope));
-    }
-    const pinnedContext = await this.contextLoader.load(envelope);
-    validatePinnedContext(envelope, pinnedContext, "new_resolution");
-    return withPgClient({ connectionString: this.connectionString }, (client) =>
-      claimRewardResolution(client, envelope));
+    const claim = async (client: TransactionClient) => {
+      const existing = await loadRewardResolutionBySourceKey(client, envelope);
+      if (existing) return transaction
+        ? claimRewardResolutionInTransaction(client, envelope)
+        : claimRewardResolution(client, envelope);
+      const pinnedContext = await this.contextLoader.load(envelope);
+      validatePinnedContext(envelope, pinnedContext, "new_resolution");
+      return transaction
+        ? claimRewardResolutionInTransaction(client, envelope)
+        : claimRewardResolution(client, envelope);
+    };
+    return transaction
+      ? claim(transaction)
+      : withPgClient({ connectionString: this.connectionString }, claim);
   }
 
-  async applyResolution(resolutionId: string): Promise<RewardApplicationResult> {
-    const initial = await withPgClient({ connectionString: this.connectionString }, (client) =>
-      loadRewardResolutionById(client, resolutionId));
+  async applyResolution(
+    resolutionId: string,
+    transaction?: TransactionClient,
+  ): Promise<RewardApplicationResult> {
+    const initial = transaction
+      ? await loadRewardResolutionById(transaction, resolutionId)
+      : await withPgClient({ connectionString: this.connectionString }, (client) =>
+          loadRewardResolutionById(client, resolutionId));
     if (!initial) return { status: "not_found" };
     if (initial.completion) return completionResult(initial, true);
 
     const pinnedContext = await this.contextLoader.load(initial);
     validatePinnedContext(initial, pinnedContext, "historical_application");
 
-    try {
-      return await withPgClient({ connectionString: this.connectionString }, (client) =>
-        withTransaction(client, async (transaction) => {
-          const resolution = await loadRewardResolutionById(transaction, resolutionId, true);
-          if (!resolution) return { status: "not_found" } as const;
-          if (resolution.completion) return completionResult(resolution, true);
-          validatePinnedContext(resolution, pinnedContext, "historical_application");
+    const apply = async (client: TransactionClient): Promise<RewardApplicationResult> => {
+      const resolution = await loadRewardResolutionById(client, resolutionId, true);
+      if (!resolution) return { status: "not_found" };
+      if (resolution.completion) return completionResult(resolution, true);
+      validatePinnedContext(resolution, pinnedContext, "historical_application");
 
-          const playerEffect = resolution.effects.find((effect) => effect.kind === "player_xp");
-          const pokemonEffects = resolution.effects
-            .filter((effect): effect is Extract<(typeof resolution.effects)[number], { kind: "pokemon_xp" }> =>
-              effect.kind === "pokemon_xp")
-            .sort((left, right) => left.pokemonInstanceId < right.pokemonInstanceId ? -1 : left.pokemonInstanceId > right.pokemonInstanceId ? 1 : 0);
-          const itemEffects = resolution.effects.filter(
-            (effect): effect is Extract<(typeof resolution.effects)[number], { kind: "item_grant" }> =>
-              effect.kind === "item_grant",
+      const playerEffect = resolution.effects.find((effect) => effect.kind === "player_xp");
+      const pokemonEffects = resolution.effects
+        .filter((effect): effect is Extract<(typeof resolution.effects)[number], { kind: "pokemon_xp" }> =>
+          effect.kind === "pokemon_xp")
+        .sort((left, right) => left.pokemonInstanceId < right.pokemonInstanceId ? -1 : left.pokemonInstanceId > right.pokemonInstanceId ? 1 : 0);
+      const itemEffects = resolution.effects.filter(
+        (effect): effect is Extract<(typeof resolution.effects)[number], { kind: "item_grant" }> =>
+          effect.kind === "item_grant",
+      );
+
+      let playerState: Awaited<ReturnType<typeof loadPlayerProgression>> = null;
+      if (playerEffect) {
+        playerState = await loadPlayerProgression(client, resolution.subjectPlayerId, true);
+        if (!playerState) throw new RewardApplicationError("Reward subject Player no longer exists");
+      }
+
+      const pokemonStates = new Map<string, NonNullable<Awaited<ReturnType<typeof loadOwnedPokemonProgression>>>>();
+      for (const effect of pokemonEffects) {
+        const state = await loadOwnedPokemonProgression(
+          client,
+          resolution.subjectPlayerId,
+          effect.pokemonInstanceId,
+          true,
+        );
+        if (!state) {
+          throw new RewardApplicationError(
+            `Pokémon target is missing or not owned by Reward subject: ${effect.pokemonInstanceId}`,
           );
+        }
+        pokemonStates.set(effect.pokemonInstanceId, state);
+      }
 
-          let playerState: Awaited<ReturnType<typeof loadPlayerProgression>> = null;
-          if (playerEffect) {
-            playerState = await loadPlayerProgression(transaction, resolution.subjectPlayerId, true);
-            if (!playerState) throw new RewardApplicationError("Reward subject Player no longer exists");
-          }
+      const inventoryState = itemEffects.length > 0
+        ? await loadInventory(client, resolution.subjectPlayerId, true)
+        : null;
+      if (itemEffects.length > 0 && !inventoryState) {
+        throw new RewardApplicationError("Reward subject Inventory does not exist");
+      }
 
-          const pokemonStates = new Map<string, NonNullable<Awaited<ReturnType<typeof loadOwnedPokemonProgression>>>>();
-          for (const effect of pokemonEffects) {
-            const state = await loadOwnedPokemonProgression(
-              transaction,
-              resolution.subjectPlayerId,
-              effect.pokemonInstanceId,
-              true,
-            );
-            if (!state) {
-              throw new RewardApplicationError(
-                `Pokémon target is missing or not owned by Reward subject: ${effect.pokemonInstanceId}`,
-              );
-            }
-            pokemonStates.set(effect.pokemonInstanceId, state);
-          }
-
-          const inventoryState = itemEffects.length > 0
-            ? await loadInventory(transaction, resolution.subjectPlayerId, true)
-            : null;
-          if (itemEffects.length > 0 && !inventoryState) {
-            throw new RewardApplicationError("Reward subject Inventory does not exist");
-          }
-
-          const pokemonResults = new Map<string, PokemonXpGrantResult>();
-          for (const effect of pokemonEffects) {
-            const state = pokemonStates.get(effect.pokemonInstanceId);
-            if (!state) throw new Error("Locked Pokémon state was lost during application");
-            pokemonResults.set(effect.pokemonInstanceId, evaluatePokemonXpGrant({
-              ruleId: pinnedContext.progressionRules.pokemonProgressionRuleId ?? "",
-              current: { level: state.level, totalExperience: state.totalExperience },
-              xpAmount: effect.amount,
-            }));
-          }
-
-          let playerResult: PlayerXpGrantResult | null = null;
-          if (playerEffect && playerState) {
-            playerResult = evaluatePlayerXpGrant({
-              ruleId: pinnedContext.progressionRules.playerProgressionRuleId ?? "",
-              current: { level: playerState.level, totalExperience: playerState.totalExperience },
-              xpAmount: playerEffect.amount,
-            });
-          }
-
-          const now = new Date();
-          if (playerState && playerResult?.changed) {
-            const updated = await updatePlayerProgression(transaction, {
-              playerId: playerState.playerId,
-              expectedRowVersion: playerState.rowVersion,
-              level: playerResult.level,
-              totalExperience: playerResult.totalExperience,
-              now,
-            });
-            if (!updated) throw new RewardApplicationStaleError();
-          }
-
-          for (const effect of pokemonEffects) {
-            const state = pokemonStates.get(effect.pokemonInstanceId);
-            const result = pokemonResults.get(effect.pokemonInstanceId);
-            if (!state || !result) throw new Error("Pokémon progression application state is incomplete");
-            if (!result.changed) continue;
-            const updated = await updateOwnedPokemonProgression(transaction, {
-              ownerPlayerId: resolution.subjectPlayerId,
-              pokemonInstanceId: effect.pokemonInstanceId,
-              expectedRowVersion: state.rowVersion,
-              level: result.level,
-              totalExperience: result.totalExperience,
-              now,
-            });
-            if (!updated) throw new RewardApplicationStaleError();
-          }
-
-          if (itemEffects.length > 0 && inventoryState) {
-            const inventoryResult = await grantInventoryEntriesInTransaction(transaction, {
-              playerId: resolution.subjectPlayerId,
-              expectedRowVersion: inventoryState.rowVersion,
-              grants: itemEffects.map((effect) => ({ itemId: effect.itemId, quantity: effect.quantity })),
-              now,
-            });
-            if (inventoryResult.status === "stale") throw new RewardApplicationStaleError();
-            if (inventoryResult.status !== "updated") {
-              throw new RewardApplicationError(`Inventory reward application failed: ${inventoryResult.status}`);
-            }
-          }
-
-          const completion = await insertRewardCompletion(transaction, resolution.resolutionId, now);
-          return {
-            status: "completed",
-            resolutionId: resolution.resolutionId,
-            completionId: completion.completionId,
-            completedAt: completion.completedAt,
-            replayed: false,
-          } as const;
+      const pokemonResults = new Map<string, PokemonXpGrantResult>();
+      for (const effect of pokemonEffects) {
+        const state = pokemonStates.get(effect.pokemonInstanceId);
+        if (!state) throw new Error("Locked Pokémon state was lost during application");
+        pokemonResults.set(effect.pokemonInstanceId, evaluatePokemonXpGrant({
+          ruleId: pinnedContext.progressionRules.pokemonProgressionRuleId ?? "",
+          current: { level: state.level, totalExperience: state.totalExperience },
+          xpAmount: effect.amount,
         }));
+      }
+
+      let playerResult: PlayerXpGrantResult | null = null;
+      if (playerEffect && playerState) {
+        playerResult = evaluatePlayerXpGrant({
+          ruleId: pinnedContext.progressionRules.playerProgressionRuleId ?? "",
+          current: { level: playerState.level, totalExperience: playerState.totalExperience },
+          xpAmount: playerEffect.amount,
+        });
+      }
+
+      const now = new Date();
+      if (playerState && playerResult?.changed) {
+        const updated = await updatePlayerProgression(client, {
+          playerId: playerState.playerId,
+          expectedRowVersion: playerState.rowVersion,
+          level: playerResult.level,
+          totalExperience: playerResult.totalExperience,
+          now,
+        });
+        if (!updated) throw new RewardApplicationStaleError();
+      }
+
+      for (const effect of pokemonEffects) {
+        const state = pokemonStates.get(effect.pokemonInstanceId);
+        const result = pokemonResults.get(effect.pokemonInstanceId);
+        if (!state || !result) throw new Error("Pokémon progression application state is incomplete");
+        if (!result.changed) continue;
+        const updated = await updateOwnedPokemonProgression(client, {
+          ownerPlayerId: resolution.subjectPlayerId,
+          pokemonInstanceId: effect.pokemonInstanceId,
+          expectedRowVersion: state.rowVersion,
+          level: result.level,
+          totalExperience: result.totalExperience,
+          now,
+        });
+        if (!updated) throw new RewardApplicationStaleError();
+      }
+
+      if (itemEffects.length > 0 && inventoryState) {
+        const inventoryResult = await grantInventoryEntriesInTransaction(client, {
+          playerId: resolution.subjectPlayerId,
+          expectedRowVersion: inventoryState.rowVersion,
+          grants: itemEffects.map((effect) => ({ itemId: effect.itemId, quantity: effect.quantity })),
+          now,
+        });
+        if (inventoryResult.status === "stale") throw new RewardApplicationStaleError();
+        if (inventoryResult.status !== "updated") {
+          throw new RewardApplicationError(`Inventory reward application failed: ${inventoryResult.status}`);
+        }
+      }
+
+      const completion = await insertRewardCompletion(client, resolution.resolutionId, now);
+      return {
+        status: "completed",
+        resolutionId: resolution.resolutionId,
+        completionId: completion.completionId,
+        completedAt: completion.completedAt,
+        replayed: false,
+      };
+    };
+
+    try {
+      return transaction
+        ? await apply(transaction)
+        : await withPgClient({ connectionString: this.connectionString }, (client) =>
+            withTransaction(client, apply));
     } catch (error) {
       if (error instanceof RewardApplicationStaleError) {
         return { status: "stale", resolutionId };

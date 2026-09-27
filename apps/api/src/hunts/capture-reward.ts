@@ -1,10 +1,13 @@
 import {
   commitCaptureAttempt,
+  commitCaptureAttemptInTransaction,
   loadCaptureAttemptByCorrelation,
   withPgClient,
+  type CaptureDbClient,
   type CaptureAttemptCommitResult,
   type CaptureAttemptIntent,
   type CaptureAttemptRecord,
+  type TransactionClient,
 } from "@pokenexus/database";
 import {
   CAPTURE_RULES_VERSION_V1,
@@ -63,11 +66,11 @@ export interface CaptureAttemptRepository {
 }
 
 export interface RewardApplicationPort {
-  claimResolution(envelope: SoloHuntRewardResolution["envelope"]): Promise<{
+  claimResolution(envelope: SoloHuntRewardResolution["envelope"], transaction?: TransactionClient): Promise<{
     readonly status: "created" | "existing";
     readonly resolution: { readonly resolutionId: string };
   }>;
-  applyResolution(resolutionId: string): Promise<RewardApplicationResult>;
+  applyResolution(resolutionId: string, transaction?: TransactionClient): Promise<RewardApplicationResult>;
 }
 
 export interface SoloHuntRewardSourceReplayValidator {
@@ -114,6 +117,19 @@ export function createPgCaptureAttemptRepository(connectionString: string): Capt
     },
     commit(input) {
       return withPgClient({ connectionString }, (client) => commitCaptureAttempt(client, input));
+    },
+  };
+}
+
+export function createTransactionCaptureAttemptRepository(
+  client: CaptureDbClient,
+): CaptureAttemptRepository {
+  return {
+    loadByCorrelation(subjectPlayerId, attemptCorrelation) {
+      return loadCaptureAttemptByCorrelation(client, subjectPlayerId, attemptCorrelation);
+    },
+    commit(input) {
+      return commitCaptureAttemptInTransaction(client, input);
     },
   };
 }
@@ -194,6 +210,7 @@ export class SoloHuntRewardApplicationService {
   }
 
   async resolveAndApply(input: {
+    readonly transaction?: TransactionClient;
     readonly huntState: SoloHuntRuntimeState;
     readonly huntInputs: SoloHuntRuntimeInputs;
     readonly rewardSourceIdentity: string;
@@ -204,8 +221,11 @@ export class SoloHuntRewardApplicationService {
     readonly application: RewardApplicationResult;
   }> {
     const resolution = await this.resolver.resolve(input);
-    const claim = await this.application.claimResolution(resolution.envelope);
-    const application = await this.application.applyResolution(claim.resolution.resolutionId);
+    const claim = await this.application.claimResolution(resolution.envelope, input.transaction);
+    const application = await this.application.applyResolution(
+      claim.resolution.resolutionId,
+      input.transaction,
+    );
     return {
       resolution,
       claimStatus: claim.status,

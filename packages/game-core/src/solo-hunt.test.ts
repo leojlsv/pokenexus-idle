@@ -22,15 +22,20 @@ import { deriveEncounterIndividualizationAuthorityKeyIdV1 } from "./encounter-in
 import {
   advanceSoloHuntSegmentedToCutoff,
   decodeSoloHuntCheckpointV1,
+  decodeSoloHuntCheckpointV2,
   encodeSoloHuntCheckpointV1,
+  encodeSoloHuntCheckpointV2,
 } from "./solo-hunt-checkpoint";
 import {
   createFreshSoloHuntCadence,
   initializeSoloHuntEncounterBattle,
   pruneSoloHuntEndedOpponentCadence,
   advanceSoloHuntInterBattleCadence,
+  advanceSoloHuntToEncounterBoundaryOrCutoff,
   advanceSoloHuntToCutoff,
+  applySoloHuntExplicitHealing,
   createSoloHuntRuntime,
+  replayValidateSoloHuntCompletedCaptureSource,
   replayValidateSoloHuntCaptureSource,
   replayValidateSoloHuntRewardSource,
   resolveSoloHuntForcedReplacement,
@@ -1148,6 +1153,36 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     )).toBe(false);
   });
 
+  it("can stop exactly after one successful Encounter before later productive history", () => {
+    const inputs = runtimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:encounter-boundary",
+      inputs,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+
+    const bounded = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, 10_000);
+    expect(bounded.accepted).toBe(true);
+    if (!bounded.accepted) return;
+    expect(bounded.stopReason).toBe("encounterBoundary");
+    expect(bounded.state.completedEncounters).toHaveLength(1);
+    expect(bounded.state.currentEncounter).toBeUndefined();
+    expect(bounded.state.interBattle).toBeDefined();
+    expect(bounded.state.logicalTimeMs).toBeLessThan(10_000);
+
+    const resumed = advanceSoloHuntToCutoff(bounded.state, inputs, 10_000);
+    const direct = advanceSoloHuntToCutoff(created.state, inputs, 10_000);
+    expect(resumed.accepted).toBe(true);
+    expect(direct.accepted).toBe(true);
+    if (!resumed.accepted || !direct.accepted) return;
+    expect(resumed.state).toEqual(direct.state);
+    expect(resumed.stopReason).toBe(direct.stopReason);
+    expect([...bounded.events, ...resumed.events]).toEqual(direct.events);
+  });
+
   it.each([
     ["1h", 60 * 60 * 1000],
     ["8h", 8 * 60 * 60 * 1000],
@@ -1552,6 +1587,83 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(terminal.state.currentEncounter).toBeUndefined();
     expect(terminal.state.pendingEncounterSelection).toBeUndefined();
     expect(terminal.state.completedEncounters).toHaveLength(1);
+  });
+
+  it("replays an explicit heal applied mid-gap and preserves it across checkpoint round-trip", () => {
+    const cadenceEffectId = id<EffectId>("effect:runtime-cadence-chip");
+    const cadenceAbilityId = id<AbilityId>("ability:runtime-cadence-chip");
+    const effectContext: ResolvedCombatContext = {
+      ...runtimeContext,
+      abilityRules: {
+        [cadenceAbilityId]: {
+          abilityId: cadenceAbilityId,
+          reactions: [{
+            trigger: "battleStart",
+            target: "self",
+            order: 1,
+            effects: [{ kind: "applyEffect", effectId: cadenceEffectId }],
+          }],
+        },
+      },
+      effectRules: {
+        [cadenceEffectId]: {
+          effectId: cadenceEffectId,
+          lifetimeScope: "cadence",
+          stackingPolicy: "replace",
+          durationMs: 5000,
+          periodic: {
+            kind: "damage",
+            intervalMs: 1000,
+            magnitude: { kind: "integer", amount: 5 },
+          },
+        },
+      },
+    };
+    const inputs = {
+      ...runtimeInputs(effectContext),
+      team: [{ ...runtimeTeam[0], abilityId: cadenceAbilityId }],
+      interBattleGapMs: 5000,
+    };
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:gap-heal",
+      inputs,
+      policyRng: createRngState(81),
+      combatDeterministicState: { rng: createRngState(82) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+
+    const damaged = advanceSoloHuntToCutoff(created.state, inputs, 1000);
+    expect(damaged.accepted).toBe(true);
+    if (!damaged.accepted || !damaged.state.interBattle) return;
+    const playerKey = cadenceParticipantKey({
+      kind: "pokemonInstance",
+      identity: runtimeTeam[0].pokemonInstanceId,
+    });
+    const hpBefore = damaged.state.interBattle.cadence.hpByParticipant[playerKey];
+    const maxHp = damaged.state.interBattle.cadence.maxHpByParticipant[playerKey];
+    expect(hpBefore).toBeLessThan(maxHp);
+
+    const healed = applySoloHuntExplicitHealing(damaged.state, inputs, {
+      sourceIdentity: "heal-command:1",
+      acceptanceSequence: "7",
+      targetPokemonInstanceId: runtimeTeam[0].pokemonInstanceId,
+      magnitude: { kind: "integer", amount: 3 },
+    });
+    expect(healed.accepted).toBe(true);
+    if (!healed.accepted || !healed.state.interBattle) return;
+    expect(healed.event.healedHp).toBe(3);
+    expect(healed.state.interBattle.cadence.hpByParticipant[playerKey]).toBe(hpBefore + 3);
+
+    const decoded = decodeSoloHuntCheckpointV2(encodeSoloHuntCheckpointV2(healed.state));
+    expect(decoded.accepted).toBe(true);
+    if (!decoded.accepted) return;
+    expect(decoded.state.appliedHealingEvents).toEqual([healed.event]);
+
+    const resumed = advanceSoloHuntToCutoff(decoded.state, inputs, 2000);
+    expect(resumed.accepted).toBe(true);
+    if (!resumed.accepted || !resumed.state.interBattle) return;
+    expect(resumed.state.interBattle.cadence.hpByParticipant[playerKey]).toBe(hpBefore - 2);
   });
 
   it("fails closed atomically when completed Encounter evidence or capture handoff is forged", () => {
@@ -2116,6 +2228,20 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
       source: {
         subjectPlayerId: playerId,
         pendingCapture: won.state.pendingCaptureDecision,
+        snapshot: firstIndividual,
+      },
+    });
+    expect(replayValidateSoloHuntCompletedCaptureSource(
+      {
+        ...won.state,
+        pendingCaptureDecision: undefined,
+      },
+      inputs,
+      won.state.completedEncounters[0]!.encounterId,
+    )).toMatchObject({
+      accepted: true,
+      source: {
+        subjectPlayerId: playerId,
         snapshot: firstIndividual,
       },
     });

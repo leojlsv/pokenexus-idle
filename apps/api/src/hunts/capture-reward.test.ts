@@ -583,9 +583,9 @@ describe("SoloHuntRewardResolutionService", () => {
     expect(result.claimStatus).toBe("created");
     expect(result.application).toMatchObject({ status: "completed", replayed: false });
     expect(claimResolution).toHaveBeenCalledOnce();
-    expect(claimResolution).toHaveBeenCalledWith(result.resolution.envelope);
+    expect(claimResolution).toHaveBeenCalledWith(result.resolution.envelope, undefined);
     expect(result.resolution.envelope.effects).toEqual([]);
-    expect(applyResolution).toHaveBeenCalledWith("resolution:test");
+    expect(applyResolution).toHaveBeenCalledWith("resolution:test", undefined);
     expect(result.resolution.rngAfter).toEqual(result.resolution.rngBefore);
   });
 

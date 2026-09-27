@@ -16,3 +16,4 @@ export * from "./inventory-repository.js";
 export * from "./reward-repository.js";
 export * from "./capture-repository.js";
 export * from "./hunt-checkpoint-repository.js";
+export * from "./hunt-orchestration-repository.js";

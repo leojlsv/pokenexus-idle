@@ -255,8 +255,19 @@ export async function claimRewardResolution(
     readonly afterParentInserted?: () => Promise<void> | void;
   } = {},
 ): Promise<{ readonly status: "created" | "existing"; readonly resolution: RewardResolutionRecord }> {
-  const envelope = normalizeEnvelope(input);
-  return withTransaction(client, async (transaction) => {
+  return withTransaction(client, (transaction) =>
+    claimRewardResolutionInTransaction(transaction, input, options));
+}
+
+export async function claimRewardResolutionInTransaction(
+  transaction: RewardDbClient,
+  input: RewardResolutionEnvelope,
+  options: {
+    readonly now?: Date;
+    readonly afterParentInserted?: () => Promise<void> | void;
+  } = {},
+): Promise<{ readonly status: "created" | "existing"; readonly resolution: RewardResolutionRecord }> {
+    const envelope = normalizeEnvelope(input);
     const resolutionId = generateUuidV7();
     const inserted = await transaction.query<ResolutionRow>(
       `INSERT INTO pokenexus.reward_resolutions (
@@ -308,7 +319,6 @@ export async function claimRewardResolution(
     if (!existing) throw new Error("Reward Resolution conflict winner was not observable");
     if (!sameEnvelope(existing, envelope)) throw new RewardResolutionConflictError();
     return { status: "existing", resolution: existing };
-  });
 }
 
 export async function insertRewardCompletion(

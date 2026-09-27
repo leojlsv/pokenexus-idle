@@ -200,73 +200,78 @@ function pairKey(pair: StaticContextPairRef): string {
   return JSON.stringify([pair.gameDataVersion, pair.rulesVersion]);
 }
 
-function createConfiguredMoveContextLoader(env: PlayerStateEnvironment): MoveEligibilityContextLoader {
-  try {
-    const selectedPair = {
-      gameDataVersion: required(
-        env.PLAYER_STATE_MOVE_GAME_DATA_VERSION,
-        "PLAYER_STATE_MOVE_GAME_DATA_VERSION",
-      ),
-      rulesVersion: required(
-        env.PLAYER_STATE_MOVE_RULES_VERSION,
-        "PLAYER_STATE_MOVE_RULES_VERSION",
-      ),
-    };
-    const pairReleases = uniqueBy(parsePairReleases(env.PLAYER_STATE_MOVE_CONTEXT_RELEASES), pairKey, "Move context");
-    const gameDataReleases = uniqueBy(
-      parseGameDataReleases(env.PLAYER_STATE_MOVE_GAME_DATA_RELEASES),
-      ({ gameDataVersion }) => gameDataVersion,
-      "Move game-data",
-    );
-    const rulesReleases = parseRulesReleases(env.PLAYER_STATE_MOVE_RULE_RELEASES);
+export function createConfiguredMoveAuthorities(env: PlayerStateEnvironment) {
+  const selectedPair = {
+    gameDataVersion: required(
+      env.PLAYER_STATE_MOVE_GAME_DATA_VERSION,
+      "PLAYER_STATE_MOVE_GAME_DATA_VERSION",
+    ),
+    rulesVersion: required(
+      env.PLAYER_STATE_MOVE_RULES_VERSION,
+      "PLAYER_STATE_MOVE_RULES_VERSION",
+    ),
+  };
+  const pairReleases = uniqueBy(parsePairReleases(env.PLAYER_STATE_MOVE_CONTEXT_RELEASES), pairKey, "Move context");
+  const gameDataReleases = uniqueBy(
+    parseGameDataReleases(env.PLAYER_STATE_MOVE_GAME_DATA_RELEASES),
+    ({ gameDataVersion }) => gameDataVersion,
+    "Move game-data",
+  );
+  const rulesReleases = parseRulesReleases(env.PLAYER_STATE_MOVE_RULE_RELEASES);
 
-    const selector: NewOperationStaticContextSelector = {
-      async select() {
-        return { ...selectedPair };
+  const selector: NewOperationStaticContextSelector = {
+    async select() {
+      return { ...selectedPair };
+    },
+  };
+  const staticContextPairs: ExactStaticContextPairAuthority = {
+    async resolve(pair) {
+      const release = pairReleases.get(pairKey(pair));
+      return release
+        ? {
+          compatibility: {
+            gameDataVersion: release.gameDataVersion,
+            rulesVersion: release.rulesVersion,
+          },
+          newOperationsAllowed: release.newOperationsAllowed,
+        }
+        : null;
+    },
+  };
+  const gameDataVersions: ExactGameDataVersionAuthority = {
+    async resolve(gameDataVersion) {
+      const release = gameDataReleases.get(gameDataVersion);
+      return release ? { ...release } : null;
+    },
+  };
+  const rulesVersions = createConfiguredMoveEligibilityRulesVersionResolver(
+    rulesReleases.map((release) => ({
+      rules: {
+        rulesVersion: release.rulesVersion,
+        moveEligibilityRuleArtifactId: MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
+        moveEligibilityRuleSemanticsHash: MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
+        productionSelectability: release.productionSelectability
+          ? { ...release.productionSelectability }
+          : undefined,
       },
-    };
-    const staticContextPairs: ExactStaticContextPairAuthority = {
-      async resolve(pair) {
-        const release = pairReleases.get(pairKey(pair));
-        return release
-          ? {
-            compatibility: {
-              gameDataVersion: release.gameDataVersion,
-              rulesVersion: release.rulesVersion,
-            },
-            newOperationsAllowed: release.newOperationsAllowed,
-          }
-          : null;
-      },
-    };
-    const gameDataVersions: ExactGameDataVersionAuthority = {
-      async resolve(gameDataVersion) {
-        const release = gameDataReleases.get(gameDataVersion);
-        return release ? { ...release } : null;
-      },
-    };
-    const rulesVersions = createConfiguredMoveEligibilityRulesVersionResolver(
-      rulesReleases.map((release) => ({
-        rules: {
-          rulesVersion: release.rulesVersion,
-          moveEligibilityRuleArtifactId: MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
-          moveEligibilityRuleSemanticsHash: MOVE_ELIGIBILITY_RULE_SEMANTICS_HASH,
-          productionSelectability: release.productionSelectability
-            ? { ...release.productionSelectability }
-            : undefined,
-        },
-        newOperationsAllowed: release.newOperationsAllowed,
-      })),
-    );
-    const gameDataReader = createHttpGameDataReader(
-      required(env.PLAYER_STATE_GAME_DATA_BASE_URL, "PLAYER_STATE_GAME_DATA_BASE_URL"),
-    );
+      newOperationsAllowed: release.newOperationsAllowed,
+    })),
+  );
+  const gameDataReader = createHttpGameDataReader(
+    required(env.PLAYER_STATE_GAME_DATA_BASE_URL, "PLAYER_STATE_GAME_DATA_BASE_URL"),
+  );
+  return { selector, staticContextPairs, gameDataVersions, rulesVersions, gameDataReader };
+}
+
+export function createConfiguredMoveContextLoader(env: PlayerStateEnvironment): MoveEligibilityContextLoader {
+  try {
+    const authorities = createConfiguredMoveAuthorities(env);
     return createMoveEligibilityContextLoader({
-      selector,
-      staticContextPairs,
-      gameDataVersions,
-      rulesVersions,
-      gameData: createRuntimeMoveEligibilityGameDataLoader(gameDataReader),
+      selector: authorities.selector,
+      staticContextPairs: authorities.staticContextPairs,
+      gameDataVersions: authorities.gameDataVersions,
+      rulesVersions: authorities.rulesVersions,
+      gameData: createRuntimeMoveEligibilityGameDataLoader(authorities.gameDataReader),
       productionCatalogs: createDefaultProductionCombatCatalogResolver(),
     });
   } catch (error) {

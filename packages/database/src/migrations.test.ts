@@ -83,7 +83,8 @@ describe("discoverMigrations", () => {
 
   it("publishes TASK-037 checkpoint claim authority after capture resolution", async () => {
     const migrations = await discoverMigrations();
-    expect(migrations.at(-1)?.fileName).toBe("0008_hunt_checkpoint_claim.sql");
+    expect(migrations.find(({ fileName }) => fileName === "0008_hunt_checkpoint_claim.sql")?.fileName)
+      .toBe("0008_hunt_checkpoint_claim.sql");
     const sql = await readFile(join(canonicalMigrationsDirectory, "0008_hunt_checkpoint_claim.sql"), "utf8");
     expect(sql).toContain("ADD COLUMN hunt_run_identity bytea NOT NULL");
     expect(sql).toContain("ADD COLUMN logical_time_anchor_at timestamptz NOT NULL");
@@ -93,5 +94,17 @@ describe("discoverMigrations", () => {
     expect(sql).toContain("target_wall_clock_at timestamptz NOT NULL");
     expect(sql).toContain("command_status text NOT NULL");
     expect(sql).toContain("result_state_bytes bytea");
+  });
+
+  it("publishes TASK-038 authoritative Hunt orchestration after checkpoint claims", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.at(-1)?.fileName).toBe("0009_authoritative_hunt_api.sql");
+    const sql = await readFile(join(canonicalMigrationsDirectory, "0009_authoritative_hunt_api.sql"), "utf8");
+    expect(sql).toContain("CREATE TABLE pokenexus.player_hunt_roots");
+    expect(sql).toContain("CREATE UNIQUE INDEX solo_hunts_one_active_per_player_idx");
+    expect(sql).toContain("UNIQUE (player_id, idempotency_key)");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_auto_capture_policies");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_encounter_boundaries");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_healing_commands");
   });
 });

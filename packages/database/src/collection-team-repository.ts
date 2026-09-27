@@ -94,6 +94,11 @@ export interface OwnedTeamPage {
   readonly nextAfterTeamId: string | null;
 }
 
+export interface OwnedTeamSnapshot {
+  readonly team: OwnedTeamRecord;
+  readonly pokemon: readonly OwnedPokemonRecord[];
+}
+
 export type TeamCreateCommandResult =
   | {
       readonly status: "accepted";
@@ -755,6 +760,34 @@ export async function loadOwnedTeam(
     [ownerPlayerId, teamId],
   );
   return mapTeamAggregate(result.rows);
+}
+
+/**
+ * Locks the reusable Team and every pinned member row before materializing one coherent activity snapshot.
+ * Team roster and Pokémon Move/Ability mutations lock the same rows, so start observes one serial order.
+ */
+export async function loadAndLockOwnedTeamSnapshot(
+  client: CollectionTeamDbClient,
+  ownerPlayerId: string,
+  teamId: string,
+): Promise<OwnedTeamSnapshot | null> {
+  const currentTeamVersion = await lockOwnedTeamVersion(client, ownerPlayerId, teamId);
+  if (currentTeamVersion === null) return null;
+  const team = await loadOwnedTeam(client, ownerPlayerId, teamId);
+  if (team === null || team.rowVersion !== currentTeamVersion) {
+    throw new Error("Locked Team snapshot changed unexpectedly");
+  }
+  const pokemon: OwnedPokemonRecord[] = [];
+  for (const pokemonInstanceId of team.pokemonInstanceIds) {
+    const version = await lockOwnedPokemonVersion(client, ownerPlayerId, pokemonInstanceId);
+    if (version === null) return null;
+    const record = await loadOwnedPokemon(client, ownerPlayerId, pokemonInstanceId);
+    if (record === null || record.rowVersion !== version) {
+      throw new Error("Locked Pokémon snapshot changed unexpectedly");
+    }
+    pokemon.push(record);
+  }
+  return { team, pokemon };
 }
 
 export async function listOwnedTeams(
