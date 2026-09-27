@@ -12,9 +12,9 @@
 
 **Current work:** `TASK-096 — Idle/Gacha Progression & Acquisition Model`, `TASK-097 — Encounter Individualization & Genetics Runtime`, and `TASK-036 — Capture & Reward Resolution` are **DONE** and integrated into canonical `main` after explicit Human Owner repository/history authorization. The integrated implementation preserves correlation-first durable capture replay with frozen RNG-origin binding, exact production-executable Move authority, replay-validated reward-source authenticity, and authoritative TASK-097 IV/Genetics/Profile/Shiny provenance. Atomic Ball debit/Pokémon creation/Species Research/attempt evidence, PostgreSQL concurrency/rollback coverage, Worker compatibility and workspace validation are green. Deploy and production cutover remain separate gates. TASK-035 remains DONE/canonical. The approved acquisition authority includes Genetics/Shiny separation, Hunt-authored encounter rates, structural auto-capture, no Epic+/Apex/capture protection, final Genetic Profiles `Harmony / Might / Clarity / Endurance / Resilience` with exactly two compatible Profiles per Species/form selected 50/50, center-weighted canonical IV generation `U[0,15] + U[0,16]` per stat, exact Genetic Score→Budget bands/interpolation, the Genetic-aware stat formula `2*BaseStat + IV + perStatGeneticBonus` under a new immutable combat rules version, default Genetic Grade probabilities `55/28/12/4/1%`, Shiny `1/16384`, Species Research count-only duplicate progression, fail-closed Genetics/Shiny/Ascendant persistence/legacy authority, the 8–82% capture curve, Genetic capture modifiers, Ball ladder `Poké 1.00 / Great 1.25 / Super 1.50 / Ultra 2.00 / VIP 2.25`, supply hierarchy and reserve-aware visible-condition auto-capture. Human-approved **Ascendant** is `Shiny + Apex` with Resonance across the two frozen compatible Profiles and no higher Score/Budget/stat ceiling.
 
-**Current action:** proceed to `TASK-038 — Authoritative Hunt API / Persistence Orchestration`. `TASK-037 — Offline / Elapsed-Time Checkpoint & Claim Engine` is **DONE** and canonically integrated after final QA/IA/Class-B gates cleared `0/0/0/0` and Human Owner repository/history authorization. Deploy and production cutover remain separately gated.
+**Current action:** `TASK-098 — Authoritative Hunt API Contract Spec` is **DONE** after QA/IA/GSC/PXE review, Human semantic acceptance and separate repository/history authorization; SPEC-015 is **APPROVED**. `TASK-038` remains PLANNED until the approved TASK-098 snapshot is canonically integrated, then becomes the next Class B implementation task. `TASK-037` remains DONE/canonical. Deploy and production cutover remain separately gated.
 
-**Next task after TASK-003 acceptance:** `TASK-038 — Authoritative Hunt API / Persistence Orchestration`.
+**Next task after TASK-003 acceptance:** activate `TASK-038 — Authoritative Hunt API / Persistence Orchestration` after canonical TASK-098 integration.
 
 **Portfolio status snapshot:**
 
@@ -58,12 +58,12 @@
 | `TASK-036` Capture & Reward Resolution | DONE — final QA READY, IA PASS and Class-B ACCEPT `0/0/0/0`; repository/history completion authorized and integrated 2026-09-26 |
 | `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | DONE — final QA READY, IA PASS and Class-B ACCEPT `0/0/0/0`; repository/history completion authorized and integrated 2026-09-27 |
 
-**Next product milestone:** authoritative Hunt API/persistence orchestration (`TASK-038`).
+**Next product milestone:** implement authoritative Hunt API/persistence orchestration (`TASK-038`) against the approved public Hunt protocol (`TASK-098 / SPEC-015`).
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-097`.
-- DONE: 42.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-098`.
+- DONE: 43.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
@@ -73,7 +73,7 @@
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 56.
-- Task-count completion: **42 / 98 = 42.9%**.
+- Task-count completion: **43 / 99 = 43.4%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -425,7 +425,7 @@ implementation Task before code is written.
 
 **Exit criteria:** one shared engine resolves battle state/events deterministically; tests prove replayability; measured budgets show TypeScript is viable; canonical Species/Move/Ability/Learnset data is published through TASK-087; and the production Move/Ability rule-content subset required by MVP is accepted and implemented through TASK-090/091.
 
-**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089, TASK-094, TASK-025, TASK-090, TASK-091, TASK-095, TASK-035, TASK-096, TASK-097 and TASK-036 are DONE. TASK-037 is the active downstream checkpoint/offline work; TASK-038 remains downstream and no public capture orchestration was added by TASK-036.
+**Safe parallelization:** the completed TASK-007..011 engine line remains frozen. TASK-092, TASK-087, TASK-024, TASK-088, TASK-089, TASK-094, TASK-025, TASK-090, TASK-091, TASK-095, TASK-035, TASK-096, TASK-097, TASK-036, TASK-037 and TASK-098 are DONE. TASK-038 is the next downstream implementation task and starts only after canonical TASK-098 integration.
 
 **Production combat-rule content gate:** TASK-009 implements the accepted resolver plus explicit
 fixtures; it must not invent broad status-Move/Ability/complex-Move semantics. TASK-090 owns the
@@ -546,7 +546,8 @@ content relies on those mechanics.
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-038` Hunt API & Persistence Orchestration | B | PLANNED | LD → Copilot CLI | QA | `SK-CF-WBP` reference-only, `SK-PG`, `SK-TDD` | PM acceptance | TASK-017/025/036/037/096/097 | Start/checkpoint/claim/cancel + manual capture commands; persist/version auto-capture enabled/per-Ball permissions/reserves/visible-condition rules; pin configuration by logical interval; compose TASK-036 atomically/idempotently; before enable/save explicitly warn that uncovered/unavailable/reserve-blocked opportunities (including visible Shiny) are permanently lost with no fallback/queue and later config is forward-only; authz/recovery. No-living terminalization remains automatic; baseline revival remains deferred |
+| `TASK-098` Authoritative Hunt API Contract Spec | A | DONE | PM → ChatGPT | QA READY + IA PASS `0/0/0/0`; GSC/PXE complete | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only | **COMPLETED — Human semantic acceptance + separate repository/history authorization 2026-09-27** | TASK-017/024/025/033/035/036/037/096/097 | SPEC-015 is APPROVED and freezes self-scoped Hunt routes/payloads, durable command idempotency, fixed-cutoff mapping, one-active-Hunt/recovery/no-free-reroll persistence, explicit inter-Battle healing-item transport, manual capture, versioned forward-only auto-capture policy, per-Encounter automatic capture boundary and reward/capture ordering before TASK-038 code |
+| `TASK-038` Hunt API & Persistence Orchestration | B | PLANNED | LD → Copilot CLI | QA | `SK-CF-WBP` reference-only, `SK-PG`, `SK-TDD` | PM acceptance | TASK-017/025/036/037/096/097/098 | Implement accepted SPEC-015 start/checkpoint/claim/retreat + explicit inter-Battle healing-item + manual capture commands; persist/version auto-capture enabled/per-Ball permissions/reserves/visible-condition rules; pin configuration by logical interval; compose TASK-024/036/037 atomically/idempotently; authz/recovery and automatic capture boundary. No-living terminalization remains automatic; baseline revival remains deferred |
 | `TASK-039` Solo Hunt Card Mode Integration | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-029/038 | PvE world/map/Zone selection in Card/Low-Spec presentation; team selection; Hunt state; event playback; automatic no-living terminal result with return/navigation presentation (baseline revival is unavailable); rewards/result states; errors/reconnect; behavior/E2E coverage |
 | `TASK-040` Solo Hunt Visual/Pixi Integration | B | PLANNED | FE → Claude Code | QA | `SK-GAME-PERF`, `SK-UI`, `SK-FE-TEST` | **HUMAN visual/live validation** | TASK-030/038 | Visual/Pixi presentation of the accepted PvE world/map/Zone navigation and the same Hunt/event source as Card; animations; scene transitions; automatic no-living terminal result and return/navigation presentation; performance/fallback; behavior/E2E coverage |
 | `TASK-041` Solo Hunt End-to-End, Offline & Performance Harness | B | PLANNED | SD → Codex | QA + IA reward-integrity review | `SK-GAME-PERF`, `SK-TDD` | **HUMAN MVP acceptance** | TASK-034–040 | Implement E2E/regression harness; fresh/returning flows; offline 1h/8h; deterministic replay; duplicate-claim defense; Card/Visual parity; load/CPU budget |
