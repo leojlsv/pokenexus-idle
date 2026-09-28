@@ -14,7 +14,7 @@
 
 **Current action:** `TASK-027 — React App Shell & Navigation` and `TASK-028 — Combat Presentation Event Contract` are **DONE**. TASK-028 closed after corrective QA READY `0/0/0/0`, delegated Class-B ACCEPT, and explicit Human Owner repository/history authorization on 2026-09-27. `TASK-099 — Pokémon Sprite Generation Lab` remains **DEFERRED**/retired with no active implementation. `TASK-029`, `TASK-030` and `TASK-100` are now dependency-ready. Push, deploy and production cutover remain separately gated.
 
-**Next task after TASK-003 acceptance:** TASK-027 and TASK-028 may proceed in parallel now that TASK-026 is DONE; `TASK-039/040` remain gated by their renderer prerequisites.
+**Next task after TASK-003 acceptance:** TASK-029 and TASK-030 may proceed in parallel now that TASK-027/TASK-028 are DONE; TASK-100 is also dependency-ready, while `TASK-039/040` remain gated by their renderer prerequisites.
 
 **Portfolio status snapshot:**
 
