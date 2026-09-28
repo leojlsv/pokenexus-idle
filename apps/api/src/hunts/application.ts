@@ -90,6 +90,7 @@ import {
   type ManualCaptureRequest,
   type StartHuntRequest,
 } from "./protocol";
+import { noLivingHuntDisposition, publicRetreatTerminalReason } from "./terminal-disposition";
 
 export interface HuntHttpResult {
   readonly httpStatus: number;
@@ -2196,11 +2197,7 @@ export class HuntApplication implements HuntHttpApplication {
     command: HuntPublicCommandRecord,
     state: SoloHuntRuntimeState,
   ): Promise<HuntHttpResult | null> {
-    const terminalReason = state.terminalReason === "noLivingTeam"
-      ? "no_living"
-      : state.terminalReason === "draw"
-        ? "draw"
-        : "opponent_victory";
+    const terminalReason = noLivingHuntDisposition(state.terminalReason);
     return withPgClient({ connectionString: this.connectionString }, (client) =>
       withTransaction(client, async (transaction) => {
         const root = await ensureAndLockPlayerHuntRoot(transaction, playerId);
@@ -3089,13 +3086,9 @@ export class HuntApplication implements HuntHttpApplication {
     command: HuntPublicCommandRecord,
     kind: "checkpoint" | "claim" | "retreat",
     state: SoloHuntRuntimeState,
-    reason: string,
+    reason: NonNullable<SoloHuntRuntimeState["terminalReason"]> | "no_living" | "opponent_victory",
   ): Promise<HuntHttpResult> {
-    const terminalReason = reason === "noLivingTeam" || reason === "no_living"
-      ? "no_living"
-      : reason === "draw"
-        ? "draw"
-        : "opponent_victory";
+    const terminalReason = noLivingHuntDisposition(reason);
     let ballAuthority: CaptureBallAuthorityRelease | null = null;
     if (kind !== "retreat") {
       try {
@@ -3115,17 +3108,9 @@ export class HuntApplication implements HuntHttpApplication {
         if (!lockedHunt) return error(503, "authority_unavailable");
         if (lockedHunt.terminalAt) {
           if (kind === "retreat") {
-            if (
-              lockedHunt.terminalReason !== "no_living"
-              && lockedHunt.terminalReason !== "retreat"
-              && lockedHunt.terminalReason !== "opponent_victory"
-              && lockedHunt.terminalReason !== "draw"
-            ) {
-              throw new Error("Retreat converged on an unsupported v1 terminal reason");
-            }
             const resultBody = {
               status: "terminal",
-              terminalReason: lockedHunt.terminalReason,
+              terminalReason: publicRetreatTerminalReason(lockedHunt.terminalReason),
               recoveryReadyAt: new Date(
                 lockedHunt.terminalAt.getTime() + lockedHunt.recoveryDurationMs,
               ).toISOString(),
@@ -3158,7 +3143,7 @@ export class HuntApplication implements HuntHttpApplication {
         const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
-          terminalReason: terminalReason === "no_living" ? "no_living" : terminalReason,
+          terminalReason,
           recoveryDurationMs: hunt.recoveryDurationMs,
         });
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
@@ -3166,7 +3151,7 @@ export class HuntApplication implements HuntHttpApplication {
         if (kind === "retreat") {
           resultBody = {
             status: "terminal",
-            terminalReason: terminalReason === "no_living" ? "no_living" : "retreat",
+            terminalReason,
             recoveryReadyAt: terminal.recoveryReadyAt.toISOString(),
           };
         } else {
@@ -3202,17 +3187,9 @@ export class HuntApplication implements HuntHttpApplication {
         const lockedHunt = await loadOwnedSoloHunt(transaction, playerId, hunt.huntId, true);
         if (!lockedHunt) return error(503, "authority_unavailable");
         if (lockedHunt.terminalAt) {
-          if (
-            lockedHunt.terminalReason !== "no_living"
-            && lockedHunt.terminalReason !== "retreat"
-            && lockedHunt.terminalReason !== "opponent_victory"
-            && lockedHunt.terminalReason !== "draw"
-          ) {
-            throw new Error("Retreat converged on an unsupported v1 terminal reason");
-          }
           const resultBody = {
             status: "terminal",
-            terminalReason: lockedHunt.terminalReason,
+            terminalReason: publicRetreatTerminalReason(lockedHunt.terminalReason),
             recoveryReadyAt: new Date(
               lockedHunt.terminalAt.getTime() + lockedHunt.recoveryDurationMs,
             ).toISOString(),
@@ -3267,17 +3244,9 @@ export class HuntApplication implements HuntHttpApplication {
         if (!lockedHunt?.terminalAt) {
           return error(503, "authority_unavailable");
         }
-        if (
-          lockedHunt.terminalReason !== "no_living"
-          && lockedHunt.terminalReason !== "retreat"
-          && lockedHunt.terminalReason !== "opponent_victory"
-          && lockedHunt.terminalReason !== "draw"
-        ) {
-          throw new Error("Retreat converged on an unsupported v1 terminal reason");
-        }
         const resultBody = {
           status: "terminal",
-          terminalReason: lockedHunt.terminalReason,
+          terminalReason: publicRetreatTerminalReason(lockedHunt.terminalReason),
           recoveryReadyAt: new Date(
             lockedHunt.terminalAt.getTime() + lockedHunt.recoveryDurationMs,
           ).toISOString(),
@@ -3305,11 +3274,7 @@ export class HuntApplication implements HuntHttpApplication {
     } catch {
       return error(503, "authority_unavailable");
     }
-    const terminalReason = state.terminalReason === "noLivingTeam"
-      ? "no_living"
-      : state.terminalReason === "draw"
-        ? "draw"
-        : "opponent_victory";
+    const terminalReason = noLivingHuntDisposition(state.terminalReason);
     return withPgClient({ connectionString: this.connectionString }, (client) =>
       withTransaction(client, async (transaction) => {
         const root = await ensureAndLockPlayerHuntRoot(transaction, playerId);

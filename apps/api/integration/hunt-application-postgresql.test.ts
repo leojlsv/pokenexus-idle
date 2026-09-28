@@ -1,6 +1,7 @@
 import {
   encodeOpaqueStringDbV1,
   claimPublicHuntCommandInTransaction,
+  completePublicHuntCommandInTransaction,
   claimRewardResolution,
   closePendingManualCaptureInTransaction,
   createPendingManualCaptureIfFreeInTransaction,
@@ -989,7 +990,9 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     expect(durable?.status).toBe("pending");
   });
 
-  it("converges a pending retreat onto the actual draw terminal reason without advancing the terminal Hunt", async () => {
+  it.each(["draw", "opponent_victory"] as const)(
+    "converges pending retreat onto public no_living from persisted %s without advancing terminal Hunt",
+    async (legacyReason) => {
     const seeded = await seedPlayerTeamAndPotion();
     const harness = application();
     const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
@@ -1027,7 +1030,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId: seeded.playerId,
           huntId,
-          terminalReason: "draw",
+          terminalReason: legacyReason,
           recoveryDurationMs: hunt.recoveryDurationMs,
         });
         expectedRecoveryReadyAt = terminal.recoveryReadyAt;
@@ -1051,14 +1054,82 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       httpStatus: 200,
       body: {
         status: "terminal",
-        terminalReason: "draw",
+        terminalReason: "no_living",
         recoveryReadyAt: expectedRecoveryReadyAt?.toISOString(),
       },
     });
+    expect(await harness.app.retreat(seeded.playerId, key, huntId)).toEqual(retry);
+    const legacyTerminal = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    expect(legacyTerminal?.terminalReason).toBe(legacyReason);
+    expect(legacyTerminal?.terminalAt).not.toBeNull();
     const afterRetry = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
     expect(afterRetry?.rowVersion).toBe(beforeRetry?.rowVersion);
     expect(afterRetry?.logicalTimeMs).toBe(beforeRetry?.logicalTimeMs);
+  });
+
+  it("does not rewrite a historical completed retreat command carrying a legacy terminal payload", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing checkpoint fixture");
+    const key = generateUuidV7();
+    const intent = { huntId };
+    const intentHash = await hashNormalizedIntent(intent);
+    let historicalBody: {
+      status: "terminal";
+      terminalReason: "draw";
+      recoveryReadyAt: string;
+    } | null = null;
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const root = await ensureAndLockPlayerHuntRoot(transaction, seeded.playerId);
+        if (!root) throw new Error("missing Player Hunt root");
+        const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: key,
+          commandKind: "retreat",
+          intentHash,
+          intentJson: intent,
+          sourceHuntId: huntId,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs: checkpoint.logicalTimeMs + 100,
+          targetWallClockAt: root.databaseNow,
+        });
+        if (claimed.status !== "accepted") throw new Error("expected first claim");
+        const terminal = await terminalizeSoloHuntInTransaction(transaction, {
+          playerId: seeded.playerId,
+          huntId,
+          terminalReason: "draw",
+          recoveryDurationMs: hunt.recoveryDurationMs,
+        });
+        historicalBody = {
+          status: "terminal",
+          terminalReason: "draw",
+          recoveryReadyAt: terminal.recoveryReadyAt.toISOString(),
+        };
+        await completePublicHuntCommandInTransaction(
+          transaction, claimed.command.commandId, 200, historicalBody,
+        );
+      }));
+
+    const replay = await harness.app.retreat(seeded.playerId, key, huntId);
+    expect(replay).toEqual({ httpStatus: 200, body: historicalBody });
+    expect(await harness.app.retreat(seeded.playerId, key, huntId)).toEqual(replay);
+    const persisted = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, key));
+    expect(persisted?.resultJson).toEqual(historicalBody);
+    expect(persisted?.status).toBe("terminal");
   });
 
   it("finalizes an old pending checkpoint against its terminal Hunt even after a newer Hunt starts", async () => {

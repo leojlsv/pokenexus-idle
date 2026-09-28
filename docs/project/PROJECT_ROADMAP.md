@@ -70,8 +70,8 @@
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-100`.
-- DONE: 50.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-101`.
+- DONE: 51.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
@@ -81,7 +81,7 @@
 - BLOCKED: 0.
 - DEFERRED: 1.
 - PLANNED: 50.
-- Task-count completion: **50 / 101 = 49.5%**.
+- Task-count completion: **51 / 102 = 50.0%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -558,6 +558,7 @@ content relies on those mechanics.
 |---|---|---|---|---|---|---|---|---|
 | `TASK-098` Authoritative Hunt API Contract Spec | A | DONE | PM → ChatGPT | QA READY + IA PASS `0/0/0/0`; GSC/PXE complete | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only | **COMPLETED — Human semantic acceptance + separate repository/history authorization 2026-09-27** | TASK-017/024/025/033/035/036/037/096/097 | SPEC-015 is APPROVED and freezes self-scoped Hunt routes/payloads, durable command idempotency, fixed-cutoff mapping, one-active-Hunt/recovery/no-free-reroll persistence, explicit inter-Battle healing-item transport, manual capture, versioned forward-only auto-capture policy, per-Encounter automatic capture boundary and reward/capture ordering before TASK-038 code |
 | `TASK-038` Hunt API & Persistence Orchestration | B | DONE | LD → current ChatGPT implementation session | Exact-current QA **READY** + IA **PASS**, no unresolved P0/P1; fresh independent Class-B **ACCEPT** | `SK-CF-WBP` reference-only, `SK-PG`, `SK-TDD` | **COMPLETED — Human Owner repository/history completion authorized 2026-09-27; deploy separately gated** | TASK-017/025/036/037/096/097/098 | Accepted SPEC-015 implementation: self-scoped start/checkpoint/claim/retreat; durable fixed-cutoff command replay/expiry/tombstones; explicit inter-Battle healing; Player-wide manual capture; versioned forward-only auto-capture policy; same-Zone no-free-reroll with exact retained authority; pre-reward Inventory automatic capture; atomic reward/capture/checkpoint composition. API unit `158/158`; Hunt PG `17/17`; API PG `54/54`; DB PG `87/87`; serialized workspace/lint/typecheck/build PASS. No-living terminalization remains automatic; baseline revival remains deferred |
+| `TASK-101` TASK-038 Retreat Terminal Contract Correction | B | DONE | LD → ChatGPT | **Independent QA PASS WITH P2; IA PASS WITH P2; Class-B functional/architectural acceptance, 0 P0/0 P1** | `SK-API-SEC`, `SK-PG`, `SK-TDD` | **COMPLETED — Human authorized local commit/merge 2026-09-28; push/deploy separately gated** | TASK-033/035/038/098 | Approved SPEC-015 §8 public retreat terminal union `retreat/no_living` for new and converged commands; immutable completed replay, recovery anchors and Combat outcomes preserved. API unit 166/166, API PG 56/56, DB PG 87/87, game-core 460/460 PASS; independent mapping tests 8/8 PASS. P2 deferred: loss/draw API E2E and incompatible legacy completed replay require separately scoped TASK-039 cutover/UX handling. |
 | `TASK-039` Solo Hunt Card Mode Integration | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-029/038 | PvE world/map/Zone selection in Card/Low-Spec presentation; team selection; Hunt state; event playback; SPEC-015 Hunt/settings UI for persisted auto-capture policy, one-manual-pending capacity, forward-only policy boundaries, same-key `202 in_progress`, `202 waiting_boundary` healing and `410 idempotency_gone`; automatic no-living terminal result with return/navigation presentation (baseline revival is unavailable); rewards/result states; errors/reconnect; behavior/E2E coverage |
 | `TASK-040` Solo Hunt Visual/Pixi Integration | B | PLANNED | FE → Claude Code | QA | `SK-GAME-PERF`, `SK-UI`, `SK-FE-TEST` | **HUMAN visual/live validation** | TASK-030/038 | Visual/Pixi presentation of the accepted PvE world/map/Zone navigation and the same Hunt/event source as Card; animations; scene transitions; automatic no-living terminal result and return/navigation presentation; performance/fallback; behavior/E2E coverage |
 | `TASK-041` Solo Hunt End-to-End, Offline & Performance Harness | B | PLANNED | SD → Codex | QA + IA reward-integrity review | `SK-GAME-PERF`, `SK-TDD` | **HUMAN MVP acceptance** | TASK-034–040 | Implement E2E/regression harness; fresh/returning flows; offline 1h/8h; deterministic replay; duplicate-claim defense; Card/Visual parity; load/CPU budget |
