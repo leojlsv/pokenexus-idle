@@ -453,8 +453,7 @@ must not create a second settings/command authority path.
 ## 14. Move-loadout implementation ownership
 
 The roadmap requires TASK-026 to ensure Move-loadout editing has explicit downstream ownership before editor code is
-written. `TASK-099` is already occupied by the Human-approved parallel Sprite Generation Lab, so the next canonical
-task ID is `TASK-100`.
+written. `TASK-100` is the canonical downstream task for that ownership.
 
 `TASK-100 — Collection, Pokémon & Team Management UI` owns the authenticated management surfaces after TASK-027 has
 provided the application shell: Collection/Pokémon detail, saved-Team management and ordered Move-loadout editing

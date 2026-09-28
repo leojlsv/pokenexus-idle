@@ -106,9 +106,6 @@ UX or presentation semantics.
 - `docs/project/PROJECT_ROADMAP.md`
 - `docs/project/PROJECT_ROADMAP.html` (generated)
 - this task file
-- `tasks/active/TASK-099-pokemon-sprite-generation-lab.md` only as an exact governance mirror of the already-active
-  parallel lab, required because the contiguous canonical roadmap now exposes TASK-099 before newly planned TASK-100;
-  TASK-026 does not edit or execute the lab scope
 - no production implementation under `apps/web/src/**` is required by TASK-026
 
 ## Completion
