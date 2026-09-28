@@ -12,9 +12,9 @@
 
 **Current work:** `TASK-096 — Idle/Gacha Progression & Acquisition Model`, `TASK-097 — Encounter Individualization & Genetics Runtime`, and `TASK-036 — Capture & Reward Resolution` are **DONE** and integrated into canonical `main` after explicit Human Owner repository/history authorization. The integrated implementation preserves correlation-first durable capture replay with frozen RNG-origin binding, exact production-executable Move authority, replay-validated reward-source authenticity, and authoritative TASK-097 IV/Genetics/Profile/Shiny provenance. Atomic Ball debit/Pokémon creation/Species Research/attempt evidence, PostgreSQL concurrency/rollback coverage, Worker compatibility and workspace validation are green. Deploy and production cutover remain separate gates. TASK-035 remains DONE/canonical. The approved acquisition authority includes Genetics/Shiny separation, Hunt-authored encounter rates, structural auto-capture, no Epic+/Apex/capture protection, final Genetic Profiles `Harmony / Might / Clarity / Endurance / Resilience` with exactly two compatible Profiles per Species/form selected 50/50, center-weighted canonical IV generation `U[0,15] + U[0,16]` per stat, exact Genetic Score→Budget bands/interpolation, the Genetic-aware stat formula `2*BaseStat + IV + perStatGeneticBonus` under a new immutable combat rules version, default Genetic Grade probabilities `55/28/12/4/1%`, Shiny `1/16384`, Species Research count-only duplicate progression, fail-closed Genetics/Shiny/Ascendant persistence/legacy authority, the 8–82% capture curve, Genetic capture modifiers, Ball ladder `Poké 1.00 / Great 1.25 / Super 1.50 / Ultra 2.00 / VIP 2.25`, supply hierarchy and reserve-aware visible-condition auto-capture. Human-approved **Ascendant** is `Shiny + Apex` with Resonance across the two frozen compatible Profiles and no higher Score/Budget/stat ceiling.
 
-**Current action:** `TASK-038 — Authoritative Hunt API / Persistence Orchestration` is **DONE** after exact-current QA READY, Independent Auditor PASS, fresh independent delegated Class-B ACCEPT and explicit Human Owner repository/history completion authorization on 2026-09-27. Deploy and production cutover remain separately gated.
+**Current action:** `TASK-026 — UI/UX Architecture, Navigation & Design-System Spec` is **DONE** after FE feasibility READY, independent QA READY with no unresolved P0/P1, explicit Human Owner visual/UX approval, and explicit repository/history authorization on 2026-09-27. SPEC-016 is **APPROVED**. `TASK-027 — React App Shell & Navigation` and `TASK-028 — Combat Presentation Event Contract` are now dependency-ready and may proceed in parallel. `TASK-099 — Pokémon Sprite Generation Lab` remains a separate non-blocking **FIX** lane in its isolated worktree and informs future TASK-032 asset direction only. Push, deploy and production cutover remain separately gated.
 
-**Next task after TASK-003 acceptance:** proceed with the next dependency-ready Solo Hunt/client-foundation work; `TASK-039/040` remain gated by their renderer prerequisites as defined in the roadmap.
+**Next task after TASK-003 acceptance:** TASK-027 and TASK-028 may proceed in parallel now that TASK-026 is DONE; `TASK-039/040` remain gated by their renderer prerequisites.
 
 **Portfolio status snapshot:**
 
@@ -58,23 +58,25 @@
 | `TASK-036` Capture & Reward Resolution | DONE — final QA READY, IA PASS and Class-B ACCEPT `0/0/0/0`; repository/history completion authorized and integrated 2026-09-26 |
 | `TASK-037` Offline / Elapsed-Time Checkpoint & Claim Engine | DONE — final QA READY, IA PASS and Class-B ACCEPT `0/0/0/0`; repository/history completion authorized and integrated 2026-09-27 |
 | `TASK-038` Authoritative Hunt API / Persistence Orchestration | DONE — exact-current QA READY, IA PASS and fresh Class-B ACCEPT with no unresolved P0/P1; Human Owner repository/history completion authorized 2026-09-27; deploy remains separately gated |
+| `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | DONE — FE feasibility READY; independent QA READY; Human visual/UX approved and repository/history completion authorized 2026-09-27 |
+| `TASK-099` Pokémon Sprite Generation Lab | FIX — isolated parallel R&D; first SpriteCook keyframe pass rejected by QA; no production asset contract or animation authorized |
 
 **Next product milestone:** satisfy the remaining client-renderer prerequisites before Solo Hunt Card/Visual integration (`TASK-039/040`) and preserve TASK-038 as the canonical server-authoritative Hunt API/persistence layer.
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-098`.
-- DONE: 44.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-100`.
+- DONE: 45.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
 - REVIEW: 0.
-- FIX: 0.
+- FIX: 1.
 - ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 0.
 - PLANNED: 55.
-- Task-count completion: **44 / 99 = 44.4%**.
+- Task-count completion: **45 / 101 = 44.6%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -500,25 +502,27 @@ content relies on those mechanics.
 
 ### EPIC-04 — Client UX, Rendering & Asset Foundation
 
-**Status:** PLANNED — TASK-026 through TASK-032 remain portfolio-planned; no Client UX implementation task is active
+**Status:** IN PROGRESS — TASK-026 is DONE and unlocks TASK-027/TASK-028; TASK-099 remains an isolated parallel asset-lab FIX lane; downstream production Client UX tasks remain gated by their declared dependencies
 **Outcome:** accessible/responsive React shell plus Card/Low-Spec and Pixi presentation adapters that consume shared domain/combat events.
 
 #### STORY-04.1 — Product shell and design system
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | B | PLANNED | PM → ChatGPT | QA | `SK-UI`, `SK-A11Y`, `SK-REACT` | **HUMAN visual/UX approval** | TASK-003; domain vocabulary from TASK-004 | FE feasibility input; information architecture including Pokémon/Team/ordered Move-loadout management surfaces; responsive targets; design tokens; states; accessibility bar; Card vs Visual responsibilities; materialize a dedicated feature implementation task before Move-loadout editing UI code if no later task already owns it |
+| `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | B | DONE | PM → ChatGPT | QA READY — no unresolved P0/P1 | `SK-UI`, `SK-A11Y`, `SK-REACT` | **HUMAN visual/UX + repository/history APPROVED 2026-09-27** | TASK-003; domain vocabulary from TASK-004 | SPEC-016 APPROVED; FE feasibility READY; information architecture including Pokémon/Team/ordered Move-loadout management surfaces; responsive targets; semantic design tokens; states; accessibility bar; Card vs Visual responsibilities; explicit downstream ownership |
 | `TASK-027` React App Shell & Navigation | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-TDD`, `SK-FE-TEST` | **HUMAN live UI validation** | TASK-026 | Shell; routes/views; loading/error/empty states; keyboard/focus; responsive layout; behavior/E2E baseline |
 | `TASK-028` Combat Event Presentation Contract | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH` | PM acceptance | TASK-007/009 | Read-model/events consumed by UI; no authority leakage; versioned payload boundaries |
+| `TASK-100` Collection, Pokémon & Team Management UI | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-TDD`, `SK-FE-TEST` | **HUMAN live UI validation** | TASK-025/027 | Collection pagination/detail; saved-Team list/create/roster/delete; ordered Move-loadout editor; authoritative eligibility; OCC/stale reconciliation; behavior/E2E coverage; no gameplay authority |
 
 #### STORY-04.2 — Dual presentation modes and assets
 
 | Task | Class | State | Owner → agent | Review / audit | Skills | Human gate | Dependencies | Sub-tasks |
 |---|---|---|---|---|---|---|---|---|
-| `TASK-029` Card / Low-Spec Combat Renderer Foundation | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-027/028 | Combatants; action/event feed; HP/status; reduced-motion/low-cost rendering; no combat math; behavior tests against fixture events |
+| `TASK-029` Card / Low-Spec Combat Renderer Foundation | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-027/028 | Combatants; action/event feed; presentation-safe HP/status only as defined by TASK-028 under SPEC-015 hidden-information constraints; reduced-motion/low-cost rendering; no combat math; behavior tests against fixture events |
 | `TASK-030` Pixi Combat Renderer Foundation | B | PLANNED | FE → Claude Code | QA | `SK-GAME-PERF`, `SK-UI`, `SK-FE-TEST` | **HUMAN visual/live validation** | TASK-028 | Scene lifecycle; entity views; event animation adapter; cleanup; frame budget; integration tests against fixture events |
 | `TASK-031` Accessibility & Responsive Baseline | B | PLANNED | FE → Claude Code | QA | `SK-A11Y`, `SK-UI`, `SK-REACT` | **HUMAN usability validation** | TASK-027/029 | Keyboard; focus; semantics; reduced motion; zoom/text; mobile/desktop breakpoints |
 | `TASK-032` Asset Manifest & Delivery Pipeline | B | PLANNED | LD → Copilot CLI | QA | `SK-CF-WR`, `SK-GAME-PERF` | **HUMAN asset-direction checkpoint** | TASK-026 | FE consultation; asset IDs/manifests; provenance/licensing metadata; implement accepted R2/CDN delivery path; cache/versioning; missing-asset handling; frontend consumption contract; budgets; distribution-strategy changes escalate to Class A architecture work |
+| `TASK-099` Pokémon Sprite Generation Lab | C | FIX | SD → Codex | QA → fresh Codex | SpriteCook generation + structural/QC concepts | **HUMAN four-keyframe visual validation** | None; informs future TASK-032 asset direction only | Isolated Charizard directional-keyframe R&D; first pass failed QA on identity/anatomy and scale/root consistency; no animation/runtime/manifest integration |
 
 **Exit criteria:** application shell and both presentation modes can render deterministic fixture events without owning gameplay logic.
 
@@ -549,7 +553,7 @@ content relies on those mechanics.
 |---|---|---|---|---|---|---|---|---|
 | `TASK-098` Authoritative Hunt API Contract Spec | A | DONE | PM → ChatGPT | QA READY + IA PASS `0/0/0/0`; GSC/PXE complete | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only | **COMPLETED — Human semantic acceptance + separate repository/history authorization 2026-09-27** | TASK-017/024/025/033/035/036/037/096/097 | SPEC-015 is APPROVED and freezes self-scoped Hunt routes/payloads, durable command idempotency, fixed-cutoff mapping, one-active-Hunt/recovery/no-free-reroll persistence, explicit inter-Battle healing-item transport, manual capture, versioned forward-only auto-capture policy, per-Encounter automatic capture boundary and reward/capture ordering before TASK-038 code |
 | `TASK-038` Hunt API & Persistence Orchestration | B | DONE | LD → current ChatGPT implementation session | Exact-current QA **READY** + IA **PASS**, no unresolved P0/P1; fresh independent Class-B **ACCEPT** | `SK-CF-WBP` reference-only, `SK-PG`, `SK-TDD` | **COMPLETED — Human Owner repository/history completion authorized 2026-09-27; deploy separately gated** | TASK-017/025/036/037/096/097/098 | Accepted SPEC-015 implementation: self-scoped start/checkpoint/claim/retreat; durable fixed-cutoff command replay/expiry/tombstones; explicit inter-Battle healing; Player-wide manual capture; versioned forward-only auto-capture policy; same-Zone no-free-reroll with exact retained authority; pre-reward Inventory automatic capture; atomic reward/capture/checkpoint composition. API unit `158/158`; Hunt PG `17/17`; API PG `54/54`; DB PG `87/87`; serialized workspace/lint/typecheck/build PASS. No-living terminalization remains automatic; baseline revival remains deferred |
-| `TASK-039` Solo Hunt Card Mode Integration | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-029/038 | PvE world/map/Zone selection in Card/Low-Spec presentation; team selection; Hunt state; event playback; automatic no-living terminal result with return/navigation presentation (baseline revival is unavailable); rewards/result states; errors/reconnect; behavior/E2E coverage |
+| `TASK-039` Solo Hunt Card Mode Integration | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **HUMAN live validation** | TASK-029/038 | PvE world/map/Zone selection in Card/Low-Spec presentation; team selection; Hunt state; event playback; SPEC-015 Hunt/settings UI for persisted auto-capture policy, one-manual-pending capacity, forward-only policy boundaries, same-key `202 in_progress`, `202 waiting_boundary` healing and `410 idempotency_gone`; automatic no-living terminal result with return/navigation presentation (baseline revival is unavailable); rewards/result states; errors/reconnect; behavior/E2E coverage |
 | `TASK-040` Solo Hunt Visual/Pixi Integration | B | PLANNED | FE → Claude Code | QA | `SK-GAME-PERF`, `SK-UI`, `SK-FE-TEST` | **HUMAN visual/live validation** | TASK-030/038 | Visual/Pixi presentation of the accepted PvE world/map/Zone navigation and the same Hunt/event source as Card; animations; scene transitions; automatic no-living terminal result and return/navigation presentation; performance/fallback; behavior/E2E coverage |
 | `TASK-041` Solo Hunt End-to-End, Offline & Performance Harness | B | PLANNED | SD → Codex | QA + IA reward-integrity review | `SK-GAME-PERF`, `SK-TDD` | **HUMAN MVP acceptance** | TASK-034–040 | Implement E2E/regression harness; fresh/returning flows; offline 1h/8h; deterministic replay; duplicate-claim defense; Card/Visual parity; load/CPU budget |
 
