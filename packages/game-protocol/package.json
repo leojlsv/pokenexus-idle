@@ -9,11 +9,20 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
     }
   },
   "files": ["dist"],
+  "dependencies": {
+    "@pokenexus/game-core": "workspace:*"
+  },
   "scripts": {
+    "prebuild": "corepack pnpm --filter @pokenexus/game-core build",
     "build": "tsc -p tsconfig.json",
+    "pretypecheck": "corepack pnpm --filter @pokenexus/game-core build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint": "eslint ."

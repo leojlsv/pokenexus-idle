@@ -12,7 +12,7 @@
 
 **Current work:** `TASK-096 — Idle/Gacha Progression & Acquisition Model`, `TASK-097 — Encounter Individualization & Genetics Runtime`, and `TASK-036 — Capture & Reward Resolution` are **DONE** and integrated into canonical `main` after explicit Human Owner repository/history authorization. The integrated implementation preserves correlation-first durable capture replay with frozen RNG-origin binding, exact production-executable Move authority, replay-validated reward-source authenticity, and authoritative TASK-097 IV/Genetics/Profile/Shiny provenance. Atomic Ball debit/Pokémon creation/Species Research/attempt evidence, PostgreSQL concurrency/rollback coverage, Worker compatibility and workspace validation are green. Deploy and production cutover remain separate gates. TASK-035 remains DONE/canonical. The approved acquisition authority includes Genetics/Shiny separation, Hunt-authored encounter rates, structural auto-capture, no Epic+/Apex/capture protection, final Genetic Profiles `Harmony / Might / Clarity / Endurance / Resilience` with exactly two compatible Profiles per Species/form selected 50/50, center-weighted canonical IV generation `U[0,15] + U[0,16]` per stat, exact Genetic Score→Budget bands/interpolation, the Genetic-aware stat formula `2*BaseStat + IV + perStatGeneticBonus` under a new immutable combat rules version, default Genetic Grade probabilities `55/28/12/4/1%`, Shiny `1/16384`, Species Research count-only duplicate progression, fail-closed Genetics/Shiny/Ascendant persistence/legacy authority, the 8–82% capture curve, Genetic capture modifiers, Ball ladder `Poké 1.00 / Great 1.25 / Super 1.50 / Ultra 2.00 / VIP 2.25`, supply hierarchy and reserve-aware visible-condition auto-capture. Human-approved **Ascendant** is `Shiny + Apex` with Resonance across the two frozen compatible Profiles and no higher Score/Budget/stat ceiling.
 
-**Current action:** `TASK-027 — React App Shell & Navigation` is **DONE** after final responsive QA READY with P0/P1 `0/0`, browser/CDP confirmation at 390px CSS viewport with `scrollWidth=390`, explicit Human live UI approval and repository/history authorization on 2026-09-27. `TASK-028 — Combat Presentation Event Contract` remains dependency-ready. Push, deploy and production cutover remain separately gated.
+**Current action:** `TASK-027 — React App Shell & Navigation` and `TASK-028 — Combat Presentation Event Contract` are **DONE**. TASK-028 closed after corrective QA READY `0/0/0/0`, delegated Class-B ACCEPT, and explicit Human Owner repository/history authorization on 2026-09-27. `TASK-099 — Pokémon Sprite Generation Lab` remains **DEFERRED**/retired with no active implementation. `TASK-029`, `TASK-030` and `TASK-100` are now dependency-ready. Push, deploy and production cutover remain separately gated.
 
 **Next task after TASK-003 acceptance:** TASK-027 and TASK-028 may proceed in parallel now that TASK-026 is DONE; `TASK-039/040` remain gated by their renderer prerequisites.
 
@@ -60,6 +60,7 @@
 | `TASK-038` Authoritative Hunt API / Persistence Orchestration | DONE — exact-current QA READY, IA PASS and fresh Class-B ACCEPT with no unresolved P0/P1; Human Owner repository/history completion authorized 2026-09-27; deploy remains separately gated |
 | `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | DONE — FE feasibility READY; independent QA READY; Human visual/UX approved and repository/history completion authorized 2026-09-27 |
 | `TASK-027` React App Shell & Navigation | DONE — final responsive QA READY; Human live UI approved and repository/history authorized 2026-09-27 |
+| `TASK-028` Combat Event Presentation Contract | DONE — corrective QA READY `0/0/0/0`; delegated Class-B ACCEPT; repository/history authorized 2026-09-27 |
 | `TASK-099` Pokémon Sprite Generation Lab | DEFERRED — side-project abandoned by Human Owner; branch/worktree removed; historical ID retained only |
 
 **Next product milestone:** satisfy the remaining client-renderer prerequisites before Solo Hunt Card/Visual integration (`TASK-039/040`) and preserve TASK-038 as the canonical server-authoritative Hunt API/persistence layer.
@@ -67,7 +68,7 @@
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-100`.
-- DONE: 46.
+- DONE: 47.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 0.
@@ -76,8 +77,8 @@
 - ACCEPTANCE: 0.
 - BLOCKED: 0.
 - DEFERRED: 1.
-- PLANNED: 54.
-- Task-count completion: **46 / 101 = 45.5%**.
+- PLANNED: 53.
+- Task-count completion: **47 / 101 = 46.5%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -503,7 +504,7 @@ content relies on those mechanics.
 
 ### EPIC-04 — Client UX, Rendering & Asset Foundation
 
-**Status:** IN PROGRESS — TASK-026/TASK-027 are DONE; TASK-028 remains dependency-ready and downstream Client UX tasks remain gated by their declared dependencies
+**Status:** IN PROGRESS — TASK-026/TASK-027/TASK-028 are DONE; TASK-029/TASK-030 and TASK-100 are dependency-ready while remaining Client UX tasks stay gated by their declared dependencies
 **Outcome:** accessible/responsive React shell plus Card/Low-Spec and Pixi presentation adapters that consume shared domain/combat events.
 
 #### STORY-04.1 — Product shell and design system
@@ -512,7 +513,7 @@ content relies on those mechanics.
 |---|---|---|---|---|---|---|---|---|
 | `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | B | DONE | PM → ChatGPT | QA READY — no unresolved P0/P1 | `SK-UI`, `SK-A11Y`, `SK-REACT` | **HUMAN visual/UX + repository/history APPROVED 2026-09-27** | TASK-003; domain vocabulary from TASK-004 | SPEC-016 APPROVED; FE feasibility READY; information architecture including Pokémon/Team/ordered Move-loadout management surfaces; responsive targets; semantic design tokens; states; accessibility bar; Card vs Visual responsibilities; explicit downstream ownership |
 | `TASK-027` React App Shell & Navigation | B | DONE | FE → current ChatGPT implementation worker | Final responsive QA READY — P0/P1 `0/0`, no material residual P2/P3; 390px browser/CDP no-overflow evidence | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-TDD`, `SK-FE-TEST` | **COMPLETED — Human live UI approved + repository/history authorized 2026-09-27** | TASK-026 | Shell/routes and protocol behavior unchanged; responsive fix prevents small-screen horizontal overflow, keeps Settings reachable and all four bottom-nav destinations visible at 320–639; 19 focused tests including CSS invariants; no TASK-100/TASK-029 ownership |
-| `TASK-028` Combat Event Presentation Contract | B | PLANNED | LD → Copilot CLI | QA | `SK-TDD`, `SK-GAME-ARCH` | PM acceptance | TASK-007/009 | Read-model/events consumed by UI; no authority leakage; versioned payload boundaries |
+| `TASK-028` Combat Event Presentation Contract | B | DONE | LD → ChatGPT delegated worker | QA READY `0/0/0/0`; delegated Class-B ACCEPT | `SK-TDD`, `SK-GAME-ARCH` | **COMPLETED — Human Owner repository/history authorized 2026-09-27** | TASK-007/009/026/038 | One-time battle bootstrap + HP-free continuation cursor; cross-batch oracle regression; engine-generated fixture; decreasing-time regression; renderer-neutral authoritative event projection |
 | `TASK-100` Collection, Pokémon & Team Management UI | B | PLANNED | FE → Claude Code | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-TDD`, `SK-FE-TEST` | **HUMAN live UI validation** | TASK-025/027 | Collection pagination/detail; saved-Team list/create/roster/delete; ordered Move-loadout editor; authoritative eligibility; OCC/stale reconciliation; behavior/E2E coverage; no gameplay authority |
 
 #### STORY-04.2 — Dual presentation modes and assets
