@@ -78,6 +78,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@pokenexus/game-protocol':
+        specifier: workspace:*
+        version: link:../../packages/game-protocol
       '@pokenexus/game-types':
         specifier: workspace:*
         version: link:../../packages/game-types
@@ -91,6 +94,9 @@ importers:
         specifier: ^19.0.0
         version: 19.3.0(react@19.3.0)
     devDependencies:
+      '@pokenexus/game-core':
+        specifier: workspace:*
+        version: link:../../packages/game-core
       '@types/react':
         specifier: ^19.0.7
         version: 19.3.0
