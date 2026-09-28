@@ -1,0 +1,38 @@
+.pixi-combat {
+  display: grid;
+  gap: var(--space-4, 1rem);
+  min-width: 0;
+}
+
+.pixi-combat__visual {
+  width: 100%;
+  min-width: 0;
+  min-height: 18rem;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--color-divider, currentColor);
+  border-radius: var(--radius-md, 0.65rem);
+  background: var(--color-surface, transparent);
+}
+
+.pixi-combat__visual canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.pixi-combat__fallback {
+  min-width: 0;
+}
+
+.pixi-combat[data-visual-failed="true"] .pixi-combat__visual {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixi-combat *,
+  .pixi-combat *::before,
+  .pixi-combat *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
