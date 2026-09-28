@@ -1,15 +1,24 @@
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { COMBAT_PRESENTATION_FIXTURE_V1 } from "@pokenexus/game-protocol/testing";
 import { PixiCombatSurface } from "./combat-pixi/PixiCombatSurface";
+import { CardCombatRenderer } from "./combat-card";
 import "./app.css";
 import "./pixi-preview.css";
 
 function Preview() {
   const [step, setStep] = useState(0);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
   const [mounted, setMounted] = useState(true);
   const total = COMBAT_PRESENTATION_FIXTURE_V1.continuations.length;
+
+  useEffect(() => {
+    const preference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!preference) return;
+    const onPreferenceChange = (event: MediaQueryListEvent) => setReducedMotion(event.matches);
+    preference.addEventListener("change", onPreferenceChange);
+    return () => preference.removeEventListener("change", onPreferenceChange);
+  }, []);
   return (
     <main className="combat-preview">
       <header>
@@ -30,13 +39,18 @@ function Preview() {
           bootstrap={COMBAT_PRESENTATION_FIXTURE_V1.bootstrap}
           continuations={COMBAT_PRESENTATION_FIXTURE_V1.continuations.slice(0, step)}
           reducedMotion={reducedMotion}
-          fallback={<div className="combat-preview__fallback">
-            <strong>Resumo acessível</strong>
-            <p>Seu Pokémon: species:owned (HP 30/30 inicial); reserva: species:owned-reserve.</p>
-            <p>Selvagem: species:wild (HP oculto). {step ? "Golpe shock aplicado; alvo imune." : "Combate iniciado."}</p>
-          </div>}
+          fallback={<CardCombatRenderer
+            bootstrap={COMBAT_PRESENTATION_FIXTURE_V1.bootstrap}
+            continuations={COMBAT_PRESENTATION_FIXTURE_V1.continuations.slice(0, step)}
+          />}
         />
-      ) : <p role="status">Canvas desmontado para inspeção do ciclo de vida.</p>}
+      ) : <>
+        <p role="status">Canvas desmontado para inspeção do ciclo de vida; apresentação Card permanece disponível.</p>
+        <CardCombatRenderer
+          bootstrap={COMBAT_PRESENTATION_FIXTURE_V1.bootstrap}
+          continuations={COMBAT_PRESENTATION_FIXTURE_V1.continuations.slice(0, step)}
+        />
+      </>}
       <footer>Escopo desta fixture: início, golpe e imunidade. KO/substituição são cobertos por testes do motor, não por esta prévia.</footer>
     </main>
   );

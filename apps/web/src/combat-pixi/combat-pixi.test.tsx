@@ -20,6 +20,7 @@ import {
   type CombatPresentationEventV1,
 } from "@pokenexus/game-protocol";
 import { COMBAT_PRESENTATION_FIXTURE_V1 } from "@pokenexus/game-protocol/testing";
+import { CardCombatRenderer } from "../combat-card";
 import { mountAsyncPixiRuntime } from "./lifecycle";
 import {
   PIXI_COMBAT_CUE_QUEUE_LIMIT,
@@ -55,6 +56,8 @@ async function flushMicrotasks(): Promise<void> {
 function createFakePixiHarness(options: { throwContainerConstruction?: boolean } = {}) {
   let tickerCallback: (() => void) | null = null;
   let resizeCallback: ResizeObserverCallback | null = null;
+  let resizeFrameCallback: FrameRequestCallback | null = null;
+  const labels: Array<{ text: string; style: Record<string, unknown>; y: number }> = [];
   const ticker = {
     maxFPS: 0,
     deltaMS: 16,
@@ -103,7 +106,15 @@ function createFakePixiHarness(options: { throwContainerConstruction?: boolean }
   }
 
   class FakeText extends FakeContainer {
+    text: string;
+    style: Record<string, unknown>;
     anchor = { set: vi.fn() };
+    constructor(options: { text: string; style: Record<string, unknown> }) {
+      super();
+      this.text = options.text;
+      this.style = { ...options.style };
+      labels.push(this);
+    }
   }
 
   class FakeApplication {
@@ -125,7 +136,10 @@ function createFakePixiHarness(options: { throwContainerConstruction?: boolean }
     observe: vi.fn(),
     disconnect: vi.fn(),
   };
-  const requestFrame = vi.fn(() => 41);
+  const requestFrame = vi.fn((callback: FrameRequestCallback) => {
+    resizeFrameCallback = callback;
+    return 41;
+  });
   const cancelFrame = vi.fn();
   const environment: PixiCombatRuntimeEnvironment = {
     loadPixi: async () => ({
@@ -148,9 +162,15 @@ function createFakePixiHarness(options: { throwContainerConstruction?: boolean }
     requestFrame,
     cancelFrame,
     getApplication: () => applicationSpies,
+    getLabels: () => labels,
     fireResize: () => {
       if (!resizeCallback) throw new Error("resize observer was not created");
       resizeCallback([], {} as ResizeObserver);
+    },
+    flushResizeFrame: () => {
+      if (!resizeFrameCallback) throw new Error("resize frame was not scheduled");
+      resizeFrameCallback(0);
+      resizeFrameCallback = null;
     },
     fireTick: () => {
       if (!tickerCallback) throw new Error("ticker callback was not registered");
@@ -535,6 +555,33 @@ describe("Pixi combat renderer foundation", () => {
     expect(app.destroy).toHaveBeenCalledTimes(1);
   });
 
+  it("bounds full visual labels within their cell at narrow widths and recomputes wrapping on resize", async () => {
+    const harness = createFakePixiHarness();
+    const host = {
+      clientWidth: 320,
+      clientHeight: 288,
+      appendChild: vi.fn(),
+    } as unknown as HTMLElement;
+    const runtime = await createPixiCombatRuntime(host, harness.environment);
+    runtime.render(buildPixiCombatModel(COMBAT_PRESENTATION_FIXTURE_V1.bootstrap).model);
+
+    expect(harness.getLabels()).toHaveLength(3);
+    expect(harness.getLabels().map((label) => label.text)).toContain("species:owned-reserve");
+    expect(harness.getLabels().every((label) =>
+      label.style.wordWrap === true && label.style.breakWords === true &&
+      label.style.wordWrapWidth === 64 && label.y === 42,
+    )).toBe(true);
+
+    const app = harness.getApplication();
+    expect(app.render).toHaveBeenCalledTimes(1);
+    (host as { clientWidth: number }).clientWidth = 640;
+    harness.fireResize();
+    harness.flushResizeFrame();
+    expect(harness.getLabels().every((label) => label.style.wordWrapWidth === 144)).toBe(true);
+    expect(app.render).toHaveBeenCalledTimes(2);
+    runtime.destroy();
+  });
+
   it("drops queued animation work synchronously when reduced motion becomes active", async () => {
     const harness = createFakePixiHarness();
     const host = {
@@ -568,6 +615,26 @@ describe("Pixi combat renderer foundation", () => {
     expect(html).toContain("Accessible card fallback");
     expect(html).toContain('aria-hidden="true"');
     expect(factory).not.toHaveBeenCalled();
+  });
+
+  it("can present the full accessible Card combat content alongside the hidden visual canvas", () => {
+    const html = renderToStaticMarkup(
+      <PixiCombatSurface
+        bootstrap={COMBAT_PRESENTATION_FIXTURE_V1.bootstrap}
+        continuations={COMBAT_PRESENTATION_FIXTURE_V1.continuations}
+        fallback={<CardCombatRenderer
+          bootstrap={COMBAT_PRESENTATION_FIXTURE_V1.bootstrap}
+          continuations={COMBAT_PRESENTATION_FIXTURE_V1.continuations}
+        />}
+      />,
+    );
+
+    expect(html).toContain('class="pixi-combat__visual" aria-hidden="true"');
+    expect(html).toContain("HP hidden");
+    expect(html).toContain("Combat events");
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain("<ol>");
+    expect(html).not.toContain("combat-preview__fallback");
   });
 
   it("uses authoritative initialSides roster order rather than initialParticipants array order", () => {

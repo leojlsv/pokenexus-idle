@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type {
   CombatPresentationBootstrapEnvelopeV1,
   CombatPresentationContinuationEnvelopeV1,
@@ -317,15 +318,16 @@ export function CardCombatRenderer({
   bootstrap: CombatPresentationBootstrapEnvelopeV1;
   continuations?: ReadonlyArray<CombatPresentationContinuationEnvelopeV1>;
 }) {
+  const headingId = useId();
   const state = buildCardCombatState(bootstrap, continuations);
   const sideIds = bootstrap.initialSides.map(({ sideId }) => sideId);
 
   return (
     <section className="combat-card" aria-label="Combat">
       <div className="combat-card__sides">
-        {sideIds.map((sideId) => (
-          <section className="combat-card__side" key={sideId} aria-labelledby={`combat-side-${sideId}`}>
-            <h2 id={`combat-side-${sideId}`}>{sideId}</h2>
+        {sideIds.map((sideId, index) => (
+          <section className="combat-card__side" key={sideId} aria-labelledby={`${headingId}-side-${index}`}>
+            <h2 id={`${headingId}-side-${index}`}>{sideId}</h2>
             <div className="combat-card__combatants">
               {state.participants
                 .filter((participant) => participant.sideId === sideId)
@@ -334,8 +336,8 @@ export function CardCombatRenderer({
           </section>
         ))}
       </div>
-      <section className="combat-card__feed" aria-labelledby="combat-event-feed-title">
-        <h2 id="combat-event-feed-title">Combat events</h2>
+      <section className="combat-card__feed" aria-labelledby={`${headingId}-feed`}>
+        <h2 id={`${headingId}-feed`}>Combat events</h2>
         <p className="combat-card__live" aria-live="polite" aria-atomic="true">
           {state.eventFeed.at(-1) ?? ""}
         </p>

@@ -37,4 +37,22 @@ describe("App shell", () => {
     expect(html).toMatch(/checked="" value="visual"|value="visual" checked=""/);
     expect(html).toContain("Hunt settings");
   });
+
+  it("keeps Hunt settings under Settings without a second current navigation item", () => {
+    const html = renderToStaticMarkup(
+      <AppShell
+        route={routeForPath("/settings/hunt")}
+        preference="card"
+        onPreferenceChange={() => undefined}
+        onNavigate={() => undefined}
+      />,
+    );
+
+    expect(html).toContain('href="#main-content"');
+    expect(html).toContain('id="main-content"');
+    expect(html).toContain('tabindex="-1"');
+    expect(html).toContain('href="/settings" aria-current="page"');
+    expect(html).not.toContain('href="/hunt" aria-current="page"');
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+  });
 });

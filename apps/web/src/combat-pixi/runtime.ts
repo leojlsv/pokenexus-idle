@@ -55,6 +55,7 @@ export async function createPixiCombatRuntime(
   let destroyed = false;
   let animatedCombatantId: string | null = null;
   const entityViews = new Map<string, InstanceType<typeof Container>>();
+  const entityLabels = new Map<string, InstanceType<typeof Text>>();
   const entityBasePresentation = new Map<string, { alpha: number; scale: number }>();
   const cueQueue: Array<{ cue: PixiVisualCue; remainingMs: number; durationMs: number }> = [];
 
@@ -81,6 +82,7 @@ export async function createPixiCombatRuntime(
     resetAnimatedView();
     cueQueue.length = 0;
     entityViews.clear();
+    entityLabels.clear();
     entityBasePresentation.clear();
     app.destroy(
       { removeView: true },
@@ -101,11 +103,13 @@ export async function createPixiCombatRuntime(
     app.stage.addChild(scene);
 
     const layout = () => {
-      const entries = [...entityViews.values()];
+      const entries = [...entityViews];
       const spacing = app.renderer.width / Math.max(1, entries.length + 1);
-      entries.forEach((view, index) => {
+      entries.forEach(([combatantId, view], index) => {
         view.x = spacing * (index + 1);
         view.y = app.renderer.height / 2;
+        const label = entityLabels.get(combatantId);
+        if (label) label.style.wordWrapWidth = Math.max(40, spacing - 16);
       });
     };
 
@@ -114,6 +118,7 @@ export async function createPixiCombatRuntime(
       if (destroyed) return;
       app.renderer.resize(Math.max(1, host.clientWidth || 1), Math.max(1, host.clientHeight || 1));
       layout();
+      app.render();
     };
     observer = environment.createResizeObserver(() => {
       if (resizeRaf !== null) environment.cancelFrame(resizeRaf);
@@ -150,16 +155,25 @@ export async function createPixiCombatRuntime(
     };
     app.ticker.add(tick);
 
-    const createEntityView = (speciesId: string) => {
+    const createEntityView = (combatantId: string, speciesId: string) => {
       const container = new Container();
       const marker = new Graphics().circle(0, 0, 28).fill({ color: 0x78d6df, alpha: 0.32 });
       const label = new Text({
         text: speciesId,
-        style: { fill: 0xf2f5f5, fontSize: 14, align: "center" },
+        style: {
+          fill: 0xf2f5f5,
+          fontSize: 14,
+          align: "center",
+          wordWrap: true,
+          breakWords: true,
+          wordWrapWidth: 80,
+        },
       });
-      label.anchor.set(0.5);
+      label.anchor.set(0.5, 0);
+      label.y = 42;
       container.addChild(marker, label);
       scene.addChild(container);
+      entityLabels.set(combatantId, label);
       return container;
     };
 
@@ -172,13 +186,14 @@ export async function createPixiCombatRuntime(
             scene.removeChild(view);
             view.destroy({ children: true });
             entityViews.delete(combatantId);
+            entityLabels.delete(combatantId);
             entityBasePresentation.delete(combatantId);
           }
         }
         for (const entity of model.entities) {
           let view = entityViews.get(entity.combatantId);
           if (!view) {
-            view = createEntityView(entity.speciesId);
+            view = createEntityView(entity.combatantId, entity.speciesId);
             entityViews.set(entity.combatantId, view);
           }
           const basePresentation = {

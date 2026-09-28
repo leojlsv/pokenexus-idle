@@ -131,7 +131,7 @@ export function AppShell({ route, preference, onPreferenceChange, onNavigate = n
   onPreferenceChange: (preference: RendererPreference) => void;
   onNavigate?: Navigate;
 }) {
-  const primaryId = route.id.startsWith("hunt") ? "hunt" : route.id.startsWith("pokemon")
+  const primaryId = route.id === "hunt-settings" ? null : route.id.startsWith("hunt") ? "hunt" : route.id.startsWith("pokemon")
     ? "pokemon" : route.id.startsWith("team") ? "teams" : route.id;
 
   return (
@@ -153,7 +153,7 @@ export function AppShell({ route, preference, onPreferenceChange, onNavigate = n
         ))}
       </nav>
 
-      <main id="main-content" className="main-content">
+      <main id="main-content" className="main-content" tabIndex={-1}>
         <RouteView route={route} preference={preference} onPreferenceChange={onPreferenceChange} onNavigate={onNavigate} />
       </main>
     </div>

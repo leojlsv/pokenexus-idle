@@ -444,4 +444,22 @@ describe("Card combat renderer foundation", () => {
         .map(({ combatantId }) => combatantId),
     ).toEqual(["combatant:owned-reserve", "combatant:owned"]);
   });
+
+  it("keeps aria-labelledby relationships unique across multiple Card instances", () => {
+    const bootstrap = COMBAT_PRESENTATION_FIXTURE_V1.bootstrap;
+    const html = renderToStaticMarkup(<>
+      <CardCombatRenderer bootstrap={bootstrap} />
+      <CardCombatRenderer bootstrap={bootstrap} />
+    </>);
+
+    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+    const labelledBy = [...html.matchAll(/\baria-labelledby="([^"]+)"/g)].map((match) => match[1]);
+    expect(labelledBy).toHaveLength((bootstrap.initialSides.length + 1) * 2);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const reference of labelledBy) {
+      expect(ids.filter((id) => id === reference)).toHaveLength(1);
+    }
+    expect(html.match(/aria-live="polite"/g)).toHaveLength(2);
+    expect(html.match(/<ol>/g)).toHaveLength(2);
+  });
 });
