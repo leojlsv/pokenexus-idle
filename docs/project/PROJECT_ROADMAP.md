@@ -8,7 +8,7 @@
 >
 > **Specification identities:** `SPEC-018` is the TASK-039 published Hunt catalog delivery contract. The proposed bounded historical authority/frontier for TASK-103 is separately named `SPEC-019` and remains **DRAFT Class-A**, without implementation approval. Neither the roadmap nor a task file promotes that draft to an accepted contract.
 >
-> **Worktree integration:** TASK-104's governance documentation and 105-task inventory are integrated in `main` after separate Human Owner Git authorization on 2026-09-30. The independently owned TASK-039, TASK-100 and TASK-103 application changes remain in their own worktrees, and TASK-102 stays in ACCEPTANCE. A branch-local `roadmap:check` never promotes those changes, authorizes further Git history or enables production endpoints.
+> **Worktree integration:** TASK-104's governance documentation and TASK-105's CI test corrections are integrated into local `main` following separate Human Owner Git authorizations on 2026-09-30. The resulting 106-task inventory remains ahead of published `origin/main` until the separately gated upstream history is authorized for publication. TASK-039, TASK-100 and TASK-103 application changes remain in their own worktrees, and TASK-102 stays in ACCEPTANCE. A branch-local `roadmap:check` never promotes those changes, authorizes further Git history or enables production endpoints.
 
 ## 1. Current position
 
@@ -19,6 +19,8 @@
 **Current action:** `TASK-027 — React App Shell & Navigation` and `TASK-028 — Combat Presentation Event Contract` are **DONE**. `TASK-029 — Card / Low-Spec Combat Renderer Foundation` is **DONE** after independent QA READY 0/0/0/0, Class-B ACCEPT 0/0 and Human-approved isolated visual preview on 2026-09-28. KO/replacement had automated, not visual, preview coverage. `TASK-030` is also DONE after QA READY 0/0/0/0, Class-B ACCEPT 0/0 and Human-approved isolated visual preview on 2026-09-28. `TASK-031` is **DONE** after independent QA TECH READY 0/0, Class-B ACCEPT 0/0 and Human usability approval on 2026-09-28. TASK-100 is **ACTIVE** in its separate frontend worktree and awaits an approved Move-eligibility public read and full acceptance. `TASK-099 — Pokémon Sprite Generation Lab` remains **DEFERRED**/retired with no active implementation. Push, deploy and production cutover remain separately gated.
 
 **Next task after TASK-003 acceptance:** The current client integration sequence has TASK-029/TASK-030 renderers and TASK-031 accessibility baseline DONE; TASK-039 Card Mode Hunt integration and TASK-100 Collection/Team UI are independently ACTIVE and modify shared shell files, requiring coordinated final integration. The Owner approved Gate A catalog delivery and accepted detailed Class-A SPEC-017 Gate B on 2026-09-29 after independent source QA/security-persistence review; SPEC-018 release delivery is implemented in the separate TASK-039 worktree. TASK-102 is in ACCEPTANCE pending separate repository/history completion, and TASK-103 is ACTIVE under one LD owner in an isolated backend worktree for the immutable origin, privacy-projected ledger and bounded GET implementation. TASK-104's governance controls are DONE and integrated after the Human Owner's separate 2026-09-30 Git authorization; no backend/frontend application code was merged by this correction. TASK-040 Visual/Pixi remains separately planned; deployed publication, event-transport evidence and Human enablement gates remain explicit.
+
+**Current CI correction:** TASK-105 is DONE in local `main` after a reported GitHub Actions `validate` failure: a full immutable v2 catalog load exceeded Vitest's 5-second default under concurrent package tests. The package runner also rediscovered compiled `dist` tests after typecheck. This Class-C correction changes only test discovery and heavy-fixture execution budgets, without modifying published content or application behavior. The remote runner cannot validate this correction until the separately gated upstream history is published.
 
 **Portfolio status snapshot:**
 
@@ -68,6 +70,7 @@
 | `TASK-103` Authoritative Hunt Presentation Backend | ACTIVE — isolated backend branch/worktree created from main 630db51, one LD implementation owner with independent QA/security/persistence audits; SPEC-017 approved; versioned owned Shiny/pre-reaction origin, indexed immutable projected ledger, transaction-safe bounded publication/GET in progress; public route, benchmarks and enablement outstanding |
 | `TASK-100` Collection, Pokémon & Team Management UI | ACTIVE — isolated FE worktree, partial functionality implemented and independently reviewed; final QA/acceptance, authoritative eligible-Moves read contract and coordinated App shell merge remain outstanding |
 | `TASK-104` Project Governance and Roadmap Reconciliation | DONE — 105-ID control-plane integrated on Human-authorized 2026-09-30 Git operation, 17/17 Node tests and independent QA/IA P0/P1/P2=0/0/0; root dashboard identifies integrated `main` separately from unfinished application worktrees; no application merge |
+| `TASK-105` CI Test Discovery and Published-Loader Timeout Stability | DONE — isolated Class-C test-runner correction integrated into local `main` after 857/857 workspace tests, lint, typecheck, build and roadmap checks passed; `origin/main` publication awaits authorization for eight older local commits, and Linux `validate` remains unverified |
 | `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | DONE — FE feasibility READY; independent QA READY; Human visual/UX approved and repository/history completion authorized 2026-09-27 |
 | `TASK-027` React App Shell & Navigation | DONE — final responsive QA READY; Human live UI approved and repository/history authorized 2026-09-27 |
 | `TASK-028` Combat Event Presentation Contract | DONE — corrective QA READY `0/0/0/0`; delegated Class-B ACCEPT; repository/history authorized 2026-09-27 |
@@ -80,8 +83,8 @@
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-104`.
-- DONE: 52.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-105`.
+- DONE: 53.
 - DRAFT: 0.
 - READY: 0.
 - ACTIVE: 3.
@@ -91,7 +94,7 @@
 - BLOCKED: 0.
 - DEFERRED: 1.
 - PLANNED: 48.
-- Task-count completion: **52 / 105 = 49.5%**.
+- Task-count completion: **53 / 106 = 50.0%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -291,7 +294,7 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 
 ### EPIC-00 — Governance, Foundation & Project Control
 
-**Status:** DONE — accepted governance baseline remains intact, including advisory GSC/PXE consultation roles; TASK-104 cross-worktree portfolio reconciliation is integrated after independent QA/IA, Human Class-B functional acceptance and separate repository-history authorization
+**Status:** DONE — TASK-104 governance baseline and TASK-105 local CI test-stability correction are integrated; upstream publishing remains a separate gate
 **Outcome:** provider-independent governance, validated monorepo/runtime foundation and a visible project-control plane.
 **Human gate:** completed — TASK-003 baseline acceptance remains valid; Human Owner accepted TASK-093 and authorized repository history on 2026-09-18.
 
@@ -315,8 +318,9 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 |---|---|---|---|---|---|---|---|---|
 | `TASK-003` Project Control Roadmap | B | DONE | PM → ChatGPT | QA | external-skill discovery only | Completed — original Human acceptance preserved; corrective lint QA clear; repository completion authorized/completed | TASK-000/001/002 | Hierarchy; sequencing; roles/agents/skills; Markdown truth; deterministic HTML generator/check; dashboard; Node-script ESLint environment correction |
 | `TASK-104` Project Governance and Roadmap Reconciliation | B | DONE | PM → ChatGPT project coordination | **Independent QA PASS 0/0/0; independent governance IA PASS 0/0/0; earlier IA P2s corrected and 17/17 tests PASS; Human Class-B functional gate ACCEPTED 2026-09-29** | `SK-TDD` | **HUMAN functional acceptance 2026-09-29; Git integration authorized and completed 2026-09-30** | TASK-003 | Reconcile active TASK-039/100/102/103 ownership and role surfaces, integrate task/spec references without application-code merge, preserve integrated-versus-provisional dashboard provenance, add bounded active-task validation and publication handoff; no deployment or worktree deletion |
+| `TASK-105` CI Test Discovery and Published-Loader Timeout Stability | C | DONE | LD → ChatGPT isolated worktree | N/A — test harness only, no production behavior change | `SK-TDD` | Human authorized TASK-105 commit/integration/push 2026-09-30; upstream publication additionally requires authorization of eight older local main commits | TASK-003/104 | Execute each source test once after typecheck by excluding compiled `dist` test artifacts, raise only heavy immutable-v1/v2 fixture timeouts, preserve integrity assertions and validate the full workspace test command |
 
-**Exit:** original Human acceptance remains valid. TASK-093 and TASK-104 are integrated and DONE; TASK-104's independent project-control gates and separate Git authorization are complete. No accepted product/game spec was reopened by this maintenance task.
+**Exit:** original Human acceptance remains valid. TASK-093, TASK-104 and TASK-105 are integrated and DONE in local `main`; the remaining upstream Git publication gate is distinct from TASK-105's accepted technical scope. No accepted product/game spec is reopened by this maintenance task.
 
 ---
 

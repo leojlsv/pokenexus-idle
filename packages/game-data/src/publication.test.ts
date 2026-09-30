@@ -208,7 +208,7 @@ describe("staging and immutable publication", () => {
       learnsets: 13_785,
       currentTypeEffectiveness: 324,
     });
-  });
+  }, 15_000);
 
   it("loads the Human-approved corrected v2 through the Node canonical loader", async () => {
     const publishedRoot = join(import.meta.dirname, "..", "published");
@@ -223,7 +223,7 @@ describe("staging and immutable publication", () => {
       learnsets: 19_035,
       currentTypeEffectiveness: 324,
     });
-  });
+  }, 15_000);
 
   it("does not apply immutable-v1 provenance compatibility to another published version", async () => {
     const root = await tempDirectory();
