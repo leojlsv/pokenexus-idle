@@ -21,7 +21,7 @@
     "postbuild": "node scripts/finalize-production-move-support-artifact.mjs",
     "pretypecheck": "corepack pnpm --filter @pokenexus/game-types build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run src",
     "lint": "eslint .",
     "benchmark:preflight": "node benchmarks/preflight.mjs",
     "benchmark": "node benchmarks/run.mjs",

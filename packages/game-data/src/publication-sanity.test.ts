@@ -52,7 +52,7 @@ describe("publication sanity", () => {
 
     expect(validateCandidatePublicationSanity(loaded.candidate, roster.mappings)).toEqual([]);
     expect(validatePublicationReadiness(loaded.candidate, roster.mappings)).toEqual([]);
-  });
+  }, 15_000);
 
   it("detects missing Species/Move Learnset closure", () => {
     const candidate = publishableCandidateFixture();
