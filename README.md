@@ -18,3 +18,19 @@ See:
 - `AGENTS.md`
 - `CONTRIBUTING.md`
 - `docs/agents/launching.md`
+
+## Project roadmap
+
+`docs/project/PROJECT_ROADMAP.md` is the editable roadmap for the checked-out
+branch; `docs/project/PROJECT_ROADMAP.html` is generated with
+`pnpm roadmap:generate` and validated with `pnpm roadmap:check`. The check is
+**branch-local** and does not consolidate other worktrees.
+
+In the local Windows workspace, `G:\pokenexus-idle\PROJECT_ROADMAP.html` is
+an untracked landing page with separately labelled integrated and provisional
+worktree views. It is not a source of Git history or automatic publication.
+Consult `docs/agents/workflow.md` before reconciling or publishing task states.
+In a Windows multi-worktree checkout, `pnpm portfolio:check-local` additionally
+checks its stamped snapshot, dashboard links, owned active-task worktree states
+and conflicting specification filenames. This is a local control, not a CI
+substitute or proof that the independent review/approval gates have passed.

@@ -77,6 +77,41 @@ lifecycle state.
 15. Merge after all required gates pass; mark DONE after required acceptance and
     merge/completion actions are finished.
 
+## Roadmap, task registration and publication
+
+PM / Architecture Coordinator maintains one reconciled **portfolio inventory** for
+work in progress across assigned worktrees. Before materializing a task or spec,
+check existing IDs in the integrated branch **and** concurrently active worktrees;
+do not reuse an assigned ID or treat a draft specification as approved.
+
+When a task is materialized or changes state, owner, review gate or dependency,
+update its canonical `tasks/active/` or `tasks/done/` file and the corresponding
+`docs/project/PROJECT_ROADMAP.md` row **in the owning worktree**. Regenerate
+`docs/project/PROJECT_ROADMAP.html` with `pnpm roadmap:generate` and run
+`pnpm roadmap:check`. Generated HTML must never be edited independently.
+
+**A local passing check does not publish to another branch.** The PM coordinates
+an isolated project-control reconciliation when several worktrees own different
+updates: reconcile all materialized task states and dependencies without
+copying unapproved application code or prematurely transitioning tasks to DONE.
+The root `PROJECT_ROADMAP.html` must state which dashboard reflects authorized
+integrated `main` and which reflects provisional worktree state, including its
+as-of/provenance qualification. Do not silently redirect to one historical
+worktree or imply that a local branch is integrated.
+On a local multi-worktree checkout, run `pnpm portfolio:check-local` in the
+reconciliation worktree after updating the root landing, in addition to the
+branch-local `roadmap:check`. It verifies a source hash, link existence,
+portfolio counts, current owner worktree states and specification-ID collisions;
+neither command automatically merges or approves another worktree.
+
+Before an authorized history integration, verify the exact source task files,
+approved spec IDs, branch-specific ownership and independent review evidence;
+regenerate/recheck the dashboard in the **target integration worktree**. A
+frontend/backend shared-file collision requires an explicit integration owner
+and a combined QA pass, not a last-writer-wins copy of either implementation.
+No roadmap or governance sync authorizes a commit, merge, deployment, clean,
+worktree deletion, Class-A specification change, or public endpoint enablement.
+
 ## Parallel work
 
 Preferred:

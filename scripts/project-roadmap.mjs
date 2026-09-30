@@ -212,9 +212,62 @@ function taskFilesById(directory) {
   const files = new Map();
   for (const name of readdirSync(directory)) {
     const match = name.match(/^(TASK-\d{3})-.+\.md$/);
-    if (match) files.set(match[1], resolve(directory, name));
+    if (match) {
+      if (files.has(match[1])) fail(`${directory}: duplicate materialized files for ${match[1]}`);
+      files.set(match[1], resolve(directory, name));
+    }
   }
   return files;
+}
+
+function readyTaskMetadataErrors(id, path, expectedClass) {
+  const lines = readUtf8(path).normalized.split('\n');
+  const start = lines.indexOf('## Metadata');
+  if (start < 0) return [`${id}: READY task is missing ## Metadata`];
+  const next = lines.findIndex((line, index) => index > start && line.startsWith('## '));
+  const fields = new Map();
+  const errors = [];
+  for (const line of lines.slice(start + 1, next < 0 ? lines.length : next)) {
+    const match = line.match(/^- ([^:]+):\s*(.*)$/);
+    if (!match) continue;
+    const [, name, rawValue] = match;
+    if (fields.has(name)) errors.push(`${id}: repeated metadata field ${name}`);
+    fields.set(name, rawValue.trim());
+  }
+
+  const value = (name) => fields.get(name) ?? '';
+  for (const name of [
+    'State', 'Class', 'Owner', 'Owner execution surface',
+    'Reviewer', 'Reviewer execution surface',
+    'Auditor', 'Auditor execution surface',
+    'Consultants', 'Consultant execution surface(s)',
+  ]) {
+    if (!value(name)) errors.push(`${id}: READY task is missing ${name}`);
+  }
+  if (value('State') && value('State') !== 'READY') {
+    errors.push(`${id}: READY State metadata differs`);
+  }
+  const taskClass = value('Class').match(/^([ABC])(?=$|[\s—-])/u)?.[1];
+  if (value('Class') && taskClass !== expectedClass) {
+    errors.push(`${id}: READY Class metadata differs from roadmap ${expectedClass}`);
+  }
+  const notApplicable = (name) => /^N\/A(?:$|\s|—)/u.test(value(name));
+  for (const [role, surface] of [
+    ['Reviewer', 'Reviewer execution surface'],
+    ['Auditor', 'Auditor execution surface'],
+    ['Consultants', 'Consultant execution surface(s)'],
+  ]) {
+    if (value(role) && value(surface) && notApplicable(role) !== notApplicable(surface)) {
+      errors.push(`${id}: ${role} N/A must match its execution surface`);
+    }
+  }
+  if (notApplicable('Owner') || notApplicable('Owner execution surface')) {
+    errors.push(`${id}: READY task requires an assigned owner and execution surface`);
+  }
+  if (expectedClass === 'B' && notApplicable('Reviewer')) {
+    errors.push(`${id}: Class B READY task requires an independent reviewer`);
+  }
+  return errors;
 }
 
 function validateRoadmap(data) {
@@ -264,6 +317,9 @@ function validateRoadmap(data) {
     else {
       const fileState = taskStateFromFile(path);
       if (roadmapState !== fileState) errors.push(`${id} state mismatch: roadmap=${roadmapState}, active task=${fileState}`);
+      if (roadmapState === 'READY' && fileState === 'READY') {
+        errors.push(...readyTaskMetadataErrors(id, path, taskById.get(id).class));
+      }
     }
   }
   for (const [id] of doneFiles) if (taskById.has(id) && taskById.get(id).status !== 'DONE') errors.push(`${id}: done task file exists but roadmap state is ${taskById.get(id).status}`);
