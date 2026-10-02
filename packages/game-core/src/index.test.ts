@@ -66,6 +66,7 @@ describe("game-core entrypoint", () => {
       "decodeSoloHuntCheckpointV1",
       "decodeSoloHuntCheckpointV2",
       "deriveLevelAvailableMoves",
+      "deriveMaxHpForRulesVersion",
       "deriveSimpleDamageMoveCooldownMs",
       "encodeSoloHuntCheckpointV1",
       "encodeSoloHuntCheckpointV2",

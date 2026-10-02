@@ -98,7 +98,8 @@ describe("discoverMigrations", () => {
 
   it("publishes TASK-038 authoritative Hunt orchestration after checkpoint claims", async () => {
     const migrations = await discoverMigrations();
-    expect(migrations.at(-1)?.fileName).toBe("0009_authoritative_hunt_api.sql");
+    expect(migrations.find(({ fileName }) => fileName === "0009_authoritative_hunt_api.sql")?.fileName)
+      .toBe("0009_authoritative_hunt_api.sql");
     const sql = await readFile(join(canonicalMigrationsDirectory, "0009_authoritative_hunt_api.sql"), "utf8");
     expect(sql).toContain("CREATE TABLE pokenexus.player_hunt_roots");
     expect(sql).toContain("CREATE UNIQUE INDEX solo_hunts_one_active_per_player_idx");
@@ -106,5 +107,19 @@ describe("discoverMigrations", () => {
     expect(sql).toContain("CREATE TABLE pokenexus.hunt_auto_capture_policies");
     expect(sql).toContain("CREATE TABLE pokenexus.hunt_encounter_boundaries");
     expect(sql).toContain("CREATE TABLE pokenexus.hunt_healing_commands");
+  });
+
+  it("publishes TASK-108 persistent Pokémon vitality and PokéCenter authority after Hunt orchestration", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.at(-1)?.fileName).toBe("0010_persistent_pokemon_vitality_pokecenter.sql");
+    const sql = await readFile(
+      join(canonicalMigrationsDirectory, "0010_persistent_pokemon_vitality_pokecenter.sql"),
+      "utf8",
+    );
+    expect(sql).toContain("CREATE TABLE pokenexus.pokemon_vitalities");
+    expect(sql).toContain("PRIMARY KEY (owner_player_id, pokemon_instance_id)");
+    expect(sql).toContain("current_hp integer NOT NULL CHECK (current_hp >= 0)");
+    expect(sql).toContain("CREATE TABLE pokenexus.pokecenter_heal_commands");
+    expect(sql).toContain("UNIQUE (player_id, idempotency_key)");
   });
 });

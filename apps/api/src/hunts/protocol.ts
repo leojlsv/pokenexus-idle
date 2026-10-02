@@ -22,6 +22,10 @@ export interface StartHuntRequest {
   readonly teamId: string;
 }
 
+export interface PokeCenterHealRequest {
+  readonly teamId: string;
+}
+
 export type ManualCaptureRequest =
   | {
       readonly decision: "attempt";
@@ -158,6 +162,14 @@ export function parseStartHuntBody(text: string): StartHuntRequest {
   assertExactKeys(value, ["huntDefinitionId", "teamId"]);
   return {
     huntDefinitionId: assertOpaqueId(value.huntDefinitionId, "huntDefinitionId"),
+    teamId: assertCanonicalUuid(value.teamId, "teamId"),
+  };
+}
+
+export function parsePokeCenterHealBody(text: string): PokeCenterHealRequest {
+  const value = parseJsonMutationBodyText(text);
+  assertExactKeys(value, ["teamId"]);
+  return {
     teamId: assertCanonicalUuid(value.teamId, "teamId"),
   };
 }

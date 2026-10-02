@@ -79,5 +79,6 @@ export type {
 } from "./solo-hunt";
 export { cadenceParticipantKey } from "./types";
 export type * from "./types";
+export { deriveMaxHpForRulesVersion } from "./validation";
 
 export const PACKAGE_NAME = "@pokenexus/game-core" as const;

@@ -17,3 +17,5 @@ export * from "./reward-repository.js";
 export * from "./capture-repository.js";
 export * from "./hunt-checkpoint-repository.js";
 export * from "./hunt-orchestration-repository.js";
+export * from "./pokemon-vitality-repository.js";
+export * from "./pokecenter-repository.js";

@@ -2,12 +2,18 @@ import {
   claimRewardResolution,
   claimRewardResolutionInTransaction,
   grantInventoryEntriesInTransaction,
+  ensureAndLockPlayerHuntRoot,
+  initializeAndReconcilePokemonVitalitiesInTransaction,
   insertRewardCompletion,
+  loadHuntInputAuthority,
   loadInventory,
+  loadOwnedPokemon,
   loadOwnedPokemonProgression,
   loadPlayerProgression,
+  loadPokemonVitality,
   loadRewardResolutionById,
   loadRewardResolutionBySourceKey,
+  reconcilePokemonVitalityMaxHpInTransaction,
   updateOwnedPokemonProgression,
   updatePlayerProgression,
   withPgClient,
@@ -17,12 +23,18 @@ import {
   type TransactionClient,
 } from "@pokenexus/database";
 import {
+  GENETIC_COMBAT_RULES_VERSION_V1,
   PLAYER_PROGRESSION_RULE_ID,
   POKEMON_PROGRESSION_RULE_ID,
+  allocateGeneticBudget,
+  deriveMaxHpForRulesVersion,
   evaluatePlayerXpGrant,
   evaluatePokemonXpGrant,
+  geneticBudgetForScore,
+  type GeneticProfile,
   type PlayerXpGrantResult,
   type PokemonXpGrantResult,
+  type StatBlock,
 } from "@pokenexus/game-core";
 import {
   loadRuntimeGameDataArtifact,
@@ -59,6 +71,7 @@ export interface PinnedRewardContext {
   readonly gameDataVersionNewOperationsAllowed: boolean | null;
   readonly progressionRules: PinnedProgressionRules;
   readonly itemIds: ReadonlySet<string>;
+  readonly speciesBaseStatsById: ReadonlyMap<string, StatBlock<number>>;
 }
 
 export interface PinnedRewardContextLoader {
@@ -83,6 +96,7 @@ export function createRuntimePinnedRewardContextLoader(input: {
       const needsRules = envelope.effects.some(
         (effect) => effect.kind === "pokemon_xp" || effect.kind === "player_xp",
       );
+      const needsPokemonXp = envelope.effects.some((effect) => effect.kind === "pokemon_xp");
       const needsItems = envelope.effects.some((effect) => effect.kind === "item_grant");
       let staticContextPairCompatibility: StaticContextPairCompatibilityRecord | null = null;
       let staticContextPairNewOperationsAllowed: boolean | null = null;
@@ -131,7 +145,8 @@ export function createRuntimePinnedRewardContextLoader(input: {
       }
 
       const itemIds = new Set<string>();
-      if (needsItems) {
+      const speciesBaseStatsById = new Map<string, StatBlock<number>>();
+      if (needsItems || (needsPokemonXp && envelope.gameDataVersion !== null)) {
         if (envelope.gameDataVersion === null) {
           throw new Error("Item reward effects require an exact pinned gameDataVersion");
         }
@@ -145,12 +160,22 @@ export function createRuntimePinnedRewardContextLoader(input: {
         }
         gameDataVersionNewOperationsAllowed = gameDataLifecycle.newOperationsAllowed;
         const version = await loadRuntimeGameDataVersion(input.gameDataReader, envelope.gameDataVersion);
-        const items = await loadRuntimeGameDataArtifact(
-          input.gameDataReader,
-          version,
-          "catalogs/items",
-        ) as ItemDefinitionV1[];
-        for (const item of items) itemIds.add(item.id);
+        if (needsItems) {
+          const items = await loadRuntimeGameDataArtifact(
+            input.gameDataReader,
+            version,
+            "catalogs/items",
+          ) as ItemDefinitionV1[];
+          for (const item of items) itemIds.add(item.id);
+        }
+        if (needsPokemonXp) {
+          const species = await loadRuntimeGameDataArtifact(
+            input.gameDataReader,
+            version,
+            "catalogs/species",
+          ) as Array<{ readonly id: string; readonly baseStats: StatBlock<number> }>;
+          for (const entry of species) speciesBaseStatsById.set(entry.id, entry.baseStats);
+        }
       }
 
       return {
@@ -162,9 +187,43 @@ export function createRuntimePinnedRewardContextLoader(input: {
         gameDataVersionNewOperationsAllowed,
         progressionRules,
         itemIds,
+        speciesBaseStatsById,
       };
     },
   };
+}
+
+function deriveProgressionMaxHp(
+  context: PinnedRewardContext,
+  pokemon: NonNullable<Awaited<ReturnType<typeof loadOwnedPokemon>>>,
+  level: bigint,
+): number {
+  const baseStats = context.speciesBaseStatsById.get(pokemon.speciesId);
+  if (!baseStats) {
+    throw new RewardApplicationError(
+      `Pinned game data does not resolve Pokémon Species for vitality reconciliation: ${pokemon.speciesId}`,
+    );
+  }
+  const numericLevel = Number(level);
+  const geneticBonuses = context.progressionRules.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1
+    ? allocateGeneticBudget(
+        geneticBudgetForScore(pokemon.individualization.geneticScore),
+        pokemon.individualization.expressedProfile as GeneticProfile,
+      )
+    : undefined;
+  const maxHp = deriveMaxHpForRulesVersion(
+    context.progressionRules.rulesVersion as never,
+    baseStats,
+    pokemon.ivs,
+    numericLevel,
+    geneticBonuses,
+  );
+  if (maxHp === undefined) {
+    throw new RewardApplicationError(
+      `Pinned rules cannot derive Pokémon max HP for vitality reconciliation: ${pokemon.pokemonInstanceId}`,
+    );
+  }
+  return maxHp;
 }
 
 export class RewardApplicationError extends Error {
@@ -305,6 +364,27 @@ export class RewardApplicationService {
     validatePinnedContext(initial, pinnedContext, "historical_application");
 
     const apply = async (client: TransactionClient): Promise<RewardApplicationResult> => {
+      let activeHistoricalHunt = false;
+      if (initial.effects.some((effect) => effect.kind === "pokemon_xp")) {
+        const root = await ensureAndLockPlayerHuntRoot(client, initial.subjectPlayerId);
+        if (!root) throw new RewardApplicationError("Reward subject Player no longer exists");
+        if (root.activeHuntId !== null) {
+          const authority = await loadHuntInputAuthority(
+            client,
+            initial.subjectPlayerId,
+            root.activeHuntId,
+          );
+          if (!authority) {
+            throw new RewardApplicationError("Active Hunt input authority is unavailable");
+          }
+          const schemaVersion = authority.runtimeInputsJson.schemaVersion;
+          if (schemaVersion === "hunt-runtime-inputs-v1") {
+            activeHistoricalHunt = true;
+          } else if (schemaVersion !== "hunt-runtime-inputs-v2") {
+            throw new RewardApplicationError("Active Hunt vitality semantics are unsupported");
+          }
+        }
+      }
       const resolution = await loadRewardResolutionById(client, resolutionId, true);
       if (!resolution) return { status: "not_found" };
       if (resolution.completion) return completionResult(resolution, true);
@@ -327,6 +407,7 @@ export class RewardApplicationService {
       }
 
       const pokemonStates = new Map<string, NonNullable<Awaited<ReturnType<typeof loadOwnedPokemonProgression>>>>();
+      const pokemonConfigs = new Map<string, NonNullable<Awaited<ReturnType<typeof loadOwnedPokemon>>>>();
       for (const effect of pokemonEffects) {
         const state = await loadOwnedPokemonProgression(
           client,
@@ -340,6 +421,11 @@ export class RewardApplicationService {
           );
         }
         pokemonStates.set(effect.pokemonInstanceId, state);
+        const config = await loadOwnedPokemon(client, resolution.subjectPlayerId, effect.pokemonInstanceId);
+        if (!config || config.rowVersion !== state.rowVersion) {
+          throw new RewardApplicationStaleError();
+        }
+        pokemonConfigs.set(effect.pokemonInstanceId, config);
       }
 
       const inventoryState = itemEffects.length > 0
@@ -384,7 +470,8 @@ export class RewardApplicationService {
       for (const effect of pokemonEffects) {
         const state = pokemonStates.get(effect.pokemonInstanceId);
         const result = pokemonResults.get(effect.pokemonInstanceId);
-        if (!state || !result) throw new Error("Pokémon progression application state is incomplete");
+        const config = pokemonConfigs.get(effect.pokemonInstanceId);
+        if (!state || !result || !config) throw new Error("Pokémon progression application state is incomplete");
         if (!result.changed) continue;
         const updated = await updateOwnedPokemonProgression(client, {
           ownerPlayerId: resolution.subjectPlayerId,
@@ -395,6 +482,32 @@ export class RewardApplicationService {
           now,
         });
         if (!updated) throw new RewardApplicationStaleError();
+        if (result.level !== state.level) {
+          const maxHp = deriveProgressionMaxHp(pinnedContext, config, result.level);
+          const existingVitality = await loadPokemonVitality(
+            client,
+            resolution.subjectPlayerId,
+            effect.pokemonInstanceId,
+            true,
+          );
+          if (existingVitality) {
+            const reconciled = await reconcilePokemonVitalityMaxHpInTransaction(client, {
+              ownerPlayerId: resolution.subjectPlayerId,
+              pokemonInstanceId: effect.pokemonInstanceId,
+              maxHp,
+              now,
+            });
+            if (reconciled.status === "not_found" || reconciled.status === "stale") {
+              throw new RewardApplicationError("Pokémon vitality reconciliation lost locked row invariant");
+            }
+          } else if (!activeHistoricalHunt) {
+            await initializeAndReconcilePokemonVitalitiesInTransaction(client, {
+              ownerPlayerId: resolution.subjectPlayerId,
+              maxHpByPokemonInstanceId: { [effect.pokemonInstanceId]: maxHp },
+              now,
+            });
+          }
+        }
       }
 
       if (itemEffects.length > 0 && inventoryState) {

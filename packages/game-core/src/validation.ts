@@ -125,6 +125,22 @@ export function deriveStatsForRulesVersion(
   return result;
 }
 
+export function deriveMaxHpForRulesVersion(
+  rulesVersion: ResolvedCombatContext["rulesVersion"],
+  baseStats: BattleCombatantInit["baseStats"],
+  ivs: BattleCombatantInit["ivs"],
+  level: number,
+  geneticBonuses?: BattleCombatantInit["geneticBonuses"],
+): number | undefined {
+  return deriveStatsForRulesVersion(
+    rulesVersion,
+    baseStats,
+    ivs,
+    level,
+    geneticBonuses,
+  )?.hp;
+}
+
 function validateStatBlock(block: BattleCombatantInit["baseStats"], label: string): string | undefined {
   for (const key of STAT_KEYS) {
     if (!isNonNegativeInteger(block[key])) return `${label}.${key} must be a non-negative integer`;
