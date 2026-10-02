@@ -94,6 +94,7 @@ function creationContext(options: {
     speciesIds: new Set([speciesId]),
     speciesById: new Map([[speciesId, {
       id: speciesId,
+      baseStats: { hp: 80, atk: 70, def: 60, spa: 50, spd: 40, spe: 30 },
       abilities,
     } as never]]),
     moveIds: new Set(["move:one", "move:two", "move:late"]),
@@ -176,7 +177,11 @@ function captureAttemptRecord(individual = snapshot()): CaptureAttemptRecord {
 function repository(existing: CaptureAttemptRecord | null = null) {
   const loadByCorrelation = vi.fn(async () => existing);
   const commit = vi.fn(async (
-    _input: CaptureAttemptIntent & { expectedInventoryRowVersion: bigint; now: Date },
+    _input: CaptureAttemptIntent & {
+      expectedInventoryRowVersion: bigint;
+      initialPokemonVitalityCurrentHp?: number;
+      now: Date;
+    },
   ): Promise<CaptureAttemptCommitResult> => ({ status: "inventory_stale", rowVersion: 9n }));
   return {
     value: { loadByCorrelation, commit } satisfies CaptureAttemptRepository,
@@ -290,6 +295,7 @@ describe("SoloHuntCaptureResolutionService", () => {
     expect(intent.creationGameDataVersion).toBe("game-data:creation");
     expect(intent.creationRulesVersion).toBe("rules:creation");
     expect(intent.expectedInventoryRowVersion).toBe(8n);
+    expect(intent.initialPokemonVitalityCurrentHp).toBe(36);
   });
 
   it("returns a durable same-correlation replay before consulting current Ball or creation authority", async () => {

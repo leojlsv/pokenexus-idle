@@ -211,6 +211,7 @@ export interface SoloHuntRuntimeInputs {
   readonly contentHash: string;
   readonly context: ResolvedCombatContext;
   readonly team: ReadonlyArray<SoloHuntTeamMemberSnapshot>;
+  readonly initialHpByPokemonInstanceId?: Readonly<Record<string, number>>;
   readonly encounterOptions: ReadonlyArray<SoloHuntEncounterOption>;
   readonly opponentTemplates: ReadonlyArray<SoloHuntOpponentTemplate>;
   readonly interBattleGapMs: number;
@@ -1196,7 +1197,11 @@ function validateRuntimeInputs(inputs: SoloHuntRuntimeInputs): string | undefine
     inputs.context,
   );
   if (!catalogValidation.accepted) return catalogValidation.reason;
-  const fresh = createFreshSoloHuntCadence(inputs.team, inputs.context);
+  const fresh = createFreshSoloHuntCadence(
+    inputs.team,
+    inputs.context,
+    inputs.initialHpByPokemonInstanceId,
+  );
   if (!fresh.accepted) return fresh.reason;
   for (const member of inputs.team) {
     if (geneticRuntime !== (member.geneticBonuses !== undefined)) {
@@ -2261,7 +2266,11 @@ function validateReplayableHuntHistory(
 ): string | undefined {
   const originRngError = validateRngState(state.combatDeterministicOrigin.rng);
   if (originRngError) return originRngError;
-  const fresh = createFreshSoloHuntCadence(inputs.team, inputs.context);
+  const fresh = createFreshSoloHuntCadence(
+    inputs.team,
+    inputs.context,
+    inputs.initialHpByPokemonInstanceId,
+  );
   if (!fresh.accepted) return fresh.reason;
 
   let cadence = fresh.cadence;
@@ -2898,7 +2907,11 @@ export function createSoloHuntRuntime(
       events: [],
     };
   }
-  const fresh = createFreshSoloHuntCadence(input.inputs.team, input.inputs.context);
+  const fresh = createFreshSoloHuntCadence(
+    input.inputs.team,
+    input.inputs.context,
+    input.inputs.initialHpByPokemonInstanceId,
+  );
   if (!fresh.accepted) return { accepted: false, reason: fresh.reason, events: [] };
 
   let pending: SoloHuntPendingEncounterSelection;
@@ -3483,6 +3496,7 @@ export interface SoloHuntMovePolicyState {
 export function createFreshSoloHuntCadence(
   team: ReadonlyArray<SoloHuntTeamMemberSnapshot>,
   context?: ResolvedCombatContext,
+  initialHpByPokemonInstanceId?: Readonly<Record<string, number>>,
 ): FreshSoloHuntCadenceResult {
   if (team.length === 0) {
     return { accepted: false, reason: "Solo Hunt requires at least one pinned Team member" };
@@ -3494,6 +3508,16 @@ export function createFreshSoloHuntCadence(
   const readinessEntries: Array<readonly [CadenceParticipantKey, CadenceCarryState["readinessByParticipant"][CadenceParticipantKey]]> = [];
   const actionLockEntries: Array<readonly [CadenceParticipantKey, number]> = [];
   const cursorEntries: Array<readonly [CadenceParticipantKey, number]> = [];
+  const initialHpKeys = initialHpByPokemonInstanceId
+    ? Object.keys(initialHpByPokemonInstanceId)
+    : [];
+  if (
+    initialHpByPokemonInstanceId
+    && !sameStringSet(initialHpKeys, team.map((member) => member.pokemonInstanceId))
+  ) {
+    return { accepted: false, reason: "Solo Hunt initial HP keys must exactly match the pinned Team" };
+  }
+  let livingMembers = 0;
 
   for (const member of team) {
     if (!context && member.geneticBonuses !== undefined) {
@@ -3536,7 +3560,22 @@ export function createFreshSoloHuntCadence(
       identity: member.pokemonInstanceId,
     };
     const participantKey = cadenceParticipantKey(participant);
-    hpEntries.push([participantKey, derived.hp]);
+    const initialHp = initialHpByPokemonInstanceId
+      ? ownGet(initialHpByPokemonInstanceId, member.pokemonInstanceId)
+      : derived.hp;
+    if (
+      initialHp === undefined
+      || !Number.isSafeInteger(initialHp)
+      || initialHp < 0
+      || initialHp > derived.hp
+    ) {
+      return {
+        accepted: false,
+        reason: `invalid initial HP for pinned Team member: ${member.pokemonInstanceId}`,
+      };
+    }
+    if (initialHp > 0) livingMembers += 1;
+    hpEntries.push([participantKey, initialHp]);
     maxHpEntries.push([participantKey, derived.hp]);
     readinessEntries.push([
       participantKey,
@@ -3551,6 +3590,10 @@ export function createFreshSoloHuntCadence(
     ]);
     actionLockEntries.push([participantKey, 0]);
     cursorEntries.push([participantKey, 1]);
+  }
+
+  if (initialHpByPokemonInstanceId && livingMembers === 0) {
+    return { accepted: false, reason: "Solo Hunt requires at least one living pinned Team member" };
   }
 
   return {

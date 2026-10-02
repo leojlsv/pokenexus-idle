@@ -12,6 +12,11 @@ import {
   GENETIC_COMBAT_RULES_RELEASE_V1,
   GENETIC_COMBAT_RULES_VERSION_V1,
 } from "./genetic-combat-rules";
+import {
+  MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
+  MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
+  isManagementFirstCombatContext,
+} from "./management-first-combat-rules";
 
 const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 const MAX_LEVEL = 200;
@@ -92,7 +97,7 @@ export function deriveStatsForRulesVersion(
   level: number,
   geneticBonuses?: BattleCombatantInit["geneticBonuses"],
 ): BattleCombatantInit["baseStats"] | undefined {
-  if (rulesVersion !== GENETIC_COMBAT_RULES_VERSION_V1) {
+  if (rulesVersion !== GENETIC_COMBAT_RULES_VERSION_V1 && rulesVersion !== MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1) {
     if (geneticBonuses !== undefined) return undefined;
     return deriveStats(baseStats, ivs, level);
   }
@@ -118,6 +123,22 @@ export function deriveStatsForRulesVersion(
     result[key] = Number(derived);
   }
   return result;
+}
+
+export function deriveMaxHpForRulesVersion(
+  rulesVersion: ResolvedCombatContext["rulesVersion"],
+  baseStats: BattleCombatantInit["baseStats"],
+  ivs: BattleCombatantInit["ivs"],
+  level: number,
+  geneticBonuses?: BattleCombatantInit["geneticBonuses"],
+): number | undefined {
+  return deriveStatsForRulesVersion(
+    rulesVersion,
+    baseStats,
+    ivs,
+    level,
+    geneticBonuses,
+  )?.hp;
 }
 
 function validateStatBlock(block: BattleCombatantInit["baseStats"], label: string): string | undefined {
@@ -160,6 +181,13 @@ export function validateCadenceCarry(cadence: import("./types").CadenceCarryStat
       !isNonNegativeInteger(readiness.nextActionRemainingMs) || !isRecord(readiness.moveCooldownRemainingMs) ||
       !isNonNegativeInteger(actionLockRemainingMs)) {
       return `invalid cadence readiness: ${participantKey}`;
+    }
+    if (isManagementFirstCombatContext(context)) {
+      if (!isNonNegativeInteger(readiness.autoPotionCooldownRemainingMs)) {
+        return `invalid cadence Auto-Potion readiness: ${participantKey}`;
+      }
+    } else if (readiness.autoPotionCooldownRemainingMs !== undefined) {
+      return `cadence Auto-Potion readiness is unsupported for rules version: ${participantKey}`;
     }
     const loadoutKeys = readiness.moveLoadout as ReadonlyArray<string>;
     const cooldownKeys = Object.keys(readiness.moveCooldownRemainingMs);
@@ -209,6 +237,14 @@ export function validateContext(context: ResolvedCombatContext): string | undefi
     if (!isNonEmptyString(context.rulesVersion)) return "rulesVersion is required";
     if (!isNonEmptyString(context.combatEventSchemaVersion)) {
       return "combatEventSchemaVersion is required";
+    }
+    if (context.rulesVersion === MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1
+      && context.combatEventSchemaVersion !== MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1) {
+      return "management-first combat rules require the management-first CombatEvent schema";
+    }
+    if (context.combatEventSchemaVersion === MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1
+      && context.rulesVersion !== MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1) {
+      return "management-first CombatEvent schema requires the management-first combat rules";
     }
   if (!isRecord(context.moveRules) || !isRecord(context.abilityRules) || !isRecord(context.typeChart)) {
     return "resolved combat context catalogs must be records";
@@ -438,6 +474,19 @@ export function validateBattleInit(input: BattleInitInput): string | undefined {
   for (const side of input.sides) {
     const error = validateSide(side);
     if (error) return error;
+  }
+  const managementFirst = isManagementFirstCombatContext(input.context);
+  if (managementFirst) {
+    if (!Object.prototype.hasOwnProperty.call(input, "koInterventionSideId")) {
+      return "management-first Battle must pin koInterventionSideId";
+    }
+    if (input.koInterventionSideId !== null) {
+      const interventionSide = input.sides.find((side) => side.sideId === input.koInterventionSideId);
+      if (!interventionSide) return "koInterventionSideId must identify a Battle side";
+      if (interventionSide.activeCapacity !== 1) return "KO intervention side activeCapacity must equal 1";
+    }
+  } else if (input.koInterventionSideId !== undefined) {
+    return "koInterventionSideId is unsupported for this rules version";
   }
   const combatantIds = input.combatants.map((combatant) => combatant.combatantId);
   if (new Set(combatantIds).size !== combatantIds.length) return "combatant identities must be unique";

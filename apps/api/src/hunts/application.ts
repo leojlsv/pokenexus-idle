@@ -1,7 +1,9 @@
 import {
   claimPublicHuntCommandInTransaction,
+  claimPokeCenterHealCommandInTransaction,
   closePendingManualCaptureInTransaction,
   completePublicHuntCommandInTransaction,
+  completePokeCenterHealCommandInTransaction,
   createHuntCheckpoint,
   createPendingManualCaptureIfFreeInTransaction,
   createSoloHuntInTransaction,
@@ -11,6 +13,8 @@ import {
   ensureAndLockPlayerHuntRoot,
   freezeEncounterBoundaryInTransaction,
   freezeEncounterAutomaticDecisionInTransaction,
+  healPokemonVitalitiesToMaxInTransaction,
+  initializeAndReconcilePokemonVitalitiesInTransaction,
   insertAutoCapturePolicyInTransaction,
   insertInitialPolicyIntervalInTransaction,
   loadAndLockOwnedTeamSnapshot,
@@ -29,11 +33,13 @@ import {
   loadPendingManualCapture,
   loadPendingZoneSelection,
   loadPlayerHuntRoot,
+  loadPokeCenterHealCommand,
   loadPublicHuntCommand,
   markEncounterBoundaryStageInTransaction,
   markHealingCommandsDueForEncounterInTransaction,
   persistOwnedHuntCheckpointInTransaction,
   recordEncounterAutomaticCaptureResultInTransaction,
+  replacePokemonVitalitiesCurrentHpInTransaction,
   saveHuntInputAuthorityInTransaction,
   savePendingZoneSelectionInTransaction,
   deletePendingZoneSelectionInTransaction,
@@ -54,6 +60,7 @@ import {
   type HuntPublicCommandRecord,
   type OwnedPokemonRecord,
   type OwnedTeamSnapshot,
+  type PokeCenterHealCommandRecord,
   type SoloHuntRecord,
   type TransactionClient,
 } from "@pokenexus/database";
@@ -89,6 +96,7 @@ import {
   type HuntItemUseRequest,
   type ManualCaptureRequest,
   type StartHuntRequest,
+  type PokeCenterHealRequest,
 } from "./protocol";
 import { noLivingHuntDisposition, publicRetreatTerminalReason } from "./terminal-disposition";
 
@@ -135,6 +143,7 @@ export interface HuntStartSelectorAuthority {
 export interface BuiltHuntRuntimeAuthority {
   readonly inputs: SoloHuntRuntimeInputs;
   readonly persistedInputs: Record<string, unknown>;
+  readonly maxHpByPokemonInstanceId: Readonly<Record<string, number>>;
   readonly selector: HuntStartSelectorAuthority;
   readonly individualizationAuthorityVersion: string | null;
   readonly individualizationAuthorityKeyId: string | null;
@@ -148,6 +157,13 @@ export interface HuntRuntimeAuthorityPort {
     readonly team: OwnedTeamSnapshot;
     readonly pendingEncounterSelection?: SoloHuntPendingEncounterSelection;
   }): Promise<BuiltHuntRuntimeAuthority>;
+  bindStartVitality(
+    built: BuiltHuntRuntimeAuthority,
+    initialHpByPokemonInstanceId: Readonly<Record<string, number>>,
+  ): BuiltHuntRuntimeAuthority;
+  deriveCurrentTeamMaxHp(
+    team: OwnedTeamSnapshot,
+  ): Promise<Readonly<Record<string, number>>>;
   loadPersistedRuntime(record: HuntInputAuthorityRecord): Promise<SoloHuntRuntimeInputs>;
   loadHistoricalEncounter(
     evidence: Pick<
@@ -272,6 +288,11 @@ export interface HuntHttpApplication {
   getCaptureBalls(playerId: string): Promise<HuntHttpResult>;
   getAutoCapturePolicy(playerId: string): Promise<HuntHttpResult>;
   start(playerId: string, idempotencyKey: string, body: StartHuntRequest): Promise<HuntHttpResult>;
+  healAtPokeCenter(
+    playerId: string,
+    idempotencyKey: string,
+    body: PokeCenterHealRequest,
+  ): Promise<HuntHttpResult>;
   checkpoint(playerId: string, idempotencyKey: string, huntId: string): Promise<HuntHttpResult>;
   claim(playerId: string, idempotencyKey: string, huntId: string): Promise<HuntHttpResult>;
   retreat(playerId: string, idempotencyKey: string, huntId: string): Promise<HuntHttpResult>;
@@ -439,6 +460,14 @@ function commandReplayResult(command: HuntPublicCommandRecord): HuntHttpResult |
   return null;
 }
 
+function pokeCenterReplayResult(command: PokeCenterHealCommandRecord): HuntHttpResult | null {
+  if (command.status !== "terminal") return null;
+  return {
+    httpStatus: command.resultHttpStatus ?? 500,
+    body: command.resultJson ?? { error: "authority_unavailable" },
+  };
+}
+
 type ExistingCommandRecheck =
   | { readonly status: "absent" }
   | { readonly status: "pending"; readonly command: HuntPublicCommandRecord }
@@ -581,6 +610,66 @@ function publicTeam(state: SoloHuntRuntimeState) {
       currentHp,
       maxHp,
     };
+  });
+}
+
+function currentOwnedHpByPokemonInstanceId(
+  state: SoloHuntRuntimeState,
+): Readonly<Record<string, number>> {
+  const cadence = currentCadence(state);
+  const result: Record<string, number> = Object.create(null) as Record<string, number>;
+  for (const member of state.pinnedTeam) {
+    const key = cadenceParticipantKey({
+      kind: "pokemonInstance",
+      identity: member.pokemonInstanceId,
+    });
+    const battleCombatant = state.currentEncounter
+      ? Object.values(state.currentEncounter.battle.combatants).find((combatant) =>
+          combatant.cadenceParticipant?.kind === "pokemonInstance"
+          && combatant.cadenceParticipant.identity === member.pokemonInstanceId)
+      : undefined;
+    const currentHp = battleCombatant?.currentHp ?? cadence?.hpByParticipant[key];
+    if (
+      currentHp === undefined
+      || !Number.isSafeInteger(currentHp)
+      || currentHp < 0
+    ) {
+      throw new HuntAuthorityUnavailableError(
+        "terminal vitality authority is unavailable for " + member.pokemonInstanceId,
+      );
+    }
+    result[member.pokemonInstanceId] = currentHp;
+  }
+  return result;
+}
+
+function huntUsesPersistentVitality(authority: HuntInputAuthorityRecord): boolean {
+  const schemaVersion = authority.runtimeInputsJson.schemaVersion;
+  if (schemaVersion === "hunt-runtime-inputs-v1") return false;
+  if (schemaVersion === "hunt-runtime-inputs-v2") return true;
+  throw new HuntAuthorityUnavailableError(
+    "persisted Hunt runtime authority has unsupported vitality semantics",
+  );
+}
+
+async function writeBackTerminalVitalityIfRequired(
+  transaction: TransactionClient,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly state: SoloHuntRuntimeState;
+    readonly now: Date;
+  },
+): Promise<void> {
+  const authority = await loadHuntInputAuthority(transaction, input.playerId, input.huntId);
+  if (!authority) {
+    throw new HuntAuthorityUnavailableError("terminal vitality runtime authority is unavailable");
+  }
+  if (!huntUsesPersistentVitality(authority)) return;
+  await replacePokemonVitalitiesCurrentHpInTransaction(transaction, {
+    ownerPlayerId: input.playerId,
+    currentHpByPokemonInstanceId: currentOwnedHpByPokemonInstanceId(input.state),
+    now: input.now,
   });
 }
 
@@ -852,6 +941,107 @@ export class HuntApplication implements HuntHttpApplication {
     }
   }
 
+  async healAtPokeCenter(
+    playerId: string,
+    idempotencyKey: string,
+    body: PokeCenterHealRequest,
+  ): Promise<HuntHttpResult> {
+    try {
+      const existing = await withPgClient(
+        { connectionString: this.connectionString },
+        (client) => loadPokeCenterHealCommand(client, playerId, idempotencyKey),
+      );
+      if (existing) {
+        if (existing.teamId !== body.teamId) return error(409, "correlation_conflict");
+        const replay = pokeCenterReplayResult(existing);
+        if (replay) return replay;
+      }
+
+      return await withPgClient({ connectionString: this.connectionString }, (client) =>
+        withTransaction(client, async (transaction) => {
+          const root = await ensureAndLockPlayerHuntRoot(transaction, playerId);
+          if (!root) return error(404, "not_found");
+
+          const claimed = await claimPokeCenterHealCommandInTransaction(transaction, {
+            playerId,
+            idempotencyKey,
+            teamId: body.teamId,
+            now: root.databaseNow,
+          });
+          if (claimed.status === "conflict") return error(409, "correlation_conflict");
+          const replay = pokeCenterReplayResult(claimed.command);
+          if (replay) return replay;
+
+          if (root.activeHuntId !== null) {
+            const result = error(409, "hunt_active");
+            await completePokeCenterHealCommandInTransaction(transaction, {
+              commandId: claimed.command.commandId,
+              httpStatus: result.httpStatus,
+              resultJson: result.body,
+              now: root.databaseNow,
+            });
+            return result;
+          }
+
+          const team = await loadAndLockOwnedTeamSnapshot(
+            transaction,
+            playerId,
+            body.teamId,
+          );
+          if (!team) {
+            const result = error(404, "not_found");
+            await completePokeCenterHealCommandInTransaction(transaction, {
+              commandId: claimed.command.commandId,
+              httpStatus: result.httpStatus,
+              resultJson: result.body,
+              now: root.databaseNow,
+            });
+            return result;
+          }
+
+          const maxHpByPokemonInstanceId =
+            await this.ports.authority.deriveCurrentTeamMaxHp(team);
+          const healed = await healPokemonVitalitiesToMaxInTransaction(transaction, {
+            ownerPlayerId: playerId,
+            maxHpByPokemonInstanceId,
+            now: root.databaseNow,
+          });
+          const vitalityById = new Map(
+            healed.vitality.map((entry) => [entry.pokemonInstanceId, entry]),
+          );
+          const result = ok({
+            teamId: body.teamId,
+            vitality: team.team.pokemonInstanceIds.map((pokemonInstanceId) => {
+              const vitality = vitalityById.get(pokemonInstanceId);
+              const maxHp = maxHpByPokemonInstanceId[pokemonInstanceId];
+              if (!vitality || maxHp === undefined) {
+                throw new HuntAuthorityUnavailableError(
+                  "PokéCenter result vitality authority is incomplete",
+                );
+              }
+              return {
+                pokemonInstanceId,
+                currentHp: vitality.currentHp,
+                maxHp,
+                vitality: vitality.currentHp > 0 ? "conscious" : "ko",
+                vitalityRowVersion: vitality.rowVersion.toString(),
+              };
+            }),
+            recoveryReadyAt: root.recoveryReadyAt?.toISOString() ?? null,
+          });
+          await completePokeCenterHealCommandInTransaction(transaction, {
+            commandId: claimed.command.commandId,
+            httpStatus: result.httpStatus,
+            resultJson: result.body,
+            now: root.databaseNow,
+          });
+          return result;
+        }));
+    } catch {
+      return error(503, "authority_unavailable");
+    }
+  }
+
   async start(playerId: string, idempotencyKey: string, body: StartHuntRequest): Promise<HuntHttpResult> {
     const intentHash = await hashNormalizedIntent(body);
     const replayFirst = await this.recheckExistingCommand(
@@ -954,6 +1144,20 @@ export class HuntApplication implements HuntHttpApplication {
             );
             return result;
           }
+          const vitality = await initializeAndReconcilePokemonVitalitiesInTransaction(
+            transaction,
+            {
+              ownerPlayerId: playerId,
+              maxHpByPokemonInstanceId: built.maxHpByPokemonInstanceId,
+              now: root.databaseNow,
+            },
+          );
+          built = this.ports.authority.bindStartVitality(
+            built,
+            Object.fromEntries(
+              vitality.map((entry) => [entry.pokemonInstanceId, entry.currentHp]),
+            ),
+          );
           const huntRunIdentity = `hunt-run:${crypto.randomUUID()}`;
           const created = createSoloHuntRuntime({
             huntRunIdentity,
@@ -2206,6 +2410,12 @@ export class HuntApplication implements HuntHttpApplication {
         if (executable.status === "response") return executable.result;
         const locked = await loadOwnedSoloHunt(transaction, playerId, hunt.huntId, true);
         if (!locked || locked.terminalAt) return null;
+        await writeBackTerminalVitalityIfRequired(transaction, {
+          playerId,
+          huntId: hunt.huntId,
+          state,
+          now: root.databaseNow,
+        });
         await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
@@ -3140,6 +3350,12 @@ export class HuntApplication implements HuntHttpApplication {
         if (!checkpoint || checkpoint.logicalTimeMs !== state.logicalTimeMs) {
           return error(503, "authority_unavailable");
         }
+        await writeBackTerminalVitalityIfRequired(transaction, {
+          playerId,
+          huntId: hunt.huntId,
+          state,
+          now: root.databaseNow,
+        });
         const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
@@ -3206,6 +3422,12 @@ export class HuntApplication implements HuntHttpApplication {
         if (!checkpoint || checkpoint.logicalTimeMs !== state.logicalTimeMs) {
           return error(503, "authority_unavailable");
         }
+        await writeBackTerminalVitalityIfRequired(transaction, {
+          playerId,
+          huntId: hunt.huntId,
+          state,
+          now: root.databaseNow,
+        });
         const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
@@ -3309,6 +3531,12 @@ export class HuntApplication implements HuntHttpApplication {
         if (!checkpoint || checkpoint.logicalTimeMs !== state.logicalTimeMs) {
           return error(503, "authority_unavailable");
         }
+        await writeBackTerminalVitalityIfRequired(transaction, {
+          playerId,
+          huntId: hunt.huntId,
+          state,
+          now: root.databaseNow,
+        });
         await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,

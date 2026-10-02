@@ -7,6 +7,7 @@ import {
   parseEmptyMutationBodyText,
   parseHuntItemUseBody,
   parseManualCaptureBody,
+  parsePokeCenterHealBody,
   parseStartHuntBody,
   validateAutoCapturePolicyRelationships,
 } from "./protocol";
@@ -21,6 +22,17 @@ describe("SPEC-015 Hunt protocol parsing", () => {
     expect(() => parseStartHuntBody(JSON.stringify({
       huntDefinitionId: "hunt:kanto:forest",
       teamId: teamId.toUpperCase(),
+    }))).toThrowError(HuntProtocolError);
+  });
+
+  it("accepts only the explicit owned-team PokéCenter selector shape", () => {
+    expect(parsePokeCenterHealBody(JSON.stringify({ teamId }))).toEqual({ teamId });
+    expect(() => parsePokeCenterHealBody(JSON.stringify({
+      teamId: teamId.toUpperCase(),
+    }))).toThrowError(HuntProtocolError);
+    expect(() => parsePokeCenterHealBody(JSON.stringify({
+      teamId,
+      currentHp: 999,
     }))).toThrowError(HuntProtocolError);
   });
 

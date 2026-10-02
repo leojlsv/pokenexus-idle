@@ -2,57 +2,63 @@
 
 ## Metadata
 
-- State: ACTIVE
+- State: BLOCKED
 - Class: B
 - Owner: Frontend Developer (ChatGPT prime)
 - Owner execution surface: ChatGPT prime (explicit non-default Frontend Developer assignment)
 - Reviewer: QA Reviewer (independent final full-task review pending)
 - Reviewer execution surface: independent ChatGPT delegated reviewers (explicit non-default; exact reviewer/session and reviewed-snapshot identities require reconciliation before final acceptance)
-- Auditor: TO BE DETERMINED for the SPEC-018 authenticated backend delivery slice; no completed implementation audit is asserted
-- Auditor execution surface: UNASSIGNED pending the backend security/authority gate determination
-- Consultants: N/A — this task implements accepted presentation/catalog behavior and does not define new gameplay or economy rules
+- Auditor: N/A for the rebased forward FE-only scope; any preserved SPEC-018/backend source requires its own correctly owned backend task/review before repository integration
+- Auditor execution surface: N/A for the rebased forward FE-only scope
+- Consultants: N/A — this task implements the already accepted SPEC-020/021 management-first UX and may not redefine gameplay/economy rules
 - Consultant execution surface(s): N/A
 - Prior partial-review evidence: independent technical QA PARTIAL READY and UX source PARTIAL READY for read/capture/advance/retreat, policy replacement, explicit healing and gated Start transport (no identified frontend P0/P1 after source corrections); isolated synthetic browser command/viewport validation passed; real API, content publication and assistive-technology gates pending
-- Backend ownership gate: this FE-owned task worktree also contains the SPEC-018 read-only API catalog-release/artifact implementation. The existing Owner approval of SPEC-018 direction does not establish that Frontend Developer has API implementation authority under `docs/agents/authority-matrix.md`. Before final acceptance or repository integration, PM/Human Owner must reconcile the backend implementation owner/scope and required independent backend review/audit; no backend role exception or full-task approval is recorded here.
-- Human Owner feedback: "funcionalidades validadas" on 2026-09-28 for the previously demonstrated read-only functionality; "Ok, aprovado" on 2026-09-28 in response to the manual-capture implementation and QA results. These approvals cover the presented partial slices, not absent command/event contracts, full live Hunt or repository history actions.
-- Dependencies: TASK-029, TASK-038 — DONE; TASK-101 Retreat correction DONE on local `main` (`630db51`), server deployment separately gated
-- Specs: SPEC-013, SPEC-015, SPEC-016, SPEC-018; TASK-028 presentation event contract; SPEC-017 APPROVED Class-A public Combat transport under accepted TASK-102 contract, with backend implementation/enablement gated in TASK-103
+- Historical backend ownership boundary: this FE-owned task worktree also contains preserved SPEC-018 read-only API catalog-release/artifact source. That source is evidence only and is **not** part of the rebased FE implementation authority. Any future backend modification or repository integration of that slice must be owned/reviewed under a separate backend-authorized task; no backend role exception is created here.
+- Historical Human feedback: "funcionalidades validadas" on 2026-09-28 for the previously demonstrated read-only functionality; "Ok, aprovado" on 2026-09-28 in response to the then-current manual-capture implementation and QA results. These approvals remain evidence for those historical slices but do not override the later Human-approved SPEC-020 management/automation direction.
+- Dependencies: TASK-029, TASK-038, TASK-101 — DONE; approved SPEC-020/021; TASK-109 first-Pre-alpha bootstrap/admission; TASK-110 authoritative Hunt automation/activity; rebased TASK-103 presentation backend
+- Specs: SPEC-013, SPEC-015, SPEC-016, SPEC-017, SPEC-018 as forward-amended by APPROVED SPEC-020/021; TASK-028 presentation event contract
 - Branch: `feat/TASK-039-solo-hunt-card-integration`
 - Worktree: `.worktrees/TASK-039-solo-hunt-card-integration`
 
 ## Objective
 
-Connect the Card/Low-Spec client to the accepted Solo Hunt and Player State authorities so a Player can select a Zone/Hunt and saved Team, start and resume a Hunt, view authoritative progress, resolve manual capture, claim effects, retreat and configure automatic capture.
+Connect the Cards-only first-Pre-alpha client to the accepted Solo Hunt, Team, Inventory and HUB authorities under the management-first contract. The Player selects a Hunt/Team, reviews Team + possible Species + rewards, starts/resumes automatic progression, manages Capture/Potion/Revive policies, views compact resolved-Encounter activity, may Retreat, and uses HUB PokéCenter only after Hunt exit. There is no manual Potion, per-Encounter capture/Ball prompt, player Checkpoint or player Claim flow.
 
 ## Scope
 
 - Present Zone/Hunt selectors from an accepted published content source without inventing authoritative availability.
 - Integrate the Owner-approved read-only release descriptor and immutable same-origin Zone/Hunt artifact delivery in SPEC-018, sharing the server's selected new-operation release and independently pinned production hash.
-- Read the self-scoped Player-wide Hunt state; recover after reload and explicitly reconcile elapsed time.
-- Use only accepted SPEC-015 HTTP commands with stable per-intent UUID idempotency and exact same-key continuation for bounded `202` responses, including response loss/reconnect.
-- Present an active Hunt through the shared TASK-028 combat presentation contract where a public battle event source exists; never expose hidden wild HP/Genetics or infer private state.
-- Support manual pending capture/skip, explicit inter-Battle healing, retreat, command-local claim effects and terminal no-living/recovery presentation.
-- Implement server-backed Hunt settings: ordered policy, ball authority, reserve semantics, warning acknowledgement, forward-only activation, OCC reconciliation.
-- Keep Card responsive and accessible, with non-live bounded history and user-controlled command retries.
+- Read the self-scoped Player-wide Hunt/vitality/recovery state; recover after reload and explicitly reconcile elapsed/offline work through authoritative bounded continuation.
+- Use only the forward accepted Hunt commands with stable idempotency and exact same-key continuation where required. Checkpoint/Claim are internal reconciliation mechanisms and must not surface as player actions.
+- Present active Battles from the accepted public presentation source: historical v1 remains compatible; forward in-Battle Revive consumes v2; post-Battle Revive/capture/reward/Inventory effects are rendered from Hunt activity, not fabricated CombatEvents.
+- Keep Retreat as the only first-slice manual active-Hunt gameplay intervention. `Wilds` terminal paths are Retreat or `no_living`, both returning to HUB + summary + 30s recovery.
+- Implement management surfaces for Capture, Auto-Potion and Auto-Revive policies, including OFF defaults for Potion/Revive until explicit configuration, allowed-item priority/reserve rules and forward-only active-Hunt edits.
+- Pre-Start presents selected Team + possible Species + rewards and fails closed on invalid/unsupported selected loadouts; damaged/partially-KO Teams are allowed only when at least one selected member is conscious.
+- Integrate the non-locomotion first-Pre-alpha HUB/PokéCenter state: PokéCenter is free/immediate for an explicitly selected saved Team, unavailable while a Solo Hunt is active and available during recovery.
+- Keep Cards responsive/accessible with compact resolved-Encounter activity and explicit unavailable/retry states when required authority is missing.
 
 ## Out of scope
 
-- Server mutation endpoints, gameplay/rolls/rewards/capture authority, unapproved content IDs, unrelated protocol expansion, Pixi/Visual renderer, Duo, revival and new runtime dependencies. The specifically approved SPEC-018 read-only catalog delivery is in scope; Combat feed activation requires its separate immutable-evidence and Class-A conformance gate.
+- Server mutation implementation, gameplay/rolls/rewards/capture authority, persistent-vitality implementation, Potion/Revive execution, unapproved content IDs, unrelated protocol expansion, Pixi/Visual renderer, Duo and new runtime dependencies. The specifically approved SPEC-018 read-only catalog delivery remains in scope; real Combat/Hunt-activity activation requires the rebased backend/runtime gates.
+- Manual Potion/item execution, manual pending capture/skip/Ball selection, visible Checkpoint, visible Claim and any attempt to make HUB locomotion part of the first Pre-alpha.
 - No commit, merge, push or deploy without separate Human Owner authorization.
 
 ## Acceptance criteria
 
-- [ ] World/Zone and saved Team start flow respects accepted content and self-scoped state.
+- [ ] Hunt/Zone and saved Team start flow respects accepted content, persistent vitality and strict executable-loadout admission; Pre-Start shows Team + possible Species + rewards.
 - [ ] Accepted Hunt mutation intents survive ambiguous transport failures; same-key continuation works, with explicit stale/superseded/expired handling.
-- [ ] Active/terminal/manual/heal/claim states and effects map to exact SPEC-015 semantics.
-- [ ] A genuine public presentation event feed drives the TASK-029 Card renderer without invented Battle events.
-- [ ] Settings enforce policy order, warning, OCC and forward-only activation.
+- [ ] Active UI exposes Retreat plus Capture/Potion/Revive policy management only; there are no manual Potion/capture/Checkpoint/Claim gameplay controls.
+- [ ] A genuine rebased presentation source drives TASK-029 Cards: v1 historical compatibility, v2 in-Battle Revive/cleanup, and separate Hunt activity for resolved Encounter/resource/post-Battle Revive facts without invented Battle events.
+- [ ] Capture/Potion/Revive settings enforce accepted policy order/reserve/OCC/forward-only semantics; initial Auto-Potion and Auto-Revive are OFF until explicit configuration.
+- [ ] Compact resolved-Encounter feed and terminal/offline summary report authoritative battle/capture/XP/drop/item-spend/KO/Revive facts without implying Hunt-end reward grants.
+- [ ] HUB/PokéCenter state follows SPEC-021: unavailable while Hunt active, selected-Team full heal after exit, usable during 30s recovery.
+- [ ] Fail-closed authority outages expose unavailable/error + explicit retry while preventing fabricated progress/resource mutation.
 - [ ] Keyboard, mobile and error/reconnect behavior checked in an isolated browser preview and relevant behavioral tests.
 - [ ] Independent QA, Class-B acceptance and Human live validation complete without unresolved P0/P1.
 
 ## Execution note
 
-Initial development may expose read-only current-state functionality before the remaining command flows are wired. This partial state must not be marked DONE. A missing public transport for a required presentation input is escalated for an accepted contract rather than inferred on the client.
+All existing read/manual-capture/healing/checkpoint/claim implementation and QA evidence below is preserved as historical source evidence. It does **not** define the forward first-Pre-alpha UX after SPEC-020/021. Further runtime edits are blocked until the prerequisite vitality/Hunt-authority/presentation implementations satisfy their own gates; then this task may resume from the preserved source without reintroducing superseded manual controls. A missing authoritative input is escalated rather than inferred on the client.
 
 ## Implemented read-only slice
 

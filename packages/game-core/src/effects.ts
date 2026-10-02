@@ -17,11 +17,26 @@ import { compareUtf8Bytes } from "./combat-math";
 import { validateCadenceCarry } from "./validation";
 import { evaluateBattleLifecycle } from "./lifecycle";
 import { cloneSafeRecord, ownGet, safeRecordFromEntries, safeRecordWith } from "./record-utils";
+import { AUTO_POTION_COOLDOWN_MS, GLOBAL_ACTION_COOLDOWN_MS } from "./management-first-combat-rules";
 
 type MutableState = { state: BattleState; events: CombatEvent[]; sequence: number };
 type EventData = {
   [K in CombatEvent["kind"]]: Omit<Extract<CombatEvent, { kind: K }>, "sequence">
 }[CombatEvent["kind"]];
+
+function isNormalizedPositiveMagnitude(magnitude: EffectMagnitude): boolean {
+  if (magnitude.kind === "integer") return Number.isSafeInteger(magnitude.amount) && magnitude.amount > 0;
+  if (!Number.isSafeInteger(magnitude.numerator) || magnitude.numerator <= 0
+    || !Number.isSafeInteger(magnitude.denominator) || magnitude.denominator <= 0) return false;
+  let numerator = magnitude.numerator;
+  let denominator = magnitude.denominator;
+  while (denominator !== 0) {
+    const remainder = numerator % denominator;
+    numerator = denominator;
+    denominator = remainder;
+  }
+  return numerator === 1;
+}
 
 function exactMagnitude(maxHp: number, value: EffectMagnitude): bigint {
   const hp = BigInt(maxHp);
@@ -287,6 +302,7 @@ export function advanceTime(
 ): { accepted: true; state: BattleState; deterministicState: DeterministicState; events: ReadonlyArray<CombatEvent> } | { accepted: false; reason: string; state: BattleState; deterministicState: DeterministicState; events: ReadonlyArray<CombatEvent> } {
   if (!Number.isSafeInteger(toMs) || toMs <= state.combatTimeMs) return { accepted: false, reason: "advanceTime requires a strictly greater safe integer", state, deterministicState, events: [] };
   if (state.status !== "active") return { accepted: false, reason: "battle is not active", state, deterministicState, events: [] };
+  if (state.koInterventionPending) return { accepted: false, reason: "KO intervention is pending", state, deterministicState, events: [] };
   if (state.replacementPendingSideIds.length > 0) return { accepted: false, reason: "forced replacement is pending", state, deterministicState, events: [] };
   const mutable: MutableState = { state, events: [], sequence: state.eventSequence };
   const effects: BattleScheduledEffect[] = Object.values(state.effects).map((effect) => ({
@@ -316,10 +332,14 @@ export function advanceTime(
       if (lifecycle.outcome) {
         emit(mutable, { kind: "BattleEnded", outcome: lifecycle.outcome, combatTimeMs: mutable.state.combatTimeMs });
       }
-      return lifecycle.outcome !== undefined || mutable.state.replacementPendingSideIds.length > 0;
+      return lifecycle.outcome !== undefined
+        || mutable.state.replacementPendingSideIds.length > 0
+        || mutable.state.koInterventionPending !== null && mutable.state.koInterventionPending !== undefined;
     },
   );
-  const stoppedAtBoundary = mutable.state.status === "ended" || mutable.state.replacementPendingSideIds.length > 0;
+  const stoppedAtBoundary = mutable.state.status === "ended"
+    || mutable.state.replacementPendingSideIds.length > 0
+    || mutable.state.koInterventionPending !== null && mutable.state.koInterventionPending !== undefined;
   const retainedEffects = mutable.state.status === "ended" ? effects.filter((effect) => effect.lifetimeScope === "cadence") : effects;
   const retainedBattleEffects = safeRecordFromEntries(retainedEffects.map(({ scheduleTargetKey: _scheduleTargetKey, ...effect }) => [
     battleEffectKey(effect.targetCombatantId, effect.effectId),
@@ -390,6 +410,9 @@ export function advanceCadence(cadence: CadenceCarryState, context: BattleState[
       moveCooldownRemainingMs: safeRecordFromEntries(
         Object.entries(readiness.moveCooldownRemainingMs).map(([moveId, remainingMs]) => [moveId, Math.max(0, remainingMs - gapMs)]),
       ),
+      ...(readiness.autoPotionCooldownRemainingMs !== undefined
+        ? { autoPotionCooldownRemainingMs: Math.max(0, readiness.autoPotionCooldownRemainingMs - gapMs) }
+        : {}),
     },
   ]));
   const actionLockRemainingMsByParticipant = safeRecordFromEntries(
@@ -406,5 +429,104 @@ export function advanceCadence(cadence: CadenceCarryState, context: BattleState[
     },
     deterministicState,
     consequences,
+  };
+}
+
+export function applyCadenceExternalHpHeal(
+  cadence: CadenceCarryState,
+  participant: CadenceParticipant,
+  magnitude: EffectMagnitude,
+): {
+  accepted: true;
+  cadence: CadenceCarryState;
+  amount: number;
+  resultingHp: number;
+} | {
+  accepted: false;
+  reason: string;
+  cadence: CadenceCarryState;
+} {
+  const participantKey = cadenceParticipantKey(participant);
+  const currentHp = ownGet(cadence.hpByParticipant, participantKey);
+  const maxHp = ownGet(cadence.maxHpByParticipant, participantKey);
+  const readiness = ownGet(cadence.readinessByParticipant, participantKey);
+  if (currentHp === undefined || maxHp === undefined || !readiness ||
+    ownGet(cadence.actionLockRemainingMsByParticipant, participantKey) === undefined) {
+    return { accepted: false, reason: "cadence participant is not present", cadence };
+  }
+  if (readiness.autoPotionCooldownRemainingMs === undefined) {
+    return { accepted: false, reason: "cadence participant lacks forward Auto-Potion cooldown state", cadence };
+  }
+  if (currentHp <= 0) return { accepted: false, reason: "external HP heal target is not living", cadence };
+  if (currentHp >= maxHp) return { accepted: false, reason: "external HP heal target is not damaged", cadence };
+  if (readiness.autoPotionCooldownRemainingMs > 0) {
+    return { accepted: false, reason: "external HP heal cooldown is active", cadence };
+  }
+  if (!isNormalizedPositiveMagnitude(magnitude)) {
+    return { accepted: false, reason: "external HP heal magnitude is invalid", cadence };
+  }
+  const healing = evaluateInstantHpHealing(currentHp, maxHp, magnitude);
+  if (healing.amount <= 0) return { accepted: false, reason: "external HP heal produced no healing", cadence };
+  return {
+    accepted: true,
+    cadence: {
+      ...cadence,
+      hpByParticipant: safeRecordWith(cadence.hpByParticipant, participantKey, healing.resultingHp),
+      readinessByParticipant: safeRecordWith(cadence.readinessByParticipant, participantKey, {
+        ...readiness,
+        nextActionRemainingMs: readiness.nextActionRemainingMs + GLOBAL_ACTION_COOLDOWN_MS,
+        autoPotionCooldownRemainingMs: AUTO_POTION_COOLDOWN_MS,
+      }),
+    },
+    amount: healing.amount,
+    resultingHp: healing.resultingHp,
+  };
+}
+
+export function applyCadenceRevive(
+  cadence: CadenceCarryState,
+  participant: CadenceParticipant,
+  restoredHp: number,
+): {
+  accepted: true;
+  cadence: CadenceCarryState;
+  resultingHp: number;
+} | {
+  accepted: false;
+  reason: string;
+  cadence: CadenceCarryState;
+} {
+  const participantKey = cadenceParticipantKey(participant);
+  const currentHp = ownGet(cadence.hpByParticipant, participantKey);
+  const maxHp = ownGet(cadence.maxHpByParticipant, participantKey);
+  const readiness = ownGet(cadence.readinessByParticipant, participantKey);
+  if (currentHp === undefined || maxHp === undefined || !readiness ||
+    ownGet(cadence.actionLockRemainingMsByParticipant, participantKey) === undefined) {
+    return { accepted: false, reason: "cadence participant is not present", cadence };
+  }
+  if (readiness.autoPotionCooldownRemainingMs === undefined) {
+    return { accepted: false, reason: "cadence participant lacks forward Auto-Potion cooldown state", cadence };
+  }
+  if (currentHp !== 0) return { accepted: false, reason: "cadence Revive target is not KO", cadence };
+  if (!Number.isSafeInteger(restoredHp) || restoredHp < 1 || restoredHp > maxHp) {
+    return { accepted: false, reason: "cadence Revive HP is invalid", cadence };
+  }
+  return {
+    accepted: true,
+    cadence: {
+      ...cadence,
+      effects: cadence.effects.filter((effect) => cadenceParticipantKey(effect.targetCadenceParticipant) !== participantKey),
+      hpByParticipant: safeRecordWith(cadence.hpByParticipant, participantKey, restoredHp),
+      readinessByParticipant: safeRecordWith(cadence.readinessByParticipant, participantKey, {
+        ...readiness,
+        nextActionRemainingMs: readiness.nextActionRemainingMs + GLOBAL_ACTION_COOLDOWN_MS,
+      }),
+      actionLockRemainingMsByParticipant: safeRecordWith(
+        cadence.actionLockRemainingMsByParticipant,
+        participantKey,
+        0,
+      ),
+    },
+    resultingHp: restoredHp,
   };
 }

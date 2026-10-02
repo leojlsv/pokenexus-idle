@@ -5,6 +5,7 @@
 - Coordinator: PM / Architecture Coordinator
 - Architecture: ADR-004
 - Static-data/version envelope: SPEC-002
+- Forward amendment authority: **SPEC-020 (APPROVED 2026-10-02)**. Where this historical baseline conflicts with management-first Pre-alpha Potion/Revive lifecycle, KO-intervention, cleanup or replay semantics, SPEC-020 governs forward rules versions; historical pinned versions retain this baseline.
 
 ## 1. Purpose
 

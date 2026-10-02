@@ -4,6 +4,7 @@ import {
   completePublicHuntCommandInTransaction,
   claimRewardResolution,
   closePendingManualCaptureInTransaction,
+  createPokemonVitalityInTransaction,
   createPendingManualCaptureIfFreeInTransaction,
   ensureAndLockPlayerHuntRoot,
   generateUuidV7,
@@ -14,6 +15,8 @@ import {
   loadInventory,
   loadOwnedSoloHunt,
   loadPendingZoneSelection,
+  loadPokeCenterHealCommand,
+  loadPokemonVitality,
   loadPublicHuntCommand,
   removeInventoryEntriesInTransaction,
   terminalizeSoloHuntInTransaction,
@@ -48,6 +51,28 @@ if (!/^pokenexus_test(?:_|$)/.test(databaseName)) {
 }
 
 const opaque = (value: string) => Buffer.from(encodeOpaqueStringDbV1(value));
+
+function deferred(): { readonly promise: Promise<void>; readonly resolve: () => void } {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+async function waitForAdvisoryWaiter(): Promise<void> {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const waiting = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const result = await client.query<{ waiting: boolean }>(
+        "SELECT EXISTS (SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND NOT granted) AS waiting",
+      );
+      return result.rows[0]?.waiting ?? false;
+    });
+    if (waiting) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error("timed out waiting for PostgreSQL advisory-lock waiter");
+}
 
 async function resetSchema(): Promise<void> {
   await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
@@ -122,9 +147,65 @@ async function seedPlayerTeamAndPotion(): Promise<{
   });
 }
 
+async function addPokemonToTeam(input: {
+  readonly playerId: string;
+  readonly teamId: string;
+  readonly slot: number;
+  readonly currentHp?: number;
+}): Promise<string> {
+  return withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+    const pokemonInstanceId = generateUuidV7();
+    await client.query(
+      `INSERT INTO pokenexus.pokemon_instances (
+         pokemon_instance_id, owner_player_id, species_id, level, total_experience,
+         iv_hp, iv_atk, iv_def, iv_spa, iv_spd, iv_spe,
+         genetic_score, genetic_profile_a, genetic_profile_b, birth_profile, expressed_profile, shiny,
+         individualization_rules_version, derivation_authority_version, derivation_authority_key_id,
+         origin_pending_selection_identity, individualization_snapshot_identity,
+         individualization_snapshot_commitment, individualization_content_version,
+         individualization_content_hash, individualization_game_data_version
+       ) VALUES (
+         $1,$2,$3,10,999,1,2,3,4,5,6,
+         50,'Harmony','Endurance','Harmony','Harmony',false,
+         $4,$5,$6,$7,$8,$9,$10,$11,$12
+       )`,
+      [
+        pokemonInstanceId,
+        input.playerId,
+        opaque("species:player"),
+        opaque("encounter-individualization-v1"),
+        opaque("authority-v1"),
+        opaque("key-v1:test"),
+        opaque(`pending:${pokemonInstanceId}`),
+        opaque(`indv1:${pokemonInstanceId}`),
+        opaque(`sha256:${pokemonInstanceId}`),
+        opaque("content:test"),
+        opaque("sha256:content-test"),
+        opaque("game-data:test"),
+      ],
+    );
+    await client.query(
+      `INSERT INTO pokenexus.pokemon_team_members (
+         team_member_id, team_id, pokemon_instance_id, owner_player_id, slot
+       ) VALUES ($1,$2,$3,$4,$5)`,
+      [generateUuidV7(), input.teamId, pokemonInstanceId, input.playerId, input.slot],
+    );
+    if (input.currentHp !== undefined) {
+      const created = await createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: input.playerId,
+        pokemonInstanceId,
+        currentHp: input.currentHp,
+        now: new Date(),
+      });
+      if (created.status === "not_found") throw new Error("fixture vitality ownership failed");
+    }
+    return pokemonInstanceId;
+  });
+}
+
 function runtimeInputs(
   playerId: string,
-  pokemonInstanceId: string,
+  pokemonInstanceIds: readonly string[],
   huntDefinitionId = "hunt:test",
 ): SoloHuntRuntimeInputs {
   const context = {
@@ -164,7 +245,7 @@ function runtimeInputs(
     contentVersion: "content:test",
     contentHash: "sha256:content-test",
     context,
-    team: [{
+    team: pokemonInstanceIds.map((pokemonInstanceId) => ({
       pokemonInstanceId: pokemonInstanceId as never,
       speciesId: "species:player" as never,
       level: 10,
@@ -172,7 +253,7 @@ function runtimeInputs(
       ivs: { hp: 1, atk: 2, def: 3, spa: 4, spd: 5, spe: 6 },
       types: ["normal" as never],
       moveLoadout: ["move:player" as never],
-    }],
+    })),
     encounterOptions: [{
       encounterDefinitionId: "encounter:test" as never,
       speciesId: "species:enemy" as never,
@@ -214,6 +295,9 @@ function applicationWithOptions(options: {
   };
   readonly historicalAvailable?: () => boolean;
   readonly startRuntimeAvailable?: () => boolean;
+  readonly beforeBuildStartRuntime?: () => Promise<void>;
+  readonly beforeDeriveCurrentTeamMaxHp?: () => Promise<void>;
+  readonly currentTeamMaxHp?: (pokemonInstanceId: string) => number;
   readonly beforeLoadPersistedRuntime?: () => Promise<void>;
   readonly automaticCapture?: HuntApplicationPorts["boundaryEffects"]["automaticCapture"];
   readonly reward?: HuntApplicationPorts["boundaryEffects"]["reward"];
@@ -241,15 +325,29 @@ function applicationWithOptions(options: {
       if (options.startRuntimeAvailable && !options.startRuntimeAvailable()) {
         throw new HuntAuthorityUnavailableError("fixture start runtime unavailable");
       }
-      const pokemon = team.pokemon[0];
-      if (!pokemon) throw new Error("fixture Team is empty");
+      await options.beforeBuildStartRuntime?.();
+      if (team.pokemon.length === 0) throw new Error("fixture Team is empty");
       lastPending = pendingEncounterSelection;
       const effectiveHuntDefinitionId = pendingEncounterSelection?.huntDefinitionId
         ?? selector.huntDefinitionId;
-      persisted = runtimeInputs(playerId, pokemon.pokemonInstanceId, effectiveHuntDefinitionId);
+      persisted = runtimeInputs(
+        playerId,
+        team.pokemon.map((pokemon) => pokemon.pokemonInstanceId),
+        effectiveHuntDefinitionId,
+      );
       return {
         inputs: persisted,
-        persistedInputs: { fixture: "hunt-application-postgresql-v1" },
+        persistedInputs: {
+          schemaVersion: "hunt-runtime-inputs-v1",
+          inputs: persisted,
+          individualizationRequired: false,
+        },
+        maxHpByPokemonInstanceId: Object.fromEntries(
+          team.pokemon.map((pokemon) => [
+            pokemon.pokemonInstanceId,
+            options.currentTeamMaxHp?.(pokemon.pokemonInstanceId) ?? 60,
+          ]),
+        ),
         selector: {
           ...selector,
           huntDefinitionId: effectiveHuntDefinitionId,
@@ -259,6 +357,30 @@ function applicationWithOptions(options: {
         individualizationAuthorityVersion: null,
         individualizationAuthorityKeyId: null,
       };
+    },
+    bindStartVitality(built, initialHpByPokemonInstanceId) {
+      persisted = {
+        ...built.inputs,
+        initialHpByPokemonInstanceId,
+      };
+      return {
+        ...built,
+        inputs: persisted,
+        persistedInputs: {
+          schemaVersion: "hunt-runtime-inputs-v2",
+          inputs: persisted,
+          individualizationRequired: false,
+        },
+      };
+    },
+    async deriveCurrentTeamMaxHp(team) {
+      await options.beforeDeriveCurrentTeamMaxHp?.();
+      return Object.fromEntries(
+        team.pokemon.map((pokemon) => [
+          pokemon.pokemonInstanceId,
+          options.currentTeamMaxHp?.(pokemon.pokemonInstanceId) ?? 60,
+        ]),
+      );
     },
     async loadPersistedRuntime() {
       await options.beforeLoadPersistedRuntime?.();
@@ -327,6 +449,661 @@ beforeEach(prepareSchema);
 afterAll(resetSchema);
 
 describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
+  it("TASK-108 pins damaged vitality, writes terminal HP, and PokéCenter heals during recovery without replay churn", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    expect(harness.runtime().initialHpByPokemonInstanceId)
+      .toEqual({ [seeded.pokemonInstanceId]: 17 });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.pokemon_vitalities SET current_hp = 50, row_version = row_version + 1 WHERE owner_player_id = $1 AND pokemon_instance_id = $2",
+        [seeded.playerId, seeded.pokemonInstanceId],
+      ).then(() => undefined));
+
+    const retreat = await harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+    expect(retreat).toMatchObject({
+      httpStatus: 200,
+      body: {
+        status: "terminal",
+        terminalReason: "retreat",
+        recoveryReadyAt: expect.any(String),
+      },
+    });
+    const recoveryReadyAt = (retreat.body as { recoveryReadyAt: string }).recoveryReadyAt;
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 17, rowVersion: 2n });
+
+    const centerKey = generateUuidV7();
+    const healed = await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      centerKey,
+      { teamId: seeded.teamId },
+    );
+    expect(healed).toMatchObject({
+      httpStatus: 200,
+      body: {
+        teamId: seeded.teamId,
+        recoveryReadyAt: expect.any(String),
+        vitality: [{
+          pokemonInstanceId: seeded.pokemonInstanceId,
+          currentHp: 60,
+          maxHp: 60,
+          vitality: "conscious",
+          vitalityRowVersion: "3",
+        }],
+      },
+    });
+    expect((healed.body as { recoveryReadyAt: string }).recoveryReadyAt).toBe(recoveryReadyAt);
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 60, rowVersion: 3n });
+
+    expect(await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      centerKey,
+      { teamId: seeded.teamId },
+    )).toEqual(healed);
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 60, rowVersion: 3n });
+
+    const noOp = await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      generateUuidV7(),
+      { teamId: seeded.teamId },
+    );
+    expect(noOp.httpStatus).toBe(200);
+    expect((noOp.body as { recoveryReadyAt: string }).recoveryReadyAt).toBe(recoveryReadyAt);
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 60, rowVersion: 3n });
+  });
+
+  it("TASK-108 durably rejects PokéCenter while a Hunt is active and replay cannot bypass the rejection", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    const centerKey = generateUuidV7();
+    expect(await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      centerKey,
+      { teamId: seeded.teamId },
+    )).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 17, rowVersion: 0n });
+
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    expect((await harness.app.retreat(
+      seeded.playerId,
+      generateUuidV7(),
+      huntId,
+    )).httpStatus).toBe(200);
+    expect(await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      centerKey,
+      { teamId: seeded.teamId },
+    )).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 17, rowVersion: 0n });
+
+    expect((await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      generateUuidV7(),
+      { teamId: seeded.teamId },
+    )).httpStatus).toBe(200);
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 60, rowVersion: 1n });
+  });
+
+  it("TASK-108 rejects an all-KO Team at Start without reviving it", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 0,
+        now: new Date(),
+      }));
+
+    expect(await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    })).toEqual({ httpStatus: 422, body: { error: "hunt_not_admissible" } });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 0, rowVersion: 0n });
+  });
+
+  it("TASK-108 persists no_living final HP and recovery atomically", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 1,
+        now: new Date(),
+      }));
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '10 seconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const terminal = await harness.app.checkpoint(seeded.playerId, generateUuidV7(), huntId);
+    expect(terminal).toMatchObject({
+      httpStatus: 200,
+      body: {
+        activeHunt: null,
+      },
+    });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 0, rowVersion: 1n });
+    const terminalHunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    expect(terminalHunt?.terminalReason).toBe("no_living");
+    expect(terminalHunt?.terminalAt).not.toBeNull();
+    const root = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      ensureAndLockPlayerHuntRoot(client, seeded.playerId));
+    expect(root?.activeHuntId).toBeNull();
+    expect(root?.recoveryReadyAt).not.toBeNull();
+  });
+
+  it("TASK-108 starts from the first living Team member when the Leader is KO", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 0,
+        now: new Date(),
+      }));
+    const reserveId = await addPokemonToTeam({
+      playerId: seeded.playerId,
+      teamId: seeded.teamId,
+      slot: 2,
+      currentHp: 23,
+    });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    expect(harness.runtime().initialHpByPokemonInstanceId).toEqual({
+      [seeded.pokemonInstanceId]: 0,
+      [reserveId]: 23,
+    });
+
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing Hunt checkpoint fixture");
+    const decoded = decodeSoloHuntCheckpointV2(checkpoint.stateBytes);
+    expect(decoded.accepted).toBe(true);
+    if (!decoded.accepted || !decoded.state.currentEncounter) return;
+    const playerSide = decoded.state.currentEncounter.battle.sides[0];
+    const activeId = playerSide?.activeCombatantIds[0];
+    const active = activeId
+      ? decoded.state.currentEncounter.battle.combatants[activeId]
+      : undefined;
+    expect(active?.cadenceParticipant).toEqual({
+      kind: "pokemonInstance",
+      identity: reserveId,
+    });
+    expect(active?.currentHp).toBe(23);
+  });
+
+  it("TASK-108 clamps persisted HP to authoritative max before Start pins it", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 70,
+        now: new Date(),
+      }));
+
+    expect((await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    })).httpStatus).toBe(200);
+    expect(harness.runtime().initialHpByPokemonInstanceId)
+      .toEqual({ [seeded.pokemonInstanceId]: 60 });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 60, rowVersion: 1n });
+  });
+
+  it("TASK-108 PokéCenter revives KO, replays exactly, conflicts on rebound, and keeps absent Team self-scoped", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 0,
+        now: new Date(),
+      }));
+
+    const key = generateUuidV7();
+    const healed = await harness.app.healAtPokeCenter(seeded.playerId, key, { teamId: seeded.teamId });
+    expect(healed).toMatchObject({
+      httpStatus: 200,
+      body: {
+        teamId: seeded.teamId,
+        vitality: [{
+          pokemonInstanceId: seeded.pokemonInstanceId,
+          currentHp: 60,
+          maxHp: 60,
+          vitality: "conscious",
+          vitalityRowVersion: "1",
+        }],
+      },
+    });
+    expect(await harness.app.healAtPokeCenter(seeded.playerId, key, { teamId: seeded.teamId }))
+      .toEqual(healed);
+    expect(await harness.app.healAtPokeCenter(seeded.playerId, key, { teamId: generateUuidV7() }))
+      .toEqual({ httpStatus: 409, body: { error: "correlation_conflict" } });
+
+    const absentTeamId = generateUuidV7();
+    const absentKey = generateUuidV7();
+    const absent = await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      absentKey,
+      { teamId: absentTeamId },
+    );
+    expect(absent).toEqual({ httpStatus: 404, body: { error: "not_found" } });
+    expect(await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      absentKey,
+      { teamId: absentTeamId },
+    )).toEqual(absent);
+
+    const foreign = await seedPlayerTeamAndPotion();
+    const foreignResult = await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      generateUuidV7(),
+      { teamId: foreign.teamId },
+    );
+    expect(foreignResult).toEqual({ httpStatus: 404, body: { error: "not_found" } });
+  });
+
+  it("TASK-108 rolls back PokéCenter claim and HP mutation when max-HP authority fails", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = applicationWithOptions({
+      beforeDeriveCurrentTeamMaxHp: async () => {
+        throw new Error("fixture authority unavailable");
+      },
+    });
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+
+    const key = generateUuidV7();
+    expect(await harness.app.healAtPokeCenter(seeded.playerId, key, { teamId: seeded.teamId }))
+      .toEqual({ httpStatus: 503, body: { error: "authority_unavailable" } });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 17, rowVersion: 0n });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokeCenterHealCommand(client, seeded.playerId, key))).toBeNull();
+  });
+
+  it("TASK-108 serializes Center-before-Start so Start pins the healed HP", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+    const centerHasRoot = deferred();
+    const releaseCenter = deferred();
+    const harness = applicationWithOptions({
+      beforeDeriveCurrentTeamMaxHp: async () => {
+        centerHasRoot.resolve();
+        await releaseCenter.promise;
+      },
+    });
+
+    const center = harness.app.healAtPokeCenter(
+      seeded.playerId,
+      generateUuidV7(),
+      { teamId: seeded.teamId },
+    );
+    await centerHasRoot.promise;
+    const start = harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    releaseCenter.resolve();
+
+    expect((await center).httpStatus).toBe(200);
+    expect((await start).httpStatus).toBe(200);
+    expect(harness.runtime().initialHpByPokemonInstanceId)
+      .toEqual({ [seeded.pokemonInstanceId]: 60 });
+  });
+
+  it("TASK-108 serializes Start-before-Center so Center durably rejects the active Hunt", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+    const startHasRoot = deferred();
+    const releaseStart = deferred();
+    const harness = applicationWithOptions({
+      beforeBuildStartRuntime: async () => {
+        startHasRoot.resolve();
+        await releaseStart.promise;
+      },
+    });
+
+    const start = harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    await startHasRoot.promise;
+    const centerKey = generateUuidV7();
+    const center = harness.app.healAtPokeCenter(
+      seeded.playerId,
+      centerKey,
+      { teamId: seeded.teamId },
+    );
+    releaseStart.resolve();
+
+    expect((await start).httpStatus).toBe(200);
+    expect(await center).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+      .toMatchObject({ currentHp: 17, rowVersion: 0n });
+    expect(await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      centerKey,
+      { teamId: seeded.teamId },
+    )).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
+  });
+
+  it("TASK-108 serializes terminal-before-Center so Center heals during the resulting recovery", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (control) => {
+      await control.query(`
+        CREATE FUNCTION pokenexus.test_task108_block_terminal_center() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+          PERFORM pg_advisory_xact_lock(108002);
+          RETURN NEW;
+        END;
+        $$
+      `);
+      await control.query(`
+        CREATE TRIGGER test_task108_block_terminal_center
+        BEFORE UPDATE OF terminal_at ON pokenexus.solo_hunts
+        FOR EACH ROW
+        WHEN (OLD.terminal_at IS NULL AND NEW.terminal_at IS NOT NULL)
+        EXECUTE FUNCTION pokenexus.test_task108_block_terminal_center()
+      `);
+      await control.query("SELECT pg_advisory_lock(108002)");
+      try {
+        const retreat = harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+        await waitForAdvisoryWaiter();
+        const center = harness.app.healAtPokeCenter(
+          seeded.playerId,
+          generateUuidV7(),
+          { teamId: seeded.teamId },
+        );
+        await control.query("SELECT pg_advisory_unlock(108002)");
+
+        const terminal = await retreat;
+        const healed = await center;
+        expect(terminal).toMatchObject({
+          httpStatus: 200,
+          body: { status: "terminal", terminalReason: "retreat", recoveryReadyAt: expect.any(String) },
+        });
+        expect(healed).toMatchObject({
+          httpStatus: 200,
+          body: {
+            recoveryReadyAt: (terminal.body as { recoveryReadyAt: string }).recoveryReadyAt,
+            vitality: [{ currentHp: 60, maxHp: 60, vitality: "conscious" }],
+          },
+        });
+      } finally {
+        await control.query("SELECT pg_advisory_unlock(108002)");
+        await control.query(
+          "DROP TRIGGER IF EXISTS test_task108_block_terminal_center ON pokenexus.solo_hunts",
+        );
+        await control.query("DROP FUNCTION IF EXISTS pokenexus.test_task108_block_terminal_center()");
+      }
+    });
+  });
+
+  it("TASK-108 serializes Center-before-terminal so the active-Hunt rejection stays durable", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (control) => {
+      await control.query(`
+        CREATE FUNCTION pokenexus.test_task108_block_center_terminal() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+          PERFORM pg_advisory_xact_lock(108001);
+          RETURN NEW;
+        END;
+        $$
+      `);
+      await control.query(`
+        CREATE TRIGGER test_task108_block_center_terminal
+        BEFORE UPDATE ON pokenexus.pokecenter_heal_commands
+        FOR EACH ROW EXECUTE FUNCTION pokenexus.test_task108_block_center_terminal()
+      `);
+      await control.query("SELECT pg_advisory_lock(108001)");
+      try {
+        const centerKey = generateUuidV7();
+        const center = harness.app.healAtPokeCenter(
+          seeded.playerId,
+          centerKey,
+          { teamId: seeded.teamId },
+        );
+        await waitForAdvisoryWaiter();
+        const retreat = harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+        await control.query("SELECT pg_advisory_unlock(108001)");
+
+        expect(await center).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
+        expect((await retreat).httpStatus).toBe(200);
+        expect(await harness.app.healAtPokeCenter(
+          seeded.playerId,
+          centerKey,
+          { teamId: seeded.teamId },
+        )).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
+        expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+          loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
+          .toMatchObject({ currentHp: 17, rowVersion: 0n });
+      } finally {
+        await control.query("SELECT pg_advisory_unlock(108001)");
+        await control.query(
+          "DROP TRIGGER IF EXISTS test_task108_block_center_terminal ON pokenexus.pokecenter_heal_commands",
+        );
+        await control.query("DROP FUNCTION IF EXISTS pokenexus.test_task108_block_center_terminal()");
+      }
+    });
+  });
+
+  it("TASK-108 lets a historical v1 Hunt terminalize without vitality rows, then cuts over after terminal", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      await client.query(
+        `UPDATE pokenexus.hunt_input_authorities
+            SET runtime_inputs_json = jsonb_set(
+              runtime_inputs_json #- '{inputs,initialHpByPokemonInstanceId}',
+              '{schemaVersion}',
+              '"hunt-runtime-inputs-v1"'::jsonb
+            )
+          WHERE player_id = $1 AND hunt_id = $2`,
+        [seeded.playerId, huntId],
+      );
+      await client.query(
+        "DELETE FROM pokenexus.pokemon_vitalities WHERE owner_player_id = $1 AND pokemon_instance_id = $2",
+        [seeded.playerId, seeded.pokemonInstanceId],
+      );
+      await client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      );
+    });
+
+    const retreat = await harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+    expect(retreat).toMatchObject({
+      httpStatus: 200,
+      body: { status: "terminal", terminalReason: "retreat" },
+    });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId))).toBeNull();
+
+    const healed = await harness.app.healAtPokeCenter(
+      seeded.playerId,
+      generateUuidV7(),
+      { teamId: seeded.teamId },
+    );
+    expect(healed).toMatchObject({
+      httpStatus: 200,
+      body: {
+        vitality: [{
+          pokemonInstanceId: seeded.pokemonInstanceId,
+          currentHp: 60,
+          maxHp: 60,
+          vitality: "conscious",
+          vitalityRowVersion: "0",
+        }],
+      },
+    });
+  });
+
   it("reuses the exact unresolved same-Zone selection across retreat and a different HuntDefinition restart", async () => {
     const seeded = await seedPlayerTeamAndPotion();
     const harness = application();

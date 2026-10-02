@@ -777,10 +777,16 @@ export async function loadAndLockOwnedTeamSnapshot(
   if (team === null || team.rowVersion !== currentTeamVersion) {
     throw new Error("Locked Team snapshot changed unexpectedly");
   }
-  const pokemon: OwnedPokemonRecord[] = [];
-  for (const pokemonInstanceId of team.pokemonInstanceIds) {
+  const lockedPokemonVersions = new Map<string, bigint>();
+  for (const pokemonInstanceId of [...team.pokemonInstanceIds].sort()) {
     const version = await lockOwnedPokemonVersion(client, ownerPlayerId, pokemonInstanceId);
     if (version === null) return null;
+    lockedPokemonVersions.set(pokemonInstanceId, version);
+  }
+  const pokemon: OwnedPokemonRecord[] = [];
+  for (const pokemonInstanceId of team.pokemonInstanceIds) {
+    const version = lockedPokemonVersions.get(pokemonInstanceId);
+    if (version === undefined) throw new Error("Locked Pokémon version is missing from Team snapshot");
     const record = await loadOwnedPokemon(client, ownerPlayerId, pokemonInstanceId);
     if (record === null || record.rowVersion !== version) {
       throw new Error("Locked Pokémon snapshot changed unexpectedly");
