@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Acceptance note: independent QA and independent Auditor both report READY with P0/P1/P2 = 0/0/0; delegated Class-B functional/architectural acceptance completed on 2026-10-02; persistent-environment migration, repository/history integration and DONE transition remain separately gated
+- State: DONE
+- Completion note: independent QA and independent Auditor both report READY with P0/P1/P2 = 0/0/0; delegated Class-B functional/architectural acceptance completed on 2026-10-02; Human Owner continuation authorized repository/history completion and the accepted implementation was integrated into local `main` at `ec647c70488b`; persistent-environment migration, deploy and public enablement remain separately gated
 - Readiness note: Human Owner explicitly authorized implementation on 2026-10-02; schema/migration source and disposable-PostgreSQL validation are authorized, but no persistent-environment migration, Git-history, deploy or public enablement is implied
 - Class: B — implement the accepted SPEC-021 persistence/API contract
 - Owner: Lead Developer
@@ -109,8 +109,15 @@ Implement the approved durable `PokemonVitality` authority and HUB PokéCenter t
 
 - Migration/cutover can irreversibly establish forward vitality authority and therefore requires disposable-DB proof plus explicit migration authorization before execution against any persistent environment.
 - Lock-order drift can deadlock or allow double-Hunt/heal races.
-- No persistent-environment migration, deploy, public enablement or Git-history action is authorized by this task.
+- Persistent-environment migration, deploy and public enablement remain separately gated. Repository/history completion was authorized by the Human Owner continuation on 2026-10-02.
 
 ## Readiness / execution gate
 
-Definition of Ready is satisfied and Human implementation authorization was given on 2026-10-02. The assigned owner may implement schema/runtime source and run disposable migration/concurrency tests. Persistent-environment migration, commit/push/merge/deploy/public enablement remain separately gated.
+Definition of Ready was satisfied and Human implementation authorization was given on 2026-10-02. The Human Owner subsequently directed continuation of TASK-107/108, authorizing repository/history completion. Persistent-environment migration, deploy and public enablement remain separate gates.
+
+## Repository completion evidence
+
+- Combined TASK-107/108 integration validation: database PostgreSQL **90/90 PASS**, API PostgreSQL **72/72 PASS**, database unit **33/33 PASS**, game-core **245/245 PASS**, API unit **169/169 PASS**, relevant typechecks PASS, root `pnpm test` PASS, root lint/build PASS and `git diff --check` PASS.
+- Validation used a fresh disposable PostgreSQL 16 container/database; no persistent-environment migration was executed.
+- The historical-v1 reward cutover regression remained green: first vitality creation stays deferred while an active `hunt-runtime-inputs-v1` Hunt owns historical semantics.
+- The accepted implementation is integrated into local `main` at `ec647c70488b`.
