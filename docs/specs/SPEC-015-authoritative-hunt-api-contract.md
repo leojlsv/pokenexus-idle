@@ -3,6 +3,7 @@
 - Status: APPROVED
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
+- Forward amendment authority: **SPEC-020 / SPEC-021 (APPROVED 2026-10-02)**. Forward Hunt APIs/orchestration must use the accepted automatic Potion/Revive, persistent vitality, policy-versioning, D-F16 `resolved_non_win`, post-Battle Revive provenance and internal-only checkpoint/claim semantics defined there; historical pinned API/replay behavior remains valid.
 - Related specs: SPEC-003, SPEC-004, SPEC-005, SPEC-006, SPEC-007, SPEC-009, SPEC-010, SPEC-011, SPEC-013, SPEC-014
 - Related ADRs: ADR-006
 - Related tasks: TASK-017, TASK-024, TASK-025, TASK-033, TASK-035, TASK-036, TASK-037, TASK-038, TASK-096, TASK-097, TASK-098

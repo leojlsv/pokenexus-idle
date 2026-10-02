@@ -457,6 +457,52 @@ describe("TASK-035 fresh Solo Hunt cadence", () => {
       reason: expect.stringContaining("duplicate"),
     });
   });
+
+  it("TASK-108 starts forward Hunts from exact persisted HP while preserving Team-order living selection", () => {
+    const lead = {
+      pokemonInstanceId: id<PokemonInstanceId>("pokemon:lead-ko"),
+      speciesId: id<SpeciesId>("species:lead"),
+      level: 10,
+      baseStats: { hp: 80, atk: 70, def: 60, spa: 40, spd: 50, spe: 100 },
+      ivs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      types: [normalType],
+      moveLoadout: [firstMove],
+    };
+    const reserve = {
+      ...lead,
+      pokemonInstanceId: id<PokemonInstanceId>("pokemon:reserve-damaged"),
+      speciesId: id<SpeciesId>("species:reserve"),
+    };
+    const leadKey = cadenceParticipantKey({ kind: "pokemonInstance", identity: lead.pokemonInstanceId });
+    const reserveKey = cadenceParticipantKey({ kind: "pokemonInstance", identity: reserve.pokemonInstanceId });
+
+    const result = createFreshSoloHuntCadence(
+      [lead, reserve],
+      undefined,
+      {
+        [lead.pokemonInstanceId]: 0,
+        [reserve.pokemonInstanceId]: 17,
+      },
+    );
+
+    expect(result.accepted).toBe(true);
+    if (!result.accepted) return;
+    expect(result.cadence.hpByParticipant).toEqual({ [leadKey]: 0, [reserveKey]: 17 });
+    expect(result.cadence.maxHpByParticipant).toEqual({ [leadKey]: 36, [reserveKey]: 36 });
+
+    const allKo = createFreshSoloHuntCadence(
+      [lead, reserve],
+      undefined,
+      {
+        [lead.pokemonInstanceId]: 0,
+        [reserve.pokemonInstanceId]: 0,
+      },
+    );
+    expect(allKo).toMatchObject({
+      accepted: false,
+      reason: expect.stringContaining("living"),
+    });
+  });
 });
 
 describe("TASK-035 deterministic encounter selection", () => {
@@ -1265,6 +1311,44 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
       restoredCapture.accepted,
       restoredCapture.accepted ? undefined : restoredCapture.reason,
     ).toBe(true);
+  });
+
+  it("TASK-108 round-trips forward persisted HP through checkpoint restart without resetting to max", () => {
+    const inputs = {
+      ...runtimeInputs(),
+      initialHpByPokemonInstanceId: {
+        [runtimeTeam[0].pokemonInstanceId]: 17,
+      },
+    };
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:persistent-vitality-restart",
+      inputs,
+      policyRng: createRngState(221),
+      combatDeterministicState: { rng: createRngState(222) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+
+    const initialPlayer = created.state.currentEncounter?.battle.combatants[
+      created.state.currentEncounter.battle.sides[0]!.combatantIds[0]!
+    ];
+    expect(initialPlayer?.currentHp).toBe(17);
+
+    const decoded = decodeSoloHuntCheckpointV2(encodeSoloHuntCheckpointV2(created.state));
+    expect(decoded.accepted).toBe(true);
+    if (!decoded.accepted) return;
+    const decodedPlayer = decoded.state.currentEncounter?.battle.combatants[
+      decoded.state.currentEncounter.battle.sides[0]!.combatantIds[0]!
+    ];
+    expect(decodedPlayer?.currentHp).toBe(17);
+
+    const resumed = advanceSoloHuntToCutoff(decoded.state, inputs, decoded.state.logicalTimeMs);
+    expect(resumed.accepted).toBe(true);
+    if (!resumed.accepted) return;
+    const resumedPlayer = resumed.state.currentEncounter?.battle.combatants[
+      resumed.state.currentEncounter.battle.sides[0]!.combatantIds[0]!
+    ];
+    expect(resumedPlayer?.currentHp).toBe(17);
   });
 
   it("rejects a checkpoint whose current Battle context no longer matches the Hunt context", () => {

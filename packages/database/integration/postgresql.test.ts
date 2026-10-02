@@ -193,6 +193,7 @@ describe("PostgreSQL 17 migration foundation", () => {
       "0007_capture_resolution.sql",
       "0008_hunt_checkpoint_claim.sql",
       "0009_authoritative_hunt_api.sql",
+      "0010_persistent_pokemon_vitality_pokecenter.sql",
     ]);
     const [persistenceMigration, authMigration] = canonical;
 

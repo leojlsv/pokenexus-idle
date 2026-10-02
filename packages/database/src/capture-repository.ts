@@ -1,6 +1,7 @@
 import type { Client } from "pg";
 import { decodeOpaqueStringDbV1, encodeOpaqueStringDbV1 } from "./opaque-string-db-codec.js";
 import { removeInventoryEntriesInTransaction } from "./inventory-repository.js";
+import { createPokemonVitalityInTransaction } from "./pokemon-vitality-repository.js";
 import { withTransaction } from "./transaction.js";
 import { generateUuidV7 } from "./uuid-v7.js";
 
@@ -74,6 +75,12 @@ export interface CaptureAttemptRecord extends CaptureAttemptIntent {
   readonly captureAttemptId: string;
   readonly createdPokemonInstanceId: string | null;
   readonly acceptedAt: Date;
+}
+
+export interface CaptureAttemptCommitInput extends CaptureAttemptIntent {
+  readonly expectedInventoryRowVersion: bigint;
+  readonly initialPokemonVitalityCurrentHp?: number;
+  readonly now: Date;
 }
 
 export type CaptureAttemptCommitResult =
@@ -583,7 +590,7 @@ async function insertAttempt(
 
 export async function commitCaptureAttemptInTransaction(
   client: CaptureDbClient,
-  input: CaptureAttemptIntent & { readonly expectedInventoryRowVersion: bigint; readonly now: Date },
+  input: CaptureAttemptCommitInput,
 ): Promise<CaptureAttemptCommitResult> {
   validateIntent(input);
   if (!await lockPlayerForCaptureAttempt(client, input.subjectPlayerId)) {
@@ -612,7 +619,23 @@ export async function commitCaptureAttemptInTransaction(
   const captureAttemptId = generateUuidV7();
   const pokemonInstanceId = input.pokemon ? generateUuidV7() : null;
   if (input.pokemon && pokemonInstanceId) {
+    if (
+      !Number.isSafeInteger(input.initialPokemonVitalityCurrentHp)
+      || input.initialPokemonVitalityCurrentHp === undefined
+      || input.initialPokemonVitalityCurrentHp <= 0
+    ) {
+      throw new Error("successful capture requires positive initial Pokémon vitality HP");
+    }
     await insertPokemon(client, input.subjectPlayerId, input.pokemon, pokemonInstanceId, input.now);
+    const vitality = await createPokemonVitalityInTransaction(client, {
+      ownerPlayerId: input.subjectPlayerId,
+      pokemonInstanceId,
+      currentHp: input.initialPokemonVitalityCurrentHp,
+      now: input.now,
+    });
+    if (vitality.status !== "created") {
+      throw new Error("successful capture failed to create Pokémon vitality atomically");
+    }
     await incrementSpeciesResearch(client, input.subjectPlayerId, input.speciesId, input.now);
   }
   await insertAttempt(client, input, captureAttemptId, pokemonInstanceId, input.now);
@@ -623,7 +646,7 @@ export async function commitCaptureAttemptInTransaction(
 
 export async function commitCaptureAttempt(
   client: CaptureDbClient,
-  input: CaptureAttemptIntent & { readonly expectedInventoryRowVersion: bigint; readonly now: Date },
+  input: CaptureAttemptCommitInput,
 ): Promise<CaptureAttemptCommitResult> {
   return withTransaction(client, (transaction) => commitCaptureAttemptInTransaction(transaction, input));
 }

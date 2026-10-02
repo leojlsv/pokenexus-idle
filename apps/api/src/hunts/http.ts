@@ -10,6 +10,7 @@ import {
   parseEmptyMutationBodyText,
   parseHuntItemUseBody,
   parseManualCaptureBody,
+  parsePokeCenterHealBody,
   parseStartHuntBody,
 } from "./protocol";
 
@@ -155,6 +156,21 @@ export function registerHuntRoutes(app: ApiApp, options: RegisterHuntRoutesOptio
     return applicationResponse(
       c,
       await options.huntFor(c).start(playerId, idempotencyKey, input),
+    );
+  });
+
+  app.post("/player/pokecenter/heal", async (c) => {
+    const principal = await options.security.requireCommandSession(c);
+    if (principal instanceof Response) return principal;
+    const idempotencyKey = canonicalIdempotencyKey(c);
+    if (idempotencyKey === null) return invalidRequest(c);
+    const input = await parseMutation(c, parsePokeCenterHealBody);
+    if (input instanceof Response) return input;
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return playerId;
+    return applicationResponse(
+      c,
+      await options.huntFor(c).healAtPokeCenter(playerId, idempotencyKey, input),
     );
   });
 

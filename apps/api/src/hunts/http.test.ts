@@ -52,6 +52,10 @@ class FakeHuntApplication {
     return this.record("start", [account, key, body]);
   }
 
+  healAtPokeCenter(account: string, key: string, body: unknown) {
+    return this.record("healAtPokeCenter", [account, key, body]);
+  }
+
   checkpoint(account: string, key: string, targetHuntId: string) {
     return this.record("checkpoint", [account, key, targetHuntId]);
   }
@@ -153,6 +157,26 @@ describe("SPEC-015 Hunt HTTP routes", () => {
     expect(hunt.calls).toEqual([{
       name: "start",
       args: [playerId, idempotencyKey, { huntDefinitionId: "hunt:test", teamId }],
+    }]);
+  });
+
+  it("routes PokéCenter healing through command auth with only teamId and idempotency identity", async () => {
+    const { app, hunt, guards } = createTestApp();
+    const response = await app.request(
+      "/player/pokecenter/heal",
+      {
+        method: "POST",
+        headers: commandHeaders(),
+        body: JSON.stringify({ teamId }),
+      },
+      {} as ApiBindings,
+    );
+
+    expect(response.status).toBe(200);
+    expect(guards).toEqual({ read: 0, command: 1 });
+    expect(hunt.calls).toEqual([{
+      name: "healAtPokeCenter",
+      args: [playerId, idempotencyKey, { teamId }],
     }]);
   });
 

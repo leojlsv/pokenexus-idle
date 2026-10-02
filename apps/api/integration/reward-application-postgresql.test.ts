@@ -1,14 +1,20 @@
 import {
   ITEM_QUANTITY_MAX,
   claimRewardResolution,
+  createHuntCheckpoint,
+  createPokemonVitalityInTransaction,
+  createSoloHuntInTransaction,
   createOrLoadPlayerByAccountId,
   encodeOpaqueStringDbV1,
+  ensureAndLockPlayerHuntRoot,
   generateUuidV7,
   grantInventoryEntries,
   loadInventory,
+  loadPokemonVitality,
   loadOwnedPokemonProgression,
   loadPlayerProgression,
   loadRewardResolutionById,
+  saveHuntInputAuthorityInTransaction,
   updatePlayerProgression,
   withPgClient,
   withTransaction,
@@ -76,6 +82,9 @@ function exactContextLoader(
         itemIds: new Set(
           envelope.effects.flatMap((effect) => effect.kind === "item_grant" ? [effect.itemId] : []),
         ),
+        speciesBaseStatsById: envelope.gameDataVersion === null
+          ? new Map()
+          : new Map([["species:test", { hp: 50, atk: 50, def: 50, spa: 50, spd: 50, spe: 50 }]]),
       };
     },
   };
@@ -248,6 +257,11 @@ describe("TASK-024 Reward application orchestration", () => {
       expect(firstPokemon?.rowVersion).toBe(1n);
       const cappedPokemon = await loadOwnedPokemonProgression(client, playerId, pokemonB);
       expect(cappedPokemon).toMatchObject({ level: 200n, totalExperience: 7_999_999n, rowVersion: 1n });
+      expect(await loadPokemonVitality(client, playerId, pokemonB)).toMatchObject({
+        currentHp: 412,
+        rowVersion: 0n,
+      });
+      expect(await loadPokemonVitality(client, playerId, pokemonA)).toBeNull();
       const inventory = await loadInventory(client, playerId);
       expect(inventory?.rowVersion).toBe(1n);
       expect(inventory?.entries).toEqual(expect.arrayContaining([
@@ -288,6 +302,155 @@ describe("TASK-024 Reward application orchestration", () => {
     expect(afterReplay?.rowVersion).toBe(2n);
     expect(observedContexts.every(([rulesVersion, gameDataVersion]) =>
       rulesVersion === "rules:retained-v1" && gameDataVersion === "game-data:retained-v1")).toBe(true);
+  });
+
+  it("reconciles vitality in the Level-change transaction without healing a max-HP increase", async () => {
+    const playerId = await createPlayer();
+    const pokemon = await createPokemon(playerId, 199);
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: playerId,
+        pokemonInstanceId: pokemon,
+        currentHp: 17,
+        now: new Date("2026-09-22T13:05:00Z"),
+      }));
+    const service = new RewardApplicationService(testDatabaseUrl, exactContextLoader());
+    const claim = await service.claimResolution({
+      subjectPlayerId: playerId,
+      sourceAuthority: "hunt:test",
+      sourceCorrelation: "outcome:vitality-level-up",
+      rulesVersion: "rules:retained-v1",
+      gameDataVersion: "game-data:retained-v1",
+      effects: [{ kind: "pokemon_xp", pokemonInstanceId: pokemon, amount: 20_000_000_000_000_000_000n }],
+    });
+
+    expect(await service.applyResolution(claim.resolution.resolutionId)).toMatchObject({
+      status: "completed",
+      replayed: false,
+    });
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      expect(await loadOwnedPokemonProgression(client, playerId, pokemon)).toMatchObject({
+        level: 200n,
+        totalExperience: 7_999_999n,
+        rowVersion: 1n,
+      });
+      expect(await loadPokemonVitality(client, playerId, pokemon)).toMatchObject({
+        currentHp: 17,
+        rowVersion: 0n,
+      });
+    });
+  });
+
+  it("rolls back Level progression when max-HP reconciliation authority is unavailable", async () => {
+    const playerId = await createPlayer();
+    const pokemon = await createPokemon(playerId, 199);
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: playerId,
+        pokemonInstanceId: pokemon,
+        currentHp: 17,
+        now: new Date("2026-09-22T13:06:00Z"),
+      }));
+    const baseLoader = exactContextLoader();
+    const missingSpeciesLoader: PinnedRewardContextLoader = {
+      async load(envelope) {
+        return {
+          ...await baseLoader.load(envelope),
+          speciesBaseStatsById: new Map(),
+        };
+      },
+    };
+    const service = new RewardApplicationService(testDatabaseUrl, missingSpeciesLoader);
+    const claim = await service.claimResolution({
+      subjectPlayerId: playerId,
+      sourceAuthority: "hunt:test",
+      sourceCorrelation: "outcome:vitality-level-up-authority-failure",
+      rulesVersion: "rules:retained-v1",
+      gameDataVersion: "game-data:retained-v1",
+      effects: [{ kind: "pokemon_xp", pokemonInstanceId: pokemon, amount: 20_000_000_000_000_000_000n }],
+    });
+
+    await expect(service.applyResolution(claim.resolution.resolutionId)).rejects.toThrow(
+      /does not resolve Pokémon Species for vitality reconciliation/,
+    );
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      expect(await loadOwnedPokemonProgression(client, playerId, pokemon)).toMatchObject({
+        level: 199n,
+        totalExperience: 7_880_598n,
+        rowVersion: 0n,
+      });
+      expect(await loadPokemonVitality(client, playerId, pokemon)).toMatchObject({
+        currentHp: 17,
+        rowVersion: 0n,
+      });
+      expect((await loadRewardResolutionById(client, claim.resolution.resolutionId))?.completion).toBeNull();
+    });
+  });
+
+  it("defers first vitality creation while an active historical v1 Hunt owns pre-cutover semantics", async () => {
+    const playerId = await createPlayer();
+    const pokemon = await createPokemon(playerId, 199);
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const checkpoint = await createHuntCheckpoint(client, {
+        subjectPlayerId: playerId,
+        huntRunIdentity: `hunt-run:${generateUuidV7()}`,
+        schemaVersion: "pokenexus.solo-hunt-checkpoint.v2",
+        gameDataVersion: "game-data:retained-v1",
+        rulesVersion: "rules:retained-v1",
+        logicalTimeMs: 0,
+        logicalTimeAnchorAt: new Date("2026-09-22T13:07:00Z"),
+        stateBytes: new TextEncoder().encode("checkpoint:historical-v1"),
+        now: new Date("2026-09-22T13:07:00Z"),
+      });
+      await withTransaction(client, async (transaction) => {
+        await ensureAndLockPlayerHuntRoot(transaction, playerId);
+        const hunt = await createSoloHuntInTransaction(transaction, {
+          playerId,
+          checkpointId: checkpoint.checkpointId,
+          huntDefinitionId: "hunt:test",
+          zoneId: "zone:test",
+          recoveryDurationMs: 1_000,
+          initialPolicyVersion: null,
+          startedAt: new Date("2026-09-22T13:07:00Z"),
+        });
+        await saveHuntInputAuthorityInTransaction(transaction, {
+          huntId: hunt.huntId,
+          playerId,
+          gameDataVersion: "game-data:retained-v1",
+          rulesVersion: "rules:retained-v1",
+          runtimeInputsJson: {
+            schemaVersion: "hunt-runtime-inputs-v1",
+            inputs: {},
+            individualizationRequired: false,
+          },
+          individualizationAuthorityVersion: null,
+          individualizationAuthorityKeyId: null,
+        });
+      });
+    });
+
+    const service = new RewardApplicationService(testDatabaseUrl, exactContextLoader());
+    const claim = await service.claimResolution({
+      subjectPlayerId: playerId,
+      sourceAuthority: "hunt:test",
+      sourceCorrelation: "outcome:v1-pre-cutover-level-up",
+      rulesVersion: "rules:retained-v1",
+      gameDataVersion: "game-data:retained-v1",
+      effects: [{ kind: "pokemon_xp", pokemonInstanceId: pokemon, amount: 20_000_000_000_000_000_000n }],
+    });
+
+    expect(await service.applyResolution(claim.resolution.resolutionId)).toMatchObject({
+      status: "completed",
+      replayed: false,
+    });
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      expect(await loadOwnedPokemonProgression(client, playerId, pokemon)).toMatchObject({
+        level: 200n,
+        totalExperience: 7_999_999n,
+        rowVersion: 1n,
+      });
+      expect(await loadPokemonVitality(client, playerId, pokemon)).toBeNull();
+    });
   });
 
   it("reloads fresh target state for the same frozen grant after unrelated progression advances", async () => {
@@ -639,6 +802,7 @@ describe("TASK-024 Reward application orchestration", () => {
             playerProgressionRuleId: "pokenexus.player-other.v2",
           },
           itemIds: new Set<string>(),
+          speciesBaseStatsById: new Map(),
         };
       },
     });

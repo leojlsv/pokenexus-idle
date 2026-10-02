@@ -6,6 +6,7 @@ import {
   generateUuidV7,
   grantInventoryEntries,
   loadInventory,
+  loadPokemonVitality,
   type CaptureAttemptIntent,
 } from "../src/index";
 import { runMigrations } from "../src/migrations";
@@ -59,7 +60,9 @@ async function createPlayerWithBall(client: Client): Promise<{
   return { playerId, inventoryRowVersion: grant.rowVersion };
 }
 
-function successIntent(playerId: string): CaptureAttemptIntent {
+function successIntent(
+  playerId: string,
+): CaptureAttemptIntent & { readonly initialPokemonVitalityCurrentHp: number } {
   return {
     subjectPlayerId: playerId,
     attemptCorrelation: "capture-command:test:1",
@@ -109,6 +112,7 @@ function successIntent(playerId: string): CaptureAttemptIntent {
       selectedAbilityId: "ability:normal-1",
       moveIds: ["move:two", "move:one"],
     },
+    initialPokemonVitalityCurrentHp: 73,
   };
 }
 
@@ -132,6 +136,11 @@ describe("TASK-036 capture persistence", () => {
       expect(first.replayed).toBe(false);
       expect(first.attempt.createdPokemonInstanceId).toBeTruthy();
       expect(first.attempt.pokemon).toEqual(intent.pokemon);
+      expect(await loadPokemonVitality(
+        client,
+        playerId,
+        first.attempt.createdPokemonInstanceId!,
+      )).toMatchObject({ currentHp: 73, rowVersion: 0n });
 
       const inventory = await loadInventory(client, playerId);
       expect(inventory).toMatchObject({ rowVersion: inventoryRowVersion + 1n });

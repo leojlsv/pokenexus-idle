@@ -11,6 +11,8 @@ import {
 } from "@pokenexus/database";
 import {
   CAPTURE_RULES_VERSION_V1,
+  GENETIC_COMBAT_RULES_VERSION_V1,
+  deriveMaxHpForRulesVersion,
   deriveLevelAvailableMoves,
   pokemonXpFloor,
   replayValidateSoloHuntCaptureSource,
@@ -61,6 +63,7 @@ export interface CaptureAttemptRepository {
   ): Promise<CaptureAttemptRecord | null>;
   commit(input: CaptureAttemptIntent & {
     readonly expectedInventoryRowVersion: bigint;
+    readonly initialPokemonVitalityCurrentHp?: number;
     readonly now: Date;
   }): Promise<CaptureAttemptCommitResult>;
 }
@@ -359,6 +362,20 @@ export class SoloHuntCaptureResolutionService {
           moveIds,
         }
       : null;
+    const initialPokemonVitalityCurrentHp = pokemon
+      ? deriveMaxHpForRulesVersion(
+          creation.pair.rulesVersion as never,
+          species.baseStats,
+          snapshot.ivs,
+          snapshot.level,
+          creation.pair.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1
+            ? snapshot.birthGeneticBonuses
+            : undefined,
+        )
+      : undefined;
+    if (pokemon && initialPokemonVitalityCurrentHp === undefined) {
+      throw new Error("captured Pokémon max HP is unavailable in the selected creation context");
+    }
 
     return this.repository.commit({
       subjectPlayerId: input.subjectPlayerId,
@@ -393,6 +410,9 @@ export class SoloHuntCaptureResolutionService {
       },
       success: capture.success,
       pokemon,
+      ...(initialPokemonVitalityCurrentHp === undefined
+        ? {}
+        : { initialPokemonVitalityCurrentHp }),
       expectedInventoryRowVersion: input.expectedInventoryRowVersion,
       now: input.now,
     });

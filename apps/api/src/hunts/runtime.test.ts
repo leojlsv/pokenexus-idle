@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { RuntimeGameDataReader } from "@pokenexus/game-data/runtime";
+import type { SoloHuntRuntimeInputs } from "@pokenexus/game-core";
 import { describe, expect, it } from "vitest";
 import { HuntAuthorityUnavailableError } from "./application";
 import {
@@ -12,10 +13,12 @@ import {
   createPublishedHuntGameDataLoader,
   deriveEncounterIndividualizationAuthorityKeyId,
   normalizeHealingItemMagnitude,
+  parsePersistedHuntRuntimeEnvelope,
   parseCaptureBallAuthorityReleases,
   parseEncounterIndividualizationAuthorityReleases,
   parseGeneticProfilePairReleases,
   parseHuntItemRuleReleases,
+  serializeHuntRuntimeInputsForPersistence,
 } from "./runtime";
 
 const V2 = "game-data-core-kanto-johto-v2";
@@ -35,6 +38,59 @@ function base64url(bytes: Uint8Array): string {
 }
 
 describe("Hunt runtime release authorities", () => {
+  it("TASK-108 versions persisted Start HP authority without reinterpreting historical v1 envelopes", () => {
+    const historicalInputs = {
+      playerId: "player:test",
+      zoneId: "zone:test",
+      huntDefinitionId: "hunt:test",
+      contentVersion: "content:test",
+      contentHash: "sha256:content-test",
+      context: { gameDataVersion: "game-data:test", rulesVersion: "rules:test" },
+      team: [{ pokemonInstanceId: "pokemon:test" }],
+      encounterOptions: [],
+      opponentTemplates: [],
+      interBattleGapMs: 0,
+    } as unknown as SoloHuntRuntimeInputs;
+    const recordFor = (runtimeInputsJson: Record<string, unknown>) => ({
+      huntId: "hunt-instance:test",
+      playerId: "player:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      runtimeInputsJson,
+      individualizationAuthorityVersion: null,
+      individualizationAuthorityKeyId: null,
+    });
+
+    const historical = serializeHuntRuntimeInputsForPersistence(historicalInputs);
+    expect(historical.schemaVersion).toBe("hunt-runtime-inputs-v1");
+    expect(parsePersistedHuntRuntimeEnvelope(recordFor(
+      historical as unknown as Record<string, unknown>,
+    )).inputs.initialHpByPokemonInstanceId).toBeUndefined();
+
+    const forwardInputs: SoloHuntRuntimeInputs = {
+      ...historicalInputs,
+      initialHpByPokemonInstanceId: { "pokemon:test": 17 },
+    };
+    const forward = serializeHuntRuntimeInputsForPersistence(forwardInputs);
+    expect(forward.schemaVersion).toBe("hunt-runtime-inputs-v2");
+    expect(parsePersistedHuntRuntimeEnvelope(recordFor(
+      forward as unknown as Record<string, unknown>,
+    )).inputs.initialHpByPokemonInstanceId).toEqual({ "pokemon:test": 17 });
+
+    expect(() => parsePersistedHuntRuntimeEnvelope(recordFor({
+      ...historical as unknown as Record<string, unknown>,
+      inputs: {
+        ...historical.inputs,
+        initialHpByPokemonInstanceId: { "pokemon:test": 17 },
+      },
+    }))).toThrow(HuntAuthorityUnavailableError);
+
+    expect(() => parsePersistedHuntRuntimeEnvelope(recordFor({
+      ...forward as unknown as Record<string, unknown>,
+      inputs: historical.inputs,
+    }))).toThrow(HuntAuthorityUnavailableError);
+  });
+
   it("resolves current and retained Ball releases with exact premium metadata", async () => {
     const releases = parseCaptureBallAuthorityReleases(JSON.stringify([
       {

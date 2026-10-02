@@ -7,6 +7,7 @@ import {
   POKEMON_PROGRESSION_RULE_ID,
   allocateGeneticBudget,
   deriveLevelAvailableMoves,
+  deriveMaxHpForRulesVersion,
   geneticBudgetForScore,
   replayValidateSoloHuntCompletedCaptureSource,
   selectBootstrapMoveLoadout,
@@ -46,6 +47,7 @@ import {
 import {
   HuntApplication,
   HuntAuthorityUnavailableError,
+  type BuiltHuntRuntimeAuthority,
   type CaptureBallAuthorityRelease,
   type HuntBoundaryEffectsPort,
   type HuntHistoricalEncounterAuthority,
@@ -60,7 +62,8 @@ import {
   type HistoricalEncounterAuthorityLoader,
 } from "./capture-reward";
 
-const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION = "hunt-runtime-inputs-v1" as const;
+export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1 = "hunt-runtime-inputs-v1" as const;
+export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2 = "hunt-runtime-inputs-v2" as const;
 const INDIVIDUALIZATION_KEY_ID_DOMAIN = "pokenexus-individualization-authority-key-id-v1";
 const CAPTURE_BALL_POWERS = new Set<CaptureBallRuleV1["powerQuarterUnits"]>([4, 5, 6, 8, 9]);
 const GENETIC_PROFILE_SET = new Set<string>(GENETIC_PROFILES);
@@ -177,8 +180,10 @@ export interface CreateHuntRuntimeAuthorityPortOptions {
   readonly gameDataReader?: RuntimeGameDataReader;
 }
 
-interface PersistedRuntimeEnvelopeV1 {
-  readonly schemaVersion: typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION;
+interface PersistedRuntimeEnvelope {
+  readonly schemaVersion:
+    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
+    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2;
   readonly inputs: Omit<SoloHuntRuntimeInputs, "individualizationAuthority">;
   readonly individualizationRequired: boolean;
 }
@@ -757,6 +762,63 @@ function buildTeamMembers(
   });
 }
 
+function deriveTeamMaxHp(
+  team: readonly SoloHuntTeamMemberSnapshot[],
+  rulesVersion: string,
+): Readonly<Record<string, number>> {
+  const result: Record<string, number> = Object.create(null) as Record<string, number>;
+  for (const member of team) {
+    const maxHp = deriveMaxHpForRulesVersion(
+      rulesVersion as never,
+      member.baseStats,
+      member.ivs,
+      member.level,
+      member.geneticBonuses,
+    );
+    if (maxHp === undefined) {
+      throw unavailable("team max HP authority is unavailable: " + member.pokemonInstanceId);
+    }
+    result[member.pokemonInstanceId] = maxHp;
+  }
+  return result;
+}
+
+function bindInitialHp(
+  built: BuiltHuntRuntimeAuthority,
+  initialHpByPokemonInstanceId: Readonly<Record<string, number>>,
+): BuiltHuntRuntimeAuthority {
+  const expectedIds = Object.keys(built.maxHpByPokemonInstanceId).sort();
+  const actualIds = Object.keys(initialHpByPokemonInstanceId).sort();
+  if (
+    expectedIds.length !== actualIds.length
+    || expectedIds.some((value, index) => value !== actualIds[index])
+  ) {
+    throw unavailable("persistent vitality identities do not match the pinned Team");
+  }
+  for (const pokemonInstanceId of expectedIds) {
+    const currentHp = initialHpByPokemonInstanceId[pokemonInstanceId];
+    const maxHp = built.maxHpByPokemonInstanceId[pokemonInstanceId];
+    if (
+      currentHp === undefined
+      || maxHp === undefined
+      || !Number.isSafeInteger(currentHp)
+      || currentHp < 0
+      || currentHp > maxHp
+    ) {
+      throw unavailable("persistent vitality is invalid: " + pokemonInstanceId);
+    }
+  }
+  const inputs: SoloHuntRuntimeInputs = {
+    ...built.inputs,
+    initialHpByPokemonInstanceId,
+  };
+  return {
+    ...built,
+    inputs,
+    persistedInputs: serializeHuntRuntimeInputsForPersistence(inputs) as unknown as Record<string, unknown>,
+  };
+}
+
 function buildEncounterAuthority(input: {
   readonly huntDefinitionId: string;
   readonly gameData: PublishedHuntGameDataAuthority;
@@ -806,24 +868,70 @@ function buildEncounterAuthority(input: {
   return { encounterOptions, opponentTemplates };
 }
 
-function persistedEnvelope(inputs: SoloHuntRuntimeInputs): PersistedRuntimeEnvelopeV1 {
+function validatePersistedInitialHpAuthority(inputs: Record<string, unknown>): void {
+  const team = inputs.team;
+  if (!Array.isArray(team) || team.length === 0) {
+    throw new TypeError("runtimeInputsJson.inputs.team must be a non-empty array");
+  }
+  const teamIds = team.map((memberValue, index) => {
+    const member = record(memberValue, "runtimeInputsJson.inputs.team[" + index + "]");
+    return nonEmptyString(
+      member.pokemonInstanceId,
+      "runtimeInputsJson.inputs.team[" + index + "].pokemonInstanceId",
+    );
+  });
+  if (new Set(teamIds).size !== teamIds.length) {
+    throw new TypeError("runtimeInputsJson.inputs.team contains duplicate Pokémon identities");
+  }
+  const authority = record(
+    inputs.initialHpByPokemonInstanceId,
+    "runtimeInputsJson.inputs.initialHpByPokemonInstanceId",
+  );
+  exactKeys(
+    authority,
+    teamIds,
+    [],
+    "runtimeInputsJson.inputs.initialHpByPokemonInstanceId",
+  );
+  for (const pokemonInstanceId of teamIds) {
+    const hp = authority[pokemonInstanceId];
+    if (typeof hp !== "number" || !Number.isSafeInteger(hp) || hp < 0) {
+      throw new TypeError("persisted initial Pokémon HP must be a non-negative safe integer");
+    }
+  }
+}
+
+export function serializeHuntRuntimeInputsForPersistence(
+  inputs: SoloHuntRuntimeInputs,
+): PersistedRuntimeEnvelope {
   const { individualizationAuthority: _secret, ...withoutSecret } = inputs;
   return {
-    schemaVersion: HUNT_RUNTIME_INPUTS_SCHEMA_VERSION,
+    schemaVersion: inputs.initialHpByPokemonInstanceId === undefined
+      ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
+      : HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2,
     inputs: withoutSecret,
     individualizationRequired: inputs.individualizationAuthority !== undefined,
   };
 }
 
-function parsePersistedEnvelope(recordValue: HuntInputAuthorityRecord): PersistedRuntimeEnvelopeV1 {
+export function parsePersistedHuntRuntimeEnvelope(
+  recordValue: HuntInputAuthorityRecord,
+): PersistedRuntimeEnvelope {
   try {
     const envelope = record(recordValue.runtimeInputsJson, "runtimeInputsJson");
     exactKeys(envelope, ["schemaVersion", "inputs", "individualizationRequired"], [], "runtimeInputsJson");
-    if (envelope.schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION || typeof envelope.individualizationRequired !== "boolean") {
+    const schemaVersion = envelope.schemaVersion;
+    if (
+      (
+        schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
+        && schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2
+      )
+      || typeof envelope.individualizationRequired !== "boolean"
+    ) {
       throw new TypeError("runtimeInputsJson envelope is unsupported");
     }
     const inputs = record(envelope.inputs, "runtimeInputsJson.inputs");
-    for (const key of [
+    const requiredKeys = [
       "playerId",
       "zoneId",
       "huntDefinitionId",
@@ -834,8 +942,17 @@ function parsePersistedEnvelope(recordValue: HuntInputAuthorityRecord): Persiste
       "encounterOptions",
       "opponentTemplates",
       "interBattleGapMs",
-    ]) {
-      if (!Object.prototype.hasOwnProperty.call(inputs, key)) throw new TypeError(`runtimeInputsJson.inputs.${key} is required`);
+    ];
+    if (schemaVersion === HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1) {
+      exactKeys(inputs, requiredKeys, [], "runtimeInputsJson.inputs");
+    } else {
+      exactKeys(
+        inputs,
+        [...requiredKeys, "initialHpByPokemonInstanceId"],
+        [],
+        "runtimeInputsJson.inputs",
+      );
+      validatePersistedInitialHpAuthority(inputs);
     }
     const context = record(inputs.context, "runtimeInputsJson.inputs.context");
     if (
@@ -846,7 +963,7 @@ function parsePersistedEnvelope(recordValue: HuntInputAuthorityRecord): Persiste
       throw new TypeError("runtimeInputsJson does not match frozen Hunt authority columns");
     }
     return {
-      schemaVersion: HUNT_RUNTIME_INPUTS_SCHEMA_VERSION,
+      schemaVersion,
       inputs: inputs as unknown as Omit<SoloHuntRuntimeInputs, "individualizationAuthority">,
       individualizationRequired: envelope.individualizationRequired,
     };
@@ -1010,6 +1127,11 @@ export function createHuntRuntimeAuthorityPort(
         moveContext,
         geneticProfiles: profiles,
       });
+      const teamMembers = buildTeamMembers(team, release.speciesById);
+      const maxHpByPokemonInstanceId = deriveTeamMaxHp(
+        teamMembers,
+        effectiveSelector.rulesVersion,
+      );
       const inputs: SoloHuntRuntimeInputs = {
         playerId: playerId as never,
         zoneId: effectiveSelector.zoneId as never,
@@ -1017,7 +1139,7 @@ export function createHuntRuntimeAuthorityPort(
         contentVersion: release.contentVersion,
         contentHash: release.contentHash,
         context: combatContext,
-        team: buildTeamMembers(team, release.speciesById),
+        team: teamMembers,
         encounterOptions: encounters.encounterOptions,
         opponentTemplates: encounters.opponentTemplates,
         interBattleGapMs,
@@ -1025,15 +1147,27 @@ export function createHuntRuntimeAuthorityPort(
       };
       return {
         inputs,
-        persistedInputs: persistedEnvelope(inputs) as unknown as Record<string, unknown>,
+        persistedInputs: serializeHuntRuntimeInputsForPersistence(inputs) as unknown as Record<string, unknown>,
+        maxHpByPokemonInstanceId,
         selector: effectiveSelector,
         individualizationAuthorityVersion: individualizationAuthority.authorityVersion,
         individualizationAuthorityKeyId: individualizationAuthority.keyId,
       };
     },
 
+    bindStartVitality(built, initialHpByPokemonInstanceId) {
+      return bindInitialHp(built, initialHpByPokemonInstanceId);
+    },
+
+    async deriveCurrentTeamMaxHp(team) {
+      const moveContext = await currentMoveContext();
+      const release = await exactPublishedForMoveContext(moveContext);
+      const teamMembers = buildTeamMembers(team, release.speciesById);
+      return deriveTeamMaxHp(teamMembers, moveContext.pair.rulesVersion);
+    },
+
     async loadPersistedRuntime(authorityRecord) {
-      const envelope = parsePersistedEnvelope(authorityRecord);
+      const envelope = parsePersistedHuntRuntimeEnvelope(authorityRecord);
       const release = await gameData.load(authorityRecord.gameDataVersion);
       if (
         release.contentVersion !== envelope.inputs.contentVersion
