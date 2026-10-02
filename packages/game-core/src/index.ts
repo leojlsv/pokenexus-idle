@@ -5,9 +5,13 @@ export {
 } from "./battle";
 export { deriveSimpleDamageMoveCooldownMs } from "./cooldown";
 export * from "./capture-reward";
-export { advanceCadence } from "./effects";
+export { advanceCadence, applyCadenceExternalHpHeal, applyCadenceRevive } from "./effects";
 export { evaluateInstantHpHealing } from "./effects";
 export type { InstantHpHealingResult } from "./effects";
+export {
+  MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
+  MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
+} from "./management-first-combat-rules";
 export {
   ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
   GENETIC_PROFILES,

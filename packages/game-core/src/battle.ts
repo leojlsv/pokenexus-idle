@@ -8,29 +8,65 @@ import type {
   CombatEvent,
   DeterministicState,
   EffectInstruction,
+  ExternalHpHealStimulus,
   ForcedReplacementIntent,
+  KoInterventionDecisionStimulus,
   TransitionResult,
   UseMoveIntent,
 } from "./types";
 import { battleEffectKey, cadenceParticipantKey } from "./types";
 import { validateBattleInit, deriveStatsForRulesVersion } from "./validation";
-import { evaluateBattleLifecycle } from "./lifecycle";
+import { evaluateBattleLifecycle, evaluateBattleLifecycleAfterKoInterventionDecline } from "./lifecycle";
 import {
   calculateBaseDamage,
   calculateEffectiveStat,
   calculateCappedFinalDamage,
   calculateStab,
   calculateTypeEffectiveness,
+  compareUtf8Bytes,
   compareInitiative,
   drawUniformInteger,
   hasLegalTarget,
   resolveTargetIds,
 } from "./combat-math";
-import { applyEffectInstructionsInternal } from "./effects";
+import { applyEffectInstructionsInternal, evaluateInstantHpHealing } from "./effects";
 import { advanceTime } from "./effects";
 import { cloneSafeRecord, createSafeRecord, ownGet, safeRecordFromEntries, safeRecordWith } from "./record-utils";
+import {
+  AUTO_POTION_COOLDOWN_MS,
+  GLOBAL_ACTION_COOLDOWN_MS,
+  isManagementFirstCombatContext,
+} from "./management-first-combat-rules";
 
-export const GLOBAL_ACTION_COOLDOWN_MS = 2000;
+export { AUTO_POTION_COOLDOWN_MS, GLOBAL_ACTION_COOLDOWN_MS } from "./management-first-combat-rules";
+
+const STAGE_RESET_ORDER = ["atk", "def", "spa", "spd", "spe"] as const;
+
+function greatestCommonDivisor(left: number, right: number): number {
+  let a = left;
+  let b = right;
+  while (b !== 0) {
+    const remainder = a % b;
+    a = b;
+    b = remainder;
+  }
+  return a;
+}
+
+function validPositiveMagnitude(magnitude: import("./types").EffectMagnitude): boolean {
+  if (magnitude.kind === "integer") {
+    return Number.isSafeInteger(magnitude.amount) && magnitude.amount > 0;
+  }
+  return Number.isSafeInteger(magnitude.numerator) && magnitude.numerator > 0
+    && Number.isSafeInteger(magnitude.denominator) && magnitude.denominator > 0
+    && greatestCommonDivisor(magnitude.numerator, magnitude.denominator) === 1;
+}
+
+function validPositiveFraction(value: { numerator: number; denominator: number }): boolean {
+  return Number.isSafeInteger(value.numerator) && value.numerator > 0
+    && Number.isSafeInteger(value.denominator) && value.denominator > 0
+    && greatestCommonDivisor(value.numerator, value.denominator) === 1;
+}
 
 function validateAbilityCadenceBindings(state: BattleState, ownerId: CombatantId, counterpartId: CombatantId | undefined, triggers: ReadonlyArray<import("./types").AbilityReactionTrigger>): string | undefined {
   const owner = ownGet(state.combatants, ownerId);
@@ -125,6 +161,7 @@ export function initializeBattle(input: BattleInitInput): BattleInitResult {
     };
   }
 
+  const managementFirst = isManagementFirstCombatContext(input.context);
   const sideByCombatant = new Map<string, BattleState["sides"][number]["sideId"]>();
   for (const side of input.sides) {
     for (const combatantId of side.combatantIds) sideByCombatant.set(combatantId, side.sideId);
@@ -137,6 +174,11 @@ export function initializeBattle(input: BattleInitInput): BattleInitResult {
       : undefined;
     const cadenceActionLockRemainingMs = inputCombatant.cadenceParticipant
       ? (input.cadenceCarry ? ownGet(input.cadenceCarry.actionLockRemainingMsByParticipant, participantKey!) : undefined)
+      : undefined;
+    const cadenceAutoPotionCooldownRemainingMs = inputCombatant.cadenceParticipant
+      ? (input.cadenceCarry
+        ? ownGet(input.cadenceCarry.readinessByParticipant, participantKey!)?.autoPotionCooldownRemainingMs
+        : undefined)
       : undefined;
     const derivedStats = deriveStatsForRulesVersion(
       input.context.rulesVersion,
@@ -172,6 +214,9 @@ export function initializeBattle(input: BattleInitInput): BattleInitResult {
       stages: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
       ...(cadenceActionLockRemainingMs !== undefined && cadenceActionLockRemainingMs > 0
         ? { actionLockExpiresAtMsByScope: { cadence: cadenceActionLockRemainingMs } }
+        : {}),
+      ...(managementFirst
+        ? { autoPotionReadyAtMs: cadenceAutoPotionCooldownRemainingMs ?? 0 }
         : {}),
       ...(inputCombatant.abilityId ? { abilityId: inputCombatant.abilityId } : {}),
       ...(inputCombatant.cadenceParticipant
@@ -232,6 +277,9 @@ export function initializeBattle(input: BattleInitInput): BattleInitResult {
     })),
     combatants,
     replacementPendingSideIds: [],
+    ...(managementFirst
+      ? { koInterventionSideId: input.koInterventionSideId ?? null, koInterventionPending: null }
+      : {}),
     effects: initialEffects,
     nextEffectApplicationSequence,
   };
@@ -302,6 +350,9 @@ export function createCadenceCarry(state: BattleState): import("./types").Cadenc
         moveCooldownRemainingMs: safeRecordFromEntries(
           Object.entries(combatant.moveReadyAtMs).map(([moveId, readyAtMs]) => [moveId, Math.max(0, readyAtMs - state.combatTimeMs)]),
         ),
+        ...(combatant.autoPotionReadyAtMs !== undefined
+          ? { autoPotionCooldownRemainingMs: Math.max(0, combatant.autoPotionReadyAtMs - state.combatTimeMs) }
+          : {}),
       };
       actionLockRemainingMsByParticipant[participantKey] = Math.max(
         0,
@@ -319,7 +370,179 @@ export function resolveCombatStimulus(
 ): TransitionResult {
   if (stimulus.kind === "advanceTime") return advanceTime(state, deterministicState, stimulus.toMs);
   if (stimulus.kind === "forcedReplacement") return resolveForcedReplacement(state, stimulus, deterministicState);
+  if (stimulus.kind === "externalHpHeal") return resolveExternalHpHeal(state, stimulus, deterministicState);
+  if (stimulus.kind === "koInterventionDecision") return resolveKoInterventionDecision(state, stimulus, deterministicState);
   return resolveUseMove(state, stimulus, deterministicState);
+}
+
+export function resolveExternalHpHeal(
+  state: BattleState,
+  stimulus: ExternalHpHealStimulus,
+  deterministicState: DeterministicState,
+): TransitionResult {
+  if (!isManagementFirstCombatContext(state.context)) {
+    return { accepted: false, reason: "external interventions are not enabled for this rules version", state, deterministicState, events: [] };
+  }
+  if (state.status !== "active") return { accepted: false, reason: "battle is not active", state, deterministicState, events: [] };
+  if (state.koInterventionPending) return { accepted: false, reason: "KO intervention is pending", state, deterministicState, events: [] };
+  if (state.replacementPendingSideIds.length > 0) return { accepted: false, reason: "forced replacement is pending", state, deterministicState, events: [] };
+  if (!stimulus.provenanceId) return { accepted: false, reason: "external HP heal provenance is required", state, deterministicState, events: [] };
+  if (!validPositiveMagnitude(stimulus.magnitude)) return { accepted: false, reason: "external HP heal magnitude is invalid", state, deterministicState, events: [] };
+
+  const target = ownGet(state.combatants, stimulus.targetId);
+  const actionOwner = ownGet(state.combatants, stimulus.actionOwnerId);
+  if (!target || target.currentHp <= 0) return { accepted: false, reason: "external HP heal target is not living", state, deterministicState, events: [] };
+  if (target.currentHp >= target.maxHp) return { accepted: false, reason: "external HP heal target is not damaged", state, deterministicState, events: [] };
+  if (!actionOwner || actionOwner.currentHp <= 0) return { accepted: false, reason: "external HP heal action owner is not living", state, deterministicState, events: [] };
+  const actionOwnerSide = state.sides.find((side) => side.sideId === actionOwner.sideId);
+  if (!actionOwnerSide?.activeCombatantIds.includes(actionOwner.combatantId)) {
+    return { accepted: false, reason: "external HP heal action owner is not active", state, deterministicState, events: [] };
+  }
+  if (target.autoPotionReadyAtMs === undefined) {
+    return { accepted: false, reason: "external HP heal target lacks forward cooldown state", state, deterministicState, events: [] };
+  }
+  if (state.combatTimeMs < target.autoPotionReadyAtMs) {
+    return { accepted: false, reason: "external HP heal cooldown is active", state, deterministicState, events: [] };
+  }
+
+  const healing = evaluateInstantHpHealing(target.currentHp, target.maxHp, stimulus.magnitude);
+  if (healing.amount <= 0) return { accepted: false, reason: "external HP heal produced no healing", state, deterministicState, events: [] };
+
+  let combatants = safeRecordWith(state.combatants, target.combatantId, {
+    ...target,
+    currentHp: healing.resultingHp,
+    autoPotionReadyAtMs: state.combatTimeMs + AUTO_POTION_COOLDOWN_MS,
+  });
+  const currentOwner = ownGet(combatants, actionOwner.combatantId)!;
+  combatants = safeRecordWith(combatants, actionOwner.combatantId, {
+    ...currentOwner,
+    nextActionAtMs: Math.max(currentOwner.nextActionAtMs, state.combatTimeMs) + GLOBAL_ACTION_COOLDOWN_MS,
+  });
+  const sequence = state.eventSequence + 1;
+  return {
+    accepted: true,
+    state: { ...state, combatants, eventSequence: sequence },
+    deterministicState,
+    events: [{
+      kind: "HealingApplied",
+      targetId: target.combatantId,
+      amount: healing.amount,
+      resultingHp: healing.resultingHp,
+      sequence,
+      combatTimeMs: state.combatTimeMs,
+    }],
+  };
+}
+
+export function resolveKoInterventionDecision(
+  state: BattleState,
+  stimulus: KoInterventionDecisionStimulus,
+  deterministicState: DeterministicState,
+): TransitionResult {
+  if (!isManagementFirstCombatContext(state.context)) {
+    return { accepted: false, reason: "KO intervention is not enabled for this rules version", state, deterministicState, events: [] };
+  }
+  if (state.status !== "active") return { accepted: false, reason: "battle is not active", state, deterministicState, events: [] };
+  const pending = state.koInterventionPending;
+  if (!pending) return { accepted: false, reason: "KO intervention is not pending", state, deterministicState, events: [] };
+  if (pending.sideId !== stimulus.sideId || pending.combatantId !== stimulus.combatantId) {
+    return { accepted: false, reason: "KO intervention identity does not match pending combatant", state, deterministicState, events: [] };
+  }
+
+  if (stimulus.decision === "decline") {
+    const resumed = evaluateBattleLifecycleAfterKoInterventionDecline({ ...state, koInterventionPending: null });
+    if (!resumed.outcome) return { accepted: true, state: resumed.state, deterministicState, events: [] };
+    const sequence = resumed.state.eventSequence + 1;
+    return {
+      accepted: true,
+      state: { ...resumed.state, eventSequence: sequence },
+      deterministicState,
+      events: [{ kind: "BattleEnded", outcome: resumed.outcome, sequence, combatTimeMs: state.combatTimeMs }],
+    };
+  }
+
+  if (!stimulus.provenanceId) return { accepted: false, reason: "KO intervention revive provenance is required", state, deterministicState, events: [] };
+  if (!validPositiveFraction(stimulus.reviveFraction)) {
+    return { accepted: false, reason: "KO intervention revive fraction is invalid", state, deterministicState, events: [] };
+  }
+  const combatant = ownGet(state.combatants, pending.combatantId);
+  const side = state.sides.find((candidate) => candidate.sideId === pending.sideId);
+  if (!combatant || combatant.currentHp !== 0 || combatant.sideId !== pending.sideId || !side?.activeCombatantIds.includes(combatant.combatantId)) {
+    return { accepted: false, reason: "pending KO intervention combatant is invalid", state, deterministicState, events: [] };
+  }
+
+  const requested = (BigInt(combatant.maxHp) * BigInt(stimulus.reviveFraction.numerator))
+    / BigInt(stimulus.reviveFraction.denominator);
+  const restored = Number(requested < 1n ? 1n : requested > BigInt(combatant.maxHp) ? BigInt(combatant.maxHp) : requested);
+  const priorStages = combatant.stages;
+  const { actionLockExpiresAtMsByScope: _actionLocks, ...unlockedCombatant } = combatant;
+  const revivedCombatant: BattleCombatantState = {
+    ...unlockedCombatant,
+    currentHp: restored,
+    nextActionAtMs: Math.max(combatant.nextActionAtMs, state.combatTimeMs) + GLOBAL_ACTION_COOLDOWN_MS,
+    stages: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+  };
+  const combatants = safeRecordWith(state.combatants, combatant.combatantId, revivedCombatant);
+  const removedEffects = Object.values(state.effects)
+    .filter((effect) => effect.targetCombatantId === combatant.combatantId)
+    .sort((left, right) => left.applicationSequence - right.applicationSequence || compareUtf8Bytes(left.effectId, right.effectId));
+  const effects = cloneSafeRecord(state.effects);
+  for (const effect of removedEffects) delete effects[battleEffectKey(effect.targetCombatantId, effect.effectId)];
+
+  let sequence = state.eventSequence;
+  const events: CombatEvent[] = [];
+  sequence += 1;
+  events.push({
+    kind: "CombatantRevived",
+    combatantId: combatant.combatantId,
+    amount: restored,
+    resultingHp: restored,
+    sequence,
+    combatTimeMs: state.combatTimeMs,
+  });
+  for (const effect of removedEffects) {
+    sequence += 1;
+    events.push({
+      kind: "EffectRemoved",
+      effectId: effect.effectId,
+      targetId: combatant.combatantId,
+      sequence,
+      combatTimeMs: state.combatTimeMs,
+    });
+  }
+  for (const stat of STAGE_RESET_ORDER) {
+    const priorStage = priorStages[stat];
+    if (priorStage === 0) continue;
+    sequence += 1;
+    events.push({
+      kind: "StatStageChanged",
+      targetId: combatant.combatantId,
+      stat,
+      requestedDelta: -priorStage,
+      appliedDelta: -priorStage,
+      resultingStage: 0,
+      sequence,
+      combatTimeMs: state.combatTimeMs,
+    });
+  }
+
+  const resumed = evaluateBattleLifecycle({
+    ...state,
+    combatants,
+    effects,
+    eventSequence: sequence,
+    koInterventionPending: null,
+  });
+  if (resumed.outcome) {
+    sequence += 1;
+    events.push({ kind: "BattleEnded", outcome: resumed.outcome, sequence, combatTimeMs: state.combatTimeMs });
+  }
+  return {
+    accepted: true,
+    state: { ...resumed.state, eventSequence: sequence },
+    deterministicState,
+    events,
+  };
 }
 
 export function resolveForcedReplacement(
@@ -328,6 +551,7 @@ export function resolveForcedReplacement(
   deterministicState: DeterministicState,
 ): TransitionResult {
   if (state.status !== "active") return { accepted: false, reason: "battle is not active", state, deterministicState, events: [] };
+  if (state.koInterventionPending) return { accepted: false, reason: "KO intervention is pending", state, deterministicState, events: [] };
   if (!state.replacementPendingSideIds.includes(intent.sideId)) return { accepted: false, reason: "side has no pending replacement", state, deterministicState, events: [] };
   const side = state.sides.find((candidate) => candidate.sideId === intent.sideId);
   const combatant = ownGet(state.combatants, intent.combatantId);
@@ -363,6 +587,9 @@ export function resolveUseMove(
 ): TransitionResult {
   if (state.status !== "active") {
     return { accepted: false, reason: "battle is not active", state, deterministicState, events: [] };
+  }
+  if (state.koInterventionPending) {
+    return { accepted: false, reason: "KO intervention is pending", state, deterministicState, events: [] };
   }
   if (state.replacementPendingSideIds.length > 0) {
     return { accepted: false, reason: "forced replacement is pending", state, deterministicState, events: [] };
