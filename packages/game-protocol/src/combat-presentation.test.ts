@@ -435,7 +435,7 @@ describe("Combat Presentation Event Contract v1", () => {
     }
   });
 
-  it("covers every authoritative CombatEvent kind without adding a second gameplay interpretation", () => {
+  it("projects every v1-supported authoritative CombatEvent kind without adding a second gameplay interpretation", () => {
     const started = bootstrap();
     const cases: ReadonlyArray<CombatEvent> = [
       authoritativeEvent({ kind: "MoveUsed", sequence: 2, combatTimeMs: 1, actorId: "combatant:owned", moveId: "move:x", targetIds: ["combatant:wild"] }),
@@ -469,6 +469,18 @@ describe("Combat Presentation Event Contract v1", () => {
       "HealingApplied",
       "StatStageChanged",
     ]);
+  });
+
+  it("keeps CombatantRevived out of historical presentation v1", () => {
+    const started = bootstrap();
+    expect(() => continuation(started.continuationContext, [authoritativeEvent({
+      kind: "CombatantRevived",
+      sequence: 2,
+      combatTimeMs: 1,
+      combatantId: "combatant:owned",
+      amount: 7,
+      resultingHp: 7,
+    })])).toThrow(/requires combat presentation v2/);
   });
 
   it("rejects malformed bootstrap bindings and non-origin bootstrap events", () => {

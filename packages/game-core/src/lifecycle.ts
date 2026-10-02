@@ -3,10 +3,35 @@ import { ownGet, safeRecordFromEntries } from "./record-utils";
 
 export type BattleOutcome = { kind: "win"; winnerSideId: BattleSideId } | { kind: "draw" };
 
-export function evaluateBattleLifecycle(state: BattleState): {
+function evaluateBattleLifecycleInternal(state: BattleState, allowKoIntervention: boolean): {
   state: BattleState;
   outcome?: BattleOutcome;
 } {
+  if (state.koInterventionPending) return { state };
+
+  if (allowKoIntervention && state.koInterventionSideId) {
+    const interventionSide = state.sides.find((side) => side.sideId === state.koInterventionSideId);
+    const pendingCombatantId = interventionSide?.activeCombatantIds.find(
+      (combatantId) => (ownGet(state.combatants, combatantId)?.currentHp ?? 0) === 0,
+    );
+    const nonInterventionSideHasLivingCombatant = state.sides.some((side) =>
+      side.sideId !== state.koInterventionSideId
+      && side.combatantIds.some((combatantId) => (ownGet(state.combatants, combatantId)?.currentHp ?? 0) > 0),
+    );
+    if (pendingCombatantId && nonInterventionSideHasLivingCombatant) {
+      return {
+        state: {
+          ...state,
+          replacementPendingSideIds: [],
+          koInterventionPending: {
+            sideId: state.koInterventionSideId,
+            combatantId: pendingCombatantId,
+          },
+        },
+      };
+    }
+  }
+
   const sides = state.sides.map((side) => ({
     ...side,
     activeCombatantIds: side.activeCombatantIds.filter((combatantId) => (ownGet(state.combatants, combatantId)?.currentHp ?? 0) > 0),
@@ -23,7 +48,15 @@ export function evaluateBattleLifecycle(state: BattleState): {
       }];
     }));
     return {
-      state: { ...state, status: "ended", sides, combatants, replacementPendingSideIds: [], effects },
+      state: {
+        ...state,
+        status: "ended",
+        sides,
+        combatants,
+        replacementPendingSideIds: [],
+        ...(Object.prototype.hasOwnProperty.call(state, "koInterventionPending") ? { koInterventionPending: null } : {}),
+        effects,
+      },
       outcome: surviving.length === 1 ? { kind: "win", winnerSideId: surviving[0].sideId } : { kind: "draw" },
     };
   }
@@ -33,5 +66,26 @@ export function evaluateBattleLifecycle(state: BattleState): {
       side.combatantIds.some((combatantId) => (ownGet(state.combatants, combatantId)?.currentHp ?? 0) > 0 && !side.activeCombatantIds.includes(combatantId)),
     )
     .map((side) => side.sideId);
-  return { state: { ...state, sides, replacementPendingSideIds } };
+  return {
+    state: {
+      ...state,
+      sides,
+      replacementPendingSideIds,
+      ...(Object.prototype.hasOwnProperty.call(state, "koInterventionPending") ? { koInterventionPending: null } : {}),
+    },
+  };
+}
+
+export function evaluateBattleLifecycle(state: BattleState): {
+  state: BattleState;
+  outcome?: BattleOutcome;
+} {
+  return evaluateBattleLifecycleInternal(state, true);
+}
+
+export function evaluateBattleLifecycleAfterKoInterventionDecline(state: BattleState): {
+  state: BattleState;
+  outcome?: BattleOutcome;
+} {
+  return evaluateBattleLifecycleInternal(state, false);
 }

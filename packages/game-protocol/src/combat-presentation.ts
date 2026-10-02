@@ -470,6 +470,8 @@ function projectEvent(
         appliedDelta: event.appliedDelta,
         resultingStage: event.resultingStage,
       };
+    case "CombatantRevived":
+      throw new Error("CombatantRevived requires combat presentation v2");
     default:
       return assertNever(event);
   }

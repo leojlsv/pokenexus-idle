@@ -157,6 +157,7 @@ export type CadenceReadinessCarry = {
   moveLoadout: ReadonlyArray<MoveId>;
   nextActionRemainingMs: number;
   moveCooldownRemainingMs: Readonly<Record<string, number>>;
+  autoPotionCooldownRemainingMs?: number;
 };
 
 export type TypeEffectivenessValue = 0 | 0.5 | 1 | 2;
@@ -211,6 +212,7 @@ export type BattleInitInput = {
   deterministicState: DeterministicState;
   cadenceBindings?: Readonly<Record<CadenceParticipantKey, CombatantId>>;
   cadenceCarry?: CadenceCarryState;
+  koInterventionSideId?: BattleSideId | null;
 };
 
 export type BattleCombatantState = {
@@ -227,6 +229,7 @@ export type BattleCombatantState = {
   moveReadyAtMs: Readonly<Record<string, number>>;
   stages: Readonly<StageBlock>;
   actionLockExpiresAtMsByScope?: Readonly<Partial<Record<LifetimeScope, number>>>;
+  autoPotionReadyAtMs?: number;
   abilityId?: AbilityId;
   cadenceParticipant?: CadenceParticipant;
 };
@@ -247,6 +250,8 @@ export type BattleState = {
   sides: ReadonlyArray<BattleSideState>;
   combatants: Readonly<Record<string, BattleCombatantState>>;
   replacementPendingSideIds: ReadonlyArray<BattleSideId>;
+  koInterventionSideId?: BattleSideId | null;
+  koInterventionPending?: null | { sideId: BattleSideId; combatantId: CombatantId };
   effects: Readonly<Record<string, ActiveEffect>>;
   nextEffectApplicationSequence: number;
 };
@@ -297,6 +302,12 @@ export type CombatEvent =
   | (CombatEventBase & {
       kind: "CombatantKO";
       combatantId: CombatantId;
+    })
+  | (CombatEventBase & {
+      kind: "CombatantRevived";
+      combatantId: CombatantId;
+      amount: number;
+      resultingHp: number;
     })
   | (CombatEventBase & {
       kind: "CombatantActivated";
@@ -356,7 +367,32 @@ export type UseMoveIntent = {
 
 export type AdvanceTimeStimulus = { kind: "advanceTime"; toMs: number };
 export type ForcedReplacementIntent = { kind: "forcedReplacement"; sideId: BattleSideId; combatantId: CombatantId };
-export type CombatStimulus = UseMoveIntent | AdvanceTimeStimulus | ForcedReplacementIntent;
+export type ExternalHpHealStimulus = {
+  kind: "externalHpHeal";
+  targetId: CombatantId;
+  actionOwnerId: CombatantId;
+  magnitude: EffectMagnitude;
+  provenanceId: string;
+};
+export type KoInterventionDecisionStimulus = {
+  kind: "koInterventionDecision";
+  sideId: BattleSideId;
+  combatantId: CombatantId;
+  decision: "decline";
+} | {
+  kind: "koInterventionDecision";
+  sideId: BattleSideId;
+  combatantId: CombatantId;
+  decision: "revive";
+  reviveFraction: { numerator: number; denominator: number };
+  provenanceId: string;
+};
+export type CombatStimulus =
+  | UseMoveIntent
+  | AdvanceTimeStimulus
+  | ForcedReplacementIntent
+  | ExternalHpHealStimulus
+  | KoInterventionDecisionStimulus;
 
 export type TransitionAccepted = {
   accepted: true;
