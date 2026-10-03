@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Review note: implementation, owner validation, exact-current `TECH READY + IA PASS 0/0/0/0`, Human reviewHash approval, immutable Wilds v5 publication and fresh independent Class-B `ACCEPT 0/0/0/0` are complete; repository/history integration remains separately gated
+- State: DONE
+- Review note: implementation, owner validation, exact-current `TECH READY + IA PASS 0/0/0/0`, Human reviewHash approval, immutable Wilds v5 publication, fresh independent Class-B `ACCEPT 0/0/0/0` and Human-authorized repository/history integration are complete; production activation, persistent migration, deploy and public enablement remain separate
 - Class: B — implement accepted bootstrap/content/admission rules without balance reinterpretation
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker
