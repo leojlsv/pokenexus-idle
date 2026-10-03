@@ -10,7 +10,7 @@
 >
 > **Worktree integration:** task states here include separately owned active worktrees. The `main` worktree retains the previously integrated 102-task snapshot until task documents, this roadmap and the generated dashboard are reconciled through the authorized repository-history process. Passing `roadmap:check` on one branch does not update `main`.
 >
-> **PRODUCT REALIGNMENT CLASS-A ACCEPTED — Human Owner 2026-10-02:** SPEC-020 and SPEC-021 are approved forward authority. Canonical local `main` already owns TASK-104 (governance reconciliation) and TASK-105 (CI stability); the accepted management-first package is TASK-106. TASK-039/TASK-103 are contract-rebased and **BLOCKED** on TASK-107-110 runtime prerequisites. TASK-107 and TASK-108 completed independent review/audit and delegated Class-B acceptance and are now in **ACCEPTANCE** pending separately gated repository/history completion; TASK-109-111 remain DRAFT. Commit/push/merge/deploy/public enablement remain separately gated.
+> **PRODUCT REALIGNMENT CLASS-A ACCEPTED — Human Owner 2026-10-02:** SPEC-020 and SPEC-021 are approved forward authority. Canonical local `main` already owns TASK-104 (governance reconciliation) and TASK-105 (CI stability); the accepted management-first package is TASK-106. TASK-039/TASK-103 are contract-rebased and **BLOCKED** on TASK-107-110 runtime prerequisites. TASK-107 and TASK-108 completed independent review/audit and delegated Class-B acceptance and are now in **ACCEPTANCE** pending separately gated repository/history completion; TASK-109-111 remain DRAFT. In parallel, TASK-112/SPEC-022 have completed Class-A QA and Human acceptance and are in ACCEPTANCE pending repository/history completion. Commit/push/merge/deploy/public enablement remain separately gated.
 
 ## 1. Current position
 
@@ -20,7 +20,7 @@
 
 **Current action:** first-Pre-alpha product/UX is closed, including **D-F16 B**: simultaneous-KO `draw` + successful post-Battle Revive consumes the Encounter as `resolved_non_win`, grants no capture/XP/item reward, consumes the matching pending selection and advances the open-ended Hunt. Initial **Auto-Potion OFF / Auto-Revive OFF** defaults remain fixed; TASK-106 received two Human Revive corrections after its prior QA-ready snapshot: Revive now clears transient effects/status/stages/action locks, and opponent exhaustion seals the Battle result before any Player Revive. The approved Class-A package records both Human corrections plus D-F16 B. All focused architecture findings are integrated in the accepted Class-A package: post-Battle Revive has durable versioned Hunt-level replay provenance; stat-stage cleanup bytes are fixed; generic KO-intervention handles any non-intervention side; D-F16 retains exact consumed PendingEncounterSelection/RNG/content provenance; and SPEC-017 Battle N+1 publication explicitly accepts committed resolved_non_win + settled Revive/cadence effects without fabricated reward/capture rows. Final semantic and architecture/replay delta QA are both **READY P0/P1/P2 = 0/0/0**. The Human Owner accepted the complete Class-A package on **2026-10-02**. SPEC-020 and SPEC-021 are now APPROVED forward authority; affected accepted specs carry forward-amendment pointers. Runtime/implementation, migration, public enablement and Git history remain separately gated. SPEC-020 contains the accepted amendment text; SPEC-021 is the approved persistent-vitality/PokéCenter contract; SPEC-003 is explicitly in the package because in-Battle Revive may intervene before Player replacement/defeat only while the opponent remains alive; opponent exhaustion seals `BattleEnded` first and any later Revive is Hunt-level processing. **Pre-alpha bootstrap** = choose one **Lv. 1** starter from Bulbasaur/Charmander/Squirtle/Chikorita/Cyndaquil/Totodile; initially it is the only owned Pokémon; auto-create a one-member Team with it as Leader; auto-assign up to 4 valid Lv. 1 Moves; grant **50 Poké Balls / 20 basic Potions / 5 Revives**; basic Potion heals **25% max HP**; the five starter Revives restore **25% max HP**; current Revive tiers are **25% / 50% / 100%**; `Wilds` does not replenish Revive; no formal tutorial. `Verdant Edge -> Wilds` is the permanent basic Hunt and open-ended in Pre-alpha. Static wild levels are **Lv.1 50% / Lv.2 35% / Lv.3 15%**. Species weights = **Pidgey 16% / Rattata 15% / Caterpie 18% / Sentret 17% / Ledyba 17% / Sunkern 17%**. Species and level are rolled independently; every species uses **Lv.1 50% / Lv.2 35% / Lv.3 15%**. All are capturable and all six currently have at least one executable Lv.1 progress-capable Move. Provisional XP = **2× wild level Player / 6× wild level Pokémon**, pending later curve reconfirmation. Each completed Encounter independently rolls **15% Poké Ball ×1** and **5% basic Potion ×1**; both may drop together; Revive does not drop. Confirmed Hunt directions include: PvE movement/exploration is automatic; HUB is the sole free-movement exception; **Pre-alpha Solo Hunt auto-Potion** is configured Player-wide/global, uses player-selected HP triggers 90%-10% in 10-point steps with `current HP <= threshold`, always targets the active Pokémon, uses Ball-like item permission/priority/fallback/minimum-reserve management, may execute during Battle and between Battles, consumes one action opportunity when applied, resolves after same-boundary damage/DoT (0 HP proceeds to KO/Revive instead of Potion), has a 5s per-target cooldown, works offline and never revives; Encounter rewards are not post-Hunt grants; checkpoint/claim are internal automatic reconciliation rather than player buttons; Retreat remains a manual strategic intervention returning to HUB; capture is management/automation with no per-Encounter manual capture/Ball prompt; automation policies may change during an active Hunt; same-Zone no-free-reroll remains; recovery blocks all Solo Hunt starts Player-wide for **30s** after Retreat/defeat while HUB/management remain available; **Pokémon HP persists across Hunts**; PokéCenter healing is free/immediate for the selected/active Team and restores KO members to conscious/max HP; damaged/partially-KO Teams may Start provided at least one selected member is conscious; **Revive is automatic Hunt policy** targeting only the Leader/active Pokémon KO'd in the current Hunt, with **25% / 50% / 100%** item tiers, one consumed action opportunity, Ball/Potion-like allowed-item priority/fallback/minimum-reserve policy, repeated use allowed by Inventory/policy/reserve and offline execution. While the opponent remains alive, Revive is evaluated before Player replacement/defeat; if opponent exhaustion already sealed `BattleEnded`, Revive is post-Battle only and cannot rewrite winner/draw, capture or victory reward. Successful Revive clears transient buffs/debuffs/DoTs/HoTs/status/action locks and resets stat stages while preserving Move cooldowns/cursor; Hunt duration is content-dependent, finite Hunts return automatically to HUB, initial offline progression cap is **8h**, and offline return gets a detailed activity/resource summary. A stamina-like offline-progression mechanic remains exploratory only. **First Pre-alpha slice:** Hunt / Pokémon / Teams / Inventory / Settings + functional non-locomotion HUB; Cards-only Hunt presentation; full offline 8h flow; active-Hunt Capture/Potion/Revive policy editing; captured Pokémon immediately usable in Collection/Teams; evolution deferred. `TASK-039` and `TASK-103` are now contract-rebased at task-definition level and **BLOCKED** on separately scoped/authorized post-Class-A runtime prerequisites; their existing source/evidence remains preserved.
 
-**Next task after TASK-003 acceptance:** TASK-107 (combat/cadence) and TASK-108 (persistent vitality/PokéCenter) have completed implementation, independent review/audit and delegated Class-B acceptance and are in ACCEPTANCE pending separately gated repository/history completion. TASK-109 (bootstrap/Wilds/admission) is the next runtime slice but remains DRAFT and requires separate implementation authorization; TASK-110 (Hunt automation/offline/provenance) follows after 109, and TASK-111 (Inventory UI) remains DRAFT. TASK-103 remains blocked until 107/108/110 authority exists, then TASK-039 remains blocked until 109/110/103. TASK-100 remains its pre-existing ACTIVE Collection/Team UI task. Git history/deploy/public enablement remain separately gated.
+**Next task after TASK-003 acceptance:** TASK-107 (combat/cadence) and TASK-108 (persistent vitality/PokéCenter) have completed implementation, independent review/audit and delegated Class-B acceptance and are in ACCEPTANCE pending separately gated repository/history completion. TASK-109 (bootstrap/Wilds/admission) is the next runtime slice but remains DRAFT and requires separate implementation authorization; TASK-110 (Hunt automation/offline/provenance) follows after 109, and TASK-111 (Inventory UI) remains DRAFT. TASK-112/SPEC-022 are accepted and now permit a separately scoped local-only static-data implementation task; ACQUIRE remains a distinct Human gate. TASK-103 remains blocked until 107/108/110 authority exists, then TASK-039 remains blocked until 109/110/103. TASK-100 remains its pre-existing ACTIVE Collection/Team UI task. Git history/deploy/public enablement remain separately gated.
 
 **Portfolio status snapshot:**
 
@@ -76,6 +76,9 @@
 | `TASK-109` First Pre-alpha Bootstrap, Wilds Content & Hunt Admission | DRAFT — depends on TASK-108 and separate implementation authorization |
 | `TASK-110` Management-First Hunt Automation, Offline & Provenance | DRAFT — depends on TASK-107/108/109 and separate implementation authorization |
 | `TASK-111` First Pre-alpha Inventory Management UI | DRAFT — separate Inventory browsing ownership; no client consume/grant/use authority |
+| `TASK-112` Local Pokémon Source Snapshot & Authority Realignment | ACCEPTANCE — SPEC-022 QA READY `0/0/0/0`; Human Owner approved exact contract 2026-10-02; repository/history completion separate |
+| `TASK-113` Local Pokémon Source Snapshot Implementation | ACCEPTANCE — post-ACQUIRE QA final TECH/ARCH READY `0/0/0/0`; real parity deltas gate future promotion only; publication/Git-history remain separately gated |
+| `TASK-114` PokéAPI Promotion Decision & Schema-5 Cutover Contract | ACCEPTANCE — schema-5 v4 publication authorized/materialized; publication-path + candidate QA READY `0/0/0/0`; runtime/Git history/deploy remain separate |
 | `TASK-026` UI/UX Architecture, Navigation & Design-System Spec | DONE — FE feasibility READY; independent QA READY; Human visual/UX approved and repository/history completion authorized 2026-09-27 |
 | `TASK-027` React App Shell & Navigation | DONE — final responsive QA READY; Human live UI approved and repository/history authorized 2026-09-27 |
 | `TASK-028` Combat Event Presentation Contract | DONE — corrective QA READY `0/0/0/0`; delegated Class-B ACCEPT; repository/history authorized 2026-09-27 |
@@ -84,22 +87,22 @@
 | `TASK-031` Accessibility & Responsive Baseline | DONE — QA TECH READY 0/0; Class-B ACCEPT 0/0; Human Card/Pixi usability checklist and local integration approved 2026-09-28; Hunt-integrated validation TASK-039/040 |
 | `TASK-099` Pokémon Sprite Generation Lab | DEFERRED — side-project abandoned by Human Owner; branch/worktree removed; historical ID retained only |
 
-**Next product milestone:** TASK-107/108 are accepted and await separately gated repository/history completion. TASK-109 is the next runtime slice after separate implementation authorization; TASK-110 follows in dependency order. Unblock TASK-103 after TASK-107/108/110 provide authoritative runtime facts, then unblock TASK-039 after TASK-109/110/103. TASK-111 remains the separate Inventory browsing slice.
+**Next product milestone:** TASK-107/108 are accepted and await separately gated repository/history completion. TASK-109 is the next runtime slice after separate implementation authorization; TASK-110 follows in dependency order. Unblock TASK-103 after TASK-107/108/110 provide authoritative runtime facts, then unblock TASK-039 after TASK-109/110/103. TASK-111 remains the separate Inventory browsing slice. TASK-112/SPEC-022 and TASK-113 are accepted; TASK-114 has materialized the Human-authorized immutable schema-5 v4 publication and now awaits separately gated runtime enablement and Git-history/deploy completion.
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-111`.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-114`.
 - DONE: 53.
 - DRAFT: 3.
 - READY: 0.
 - ACTIVE: 1.
-- REVIEW: 0.
 - FIX: 0.
-- ACCEPTANCE: 4.
+- REVIEW: 0.
+- ACCEPTANCE: 7.
 - BLOCKED: 2.
 - DEFERRED: 1.
 - PLANNED: 48.
-- Task-count completion: **53 / 112 = 47.3%**.
+- Task-count completion: **53 / 115 = 46.1%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -245,7 +248,7 @@ Skills are **advisory procedural knowledge**, not authority. A skill never grant
 
 - `SK-PKM-DEX` and `SK-PKM-GEN1` are optional consultation sources only; they do not create a new canonical role, owner, reviewer, auditor or merge gate.
 - They must be invoked explicitly for a scoped question. Do not install/enable them as broad Pokémon auto-trigger behavior across the repository.
-- For factual Pokémon data selected for ingestion, the authority chain is PokémonDB → validated immutable local snapshot under TASK-006. These skills never override that chain and must not silently supply missing canonical fields.
+- For factual Pokémon data selected for ingestion, current authority is SPEC-002/SPEC-008 as amended by **APPROVED SPEC-022**: provider authority is field-specific, normal ingestion consumes immutable local snapshots only, and canonical IDs/form adoption remain local/Human-owned. These skills never override that policy and must not silently supply missing canonical fields.
 - Their purpose is to help PM/QA notice franchise terminology, generation differences, historical mechanics and mapping discrepancies before the owning PokeNexus spec makes a decision.
 - A reference skill may explain official/historical behavior, but executable PokeNexus behavior remains owned by the relevant accepted task and Human Owner gate.
 - Direct PM/spec-task wiring is appropriate for TASK-006, TASK-008, TASK-019, TASK-022, TASK-033 and TASK-062. During TASK-034/036 or other implementation/content work, PM/QA may consult these references only as part of scoped review/clarification; the implementation owner does not inherit the skills or any authority from them. Use elsewhere only when the active task has a concrete Pokémon-domain question.
@@ -342,6 +345,9 @@ Safe parallelization is described per Epic; no parallel tasks may redefine the s
 | `TASK-006` Static Game Data Schema & Rules Versioning | A | DONE | PM → ChatGPT | QA | `SK-GAME-ARCH`; `SK-PKM-DEX`, `SK-PKM-GEN1` reference-only | Completed — Human Owner accepted SPEC-002 | TASK-004/005 | Separate schemaVersion/gameDataVersion/rulesVersion + explicit compatible pairs; immutable rules resolution/retention envelope; logical sharded game-data bundle with NFC deterministic artifacts, SHA-256 content/provenance/bundle binding; Bulbapedia-primary / PokémonDB-complementary DATA-only source policy; source-coverage inventory reconciliation; species/form mapping roster with distinct SpeciesId + baseSpeciesId and no FormId; Species/Move/Type/Ability/Item/Learnset schemas; current type chart factual reference only; future Zone/Encounter/Hunt schema extension remains TASK-033/034-owned; no runtime web dependency or opportunistic provider fallback |
 | `TASK-092` SpeciesDefinition Static-Fact Audit & Extension Spec | A | DONE | PM → ChatGPT | DoR QA READY `0/0/0/0`; original final QA NOT READY `0/1/0/0`; corrected option-1 Pokémon-domain review PASS advisory `0/0/0/0`; final independent QA READY `0/0/0/0` | `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human Owner accepted SPEC-008 v2 direction, approved **option 1**, and authorized repository history/completion on 2026-09-18 | TASK-006/093 | SPEC-008 APPROVED and integrated. Persistent Species/forms keep the applicable v2 contract and genuine SourceFact states. Mega/Eternamax/battle-only transformations are explicit excluded/deferred source inventory, not separately captured/persisted SpeciesDefinition identities and do not force fake availability wrappers. No transformation-profile catalog is added in schema v2; activation/reversion and the future transformed profile remain future rulesVersion/schema-extension work |
 | `TASK-087` Static Game Data Catalog & Ingestion Implementation | B | DONE | LD → ChatGPT delegated worker | Pre-promotion gates clean; post-promotion TECH/ARCH **FINAL READY** `0/0/0/0`, dependency/debt/governance **FINAL READY** `0/0/0/0`, independent QA **FINAL READY** `0/0/0/0`, Class B acceptance **ACCEPTED** `0/0/0/0` | `SK-TDD`, `SK-GAME-ARCH`; `SK-PKM-DEX` reference-only | Completed — Human data gate approved `a620dd9b…a468b`; corrective commit/push/main integration explicitly authorized 2026-09-21 | TASK-005/006/092 | Corrected v2 published: 293 Species / 547 Moves / 19,035 Learnsets, `bundleHash fc4ecaac…052b4`; canonical roster has 552 accepted Move identities preserving five historical mappings; v1 unchanged at `bbe511…02903`; same-version v2 republish is byte-idempotent |
+| `TASK-112` Local Pokémon Source Snapshot & Authority Realignment | A | ACCEPTANCE | PM → ChatGPT | Independent pre-implementation QA **READY `0/0/0/0`** | N/A | Human Owner **APPROVED SPEC-022 on 2026-10-02**; repository/history completion separate | TASK-006/087/092 | Approved local-only source architecture: explicit Human-gated ACQUIRE phase; offline deterministic INGEST/PUBLISH; field-specific authority; pinned PokéAPI v2 source dataset for approved structured fields; current Move selected-game and Learnset semantics retained until separate parity gates |
+| `TASK-113` Local Pokémon Source Snapshot Implementation | B | ACCEPTANCE | LD → ChatGPT coding agent | Post-ACQUIRE independent QA **final TECH/ARCH READY `0/0/0/0`** | N/A | Authorized ACQUIRE completed; real parity deltas gate future promotion; publication/Git-history/deploy remain separate | TASK-087/092/112 | Schema-5 SourceSnapshotRecord + multi-file provenance; real pinned PokéAPI snapshot ingest; low-ambiguity structured facts; local parity/diff; no runtime upstream access |
+| `TASK-114` PokéAPI Promotion Decision & Schema-5 Cutover Contract | A | ACCEPTANCE | PM → ChatGPT | Pre-implementation QA **READY `0/0/0/0`**; migration/candidate QA **READY `0/0/0/0`**; publication-path re-review **READY `0/0/0/0`** | N/A | Human Owner **APPROVED SPEC-023/local staging and separately authorized schema-5 publication on 2026-10-03**; runtime/Git history/deploy remain separate | TASK-112/113 | Immutable `game-data-core-kanto-johto-v4` schema 5 publication materialized at `version-3544a59c…be47c`; exact 87 fields / 83 records; 1,146/1,146 historical evidence including +2 disclosed mainline-context records; bundle `fc37e5e9…23346`; post-publication sanity + v3 comparison PASS |
 
 **Pokémon data-source policy for TASK-006/TASK-087:** the current SPEC-002 hierarchy is
 Bulbapedia-primary with PokémonDB as an approved complementary factual source. A complementary
@@ -350,33 +356,45 @@ silently overrides a structured Bulbapedia fact. PokeNexus runtime/game logic mu
 live upstream requests. Controlled ingestion produces immutable local snapshots which are validated,
 normalized and then published through the accepted `gameDataVersion` / checksum model.
 
-The ingestion scope is **DATA only**. It must not collect or publish images, sprites,
-icons, audio, other assets, editorial prose, page layout or styling. HTML may be fetched
-only as transient parser input; any local HTML cache is non-canonical working state and
-must not be published as game data. "Raw snapshot" in this project means raw **extracted
-fields**, not a preserved copy of the source page.
+**APPROVED TASK-112 / SPEC-022 amendment:** the Human Owner directed that ordinary runtime, CI/build,
+ingestion and publication use only local/immutable data. SPEC-022 therefore defines a separate
+explicit Human-gated source-acquisition phase, field-specific provider authority, and an exact pinned
+local PokéAPI v2 source dataset for approved structured fields. Independent pre-implementation QA is
+READY `0/0/0/0`, and the Human Owner accepted the exact contract on 2026-10-02. Dependent local-only
+implementation may proceed; ACQUIRE/publication/Git-history/deployment remain separately gated.
+
+The ingestion scope is **DATA only**. It must not publish images, sprites, icons, audio, other assets,
+editorial prose, page layout or styling. Third-party source bytes may be obtained only during an
+explicitly Human-authorized **ACQUIRE** operation and are retained as immutable maintenance evidence
+under SPEC-022; normal INGEST/PUBLISH reads only those local bytes. Source snapshots are never runtime
+authority and are not published as gameplay catalogs.
 
 The existing `pokemondb_moves_crawler_v2.py` from the Human Owner's prior project is an
 implementation reference only for operational patterns such as retry/backoff, cache,
 checkpoint/resume, diagnostics, atomic promotion and deterministic fingerprinting. Its source
 fallback behavior is not authoritative for PokeNexus. Provider choice and disagreement handling
-must follow SPEC-002; PokeAPI, Smogon or other opportunistic fallback remains disallowed.
+must follow SPEC-002/SPEC-008 as amended by SPEC-022. Opportunistic fallback remains disallowed;
+PokéAPI is permitted only through the pinned local source-dataset fields explicitly approved there.
 
-The TASK-006 crawler/exporter sub-task must:
+The historical TASK-006 web-provider requirements remain applicable to SPEC-022 **ACQUIRE** where
+the selected provider is a web surface:
 
-- crawl only the exact factual fields/pages approved in the TASK-006 field whitelist;
+- acquire only the exact factual fields/pages/surfaces approved for that one Human-authorized request;
 - avoid copying editorial prose, page layout/design or unrelated site content;
 - respect the current `robots.txt`, use a descriptive User-Agent, cache responses and use
   conservative throttling/backoff (never faster than the site's current crawl policy);
 - fail closed if robots/access rules change rather than silently bypassing restrictions;
-- emit a raw snapshot plus normalized output and provenance manifest containing at least
-  source URL, retrieval timestamp, parser version and source-content hash;
-- be manually/on-demand or controlled-CI ingestion only, never a production/runtime fetch;
+- emit an immutable local source snapshot with exact locator/revision where available, retrieval
+  timestamp and source-content hashes; parser/versioned normalization happens later in local INGEST;
+- require explicit Human authorization per ACQUIRE; routine CI/build/INGEST and runtime never crawl;
 - require validation before a snapshot can become canonical PokeNexus game data;
-- never silently substitute an unapproved provider or let a complementary source override a
-  structured primary-source fact; unresolved identity/binding/source gaps fail closed.
+- never silently substitute a provider or override the field-specific authority matrix; unresolved
+  identity/binding/source gaps fail closed.
 
 **Accepted TASK-006 DATA whitelist v1:**
+
+The following records the original baseline data scope. Current provider authority and acquisition
+placement are governed by approved SPEC-022 where that later contract differs.
 
 The approved initial ingestion profile is deliberately narrow. A field belongs in the baseline only when an
 already-planned PokeNexus system needs the factual input. Additional upstream data can be added later by
