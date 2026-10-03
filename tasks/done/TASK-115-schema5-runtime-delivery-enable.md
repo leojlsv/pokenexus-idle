@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Review note: implementation/owner validation complete; independent QA final TECH READY `0/0/0/0`; fresh exact-current independent Class-B PM/architecture acceptance re-gate final `ACCEPT`, `P0/P1/P2/P3 = 0/0/0/0`
+- State: DONE
+- Review note: implementation/owner validation complete; independent QA final TECH READY `0/0/0/0`; fresh exact-current independent Class-B PM/architecture acceptance re-gate final `ACCEPT`, `P0/P1/P2/P3 = 0/0/0/0`; repository-history integration completed on canonical `main`
 - Class: B — runtime implementation inside APPROVED SPEC-002 / SPEC-022 / SPEC-023 architecture
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT coding agent
@@ -17,7 +17,7 @@
 - Related: TASK-006 / TASK-087 / TASK-095 / TASK-112 / TASK-113 / TASK-114
 - Branch: `feat/TASK-115-runtime-schema5-cutover`
 - Worktree: `.worktrees/TASK-115-runtime-schema5-cutover`
-- Human gate: implementation explicitly authorized/approved on 2026-10-03; Git history, deploy and public enablement remain separate
+- Human gate: implementation and repository-history integration explicitly authorized/approved on 2026-10-03; production v4 selected-pair activation/rebind, deploy and public enablement remain separate
 
 ## Objective
 
@@ -156,6 +156,8 @@ proven and scoped without changing historical rules identities.
   It confirmed the DoR metadata is complete, the change remains inside APPROVED SPEC-002/022/023,
   no Class-A amendment is required, and no production selected-pair/rules/database/environment/deploy/
   public-enable scope leaked into the diff.
-- TASK-115 therefore remains correctly in `ACCEPTANCE`. Repository-history integration remains a
-  separate Human gate. Production v4 selected-pair/release activation, deploy and public enablement are
-  not included.
+- Human Owner then explicitly authorized repository-history integration. The accepted snapshot was
+  committed as `90b67d8` and merged into canonical `main` as `92905bb`; post-merge focused/full
+  game-data, typecheck/lint/build, Worker compatibility, roadmap and diff gates remained green.
+- TASK-115 is therefore `DONE`. Production v4 selected-pair/release activation, database/environment
+  cutover, deploy and public enablement are not included and remain separately gated.
