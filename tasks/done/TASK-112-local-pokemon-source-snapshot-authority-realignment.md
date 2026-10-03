@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Acceptance note: independent pre-implementation Class-A QA READY with P0/P1/P2/P3 = 0/0/0/0; Human Owner accepted the exact SPEC-022 contract on 2026-10-02; repository/history completion remains separately gated
+- State: DONE
+- Acceptance note: independent pre-implementation Class-A QA READY with P0/P1/P2/P3 = 0/0/0/0; Human Owner accepted the exact SPEC-022 contract on 2026-10-02; repository/history integrated with the required TASK-113/114 dependency chain under Human TASK-114 continuation authorization on 2026-10-03
 - Class: A — canonical source authority and provenance architecture
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
