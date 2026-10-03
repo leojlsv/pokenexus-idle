@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Review note: independent implementation and publication-path QA complete; Human-authorized schema-5 v4 publication materialized and revalidated; runtime enablement, Git history and deploy remain separate gates
+- State: DONE
+- Review note: independent implementation/publication-path QA complete; Human-authorized schema-5 v4 publication materialized, revalidated and integrated into canonical Git history on 2026-10-03; runtime schema-5 enablement and deploy remain separate gates
 - Class: A — changes approved field-authority behavior for Move `sourceTarget` and defines the first schema-5 data-promotion contract
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT
@@ -15,7 +15,7 @@
 - Consultant execution surface(s): N/A
 - Spec: APPROVED SPEC-023
 - Related: TASK-006 / TASK-087 / TASK-092 / TASK-112 / TASK-113
-- Branch: `feat/TASK-113-local-pokemon-snapshot-implementation` (shared uncommitted TASK-112/113 dependency state; no new Git history authorized)
+- Branch: `feat/TASK-114-pokeapi-promotion-schema5` (integrates required TASK-112/113 dependency state)
 - Worktree: `G:\pokenexus-idle\.worktrees\TASK-113-local-pokemon-snapshot-implementation`
 
 ## Objective
@@ -278,3 +278,24 @@ implementation/review.
   `typecheck`, `lint`, `build`, Worker-compat dry-run and runtime/schema parser-isolation tests PASS.
 - Runtime schema 5 remains fail-closed and was not enabled. No commit, push, merge, tag or deploy was
   performed. TASK-114 remains `ACCEPTANCE` pending those separately owned gates.
+
+## Repository/history completion — 2026-10-03
+
+- Human Owner explicitly authorized continuation/completion of TASK-114 after the schema-5 publication gate.
+- Independent governance/integration review reported **P0/P1/P2/P3 = `0/0/0/0`, INTEGRATION READY** and
+  confirmed TASK-114 must integrate the accepted TASK-112/113 dependency state with it.
+- Dependency/history commits:
+  - `a5a9847` — `docs(game-data): define local pokemon source authority`;
+  - `c341683` — `feat(game-data): publish schema v5 pokemon data`;
+  - `ce36ecd` — reconcile TASK-114 branch with current `main` while preserving TASK-107/108 DONE state.
+- Canonical local `main` integrated the complete chain at merge commit `938fe33`
+  (`merge: integrate TASK-114 schema v5 publication`).
+- Exact integrated-state validation before completion:
+  - `@pokenexus/game-data` serial suite **393/393 PASS + 1 intentional live-test skip**;
+  - schema-5 `sanity:compare` against v3 **PASS** with **9/9 audits, 10/10 assertions, 0 structural regressions**;
+  - package/root lint and build PASS after materializing this worktree's already-locked dependencies via
+    `pnpm install --offline --frozen-lockfile`;
+  - roadmap check and `git diff --check` PASS.
+- TASK-112, TASK-113 and TASK-114 therefore complete together in dependency order and move to `DONE`.
+- Runtime schema-5 enablement, persistent-environment migration where applicable, deploy and public
+  runtime enablement remain separately owned/gated and were not executed by this completion.

@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Review note: post-ACQUIRE corrective re-gate TECH/ARCH READY with P0/P1/P2/P3 = 0/0/0/0; remaining parity deltas gate future promotion only
+- State: DONE
+- Review note: post-ACQUIRE corrective re-gate TECH/ARCH READY with P0/P1/P2/P3 = 0/0/0/0; required implementation state integrated with TASK-114 publication/history completion on 2026-10-03
 - Class: B — implementation inside approved SPEC-022 architecture
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT coding agent
