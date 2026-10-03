@@ -21,6 +21,49 @@ const moveFactSourceByMoveId = new Map(
   provenance.moveFactSources.map((record) => [record.moveId, record]),
 );
 
+const pokeApiSpeciesGlobalPaths = new Set([
+  "data/v2/csv/types.csv",
+  "data/v2/csv/egg_groups.csv",
+  "data/v2/csv/pokemon_stats.csv",
+  "data/v2/csv/pokedexes.csv",
+  "data/v2/csv/stats.csv",
+  "data/v2/csv/pokemon_species.csv",
+  "data/v2/csv/pokemon.csv",
+  "data/v2/csv/pokemon_abilities.csv",
+  "data/v2/csv/pokemon_dex_numbers.csv",
+  "data/v2/csv/pokemon_egg_groups.csv",
+  "data/v2/csv/pokemon_types.csv",
+  "data/v2/csv/abilities.csv",
+  "data/v2/csv/growth_rates.csv",
+]);
+
+function isStructuredPokeApiSource(source) {
+  return (
+    source?.provider === "pokeapi" &&
+    source?.parserVersion === "pokeapi-csv-v1" &&
+    source?.acquisitionStatus === "snapshot" &&
+    typeof source?.snapshotId === "string" &&
+    source.snapshotId.startsWith("source-snapshot:pokeapi:")
+  );
+}
+
+function isApprovedPokeApiSpeciesGlobalSource(source) {
+  return isStructuredPokeApiSource(source) && pokeApiSpeciesGlobalPaths.has(source.logicalPath);
+}
+
+const pokeApiCrossSurfaceComboByPath = new Map([
+  ["data/v2/csv/types.csv", "species+type-effectiveness+types"],
+  ["data/v2/csv/abilities.csv", "abilities+species"],
+  ["data/v2/csv/languages.csv", "abilities+items+types"],
+]);
+
+function isApprovedPokeApiCrossSurfaceSource(source, combination) {
+  return (
+    isStructuredPokeApiSource(source) &&
+    pokeApiCrossSurfaceComboByPath.get(source.logicalPath) === combination
+  );
+}
+
 const usage = new Map();
 function addUsage(sourceRecordId, surface, entityId) {
   const entry = usage.get(sourceRecordId) || {
@@ -67,9 +110,12 @@ const allowedCrossSurfaceCombinations = new Set([
   "learnsets+moves",
   "type-effectiveness+types",
 ]);
-const unexpectedCrossSurface = crossSurface.filter(([, entry]) => {
+const unexpectedCrossSurface = crossSurface.filter(([sourceRecordId, entry]) => {
   const key = [...entry.surfaces].sort().join("+");
-  return !allowedCrossSurfaceCombinations.has(key);
+  return (
+    !allowedCrossSurfaceCombinations.has(key) &&
+    !isApprovedPokeApiCrossSurfaceSource(sourceById.get(sourceRecordId), key)
+  );
 });
 
 const learnsetSpeciesBySource = new Map();
@@ -115,11 +161,20 @@ const speciesSourcesAcrossDifferentNationalDex = [...speciesEntitiesBySource.ent
     speciesIds,
   }));
 
+const isRegionalFormAggregateSource = (source) =>
+  source?.parserVersion === "bulbapedia-regional-form-evidence-v2" &&
+  source?.canonicalUrl === "https://bulbapedia.bulbagarden.net/wiki/Regional_form";
 const unexplainedSpeciesCrossDexSources = speciesSourcesAcrossDifferentNationalDex.filter(
   (entry) =>
-    entry.source?.parserVersion !== "bulbapedia-regional-form-evidence-v2" ||
-    entry.source?.canonicalUrl !== "https://bulbapedia.bulbagarden.net/wiki/Regional_form",
+    !isRegionalFormAggregateSource(entry.source) &&
+    !isApprovedPokeApiSpeciesGlobalSource(entry.source),
 );
+const explainedRegionalFormAggregateSources = speciesSourcesAcrossDifferentNationalDex.filter(
+  (entry) => isRegionalFormAggregateSource(entry.source),
+).length;
+const explainedStructuredPokeApiSources = speciesSourcesAcrossDifferentNationalDex.filter(
+  (entry) => isApprovedPokeApiSpeciesGlobalSource(entry.source),
+).length;
 
 const invalidSharedSpeciesLearnsetSources = crossSurface
   .filter(([, entry]) => {
@@ -168,13 +223,25 @@ for (const [sourceRecordId, entry] of sharedLearnsetMoveSources) {
 
   for (const moveId of moveIds) {
     const relation = moveFactSourceByMoveId.get(moveId);
+    const mainlineIds = Array.isArray(relation?.mainline?.sourceRecordIds)
+      ? relation.mainline.sourceRecordIds
+      : [relation?.mainline?.sourceRecordId].filter(Boolean);
+    const sourceTargetIds = Array.isArray(relation?.sourceTargetSourceRecordIds)
+      ? relation.sourceTargetSourceRecordIds
+      : [relation?.sourceTargetSourceRecordId].filter(Boolean);
+    const makesContactIds = Array.isArray(relation?.makesContactSourceRecordIds)
+      ? relation.makesContactSourceRecordIds
+      : [relation?.makesContactSourceRecordId].filter(Boolean);
+    const zaIds = Array.isArray(relation?.zaBaseCooldownSourceRecordIds)
+      ? relation.zaBaseCooldownSourceRecordIds
+      : [relation?.zaBaseCooldownSourceRecordId].filter(Boolean);
     const mainlineMatch =
-      relation?.mainline?.sourceRecordId === sourceRecordId &&
+      mainlineIds.includes(sourceRecordId) &&
       relation?.mainline?.selectedGame === "brilliant-diamond-shining-pearl";
     const unexpectedOtherRole =
-      relation?.sourceTargetSourceRecordId === sourceRecordId ||
-      relation?.makesContactSourceRecordId === sourceRecordId ||
-      relation?.zaBaseCooldownSourceRecordId === sourceRecordId;
+      sourceTargetIds.includes(sourceRecordId) ||
+      makesContactIds.includes(sourceRecordId) ||
+      zaIds.includes(sourceRecordId);
     roleMatches.push({ moveId, mainlineMatch, unexpectedOtherRole });
     if (!mainlineMatch || unexpectedOtherRole) valid = false;
   }
@@ -221,8 +288,8 @@ const result = {
   speciesEvidence: {
     sourceRecords: speciesEntitiesBySource.size,
     sourceRecordsAcrossDifferentNationalDex: speciesSourcesAcrossDifferentNationalDex.length,
-    explainedRegionalFormAggregateSources:
-      speciesSourcesAcrossDifferentNationalDex.length - unexplainedSpeciesCrossDexSources.length,
+    explainedRegionalFormAggregateSources,
+    explainedStructuredPokeApiSources,
     unexplainedCrossDexSources: unexplainedSpeciesCrossDexSources.length,
   },
   sharedSpeciesLearnsetEvidence: {

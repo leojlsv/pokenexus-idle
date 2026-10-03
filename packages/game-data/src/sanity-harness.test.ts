@@ -366,7 +366,10 @@ describe("repository game-data sanity harness", () => {
     const candidateReport = JSON.parse(
       readFileSync(join(repoRoot, ".tmp-game-data-sanity", "sanity-report.json"), "utf8"),
     ) as { publication: { gameDataVersion: string } };
-    expect(candidateReport.publication.gameDataVersion).toBe("game-data-core-kanto-johto-v3");
+    const currentManifest = JSON.parse(
+      readFileSync(join(targets.gameDataDir, "manifest.json"), "utf8"),
+    ) as { gameDataVersion: string };
+    expect(candidateReport.publication.gameDataVersion).toBe(currentManifest.gameDataVersion);
   });
 
   it("fails closed when a published artifact no longer matches its manifest hash", () => {

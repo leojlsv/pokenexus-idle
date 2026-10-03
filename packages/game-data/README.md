@@ -30,16 +30,46 @@ The durable delivery/retention contract is documented in
 
 ## Maintenance
 
-The controlled ingestion command is Node-only. Build the package, then invoke the compiled CLI
-directly; do not pass a literal `--` through the package-script wrapper:
+Normal ingestion is local-only under SPEC-022. It accepts an already acquired immutable PokéAPI
+source snapshot, verifies its manifest and every declared file hash, then parses only local bytes:
 
 ```text
-corepack pnpm --filter @pokenexus/game-data build
-node packages/game-data/dist/maintenance-cli.js <profile> <output> <cache> <mode>
+corepack pnpm --filter @pokenexus/game-data ingest -- <local-pokeapi-snapshot-root>
 ```
 
-Routine CI does not perform live upstream crawling. Provider fetches remain explicit maintenance
-operations governed by SPEC-002 source policy.
+The command does not crawl providers, evaluate remote fallbacks or fetch missing files. Missing or
+hash-mismatched snapshot material fails closed.
+
+External provider acquisition is a separate SPEC-022 `ACQUIRE` phase. It must not run without an
+explicit Human Owner authorization for the exact provider, immutable revision/release when available,
+and exact source surface set. The historical `maintenance-cli` entrypoint is fail-closed under this
+contract; provider-crawling internals remain package-private until a separately authorized ACQUIRE
+task owns an explicit executor.
+
+### Schema-5 promotion staging
+
+Under APPROVED SPEC-023, the first PokéAPI-backed promotion candidate is staged from local retained
+evidence only. The command requires every input/output location explicitly and has no remote fallback:
+
+```text
+corepack pnpm --filter @pokenexus/game-data stage:promotion-v5 -- \
+  <published-v3-directory> \
+  <local-pokeapi-snapshot-root> \
+  <retained-task087-cache-directory> \
+  <stable-legacy-evidence-directory> \
+  <candidate-output-directory>
+```
+
+The staging path verifies the exact approved v3 version/bundle, the pinned PokéAPI snapshot, all 293
+provider bindings and all 1,146 retained historical evidence records before writing the local
+candidate. Protected input roots and output roots must not overlap. It emits a schema-5 candidate
+manifest, Human-review delta, provenance and ten artifact shards, but deliberately does **not** write a
+published `manifest.json`, enable runtime schema 5, access upstream providers, or perform Git/deploy
+operations. Publication requires a separate Human gate. After that gate, the Node-only
+`publishApprovedPromotionV5Candidate` path requires the exact approved `reviewHash`, binds the review's
+candidate version/bundle/provenance identity, verifies every staged artifact/provenance commitment,
+and materializes the immutable version through a verified temporary directory + atomic rename. This
+publication path does not widen runtime schema support.
 
 ## Repository sanity harness
 

@@ -10,6 +10,9 @@ const abilities = JSON.parse(fs.readFileSync(`${base}/catalogs/abilities.json`, 
 const types = JSON.parse(fs.readFileSync(`${base}/catalogs/types.json`, "utf8"));
 const items = JSON.parse(fs.readFileSync(`${base}/catalogs/items.json`, "utf8"));
 const learnsets = JSON.parse(fs.readFileSync(`${base}/catalogs/learnsets.json`, "utf8"));
+const typeEffectiveness = JSON.parse(
+  fs.readFileSync(`${base}/reference-data/current-type-effectiveness.json`, "utf8"),
+);
 const provenance = JSON.parse(fs.readFileSync(`${base}/provenance.json`, "utf8"));
 const roster = JSON.parse(
   fs.readFileSync("packages/game-data/src/canonical-mapping-roster.json", "utf8"),
@@ -220,6 +223,7 @@ const sourceRefSurfaces = [
   ["types", types],
   ["items", items],
   ["learnsets", learnsets],
+  ["type-effectiveness", typeEffectiveness],
 ];
 const sourceRefAudit = {};
 for (const [surface, rows] of sourceRefSurfaces) {
@@ -247,12 +251,19 @@ for (const [surface, rows] of sourceRefSurfaces) {
 }
 
 for (const factSource of provenance.moveFactSources) {
-  for (const id of [
-    factSource.mainline?.sourceRecordId,
-    factSource.makesContactSourceRecordId,
-    factSource.sourceTargetSourceRecordId,
-    factSource.zaBaseCooldownSourceRecordId,
-  ]) {
+  const mainlineIds = Array.isArray(factSource.mainline?.sourceRecordIds)
+    ? factSource.mainline.sourceRecordIds
+    : [factSource.mainline?.sourceRecordId].filter(Boolean);
+  const makesContactIds = Array.isArray(factSource.makesContactSourceRecordIds)
+    ? factSource.makesContactSourceRecordIds
+    : [factSource.makesContactSourceRecordId].filter(Boolean);
+  const sourceTargetIds = Array.isArray(factSource.sourceTargetSourceRecordIds)
+    ? factSource.sourceTargetSourceRecordIds
+    : [factSource.sourceTargetSourceRecordId].filter(Boolean);
+  const zaIds = Array.isArray(factSource.zaBaseCooldownSourceRecordIds)
+    ? factSource.zaBaseCooldownSourceRecordIds
+    : [factSource.zaBaseCooldownSourceRecordId].filter(Boolean);
+  for (const id of [...mainlineIds, ...makesContactIds, ...sourceTargetIds, ...zaIds]) {
     if (id) directlyReferencedSourceIds.add(id);
   }
 }

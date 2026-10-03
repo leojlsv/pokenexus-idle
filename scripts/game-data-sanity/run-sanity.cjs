@@ -25,9 +25,14 @@ const artifactPaths = { ...factualArtifactPaths, ...pveArtifactPaths };
 const requiredArtifactLogicalNamesBySchema = {
   "3": Object.keys(factualArtifactPaths).sort(),
   "4": Object.keys(artifactPaths).sort(),
+  "5": Object.keys(artifactPaths).sort(),
 };
 const supportedSchemaVersions = new Set(Object.keys(requiredArtifactLogicalNamesBySchema));
-const supportedNormalizerVersion = "pokenexus-static-normalizer-v5";
+const supportedNormalizerVersionsBySchema = {
+  "3": new Set(["pokenexus-static-normalizer-v5"]),
+  "4": new Set(["pokenexus-static-normalizer-v5"]),
+  "5": new Set(["pokenexus-static-normalizer-v6"]),
+};
 const sha256Pattern = /^sha256:[0-9a-f]{64}$/u;
 const factualCatalogCountArtifacts = {
   species: "catalogs/species",
@@ -41,6 +46,12 @@ const factualCatalogCountArtifacts = {
 const catalogCountArtifactsBySchema = {
   "3": factualCatalogCountArtifacts,
   "4": {
+    ...factualCatalogCountArtifacts,
+    zones: "catalogs/zones",
+    hunts: "catalogs/hunts",
+    encounterDefinitions: "catalogs/encounter-definitions",
+  },
+  "5": {
     ...factualCatalogCountArtifacts,
     zones: "catalogs/zones",
     hunts: "catalogs/hunts",
@@ -124,7 +135,7 @@ function validatePublishedManifestContract(manifest, manifestPath) {
   if (!supportedSchemaVersions.has(manifest.schemaVersion)) {
     throw new Error("Unsupported published schemaVersion " + String(manifest.schemaVersion));
   }
-  if (manifest.schemaVersion === "4" && manifest.pveContentSchemaVersion !== "1") {
+  if (["4", "5"].includes(manifest.schemaVersion) && manifest.pveContentSchemaVersion !== "1") {
     throw new Error(
       "Unsupported pveContentSchemaVersion " + String(manifest.pveContentSchemaVersion),
     );
@@ -140,7 +151,7 @@ function validatePublishedManifestContract(manifest, manifestPath) {
     manifest.normalizerVersion,
     "manifest.normalizerVersion",
   );
-  if (normalizerVersion !== supportedNormalizerVersion) {
+  if (!supportedNormalizerVersionsBySchema[manifest.schemaVersion].has(normalizerVersion)) {
     throw new Error("Unsupported normalizerVersion " + normalizerVersion);
   }
 
