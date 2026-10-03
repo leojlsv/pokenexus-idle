@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Acceptance note: independent QA reports TECH READY with P0/P1/P2 = 0/0/0; delegated Class-B functional/architectural acceptance completed on 2026-10-02; repository/history integration and DONE transition remain separately gated
+- State: DONE
+- Completion note: independent QA reports TECH READY with P0/P1/P2 = 0/0/0; delegated Class-B functional/architectural acceptance completed on 2026-10-02; Human Owner continuation authorized repository/history completion and the accepted implementation was integrated into local `main` at `ec647c70488b`; deploy/public enablement remain separately gated
 - Readiness note: Human Owner explicitly authorized implementation on 2026-10-02 after the accepted Class-A decomposition; runtime implementation may proceed inside this task scope, while Git-history/deploy/public-enable remain separate gates
 - Class: B — implement accepted Class-A combat/cadence rules without redefining product semantics
 - Owner: Lead Developer
@@ -89,11 +89,11 @@ Implement the deterministic game-core and cadence primitives required by the app
 
 - Incorrect version gating can corrupt historical replay; historical rules must remain immutable.
 - Event-order drift can break SPEC-017 v2 projection/replay.
-- No migration, deploy, public enablement or Git-history action is authorized by this task.
+- No migration is part of this slice. Deploy/public enablement remain separately gated; repository/history completion was authorized by the Human Owner continuation on 2026-10-02.
 
 ## Readiness / execution gate
 
-Definition of Ready is satisfied and Human implementation authorization was given on 2026-10-02. The assigned owner may implement in the isolated worktree. Commit/push/merge/deploy/public enablement remain separately gated.
+Definition of Ready was satisfied and Human implementation authorization was given on 2026-10-02. The Human Owner subsequently directed continuation of TASK-107/108, authorizing repository/history completion; deploy/public enablement remain separate gates.
 
 ## Owner implementation evidence
 
@@ -104,4 +104,5 @@ Definition of Ready is satisfied and Human implementation authorization was give
 - Owner validation on the exact REVIEW candidate: `@pokenexus/game-core` test **243/243 PASS**; `@pokenexus/game-protocol` test **34/34 PASS** after the build refreshes its compiled test artifact; full root `pnpm test` PASS; game-core/protocol typecheck PASS; root lint/build PASS; and `git diff --check` PASS.
 - Fresh acceptance revalidation kept game-core **243/243**, game-protocol **34/34**, both relevant typechecks, root lint/build and `git diff --check` green. A later full-root `pnpm test` run hit only two unrelated 5-second `game-data` timeout ceilings (`pve-publication-sanity` and `sanity-harness`); rerunning those exact files with `--testTimeout 30000` passed **15/15**. No TASK-107-owned test failed.
 - Replay evidence covers JSON rehydration of exact pending KO identity through both Revive and Decline, plus serialized replay of KO → Revive. Historical presentation v1 remains schema-exact and fails closed on forward-only `CombatantRevived`; TASK-103 owns the accepted additive presentation v2 projection.
-- Independent QA reports TECH READY with P0/P1/P2 = 0/0/0; delegated Class-B functional/architectural acceptance is complete. Repository/history integration and DONE transition remain separately gated.
+- Independent QA reports TECH READY with P0/P1/P2 = 0/0/0; delegated Class-B functional/architectural acceptance is complete.
+- Post-integration validation on the combined TASK-107/108 tree: game-core **245/245 PASS**, focused game-protocol **17/17 PASS**, full root `pnpm test` PASS, relevant typechecks PASS, root lint/build PASS and `git diff --check` PASS. The accepted implementation is integrated into local `main` at `ec647c70488b`.
