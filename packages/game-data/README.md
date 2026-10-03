@@ -69,7 +69,11 @@ operations. Publication requires a separate Human gate. After that gate, the Nod
 `publishApprovedPromotionV5Candidate` path requires the exact approved `reviewHash`, binds the review's
 candidate version/bundle/provenance identity, verifies every staged artifact/provenance commitment,
 and materializes the immutable version through a verified temporary directory + atomic rename. This
-publication path does not widen runtime schema support.
+publication path itself does not widen runtime schema support. TASK-115 separately enables the
+Worker/browser-safe runtime delivery layer for explicit schema `3`, `4` and `5` manifests. Runtime
+support remains exact-version and fail-closed: unknown schemas are rejected, and accepting schema 5
+does not by itself select `game-data-core-kanto-johto-v4` for new authoritative operations or infer a
+new `{gameDataVersion, rulesVersion}` compatibility pair.
 
 ## Repository sanity harness
 

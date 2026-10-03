@@ -7,6 +7,7 @@ import {
   loadRuntimeGameDataArtifact,
   loadRuntimeGameDataVersion,
   runtimeVersionDirectoryName,
+  SUPPORTED_RUNTIME_GAME_DATA_SCHEMA_VERSIONS,
   type RuntimeGameDataReader,
 } from "./runtime-delivery";
 import { canonicalJson } from "./canonical-json";
@@ -15,6 +16,7 @@ const PUBLISHED_ROOT = join(import.meta.dirname, "..", "published");
 const V1 = "game-data-core-kanto-johto-v1";
 const V2 = "game-data-core-kanto-johto-v2";
 const V3 = "game-data-core-kanto-johto-v3";
+const V4 = "game-data-core-kanto-johto-v4";
 
 function fileReader(root: string): RuntimeGameDataReader {
   return {
@@ -25,6 +27,10 @@ function fileReader(root: string): RuntimeGameDataReader {
 }
 
 describe("runtime game-data delivery", () => {
+  it("accepts exactly the explicitly supported runtime schema versions", () => {
+    expect(SUPPORTED_RUNTIME_GAME_DATA_SCHEMA_VERSIONS).toEqual(["3", "4", "5"]);
+  });
+
   it("adapts immutable HTTP/CDN storage without eagerly fetching any bundle", async () => {
     const fetchMock = async (input: URL | RequestInfo) => {
       const url = input instanceof URL ? input : new URL(String(input));
@@ -133,5 +139,104 @@ describe("runtime game-data delivery", () => {
     expect(zones).toHaveLength(1);
     expect(hunts).toHaveLength(1);
     expect(encounters).toHaveLength(9);
+  });
+
+  it("loads the immutable schema-v5 v4 publication with exact bundle and artifact verification", async () => {
+    const reader = fileReader(PUBLISHED_ROOT);
+    const version = await loadRuntimeGameDataVersion(reader, V4);
+    expect(version.manifest.schemaVersion).toBe("5");
+    expect(version.manifest.bundleHash).toBe(
+      "sha256:fc37e5e9acebca805949780e2adb378b7ace8241b7b13ec7689a67d7abf23346",
+    );
+    expect(version.manifest.catalogCounts).toMatchObject({
+      species: 293,
+      moves: 547,
+      learnsets: 19_035,
+      zones: 1,
+      hunts: 1,
+      encounterDefinitions: 9,
+    });
+
+    const species = await loadRuntimeGameDataArtifact(reader, version, "catalogs/species");
+    const moves = await loadRuntimeGameDataArtifact(reader, version, "catalogs/moves");
+    const learnsets = await loadRuntimeGameDataArtifact(reader, version, "catalogs/learnsets");
+    const zones = await loadRuntimeGameDataArtifact(reader, version, "catalogs/zones");
+    const hunts = await loadRuntimeGameDataArtifact(reader, version, "catalogs/hunts");
+    const encounters = await loadRuntimeGameDataArtifact(
+      reader,
+      version,
+      "catalogs/encounter-definitions",
+    );
+    expect(species).toHaveLength(293);
+    expect(moves).toHaveLength(547);
+    expect(learnsets).toHaveLength(19_035);
+    expect(zones).toHaveLength(1);
+    expect(hunts).toHaveLength(1);
+    expect(encounters).toHaveLength(9);
+
+    const provenance = await loadRuntimeAuditArtifact(reader, version, "provenance");
+    const sourceInventory = await loadRuntimeAuditArtifact(reader, version, "source-inventory");
+    expect(provenance).toMatchObject({ provenanceHash: version.manifest.provenanceHash });
+    expect(sourceInventory).toBeTypeOf("object");
+  });
+
+  it("fails closed on an unknown future schema before any artifact is loaded", async () => {
+    const requested: string[] = [];
+    const base = fileReader(PUBLISHED_ROOT);
+    const v4Directory = await runtimeVersionDirectoryName(V4);
+    const reader: RuntimeGameDataReader = {
+      async read(path) {
+        requested.push(path);
+        if (path === `${v4Directory}/manifest.json`) {
+          const original = JSON.parse(
+            new TextDecoder().decode(await base.read(path)),
+          ) as Record<string, unknown>;
+          return new TextEncoder().encode(canonicalJson({ ...original, schemaVersion: "6" }));
+        }
+        return base.read(path);
+      },
+    };
+    await expect(loadRuntimeGameDataVersion(reader, V4)).rejects.toThrow(
+      /unsupported runtime game-data schemaVersion: 6/,
+    );
+    expect(requested).toHaveLength(1);
+  });
+
+  it("fails closed when the schema-v5 bundle commitment or artifact bytes are tampered", async () => {
+    const base = fileReader(PUBLISHED_ROOT);
+    const v4Directory = await runtimeVersionDirectoryName(V4);
+    const badManifestReader: RuntimeGameDataReader = {
+      async read(path) {
+        if (path === `${v4Directory}/manifest.json`) {
+          const original = JSON.parse(
+            new TextDecoder().decode(await base.read(path)),
+          ) as Record<string, unknown>;
+          return new TextEncoder().encode(canonicalJson({
+            ...original,
+            bundleHash: `sha256:${"0".repeat(64)}`,
+          }));
+        }
+        return base.read(path);
+      },
+    };
+    await expect(loadRuntimeGameDataVersion(badManifestReader, V4)).rejects.toThrow(
+      /published bundleHash mismatch/,
+    );
+
+    const version = await loadRuntimeGameDataVersion(base, V4);
+    const badArtifactReader: RuntimeGameDataReader = {
+      async read(path) {
+        const bytes = await base.read(path);
+        if (path === `${v4Directory}/catalogs/species.json`) {
+          const tampered = Uint8Array.from(bytes);
+          tampered[tampered.length - 1] ^= 1;
+          return tampered;
+        }
+        return bytes;
+      },
+    };
+    await expect(
+      loadRuntimeGameDataArtifact(badArtifactReader, version, "catalogs/species"),
+    ).rejects.toThrow(/catalogs\/species content hash mismatch/);
   });
 });

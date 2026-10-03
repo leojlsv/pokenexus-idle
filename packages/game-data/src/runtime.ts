@@ -3,4 +3,6 @@
 export * from "./schema.js";
 export * from "./pve-content-schema.js";
 export * from "./pve-manifest.js";
+export * from "./schema-version-v5.js";
+export * from "./game-data-manifest-v5.js";
 export * from "./runtime-delivery.js";

@@ -36,13 +36,21 @@ reader or implement the same `RuntimeGameDataReader` interface directly over an 
 Runtime resolution is two-stage:
 
 1. `loadRuntimeGameDataVersion(reader, gameDataVersion)` derives the deterministic version prefix,
-   loads only `manifest.json`, checks canonical JSON and verifies the manifest's `bundleHash`.
+   loads only `manifest.json`, checks canonical JSON, explicitly dispatches only supported schema
+   versions (`3`, `4`, `5`) and verifies the manifest's `bundleHash`. Unknown/future schemas fail
+   closed before any catalog shard is fetched.
 2. `loadRuntimeGameDataArtifact(...)` fetches only the requested logical catalog shard and verifies
    its descriptor hash/record count before parsing it. `catalogs/learnsets` is therefore not loaded
    by consumers that do not need Learnsets.
 
 `provenance.json` and `source-inventory.json` are audit/verification metadata and remain separately
 lazy through `loadRuntimeAuditArtifact(...)`; normal gameplay consumers do not fetch them.
+
+Schema support is distinct from production activation. The runtime reader can verify and load an
+immutable schema-5 publication by its exact `gameDataVersion`, but trusted server configuration still
+controls which exact `{gameDataVersion, rulesVersion}` pairs are accepted for new authoritative
+operations. Existing historical pair identities are never widened merely because a newer schema can
+be parsed.
 
 The current schema uses one Learnset artifact. Future physical subdivision by generation/game is
 permitted by SPEC-002, but must preserve the same logical content and deterministic manifest
@@ -67,8 +75,8 @@ paths.
 
 ## Required gates
 
-- game-data package tests validate lazy shard loading plus immutable v1 backward resolution and
-  corrected v2 resolution;
+- game-data package tests validate lazy shard loading plus immutable schema-3 v1/v2 resolution,
+  schema-4 v3 resolution and schema-5 v4 resolution;
 - candidate publication sanity is part of `validatePublicationReadiness(...)`, so normalized
   maintenance validation, review-stage construction, staging, and the final atomic publication
   revalidation share the same Learnset/forms/provenance integrity gate;

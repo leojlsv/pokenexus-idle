@@ -1,5 +1,6 @@
 import { canonicalJson } from "./canonical-json.js";
 import {
+  SCHEMA_VERSION,
   parseAbilityDefinitionV1,
   parseGameDataManifest,
   parseItemDefinitionV1,
@@ -16,6 +17,12 @@ import {
   parseGameDataManifestV4,
   type GameDataManifestV4,
 } from "./pve-manifest.js";
+import {
+  GAME_DATA_V5_ARTIFACT_PATHS,
+  parseGameDataManifestV5,
+  type GameDataManifestV5,
+} from "./game-data-manifest-v5.js";
+import { GAME_DATA_SCHEMA_V5 } from "./schema-version-v5.js";
 import {
   parseEncounterDefinitionV1,
   parseHuntDefinitionV1,
@@ -77,8 +84,14 @@ export function createHttpGameDataReader(
 export interface RuntimeGameDataVersion {
   gameDataVersion: string;
   directoryName: string;
-  manifest: GameDataManifest | GameDataManifestV4;
+  manifest: GameDataManifest | GameDataManifestV4 | GameDataManifestV5;
 }
+
+export const SUPPORTED_RUNTIME_GAME_DATA_SCHEMA_VERSIONS = Object.freeze([
+  SCHEMA_VERSION,
+  GAME_DATA_SCHEMA_V4,
+  GAME_DATA_SCHEMA_V5,
+] as const);
 
 function assertRuntimeV3ArtifactSet(manifest: GameDataManifest): void {
   const expected = [...RUNTIME_V3_ARTIFACT_LOGICAL_NAMES].sort();
@@ -121,6 +134,32 @@ async function parseCanonicalJson(bytes: Uint8Array, label: string): Promise<unk
   return parsed;
 }
 
+function parseRuntimeManifest(value: Record<string, unknown>): RuntimeGameDataVersion["manifest"] {
+  switch (value.schemaVersion) {
+    case SCHEMA_VERSION:
+      return parseGameDataManifest(value);
+    case GAME_DATA_SCHEMA_V4:
+      return parseGameDataManifestV4(value);
+    case GAME_DATA_SCHEMA_V5:
+      return parseGameDataManifestV5(value);
+    default:
+      throw new Error(`unsupported runtime game-data schemaVersion: ${String(value.schemaVersion)}`);
+  }
+}
+
+function runtimeArtifactPath(
+  manifest: RuntimeGameDataVersion["manifest"],
+  logicalName: RuntimeArtifactLogicalName,
+): string {
+  if (manifest.schemaVersion === GAME_DATA_SCHEMA_V4) {
+    return GAME_DATA_V4_ARTIFACT_PATHS[logicalName];
+  }
+  if (manifest.schemaVersion === GAME_DATA_SCHEMA_V5) {
+    return GAME_DATA_V5_ARTIFACT_PATHS[logicalName];
+  }
+  return RUNTIME_ARTIFACT_PATHS[logicalName];
+}
+
 export async function runtimeVersionDirectoryName(gameDataVersion: string): Promise<string> {
   const normalized = gameDataVersion.normalize("NFC");
   if (!normalized) throw new TypeError("gameDataVersion must be non-empty");
@@ -142,11 +181,8 @@ export async function loadRuntimeGameDataVersion(
   ) {
     throw new Error("published manifest must be an object");
   }
-  const schemaVersion = (manifestValue as Record<string, unknown>).schemaVersion;
-  const manifest = schemaVersion === GAME_DATA_SCHEMA_V4
-    ? parseGameDataManifestV4(manifestValue)
-    : parseGameDataManifest(manifestValue);
-  if (manifest.schemaVersion !== GAME_DATA_SCHEMA_V4) {
+  const manifest = parseRuntimeManifest(manifestValue as Record<string, unknown>);
+  if (manifest.schemaVersion === SCHEMA_VERSION) {
     assertRuntimeV3ArtifactSet(manifest);
   }
   if (manifest.gameDataVersion !== normalized) {
@@ -195,9 +231,7 @@ export async function loadRuntimeGameDataArtifact(
   const bytes = await reader.read(
     joinPath(
       version.directoryName,
-      version.manifest.schemaVersion === GAME_DATA_SCHEMA_V4
-        ? GAME_DATA_V4_ARTIFACT_PATHS[logicalName]
-        : RUNTIME_ARTIFACT_PATHS[logicalName],
+      runtimeArtifactPath(version.manifest, logicalName),
     ),
   );
   if (await sha256(bytes) !== descriptors[0].contentHash) {
