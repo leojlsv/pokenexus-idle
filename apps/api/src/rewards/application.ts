@@ -37,6 +37,7 @@ import {
   type StatBlock,
 } from "@pokenexus/game-core";
 import {
+  authoredItemIdsForRuntimeGameData,
   loadRuntimeGameDataArtifact,
   loadRuntimeGameDataVersion,
   type ItemDefinitionV1,
@@ -167,6 +168,12 @@ export function createRuntimePinnedRewardContextLoader(input: {
             "catalogs/items",
           ) as ItemDefinitionV1[];
           for (const item of items) itemIds.add(item.id);
+          for (const itemId of authoredItemIdsForRuntimeGameData({
+            gameDataVersion: version.gameDataVersion,
+            bundleHash: version.manifest.bundleHash,
+          })) {
+            itemIds.add(itemId);
+          }
         }
         if (needsPokemonXp) {
           const species = await loadRuntimeGameDataArtifact(

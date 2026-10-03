@@ -11,6 +11,7 @@ import {
   createHistoricalEncounterAuthorityLoader,
   createHuntItemRuleReleaseResolver,
   createPublishedHuntGameDataLoader,
+  assertPublishedHuntPveManifest,
   deriveEncounterIndividualizationAuthorityKeyId,
   normalizeHealingItemMagnitude,
   parsePersistedHuntRuntimeEnvelope,
@@ -38,6 +39,23 @@ function base64url(bytes: Uint8Array): string {
 }
 
 describe("Hunt runtime release authorities", () => {
+  it("accepts PVE content authority on retained schema 4 and forward schema 5 only", () => {
+    expect(() => assertPublishedHuntPveManifest({
+      schemaVersion: "4",
+      pveContentSchemaVersion: "1",
+    })).not.toThrow();
+    expect(() => assertPublishedHuntPveManifest({
+      schemaVersion: "5",
+      pveContentSchemaVersion: "1",
+    })).not.toThrow();
+    expect(() => assertPublishedHuntPveManifest({ schemaVersion: "3" }))
+      .toThrow(/does not contain PVE content authority/);
+    expect(() => assertPublishedHuntPveManifest({
+      schemaVersion: "6",
+      pveContentSchemaVersion: "1",
+    })).toThrow(/does not contain PVE content authority/);
+  });
+
   it("TASK-108 versions persisted Start HP authority without reinterpreting historical v1 envelopes", () => {
     const historicalInputs = {
       playerId: "player:test",

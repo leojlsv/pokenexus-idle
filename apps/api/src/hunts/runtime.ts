@@ -61,6 +61,7 @@ import {
   createTransactionCaptureAttemptRepository,
   type HistoricalEncounterAuthorityLoader,
 } from "./capture-reward";
+import { assertStrictSoloHuntStartTeamAdmission } from "./start-admission";
 
 export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1 = "hunt-runtime-inputs-v1" as const;
 export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2 = "hunt-runtime-inputs-v2" as const;
@@ -612,6 +613,21 @@ function assertUniqueId<T extends { readonly id: string }>(rows: readonly T[], l
   return uniqueMap(rows, ({ id }) => id, label);
 }
 
+export function assertPublishedHuntPveManifest(manifest: {
+  readonly schemaVersion: string;
+  readonly pveContentSchemaVersion?: unknown;
+}): asserts manifest is {
+  readonly schemaVersion: "4" | "5";
+  readonly pveContentSchemaVersion: string;
+} {
+  if (
+    typeof manifest.pveContentSchemaVersion !== "string"
+    || (manifest.schemaVersion !== "4" && manifest.schemaVersion !== "5")
+  ) {
+    throw new Error("published game-data release does not contain PVE content authority");
+  }
+}
+
 export function createPublishedHuntGameDataLoader(
   reader: RuntimeGameDataReader,
 ): ExactPublishedHuntGameDataLoader {
@@ -622,9 +638,7 @@ export function createPublishedHuntGameDataLoader(
         if (version.gameDataVersion !== gameDataVersion) {
           throw new Error("exact game-data loader returned a different gameDataVersion");
         }
-        if (!("pveContentSchemaVersion" in version.manifest) || version.manifest.schemaVersion !== "4") {
-          throw new Error("published game-data release does not contain PVE content authority");
-        }
+        assertPublishedHuntPveManifest(version.manifest);
         const [species, typeEffectiveness, zones, hunts, encounters] = await Promise.all([
           loadRuntimeGameDataArtifact(reader, version, "catalogs/species") as Promise<SpeciesDefinitionV2[]>,
           loadRuntimeGameDataArtifact(reader, version, "referenceData/currentTypeEffectiveness") as Promise<TypeEffectivenessEntry[]>,
@@ -1086,6 +1100,7 @@ export function createHuntRuntimeAuthorityPort(
       if (moveContext.pair.rulesVersion !== GENETIC_COMBAT_RULES_VERSION_V1) {
         throw unavailable("new Hunt runtime requires the accepted Genetic combat rules authority");
       }
+      assertStrictSoloHuntStartTeamAdmission(team, moveContext);
       if (!pendingEncounterSelection && hunt.recoveryDurationMs !== selector.recoveryDurationMs) {
         throw unavailable("selected Hunt definition changed before acceptance");
       }
