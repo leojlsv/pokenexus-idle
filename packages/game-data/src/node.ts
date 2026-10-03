@@ -17,3 +17,4 @@ export * from "./game-data-manifest-v5.js";
 export * from "./legacy-evidence-migration-v5.js";
 export * from "./promotion-staging-v5.js";
 export * from "./promotion-publication-v5.js";
+export * from "./pve-restaging-v5.js";

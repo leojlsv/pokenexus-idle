@@ -1,0 +1,46 @@
+{
+  "zones": [
+    {
+      "id": "zone:verdant-edge",
+      "displayName": "Verdant Edge",
+      "displayOrder": 10,
+      "availability": {
+        "playerLevelMin": null,
+        "prerequisiteHuntIds": []
+      }
+    }
+  ],
+  "hunts": [
+    {
+      "id": "hunt:verdant-edge:wilds",
+      "zoneId": "zone:verdant-edge",
+      "displayName": "Wilds",
+      "displayOrder": 10,
+      "availability": {
+        "playerLevelMin": null,
+        "prerequisiteHuntIds": []
+      },
+      "recoveryDurationMs": 30000
+    }
+  ],
+  "encounters": [
+    { "id": "encounter:verdant-edge:caterpie-l1", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-caterpie-10:f77ea3bb04", "weight": 900, "levelBand": { "min": 1, "max": 1 }, "reward": { "pokemonXpPool": 6, "playerXp": 2, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:caterpie-l2", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-caterpie-10:f77ea3bb04", "weight": 630, "levelBand": { "min": 2, "max": 2 }, "reward": { "pokemonXpPool": 12, "playerXp": 4, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:caterpie-l3", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-caterpie-10:f77ea3bb04", "weight": 270, "levelBand": { "min": 3, "max": 3 }, "reward": { "pokemonXpPool": 18, "playerXp": 6, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:ledyba-l1", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-ledyba-165:092570add7", "weight": 850, "levelBand": { "min": 1, "max": 1 }, "reward": { "pokemonXpPool": 6, "playerXp": 2, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:ledyba-l2", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-ledyba-165:092570add7", "weight": 595, "levelBand": { "min": 2, "max": 2 }, "reward": { "pokemonXpPool": 12, "playerXp": 4, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:ledyba-l3", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-ledyba-165:092570add7", "weight": 255, "levelBand": { "min": 3, "max": 3 }, "reward": { "pokemonXpPool": 18, "playerXp": 6, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:pidgey-l1", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-pidgey-16:8e97efe736", "weight": 800, "levelBand": { "min": 1, "max": 1 }, "reward": { "pokemonXpPool": 6, "playerXp": 2, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:pidgey-l2", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-pidgey-16:8e97efe736", "weight": 560, "levelBand": { "min": 2, "max": 2 }, "reward": { "pokemonXpPool": 12, "playerXp": 4, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:pidgey-l3", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-pidgey-16:8e97efe736", "weight": 240, "levelBand": { "min": 3, "max": 3 }, "reward": { "pokemonXpPool": 18, "playerXp": 6, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:rattata-l1", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-rattata-19:9975b0175c", "weight": 750, "levelBand": { "min": 1, "max": 1 }, "reward": { "pokemonXpPool": 6, "playerXp": 2, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:rattata-l2", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-rattata-19:9975b0175c", "weight": 525, "levelBand": { "min": 2, "max": 2 }, "reward": { "pokemonXpPool": 12, "playerXp": 4, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:rattata-l3", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-rattata-19:9975b0175c", "weight": 225, "levelBand": { "min": 3, "max": 3 }, "reward": { "pokemonXpPool": 18, "playerXp": 6, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:sentret-l1", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-sentret-161:fa09afb6e0", "weight": 850, "levelBand": { "min": 1, "max": 1 }, "reward": { "pokemonXpPool": 6, "playerXp": 2, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:sentret-l2", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-sentret-161:fa09afb6e0", "weight": 595, "levelBand": { "min": 2, "max": 2 }, "reward": { "pokemonXpPool": 12, "playerXp": 4, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:sentret-l3", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-sentret-161:fa09afb6e0", "weight": 255, "levelBand": { "min": 3, "max": 3 }, "reward": { "pokemonXpPool": 18, "playerXp": 6, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:sunkern-l1", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-sunkern-191:8f850eef0e", "weight": 850, "levelBand": { "min": 1, "max": 1 }, "reward": { "pokemonXpPool": 6, "playerXp": 2, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:sunkern-l2", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-sunkern-191:8f850eef0e", "weight": 595, "levelBand": { "min": 2, "max": 2 }, "reward": { "pokemonXpPool": 12, "playerXp": 4, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } },
+    { "id": "encounter:verdant-edge:sunkern-l3", "huntId": "hunt:verdant-edge:wilds", "speciesId": "candidate:species:pokedex-sunkern-191:8f850eef0e", "weight": 255, "levelBand": { "min": 3, "max": 3 }, "reward": { "pokemonXpPool": 18, "playerXp": 6, "itemDrops": [{ "itemId": "pokenexus:item:poke-ball:v1", "quantity": 1, "chanceBasisPoints": 1500 }, { "itemId": "pokenexus:item:basic-potion:v1", "quantity": 1, "chanceBasisPoints": 500 }] } }
+  ]
+}

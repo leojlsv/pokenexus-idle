@@ -6,3 +6,4 @@ export * from "./pve-manifest.js";
 export * from "./schema-version-v5.js";
 export * from "./game-data-manifest-v5.js";
 export * from "./runtime-delivery.js";
+export * from "./prealpha-content-authority.js";

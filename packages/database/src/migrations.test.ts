@@ -111,7 +111,8 @@ describe("discoverMigrations", () => {
 
   it("publishes TASK-108 persistent Pokémon vitality and PokéCenter authority after Hunt orchestration", async () => {
     const migrations = await discoverMigrations();
-    expect(migrations.at(-1)?.fileName).toBe("0010_persistent_pokemon_vitality_pokecenter.sql");
+    expect(migrations.find(({ fileName }) => fileName === "0010_persistent_pokemon_vitality_pokecenter.sql")?.fileName)
+      .toBe("0010_persistent_pokemon_vitality_pokecenter.sql");
     const sql = await readFile(
       join(canonicalMigrationsDirectory, "0010_persistent_pokemon_vitality_pokecenter.sql"),
       "utf8",
@@ -121,5 +122,20 @@ describe("discoverMigrations", () => {
     expect(sql).toContain("current_hp integer NOT NULL CHECK (current_hp >= 0)");
     expect(sql).toContain("CREATE TABLE pokenexus.pokecenter_heal_commands");
     expect(sql).toContain("UNIQUE (player_id, idempotency_key)");
+  });
+
+  it("publishes TASK-109 one-time Player bootstrap authority after persistent vitality", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.at(-1)?.fileName).toBe("0011_first_prealpha_player_bootstrap.sql");
+    const sql = await readFile(
+      join(canonicalMigrationsDirectory, "0011_first_prealpha_player_bootstrap.sql"),
+      "utf8",
+    );
+    expect(sql).toContain("CREATE TABLE pokenexus.player_bootstraps");
+    expect(sql).toContain("player_id uuid PRIMARY KEY");
+    expect(sql).toContain("pokemon_instance_id uuid NOT NULL UNIQUE");
+    expect(sql).toContain("team_id uuid NOT NULL UNIQUE");
+    expect(sql).toContain("FOREIGN KEY (player_id, pokemon_instance_id)");
+    expect(sql).toContain("FOREIGN KEY (player_id, team_id)");
   });
 });

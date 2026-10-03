@@ -13,11 +13,6 @@ import {
   parseGameDataManifestV5,
   type GameDataManifestV5,
 } from "./game-data-manifest-v5.js";
-import type {
-  PromotionV5Review,
-  PromotionV5StageManifest,
-  StagedPromotionV5Candidate,
-} from "./promotion-staging-v5.js";
 import {
   canonicalizeProvenanceManifestV5,
   parseProvenanceManifestV5,
@@ -36,10 +31,25 @@ export interface PublishedPromotionV5Bundle {
   manifest: GameDataManifestV5;
 }
 
-type PromotionV5PublicationCandidate = Pick<
-  StagedPromotionV5Candidate,
-  "directory" | "manifest" | "reviewHash"
->;
+export interface PublishableSchemaV5StageManifest {
+  schemaVersion: GameDataManifestV5["schemaVersion"];
+  pveContentSchemaVersion: GameDataManifestV5["pveContentSchemaVersion"];
+  candidateGameDataVersion: string;
+  candidateBundleHash: string;
+  normalizerVersion: string;
+  provenanceHash: string;
+  provenanceManifest: GameDataManifestV5["provenanceManifest"];
+  sourceInventory: GameDataManifestV5["sourceInventory"];
+  artifacts: GameDataManifestV5["artifacts"];
+  catalogCounts: GameDataManifestV5["catalogCounts"];
+  reviewHash: string;
+}
+
+export interface SchemaV5PublicationCandidate {
+  directory: string;
+  manifest: PublishableSchemaV5StageManifest;
+  reviewHash: string;
+}
 
 function normalizeVersion(gameDataVersion: string): string {
   const normalized = gameDataVersion.normalize("NFC");
@@ -80,7 +90,7 @@ async function readCanonicalJson(path: string, label: string): Promise<unknown> 
 }
 
 export function buildPublishedPromotionV5Manifest(
-  staged: PromotionV5StageManifest,
+  staged: PublishableSchemaV5StageManifest,
   publishedAt: string,
 ): GameDataManifestV5 {
   if (Number.isNaN(Date.parse(publishedAt))) {
@@ -208,7 +218,7 @@ export async function loadPublishedPromotionV5Bundle(
   );
 }
 
-async function verifyStageCommitment(stagedCandidate: PromotionV5PublicationCandidate): Promise<void> {
+async function verifyStageCommitment(stagedCandidate: SchemaV5PublicationCandidate): Promise<void> {
   if (!HASH_RE.test(stagedCandidate.reviewHash)) {
     throw new Error("invalid schema-v5 reviewHash commitment");
   }
@@ -236,7 +246,11 @@ async function verifyStageCommitment(stagedCandidate: PromotionV5PublicationCand
   if (reviewValue === null || typeof reviewValue !== "object" || Array.isArray(reviewValue)) {
     throw new Error("schema-v5 staged Human review must be an object");
   }
-  const review = reviewValue as Partial<PromotionV5Review>;
+  const review = reviewValue as {
+    candidateGameDataVersion?: unknown;
+    candidateBundleHash?: unknown;
+    provenanceHash?: unknown;
+  };
   if (
     review.candidateGameDataVersion !== stagedCandidate.manifest.candidateGameDataVersion ||
     review.candidateBundleHash !== stagedCandidate.manifest.candidateBundleHash ||
@@ -247,7 +261,7 @@ async function verifyStageCommitment(stagedCandidate: PromotionV5PublicationCand
 }
 
 async function copyStagePayload(
-  stagedCandidate: PromotionV5PublicationCandidate,
+  stagedCandidate: SchemaV5PublicationCandidate,
   destination: string,
 ): Promise<void> {
   for (const descriptor of stagedCandidate.manifest.artifacts) {
@@ -277,7 +291,7 @@ async function copyStagePayload(
 }
 
 export async function publishApprovedPromotionV5Candidate(
-  stagedCandidate: PromotionV5PublicationCandidate,
+  stagedCandidate: SchemaV5PublicationCandidate,
   publishedRoot: string,
   publishedAt: string,
   approval: PromotionV5PublicationApproval,
