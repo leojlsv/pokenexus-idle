@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B — immutable authority/version rebind inside APPROVED SPEC-002 / SPEC-012 / SPEC-014 semantics
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT coding agent
@@ -14,7 +14,7 @@
 - Related: TASK-095/097/107/109/114/115
 - Branch: `feat/TASK-116-production-v5-rebind`
 - Worktree: `.worktrees/TASK-116-production-v5-rebind`
-- Human gate: implementation/pair-rebind explicitly authorized on `2026-10-03T15:06:57Z`; repository-history publication remains separate
+- Human gate: implementation/pair-rebind explicitly authorized on `2026-10-03T15:06:57Z`; repository-history integration explicitly authorized on `2026-10-04T01:28:09Z` and completed
 
 ## Objective
 
@@ -123,3 +123,11 @@ of being hidden inside the rebind.
   Worker in either available Cloudflare account, no Hyperdrive configs and no Pages projects. Therefore the Human-authorized
   persistent migration/deploy/public-enable gates remain materially blocked by absent infrastructure, not by review or
   permission.
+
+## Repository/history completion — 2026-10-04
+
+- Human Owner explicitly authorized the separate repository/history gate on `2026-10-04T01:28:09Z`.
+- Feature commit: `2e047f8938bf94ab063fc9837b99db7d3229a281` (`feat: bind production rules to game data v5`).
+- Feature branch `feat/TASK-116-production-v5-rebind` was pushed to origin.
+- Main integration merge: `bfc98ffdc3c1659643d276271244ada31d7ac958` (`merge: complete TASK-116 production v5 rules rebind`).
+- Persistent migration, deploy and public enablement remain separate release-stage work and were not executed by this repository/history closure.

@@ -88,22 +88,22 @@
 | `TASK-031` Accessibility & Responsive Baseline | DONE — QA TECH READY 0/0; Class-B ACCEPT 0/0; Human Card/Pixi usability checklist and local integration approved 2026-09-28; Hunt-integrated validation TASK-039/040 |
 | `TASK-099` Pokémon Sprite Generation Lab | DEFERRED — side-project abandoned by Human Owner; branch/worktree removed; historical ID retained only |
 
-**Next product milestone:** TASK-109 is DONE and integrated. TASK-116 is ACCEPTANCE after owner gates plus fresh independent TECH/IA `0/0/0/0` acceptance for the exact immutable v5 production-rules/Genetic pair rebind. Repository-history completion remains separately gated. TASK-110 remains the next dependency-ordered gameplay runtime slice and still requires separate implementation authorization. Persistent migration, deploy and public enablement are Human-authorized but remain materially blocked because the production PostgreSQL/Hyperdrive/Worker/Pages/domain/secrets release infrastructure does not exist yet.
+**Next product milestone:** TASK-109 and TASK-116 are DONE and repository-integrated. TASK-110 remains the next dependency-ordered gameplay runtime slice and still requires separate implementation authorization. Persistent migration, deploy and public enablement are Human-authorized but remain materially blocked because the production PostgreSQL/Hyperdrive/Worker/Pages/domain/secrets release infrastructure does not exist yet.
 
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-116`.
-- DONE: 60.
+- DONE: 61.
 - DRAFT: 2.
 - READY: 0.
 - ACTIVE: 1.
 - FIX: 0.
 - REVIEW: 0.
-- ACCEPTANCE: 3.
+- ACCEPTANCE: 2.
 - BLOCKED: 2.
 - DEFERRED: 1.
 - PLANNED: 48.
-- Task-count completion: **60 / 117 = 51.3%**.
+- Task-count completion: **61 / 117 = 52.1%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -610,7 +610,7 @@ content relies on those mechanics.
 | `TASK-109` First Pre-alpha Bootstrap, Wilds Content & Hunt Admission | B | DONE | LD → ChatGPT delegated implementation worker | Independent exact-current **TECH READY + INTEGRITY READY `0/0/0/0`**; fresh Class-B **ACCEPT `0/0/0/0`** | `SK-TDD`, `SK-PG`, `SK-GAME-ARCH` | **COMPLETED — Human-approved immutable schema-5 v5 publication + Human-authorized repository/history integration 2026-10-03; production activation/persistent migration/deploy/public-enable remain separate** | TASK-020/024/034/038/089/091/106/108 | Bootstrap/Wilds/strict admission implemented and validated; no new public starter-choice protocol; TASK-110 remains separate. |
 | `TASK-110` Management-First Hunt Automation, Offline & Provenance | B | DRAFT | LD → ChatGPT delegated implementation worker | QA + IA | `SK-TDD`, `SK-PG`, `SK-GAME-PERF`, `SK-API-SEC` | **Separate implementation authorization required** | TASK-023/024/035/036/037/038/101/106/107/108/109 | Policies/offline/D-F16/provenance/activity. |
 | `TASK-111` First Pre-alpha Inventory Management UI | B | DRAFT | FE → ChatGPT delegated implementation worker | QA | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST` | **Separate frontend implementation authorization required** | TASK-024/025/027/031/106 | Read/management Inventory browsing; no consume/grant/use authority. |
-| `TASK-116` Exact Production Rules Rebind for Game Data v5 | B | ACCEPTANCE | LD → ChatGPT coding agent | Independent TECH + architecture/integrity **ACCEPT `0/0/0/0`**; owner gates PASS | `SK-TDD`, `SK-GAME-ARCH` | **Human pair/rebind implementation authorized 2026-10-03; Git history separate; persistent migration/deploy/public enablement authorized but blocked on absent production infrastructure** | TASK-095/097/109/114/115 | New immutable production support/catalog + Genetic rules identity for exact v5 pair; retained identities untouched; no semantic drift. |
+| `TASK-116` Exact Production Rules Rebind for Game Data v5 | B | DONE | LD → ChatGPT coding agent | Independent TECH + architecture/integrity **ACCEPT `0/0/0/0`**; owner gates PASS | `SK-TDD`, `SK-GAME-ARCH` | **COMPLETED — Human-authorized repository/history integration 2026-10-04; persistent migration/deploy/public enablement remain separate and blocked on absent production infrastructure** | TASK-095/097/109/114/115 | New immutable production support/catalog + Genetic rules identity for exact v5 pair; retained identities untouched; no semantic drift. |
 
 **Exit / MVP gate:** Solo Hunt is a complete server-authoritative playable loop. Human Owner explicitly approves MVP behavior and presentation before the project expands into realtime multiplayer content.
 
