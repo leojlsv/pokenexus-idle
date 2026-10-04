@@ -5,11 +5,11 @@ import {
   type CommitPlayerBootstrapResult,
 } from "@pokenexus/database";
 import {
-  GENETIC_COMBAT_RULES_VERSION_V1,
   MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
   deriveLevelAvailableMoves,
   deriveMaxHpForRulesVersion,
   individualizeEncounter,
+  isGeneticCombatRulesVersion,
   type EncounterIndividualizationAuthority,
   type GeneticProfile,
 } from "@pokenexus/game-core";
@@ -187,7 +187,7 @@ export class PlayerBootstrapApplicationService {
       compatibleProfiles,
       authority,
     });
-    const geneticAware = context.pair.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1
+    const geneticAware = isGeneticCombatRulesVersion(context.pair.rulesVersion)
       || context.pair.rulesVersion === MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1;
     const maxHp = deriveMaxHpForRulesVersion(
       context.pair.rulesVersion as never,

@@ -5,19 +5,26 @@ import { describe, expect, it } from "vitest";
 import { initializeBattle, resolveCombatStimulus } from "./battle";
 import rawProfile from "./production-move-support-v1.json";
 import rawProfileV2 from "./production-move-support-v2.json";
+import rawProfileV3 from "./production-move-support-v3.json";
 import {
   assertProductionMoveLoadoutExecutable,
   PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH,
   PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2,
+  PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V3,
   PRODUCTION_COMBAT_GAME_DATA_VERSION,
   PRODUCTION_COMBAT_GAME_DATA_VERSION_V2,
+  PRODUCTION_COMBAT_GAME_DATA_VERSION_V3,
   PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH,
   PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2,
+  PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V3,
   PRODUCTION_COMBAT_RULE_CATALOG_V1,
   PRODUCTION_COMBAT_RULE_CATALOG_V2,
+  PRODUCTION_COMBAT_RULE_CATALOG_V3,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V3,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH,
   PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2,
+  PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3,
   PRODUCTION_MOVE_SELECTABILITY_RULE_ARTIFACT_ID,
   PRODUCTION_MOVE_SELECTABILITY_RULE_SEMANTICS_HASH,
   PRODUCTION_TARGET_DISPOSITIONS_V1,
@@ -26,11 +33,13 @@ import {
   hashCanonicalProductionCombatRuleCatalog,
   loadApprovedProductionCombatRuleCatalogV1,
   loadApprovedProductionCombatRuleCatalogV2,
+  loadApprovedProductionCombatRuleCatalogV3,
   resolveProductionBattleAbility,
   resolveProductionAbilityRuleForBattle,
   validateProductionCombatRuleCatalogAgainstGameData,
   validateProductionCombatSupportProfile,
   validateProductionCombatSupportProfileV2,
+  validateProductionCombatSupportProfileV3,
   type ProductionCombatGameDataFacts,
 } from "./production-combat-rules";
 
@@ -42,6 +51,10 @@ const V2_DIRECTORY = resolve(
 const V3_DIRECTORY = resolve(
   PACKAGE_ROOT,
   "../game-data/published/version-e7903d8b32ee60805f55ef36c8fe735a517c858f700e92459c3b239a7560e1e2",
+);
+const V5_DIRECTORY = resolve(
+  PACKAGE_ROOT,
+  "../game-data/published/version-38ed5230053095b7ef69290f55f40278e681f20eb530788040be5639cdde3c19",
 );
 
 function readJson<T>(path: string): T {
@@ -67,6 +80,10 @@ function v2Facts(): ProductionCombatGameDataFacts {
 
 function v3Facts(): ProductionCombatGameDataFacts {
   return facts(V3_DIRECTORY);
+}
+
+function v5Facts(): ProductionCombatGameDataFacts {
+  return facts(V5_DIRECTORY);
 }
 
 function profileSemantics(value: Record<string, unknown>): Record<string, unknown> {
@@ -103,6 +120,25 @@ describe("SPEC-012 production combat rule catalog", () => {
     expect(() => validateProductionCombatSupportProfileV2(rawProfileV2)).not.toThrow();
     await expect(loadApprovedProductionCombatRuleCatalogV2(runtimeBytes)).resolves.toEqual(
       PRODUCTION_COMBAT_RULE_CATALOG_V2,
+    );
+  });
+
+  it("freezes the v5-bound profile without changing SPEC-012 semantics", async () => {
+    const runtimeBytes = readFileSync(resolve(PACKAGE_ROOT, "src/production-move-support-v3.json"));
+    expect("sha256:" + createHash("sha256").update(runtimeBytes).digest("hex")).toBe(
+      PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3,
+    );
+    expect(rawProfileV3).toMatchObject({
+      schemaVersion: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V3,
+      gameDataVersion: PRODUCTION_COMBAT_GAME_DATA_VERSION_V3,
+      gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V3,
+    });
+    expect(profileSemantics(rawProfileV3 as unknown as Record<string, unknown>)).toEqual(
+      profileSemantics(rawProfileV2 as unknown as Record<string, unknown>),
+    );
+    expect(() => validateProductionCombatSupportProfileV3(rawProfileV3)).not.toThrow();
+    await expect(loadApprovedProductionCombatRuleCatalogV3(runtimeBytes)).resolves.toEqual(
+      PRODUCTION_COMBAT_RULE_CATALOG_V3,
     );
   });
 
@@ -144,6 +180,21 @@ describe("SPEC-012 production combat rule catalog", () => {
     expect(catalog.productionSelectabilityRuleArtifact).toEqual(
       oldCatalog.productionSelectabilityRuleArtifact,
     );
+  });
+
+  it("materializes the v5-bound release with identical executable semantics and distinct binding metadata", () => {
+    const retained = PRODUCTION_COMBAT_RULE_CATALOG_V2;
+    const catalog = PRODUCTION_COMBAT_RULE_CATALOG_V3;
+    expect(catalog.gameDataVersion).toBe(PRODUCTION_COMBAT_GAME_DATA_VERSION_V3);
+    expect(catalog.gameDataBundleHash).toBe(PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V3);
+    expect(catalog.profileArtifactId).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V3);
+    expect(catalog.profileContentHash).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3);
+    expect(catalog.moveSupport).toEqual(retained.moveSupport);
+    expect(catalog.abilitySupport).toEqual(retained.abilitySupport);
+    expect(catalog.moveRules).toEqual(retained.moveRules);
+    expect(catalog.abilityRules).toEqual(retained.abilityRules);
+    expect(catalog.effectRules).toEqual(retained.effectRules);
+    expect(catalog.executableMoveIds).toEqual(retained.executableMoveIds);
   });
 
   it("freezes the complete enemy-normalized target disposition vocabulary", () => {
@@ -207,9 +258,10 @@ describe("SPEC-012 production combat rule catalog", () => {
     expect(() => validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V1, missingType)).toThrow(/unresolved TypeId/);
   });
 
-  it("validates only the retained-v2 and new-v3 exact catalog/data bindings", () => {
+  it("validates only the retained-v2, v3 and new-v5 exact catalog/data bindings", () => {
     const oldFacts = v2Facts();
     const newFacts = v3Facts();
+    const v5 = v5Facts();
     expect(() =>
       validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V1, oldFacts)
     ).not.toThrow();
@@ -217,10 +269,19 @@ describe("SPEC-012 production combat rule catalog", () => {
       validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V2, newFacts)
     ).not.toThrow();
     expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V3, v5)
+    ).not.toThrow();
+    expect(() =>
       validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V1, newFacts)
     ).toThrow(/gameDataVersion mismatch/);
     expect(() =>
       validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V2, oldFacts)
+    ).toThrow(/gameDataVersion mismatch/);
+    expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V2, v5)
+    ).toThrow(/gameDataVersion mismatch/);
+    expect(() =>
+      validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V3, newFacts)
     ).toThrow(/gameDataVersion mismatch/);
     expect(() =>
       validateProductionCombatRuleCatalogAgainstGameData(PRODUCTION_COMBAT_RULE_CATALOG_V2, {
@@ -386,6 +447,27 @@ describe("SPEC-012 production combat rule catalog", () => {
     }
   });
 
+  it("rebinds all-293 coverage from v3 to v5 without semantic drift", () => {
+    const retained = v3Facts();
+    const rebound = v5Facts();
+    const oldCoverage = buildProductionMoveCoverageReport({
+      catalog: PRODUCTION_COMBAT_RULE_CATALOG_V2,
+      gameDataVersion: retained.gameDataVersion,
+      species: retained.species,
+      learnsets: retained.learnsets,
+    });
+    const newCoverage = buildProductionMoveCoverageReport({
+      catalog: PRODUCTION_COMBAT_RULE_CATALOG_V3,
+      gameDataVersion: rebound.gameDataVersion,
+      species: rebound.species,
+      learnsets: rebound.learnsets,
+    });
+    expect(newCoverage.rows).toEqual(oldCoverage.rows);
+    expect(newCoverage.profileArtifactId).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V3);
+    expect(newCoverage.profileContentHash).toBe(PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3);
+    expect(newCoverage.gameDataVersion).toBe(PRODUCTION_COMBAT_GAME_DATA_VERSION_V3);
+  });
+
   it("canonically serializes and hashes the materialized catalog deterministically", async () => {
     const serialized = canonicalSerializeProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V1);
     expect(serialized).toBe(canonicalSerializeProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V1));
@@ -396,5 +478,9 @@ describe("SPEC-012 production combat rule catalog", () => {
     expect(v2Hash).toBe(PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2);
     expect(v2Hash).not.toBe(hash);
     expect(v2Hash).toBe(await hashCanonicalProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V2));
+    const v3Hash = await hashCanonicalProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V3);
+    expect(v3Hash).toBe(PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V3);
+    expect(v3Hash).not.toBe(v2Hash);
+    expect(v3Hash).toBe(await hashCanonicalProductionCombatRuleCatalog(PRODUCTION_COMBAT_RULE_CATALOG_V3));
   });
 });

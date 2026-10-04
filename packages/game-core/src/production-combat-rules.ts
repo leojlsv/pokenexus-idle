@@ -1,5 +1,6 @@
 import rawProductionMoveSupportProfileV1 from "./production-move-support-v1.json" with { type: "json" };
 import rawProductionMoveSupportProfileV2 from "./production-move-support-v2.json" with { type: "json" };
+import rawProductionMoveSupportProfileV3 from "./production-move-support-v3.json" with { type: "json" };
 import { compareUtf8Bytes } from "./combat-math";
 import { deriveSimpleDamageMoveCooldownMs } from "./cooldown";
 import { deriveLevelAvailableMoves, type MoveEligibilityLearnsetEntry } from "./move-eligibility";
@@ -56,29 +57,52 @@ export const PRODUCTION_COMBAT_GAME_DATA_VERSION_V2 = "game-data-core-kanto-joht
 export const PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2 =
   "sha256:a7ee6337f8f41986ca7fc4608e8f75f49fb1a42d54d66aeb18b5ae56208c6559" as const;
 
+export const PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V3 =
+  "spec-012-production-move-support-v3" as const;
+
+export const PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3 =
+  "sha256:fa117277ffccfcbf9092c0184dd3305d4b3b76ea6e2ab018650d92afc0fcb615" as const;
+
+export const PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V3 =
+  "pokenexus.production-combat-rule-catalog.v3" as const;
+
+export const PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V3 =
+  "sha256:f3332f2f3fe6019647d68ab918e6338d0bb0721f7c838137976b878712a074c6" as const;
+
+export const PRODUCTION_COMBAT_GAME_DATA_VERSION_V3 = "game-data-core-kanto-johto-v5" as const;
+
+export const PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V3 =
+  "sha256:565cdd360c1b29dc3607696299244279a8d0c3f488d4544c41c62ed47592f782" as const;
+
 export type ProductionCombatRuleCatalogArtifactId =
   | typeof PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID
-  | typeof PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2;
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V2
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V3;
 
 export type ProductionCombatRuleCatalogCanonicalHash =
   | typeof PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH
-  | typeof PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2;
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2
+  | typeof PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V3;
 
 export type ProductionCombatSupportProfileArtifactId =
   | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID
-  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2;
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V2
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V3;
 
 export type ProductionCombatSupportProfileContentHash =
   | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH
-  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2;
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V2
+  | typeof PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3;
 
 export type ProductionCombatGameDataVersion =
   | typeof PRODUCTION_COMBAT_GAME_DATA_VERSION
-  | typeof PRODUCTION_COMBAT_GAME_DATA_VERSION_V2;
+  | typeof PRODUCTION_COMBAT_GAME_DATA_VERSION_V2
+  | typeof PRODUCTION_COMBAT_GAME_DATA_VERSION_V3;
 
 export type ProductionCombatGameDataBundleHash =
   | typeof PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH
-  | typeof PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2;
+  | typeof PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2
+  | typeof PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V3;
 
 export type ProductionMoveSupportState = "executable-simple" | "executable-authored" | "unsupported";
 export type ProductionAbilitySupportState = "inactive-by-policy" | "executable-authored" | "unsupported";
@@ -437,6 +461,15 @@ const PRODUCTION_COMBAT_RELEASE_V2: ProductionCombatReleaseIdentity = {
   gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V2,
 };
 
+const PRODUCTION_COMBAT_RELEASE_V3: ProductionCombatReleaseIdentity = {
+  catalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_ARTIFACT_ID_V3,
+  catalogCanonicalHash: PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V3,
+  profileArtifactId: PRODUCTION_COMBAT_SUPPORT_PROFILE_ARTIFACT_ID_V3,
+  profileContentHash: PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3,
+  gameDataVersion: PRODUCTION_COMBAT_GAME_DATA_VERSION_V3,
+  gameDataBundleHash: PRODUCTION_COMBAT_GAME_DATA_BUNDLE_HASH_V3,
+};
+
 function materializeProductionCombatRuleCatalog(
   value: unknown,
   identity: ProductionCombatReleaseIdentity,
@@ -564,6 +597,11 @@ export const PRODUCTION_COMBAT_RULE_CATALOG_V1 = materializeProductionCombatRule
 export const PRODUCTION_COMBAT_RULE_CATALOG_V2 = materializeProductionCombatRuleCatalog(
   rawProductionMoveSupportProfileV2 as unknown,
   PRODUCTION_COMBAT_RELEASE_V2,
+);
+
+export const PRODUCTION_COMBAT_RULE_CATALOG_V3 = materializeProductionCombatRuleCatalog(
+  rawProductionMoveSupportProfileV3 as unknown,
+  PRODUCTION_COMBAT_RELEASE_V3,
 );
 
 function exactUniverse(label: string, expected: ReadonlySet<string>, actual: Readonly<Record<string, unknown>>): void {
@@ -815,6 +853,10 @@ export function validateProductionCombatSupportProfileV2(value: unknown): void {
   materializeProductionCombatRuleCatalog(value, PRODUCTION_COMBAT_RELEASE_V2);
 }
 
+export function validateProductionCombatSupportProfileV3(value: unknown): void {
+  materializeProductionCombatRuleCatalog(value, PRODUCTION_COMBAT_RELEASE_V3);
+}
+
 export async function loadApprovedProductionCombatRuleCatalogV1(
   bytes: Uint8Array,
 ): Promise<ProductionCombatRuleCatalog> {
@@ -844,6 +886,23 @@ export async function loadApprovedProductionCombatRuleCatalogV2(
     PRODUCTION_COMBAT_RELEASE_V2,
   );
   if (await hashCanonicalProductionCombatRuleCatalog(catalog) !== PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V2) {
+    throw new Error("production combat rule catalog canonical hash mismatch");
+  }
+  return catalog;
+}
+
+export async function loadApprovedProductionCombatRuleCatalogV3(
+  bytes: Uint8Array,
+): Promise<ProductionCombatRuleCatalog> {
+  if (await sha256Bytes(bytes) !== PRODUCTION_COMBAT_SUPPORT_PROFILE_CONTENT_HASH_V3) {
+    throw new Error("production combat support profile content hash mismatch");
+  }
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  const catalog = materializeProductionCombatRuleCatalog(
+    JSON.parse(text) as unknown,
+    PRODUCTION_COMBAT_RELEASE_V3,
+  );
+  if (await hashCanonicalProductionCombatRuleCatalog(catalog) !== PRODUCTION_COMBAT_RULE_CATALOG_CANONICAL_HASH_V3) {
     throw new Error("production combat rule catalog canonical hash mismatch");
   }
   return catalog;

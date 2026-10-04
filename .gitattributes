@@ -15,3 +15,4 @@
 docs/specs/SPEC-012-production-move-support-v1.json -text whitespace=cr-at-eol
 packages/game-core/src/production-move-support-v1.json -text whitespace=cr-at-eol
 packages/game-core/src/production-move-support-v2.json -text whitespace=cr-at-eol
+packages/game-core/src/production-move-support-v3.json -text whitespace=cr-at-eol

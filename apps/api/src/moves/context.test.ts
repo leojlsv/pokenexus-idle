@@ -1,6 +1,7 @@
 import {
   PRODUCTION_COMBAT_RULE_CATALOG_V1,
   PRODUCTION_COMBAT_RULE_CATALOG_V2,
+  PRODUCTION_COMBAT_RULE_CATALOG_V3,
 } from "@pokenexus/game-core";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -10,8 +11,12 @@ import {
   PRODUCTION_COMBAT_V2_RULES_VERSION,
   PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
+  PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION,
   PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_V3_RULES_VERSION,
+  PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_V5_RULES_VERSION,
   createConfiguredMoveEligibilityRulesVersionResolver,
   createConfiguredProductionCombatCatalogResolver,
   createMoveEligibilityContextLoader,
@@ -127,9 +132,10 @@ function createHarness(overrides: {
 }
 
 describe("createMoveEligibilityContextLoader", () => {
-  it("publishes distinct immutable retained-v2 and new-v3 rules release descriptors", () => {
+  it("publishes distinct immutable retained-v2, v3 and v5 rules release descriptors", () => {
     expect(PRODUCTION_COMBAT_V2_RULES_VERSION).toBe(PRODUCTION_COMBAT_RULE_CATALOG_V1.artifactId);
     expect(PRODUCTION_COMBAT_V3_RULES_VERSION).toBe(PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId);
+    expect(PRODUCTION_COMBAT_V5_RULES_VERSION).toBe(PRODUCTION_COMBAT_RULE_CATALOG_V3.artifactId);
     expect(PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR).toMatchObject({
       rulesVersion: PRODUCTION_COMBAT_RULE_CATALOG_V1.artifactId,
       productionSelectability: {
@@ -154,6 +160,15 @@ describe("createMoveEligibilityContextLoader", () => {
     expect(PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR.productionSelectability?.semanticHash).toBe(
       PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR.productionSelectability?.semanticHash,
     );
+    expect(PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR).toMatchObject({
+      rulesVersion: PRODUCTION_COMBAT_RULE_CATALOG_V3.artifactId,
+      productionSelectability: {
+        supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V3.profileArtifactId,
+        supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V3.profileContentHash,
+        combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V3.artifactId,
+        combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V3.canonicalContentHash,
+      },
+    });
     expect(PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR).toMatchObject({
       rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
       productionSelectability: {
@@ -161,6 +176,15 @@ describe("createMoveEligibilityContextLoader", () => {
         supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V2.profileContentHash,
         combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId,
         combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V2.canonicalContentHash,
+      },
+    });
+    expect(PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR).toMatchObject({
+      rulesVersion: PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION,
+      productionSelectability: {
+        supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V3.profileArtifactId,
+        supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V3.profileContentHash,
+        combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V3.artifactId,
+        combatRuleCatalogContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V3.canonicalContentHash,
       },
     });
   });
@@ -182,15 +206,25 @@ describe("createMoveEligibilityContextLoader", () => {
     }
   });
 
-  it("publishes only the explicit Genetic rulesVersion as a v3-catalog reuse", async () => {
+  it("publishes only explicit retained/new Genetic rulesVersions against their exact catalogs", async () => {
     const resolver = createConfiguredMoveEligibilityRulesVersionResolver([
       { rules: PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR, newOperationsAllowed: true },
+      { rules: PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR, newOperationsAllowed: true },
     ]);
     await expect(resolver.resolve(PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION)).resolves.toMatchObject({
       rules: {
         rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
         productionSelectability: {
           combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V2.artifactId,
+        },
+      },
+      newOperationsAllowed: true,
+    });
+    await expect(resolver.resolve(PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION)).resolves.toMatchObject({
+      rules: {
+        rulesVersion: PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION,
+        productionSelectability: {
+          combatRuleCatalogArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V3.artifactId,
         },
       },
       newOperationsAllowed: true,
@@ -251,6 +285,18 @@ describe("createMoveEligibilityContextLoader", () => {
         gameDataVersion: PRODUCTION_COMBAT_RULE_CATALOG_V1.gameDataVersion,
         rules: PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
       },
+      {
+        gameDataVersion: PRODUCTION_COMBAT_RULE_CATALOG_V2.gameDataVersion,
+        rules: PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR,
+      },
+      {
+        gameDataVersion: PRODUCTION_COMBAT_RULE_CATALOG_V3.gameDataVersion,
+        rules: PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR,
+      },
+      {
+        gameDataVersion: PRODUCTION_COMBAT_RULE_CATALOG_V2.gameDataVersion,
+        rules: PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR,
+      },
     ];
 
     for (const { gameDataVersion, rules } of crossPairs) {
@@ -298,12 +344,16 @@ describe("createMoveEligibilityContextLoader", () => {
     })).rejects.toThrow(/content hash mismatch/);
   });
 
-  it("resolves both immutable production releases only by their full four-field identities", async () => {
+  it("resolves all immutable production releases only by their full four-field identities", async () => {
     const resolver = createConfiguredProductionCombatCatalogResolver([
       PRODUCTION_COMBAT_RULE_CATALOG_V1,
       PRODUCTION_COMBAT_RULE_CATALOG_V2,
+      PRODUCTION_COMBAT_RULE_CATALOG_V3,
     ]);
-    const identityFor = (catalog: typeof PRODUCTION_COMBAT_RULE_CATALOG_V1 | typeof PRODUCTION_COMBAT_RULE_CATALOG_V2) => ({
+    const identityFor = (catalog:
+      | typeof PRODUCTION_COMBAT_RULE_CATALOG_V1
+      | typeof PRODUCTION_COMBAT_RULE_CATALOG_V2
+      | typeof PRODUCTION_COMBAT_RULE_CATALOG_V3) => ({
       supportProfileArtifactId: catalog.profileArtifactId,
       supportProfileContentHash: catalog.profileContentHash,
       combatRuleCatalogArtifactId: catalog.artifactId,
@@ -316,8 +366,11 @@ describe("createMoveEligibilityContextLoader", () => {
     await expect(resolver.resolve(identityFor(PRODUCTION_COMBAT_RULE_CATALOG_V2))).resolves.toBe(
       PRODUCTION_COMBAT_RULE_CATALOG_V2,
     );
+    await expect(resolver.resolve(identityFor(PRODUCTION_COMBAT_RULE_CATALOG_V3))).resolves.toBe(
+      PRODUCTION_COMBAT_RULE_CATALOG_V3,
+    );
 
-    const newIdentity = identityFor(PRODUCTION_COMBAT_RULE_CATALOG_V2);
+    const newIdentity = identityFor(PRODUCTION_COMBAT_RULE_CATALOG_V3);
     for (const drifted of [
       { ...newIdentity, supportProfileArtifactId: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileArtifactId },
       { ...newIdentity, supportProfileContentHash: PRODUCTION_COMBAT_RULE_CATALOG_V1.profileContentHash },

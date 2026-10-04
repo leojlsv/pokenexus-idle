@@ -11,7 +11,6 @@ import {
 } from "@pokenexus/database";
 import {
   CAPTURE_RULES_VERSION_V1,
-  GENETIC_COMBAT_RULES_VERSION_V1,
   deriveMaxHpForRulesVersion,
   deriveLevelAvailableMoves,
   pokemonXpFloor,
@@ -20,6 +19,7 @@ import {
   resolveCaptureAttemptV1,
   resolveSoloHuntEncounterReward,
   selectBootstrapMoveLoadout,
+  isGeneticCombatRulesVersion,
   type CaptureBallRuleV1,
   type DeterministicRngState,
   type EncounterRewardInputV1,
@@ -368,7 +368,7 @@ export class SoloHuntCaptureResolutionService {
           species.baseStats,
           snapshot.ivs,
           snapshot.level,
-          creation.pair.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1
+          isGeneticCombatRulesVersion(creation.pair.rulesVersion)
             ? snapshot.birthGeneticBonuses
             : undefined,
         )

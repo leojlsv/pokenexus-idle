@@ -50,7 +50,7 @@ import {
   type EncounterIndividualizationSnapshot,
   type GeneticProfile,
 } from "./encounter-individualization";
-import { GENETIC_COMBAT_RULES_VERSION_V1 } from "./genetic-combat-rules";
+import { isGeneticCombatRulesVersion } from "./genetic-combat-rules";
 
 const SOLO_HUNT_STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 
@@ -217,7 +217,7 @@ export interface SoloHuntRuntimeInputs {
   readonly interBattleGapMs: number;
   /**
    * Server-only runtime authority. secretKey is never copied into SoloHuntRuntimeState.
-   * Presence is required only by GENETIC_COMBAT_RULES_VERSION_V1.
+   * Presence is required by an explicitly supported Genetic combat-rules release.
    */
   readonly individualizationAuthority?: EncounterIndividualizationAuthority;
 }
@@ -519,7 +519,7 @@ export function validateSoloHuntOpponentCatalog(
   }
 
   const seenKeys = new Set<string>();
-  const geneticRuntime = context.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1;
+  const geneticRuntime = isGeneticCombatRulesVersion(context.rulesVersion);
   const zeroStats: StatBlock<number> = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
   for (const template of templates) {
     const key = opponentTemplateKey(template.encounterDefinitionId, template.level);
@@ -667,7 +667,7 @@ export function initializeSoloHuntEncounterBattle(
   ) {
     return reject(`Solo Hunt opponent template does not match selected encounter/context: ${templateKey}`);
   }
-  const geneticRuntime = input.context.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1;
+  const geneticRuntime = isGeneticCombatRulesVersion(input.context.rulesVersion);
   const individual = input.individualizationSnapshot;
   if (geneticRuntime) {
     if (
@@ -1336,7 +1336,7 @@ function pendingSelectionIdentity(
 }
 
 function usesGeneticIndividualization(inputs: Pick<SoloHuntRuntimeInputs, "context" | "individualizationAuthority">): boolean {
-  return inputs.context.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1;
+  return isGeneticCombatRulesVersion(inputs.context.rulesVersion);
 }
 
 function isValidCompatibleProfiles(
