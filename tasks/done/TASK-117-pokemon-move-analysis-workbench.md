@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B — isolated local analysis UI/data tooling inside accepted static-data architecture
 - Owner: Lead Developer / Frontend Developer
 - Owner execution surface: ChatGPT coding agent
@@ -17,6 +17,8 @@
 - Branch: `feat/TASK-117-pokemon-move-analysis-workbench`
 - Worktree: `.worktrees/TASK-117-pokemon-move-analysis-workbench`
 - Human direction: requested 2026-10-03 as a non-priority parallel side task and future Admin-panel building block
+- Human gate: both exact Hoenn ACQUIRE requests were explicitly authorized; repository-history integration was
+  explicitly authorized at `2026-10-04T19:03:17Z` and completed
 
 ## Objective
 
@@ -147,8 +149,8 @@ Current owner validation: web **55/55 PASS** including the exact 001–386 stagi
 PASS; `git diff --check` PASS. A prior 390 CSS-px browser measurement for the unchanged compact-line layout reported
 `innerWidth=390`, `htmlScrollWidth=375` and `moveTableWidth=317`. Fresh exact-current independent QA is
 **READY — P0/P1/P2/P3 = 0/0/0/0**, and delegated Class-B functional/architectural acceptance is
-**ACCEPT — P0/P1/P2/P3 = 0/0/0/0**. No review blocker remains; repository-history integration remains a separate
-Human gate.
+**ACCEPT — P0/P1/P2/P3 = 0/0/0/0**. Repository-history integration completed after the explicit Human gate;
+no review or completion blocker remains.
 
 ## Dependencies
 
@@ -179,5 +181,9 @@ Human gate.
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`.
-Do not create an implementation-summary/changelog file.
+- Feature commit: `425173a41d01024b3dbaedd440732b5579413efd` (`feat(web): add Pokemon move analysis workbench`).
+- Feature branch `feat/TASK-117-pokemon-move-analysis-workbench` was pushed to origin.
+- Main integration merge: `2088fc0522c5d2c6255d795ac9454710ccdc6e27`
+  (`merge: integrate TASK-117 pokemon move analysis workbench`).
+- The workbench remains a local analysis/staging surface. No immutable game-data publication, production Admin/LiveOps
+  mutation, persistent migration, deploy or public enablement was performed by TASK-117.
