@@ -665,8 +665,9 @@ as a substitute for explicit server authorization.
 
 - ADR-001: authentication implementation remains TypeScript-facing; WebAuthn is a browser/server web
   standard rather than a new application runtime.
-- ADR-003: realtime remains limited. ADR-006 defines identity/session prerequisites only; ADR-007 owns
-  HUB/Duo handshake/revalidation protocol.
+- ADR-003/ADR-007: realtime remains limited and action-scoped. ADR-006 defines identity/session
+  prerequisites; ADR-007 owns the common realtime handoff/revalidation floor for feature sessions,
+  including Duo.
 - ADR-005: PostgreSQL remains durable authority, auth-sensitive reads use fresh access, `game-core`
   remains database/auth-free, and session semantics do not depend on PostgreSQL physical session
   state.
@@ -680,7 +681,7 @@ as a substitute for explicit server authorization.
 - TASK-017 owns Player profile APIs and must consume authenticated `AccountId -> PlayerId` authority.
 - TASK-018 verifies persistence/auth recovery, contract and baseline auditability across TASK-014/016/
   017.
-- TASK-042/043 own realtime HUB identity/session handshake details.
+- TASK-042/043 own common action-scoped realtime identity/session handoff and coordination details.
 - TASK-056/070+ own competitive/economy-specific abuse and authorization rules.
 - TASK-078 owns future privileged LiveOps UI/contracts and cannot reuse ordinary player sessions as
   implicit admin authority.

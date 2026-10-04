@@ -1,7 +1,8 @@
 # ADR-003 — Realtime scope
 
 ## Status
-Accepted
+Accepted historical baseline — shared-HUB realtime scope superseded by ADR-007 on 2026-10-04;
+the isolated Duo-room constraint remains accepted.
 
 ## Decision
 Realtime networking is limited initially to:

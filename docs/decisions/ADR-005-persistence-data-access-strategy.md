@@ -13,7 +13,7 @@ The accepted architecture already fixes several boundaries:
 
 - TypeScript is the primary implementation language;
 - the API runs on Cloudflare Workers;
-- Durable Objects are limited to realtime HUB/Duo coordination rather than global durable game
+- Durable Objects are limited to accepted action-scoped realtime/Duo coordination rather than global durable game
   state;
 - Solo Hunts advance from elapsed time instead of a persistent server tick;
 - PostgreSQL is the selected durable database family;
@@ -91,8 +91,8 @@ accepted contract tolerates bounded staleness. Fresh and cached bindings must ha
 and repository/API methods so a correctness-sensitive call cannot silently inherit cached behavior.
 
 `apps/api` is an expected database consumer. `apps/realtime` may access PostgreSQL when a later
-accepted realtime contract requires durable load/checkpoint/finalization, but ephemeral movement and
-presence remain outside continuous database persistence under ADR-003.
+accepted realtime contract requires durable load/checkpoint/finalization, but ephemeral realtime
+coordination state remains outside continuous database persistence under ADR-003/ADR-007.
 
 ### 3. Driver and data-access shape
 
@@ -258,8 +258,9 @@ convenience.
 
 ### 8. Durable Objects do not become a competing persistence authority
 
-ADR-003 remains unchanged. Durable Object storage can own accepted realtime coordination state for
-HUB/Duo rooms. Movement/presence is not continuously persisted to PostgreSQL.
+ADR-007 supersedes the shared-HUB portion of ADR-003. Durable Object storage can own accepted
+action-scoped realtime/Duo coordination state. Ordinary HUB use has no ambient realtime room, and
+ephemeral session/movement/presence state is not continuously persisted to PostgreSQL.
 
 When a realtime flow needs to create/update durable player-owned state, the owning later contract
 must define one finalization/checkpoint boundary against PostgreSQL. The same persistent fact must
@@ -334,8 +335,8 @@ integrity contract requires it.
 - ADR-001: TypeScript remains the stack language; the selected driver/adapters are TypeScript-facing.
 - ADR-002: Solo Hunt elapsed-time simulation can run outside a DB transaction and persist at defined
   checkpoint/claim boundaries.
-- ADR-003: realtime remains limited; DO coordination storage does not replace PostgreSQL durable
-  player/game-state authority.
+- ADR-003/ADR-007: realtime remains limited to accepted action-scoped/Duo coordination; DO storage
+  does not replace PostgreSQL durable player/game-state authority.
 - ADR-004: Combat Engine remains pure; persistence orchestration consumes/produces explicit values
   around deterministic engine calls rather than performing DB I/O inside them.
 - SPEC-001: persistent-instance/static/runtime identity layers remain separate.

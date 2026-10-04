@@ -5,6 +5,10 @@
 - Human authority source: Human Owner directions dated 2026-10-01/02
 - Product baseline: `docs/project/PRODUCT_EXPECTATIONS_BASELINE.md`
 - Flow source: `docs/project/PRODUCT_FLOW_DECISION_MAP.md`
+- Forward HUB networking amendment: **ADR-007 accepted by the Human Owner on 2026-10-04.** Ordinary
+  HUB use has no ambient shared multiplayer presence/networked movement/global HUB chat/always-on
+  socket. Any later local/private HUB scene or locomotion remains a separate presentation choice;
+  player-to-player realtime exists only through explicit action-scoped feature sessions.
 
 ## 1. Problem
 
@@ -65,9 +69,13 @@ PvE traversal/progression is automatic.
 
 ### 4.3 HUB movement exception
 
-The HUB is the sole currently intended free/manual movement surface.
+The HUB remains the sole currently intended surface where a later accepted UX may expose free/manual
+avatar movement.
 
-HUB movement belongs to the social-space interaction model and must not be reused as precedent for PvE movement.
+Under ADR-007, any such HUB movement is local/private presentation state unless a separately accepted
+feature action creates a bounded player-to-player session. HUB movement does not imply ambient shared
+presence, shared movement authority or a generic realtime room, and it must not be reused as precedent
+for PvE movement.
 
 ## 5. Healing Potion correction
 
@@ -187,7 +195,7 @@ The Human Owner has now selected:
 
 - keep the current same-Zone **no-free-reroll** behavior for unresolved selections; **D-F16 B is the sole first-Pre-alpha explicit exception**, where simultaneous-KO `draw` + successful post-Battle Revive durably resolves the Encounter as non-win and consumes its pending selection before the next Encounter is selected;
 - recovery/cooldown applies after both Retreat and defeat/no-living terminalization;
-- recovery is **Player-wide only for starting Solo Hunts**: while active, no Solo Hunt may start in any Zone/Hunt, but HUB/management surfaces remain available; in the first Pre-alpha the HUB is non-locomotion, while later accepted HUB free movement remains a separate social-space capability;
+- recovery is **Player-wide only for starting Solo Hunts**: while active, no Solo Hunt may start in any Zone/Hunt, but HUB/management surfaces remain available; in the first Pre-alpha the HUB is non-locomotion, while any later accepted HUB locomotion remains local/private presentation unless an owning feature action explicitly creates a bounded player session under ADR-007;
 - recovery duration is **30 seconds globally**, not a per-Hunt/content tuning input.
 
 The Human Owner also **reversed the earlier fresh-Hunt full-HP assumption**:
@@ -563,7 +571,9 @@ The first Pre-alpha shell exposes:
 Hunt / Pokémon / Teams / Inventory / Settings / HUB
 ```
 
-HUB is a functional non-locomotion surface in this slice. It exposes PokéCenter and navigation/access; free realtime HUB movement remains later scope.
+HUB is a functional non-locomotion surface in this slice. It exposes PokéCenter and navigation/access.
+Any later local/private HUB locomotion is separate presentation scope; player-to-player realtime is
+action-scoped under ADR-007 and does not depend on HUB locomotion.
 
 Hunt UX:
 
@@ -630,7 +640,7 @@ These are binding forward technical contract choices under the accepted Class-A 
 | TASK-040 Visual/Pixi | **Deferred beyond the first Pre-alpha slice.** When resumed, it must consume the same aligned automatic-Hunt truth as Cards; no manual PvE locomotion. |
 | TASK-041 E2E/MVP harness | First Pre-alpha harness must target the Human-approved **Cards-only** flow, including offline 8h/reconnect and active-Hunt policy edits; Visual/Pixi parity becomes a later extension after TASK-040. |
 | TASK-103 Hunt combat presentation backend | Preserve as the combat-only SPEC-017 source. If the coordinated amendment is accepted, it must preserve historical `pokenexus.combat-presentation.v1` exactly and implement/prove additive `pokenexus.combat-presentation.v2` projection for forward **in-Battle** `CombatantRevived` plus deterministic cleanup events. Post-Battle Revive must remain Hunt activity and must not mutate a sealed Battle transcript. It must **not** absorb capture/reward/Inventory-consumption activity. Card feed composition needs the separate bounded SPEC-015 activity authority. |
-| TASK-042–048 HUB | Full realtime/free-movement social HUB remains a later scope. The first Pre-alpha needs only a **functional non-locomotion HUB surface** with PokéCenter + navigation/access; it must not depend on the realtime HUB stack. |
+| TASK-042–048 HUB | ADR-007 replaces the planned ambient shared realtime HUB with action-scoped player connections. The first Pre-alpha still needs only a **functional non-locomotion HUB surface** with PokéCenter + navigation/access and does not depend on realtime. Later local/private HUB locomotion remains separate presentation scope; TASK-043–048 must implement only explicit feature/session connection behavior accepted by their owning contracts. |
 | Future Duo/PvP/Gym/World Boss | Must start from management-first interaction classification, not inherit action/adventure controls by convention. |
 
 ## 10. Deferred Human decisions beyond first-slice acceptance
@@ -651,7 +661,7 @@ Additional Human decisions now fixed:
 - offline return summary includes Battles/Encounters, capture successes/failures, XP/rewards, items obtained, Balls/Potions/Revives spent, KOs/Revives and terminal reason;
 - a stamina-like mechanic for offline progression is only an **exploratory future idea**, not an accepted product rule yet;
 - first Pre-alpha surfaces are **Hunt / Pokémon / Teams / Inventory / Settings + HUB**;
-- first Pre-alpha HUB is functional but **non-locomotion**: PokéCenter + navigation/access only; free HUB movement is deferred;
+- first Pre-alpha HUB is functional but **non-locomotion**: PokéCenter + navigation/access only; any later local/private HUB locomotion is deferred and does not imply shared player presence/networked movement;
 - first Pre-alpha Hunt presentation is **Cards only**; Visual/Pixi is deferred;
 - offline progression is included from the first Pre-alpha with the approved **8h cap + detailed summary**;
 - Capture/Potion/Revive policies are editable during active Hunt and remain forward-only;

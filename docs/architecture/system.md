@@ -2,17 +2,24 @@
 
 ## Product model
 
-PokeNexus Idle is structured around two execution models:
+PokeNexus Idle is structured around functional management surfaces plus bounded gameplay/social
+sessions when an accepted feature requires synchronous coordination.
 
-### Social Hub
-Persistent shared multiplayer space:
-- player presence
-- movement
-- chat
-- NPC interaction
-- parties / invitations
+### HUB
+Functional player-facing surface for:
+- management/navigation
+- PokéCenter and other accepted services
+- NPC/service interaction hooks
+- explicit social or multiplayer action entry points
 
-Transport: WebSocket.
+Ordinary HUB use has no ambient shared multiplayer presence, shared movement state, global HUB chat
+room or always-on WebSocket. HTTP/API is the default transport. A later local/private HUB scene or
+avatar movement presentation does not create shared network authority by itself.
+
+### Action-scoped player connections
+Explicit feature actions may create bounded participant sessions when their accepted contracts
+require live shared state. Realtime transport, authorization, lifecycle, reconnect/teardown and
+durable handoff are owned by the feature/session contract under ADR-007.
 
 ### Gameplay Instances
 - Solo hunts: server-authoritative, event/elapsed-time simulation.
@@ -28,7 +35,7 @@ React + PixiJS
    |
    +-- WebSocket -> Realtime / Durable Objects
                          |
-                         +-- Hub
+                         +-- Action-scoped feature rooms
                          +-- Duo Hunt Rooms
 
 API + Realtime
@@ -52,7 +59,7 @@ Presentation, rendering, input and local UX state.
 Authentication, commands, validation, persistence orchestration.
 
 ### realtime
-Ephemeral multiplayer state and room coordination.
+Ephemeral action-scoped multiplayer state and room coordination.
 
 ### game-core
 Pure deterministic domain logic.
