@@ -11,8 +11,11 @@ import {
 } from "./encounter-individualization";
 import {
   canonicalSerializeGeneticCombatRulesReleaseV1,
+  canonicalSerializeGeneticCombatRulesReleaseV2,
   GENETIC_COMBAT_RULES_RELEASE_V1,
+  GENETIC_COMBAT_RULES_RELEASE_V2,
   GENETIC_COMBAT_RULES_SEMANTICS_HASH_V1,
+  GENETIC_COMBAT_RULES_SEMANTICS_HASH_V2,
 } from "./genetic-combat-rules";
 import { deriveStatsForRulesVersion } from "./validation";
 
@@ -163,6 +166,13 @@ describe("Encounter individualization", () => {
       .digest("hex");
     expect(`sha256:${digest}`).toBe(GENETIC_COMBAT_RULES_SEMANTICS_HASH_V1);
     expect(GENETIC_COMBAT_RULES_RELEASE_V1.derivedStats.geneticBudgetMax).toBe(70);
+    const v2Digest = createHash("sha256")
+      .update(canonicalSerializeGeneticCombatRulesReleaseV2(), "utf8")
+      .digest("hex");
+    expect(`sha256:${v2Digest}`).toBe(GENETIC_COMBAT_RULES_SEMANTICS_HASH_V2);
+    expect(GENETIC_COMBAT_RULES_RELEASE_V2.derivedStats).toEqual(
+      GENETIC_COMBAT_RULES_RELEASE_V1.derivedStats,
+    );
   });
 
   it("rejects a Genetic Bonus vector outside the accepted total budget", () => {
@@ -174,6 +184,13 @@ describe("Encounter individualization", () => {
       { hp: 20, atk: 10, def: 10, spa: 10, spd: 10, spe: 10 },
     );
     expect(valid).toEqual({ hp: 361, atk: 246, def: 246, spa: 246, spd: 246, spe: 246 });
+    expect(deriveStatsForRulesVersion(
+      GENETIC_COMBAT_RULES_RELEASE_V2.rulesVersion,
+      { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100 },
+      { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+      100,
+      { hp: 20, atk: 10, def: 10, spa: 10, spd: 10, spe: 10 },
+    )).toEqual(valid);
     expect(deriveStatsForRulesVersion(
       GENETIC_COMBAT_RULES_RELEASE_V1.rulesVersion,
       { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100 },

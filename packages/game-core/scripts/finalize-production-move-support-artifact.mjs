@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const APPROVED_V1_SHA256 = "1462b33b35e38224b505240dbf5205104e98dae1310d0bc630e2aa02fb31879e";
 const APPROVED_V2_SHA256 = "6a578d7408c79b7984b5b6640be42dbbb43459f859ffe31ce79880d72d159b57";
+const APPROVED_V3_SHA256 = "fa117277ffccfcbf9092c0184dd3305d4b3b76ea6e2ab018650d92afc0fcb615";
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(scriptDirectory, "..");
 const repositoryRoot = resolve(packageRoot, "../..");
@@ -14,6 +15,8 @@ const sourceArtifactV1Path = resolve(packageRoot, "src/production-move-support-v
 const distArtifactV1Path = resolve(packageRoot, "dist/production-move-support-v1.json");
 const sourceArtifactV2Path = resolve(packageRoot, "src/production-move-support-v2.json");
 const distArtifactV2Path = resolve(packageRoot, "dist/production-move-support-v2.json");
+const sourceArtifactV3Path = resolve(packageRoot, "src/production-move-support-v3.json");
+const distArtifactV3Path = resolve(packageRoot, "dist/production-move-support-v3.json");
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -26,15 +29,17 @@ function assertApproved(bytes, expectedSha256, label) {
   }
 }
 
-const [docsBytes, sourceV1Bytes, sourceV2Bytes] = await Promise.all([
+const [docsBytes, sourceV1Bytes, sourceV2Bytes, sourceV3Bytes] = await Promise.all([
   readFile(docsArtifactPath),
   readFile(sourceArtifactV1Path),
   readFile(sourceArtifactV2Path),
+  readFile(sourceArtifactV3Path),
 ]);
 
 assertApproved(docsBytes, APPROVED_V1_SHA256, "docs SPEC-012 support artifact");
 assertApproved(sourceV1Bytes, APPROVED_V1_SHA256, "game-core source v1 support artifact");
 assertApproved(sourceV2Bytes, APPROVED_V2_SHA256, "game-core source v2 support artifact");
+assertApproved(sourceV3Bytes, APPROVED_V3_SHA256, "game-core source v3 support artifact");
 if (!docsBytes.equals(sourceV1Bytes)) {
   throw new Error("docs SPEC-012 support artifact and game-core source support artifact differ byte-for-byte");
 }
@@ -42,21 +47,27 @@ if (!docsBytes.equals(sourceV1Bytes)) {
 await Promise.all([
   copyFile(sourceArtifactV1Path, distArtifactV1Path),
   copyFile(sourceArtifactV2Path, distArtifactV2Path),
+  copyFile(sourceArtifactV3Path, distArtifactV3Path),
 ]);
 
-const [distV1Bytes, distV2Bytes] = await Promise.all([
+const [distV1Bytes, distV2Bytes, distV3Bytes] = await Promise.all([
   readFile(distArtifactV1Path),
   readFile(distArtifactV2Path),
+  readFile(distArtifactV3Path),
 ]);
 assertApproved(distV1Bytes, APPROVED_V1_SHA256, "game-core dist v1 support artifact");
 assertApproved(distV2Bytes, APPROVED_V2_SHA256, "game-core dist v2 support artifact");
+assertApproved(distV3Bytes, APPROVED_V3_SHA256, "game-core dist v3 support artifact");
 if (!sourceV1Bytes.equals(distV1Bytes)) {
   throw new Error("game-core dist v1 support artifact does not match source bytes after copy");
 }
 if (!sourceV2Bytes.equals(distV2Bytes)) {
   throw new Error("game-core dist v2 support artifact does not match source bytes after copy");
 }
+if (!sourceV3Bytes.equals(distV3Bytes)) {
+  throw new Error("game-core dist v3 support artifact does not match source bytes after copy");
+}
 
 process.stdout.write(
-  `production Move support artifacts finalized: v1 sha256:${APPROVED_V1_SHA256}; v2 sha256:${APPROVED_V2_SHA256}\n`,
+  `production Move support artifacts finalized: v1 sha256:${APPROVED_V1_SHA256}; v2 sha256:${APPROVED_V2_SHA256}; v3 sha256:${APPROVED_V3_SHA256}\n`,
 );

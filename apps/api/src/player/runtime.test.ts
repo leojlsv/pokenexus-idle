@@ -39,8 +39,12 @@ import {
   PRODUCTION_COMBAT_V2_RULES_VERSION,
   PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
+  PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION,
   PRODUCTION_COMBAT_V3_RULES_RELEASE_DESCRIPTOR,
   PRODUCTION_COMBAT_V3_RULES_VERSION,
+  PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR,
+  PRODUCTION_COMBAT_V5_RULES_VERSION,
 } from "../moves/context";
 
 const accountId = "0199472a-0000-7000-8000-000000000010";
@@ -50,6 +54,7 @@ const publishedGameDataRoot = resolve(process.cwd(), "../../packages/game-data/p
 const productionGameDataBaseUrl = "https://task-095-game-data.test/";
 const V2 = "game-data-core-kanto-johto-v2";
 const V3 = "game-data-core-kanto-johto-v3";
+const V5 = "game-data-core-kanto-johto-v5";
 const ampharosSpeciesId = "candidate:species:pokedex-ampharos-181:b682912fc8";
 const dragonPulseMoveId = "candidate:move:dragon-pulse:54d897ab30";
 
@@ -121,10 +126,21 @@ function productionEnvironment(
         rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
         newOperationsAllowed: true,
       },
+      {
+        gameDataVersion: V5,
+        rulesVersion: PRODUCTION_COMBAT_V5_RULES_VERSION,
+        newOperationsAllowed: true,
+      },
+      {
+        gameDataVersion: V5,
+        rulesVersion: PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION,
+        newOperationsAllowed: true,
+      },
     ]),
     PLAYER_STATE_MOVE_GAME_DATA_RELEASES: JSON.stringify([
       { gameDataVersion: V2, newOperationsAllowed: true },
       { gameDataVersion: V3, newOperationsAllowed: true },
+      { gameDataVersion: V5, newOperationsAllowed: true },
     ]),
     PLAYER_STATE_MOVE_RULE_RELEASES: JSON.stringify([
       {
@@ -141,6 +157,16 @@ function productionEnvironment(
         rulesVersion: PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR.rulesVersion,
         newOperationsAllowed: true,
         productionSelectability: PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+      },
+      {
+        rulesVersion: PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR.rulesVersion,
+        newOperationsAllowed: true,
+        productionSelectability: PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR.productionSelectability,
+      },
+      {
+        rulesVersion: PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR.rulesVersion,
+        newOperationsAllowed: true,
+        productionSelectability: PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR.productionSelectability,
       },
     ]),
   };
@@ -278,6 +304,77 @@ describe("Player Move runtime authority ordering", () => {
         });
       expect(fetchedPaths).toHaveLength(6);
       expect(fetchedPaths[0]).toMatch(/^version-[0-9a-f]{64}\/manifest\.json$/);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("resolves the exact v5 + Genetic v2 pair through environment configuration", async () => {
+    state.loadError = null;
+    state.pokemon = {
+      ...pokemon(7n),
+      speciesId: ampharosSpeciesId,
+      level: 20,
+      moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+    };
+    const fetchedPaths: string[] = [];
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = new URL(
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url,
+      );
+      const relativePath = url.pathname.replace(/^\/+/, "");
+      fetchedPaths.push(relativePath);
+      try {
+        const bytes = await readFile(resolve(publishedGameDataRoot, relativePath));
+        return new Response(Uint8Array.from(bytes).buffer, { status: 200 });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Response(null, { status: 404 });
+        throw error;
+      }
+    });
+
+    try {
+      await expect(app(productionEnvironment(V5, PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION))
+        .replaceMoveLoadout(accountId, {
+          pokemonInstanceId,
+          expectedRowVersion: 7n,
+          moveIds: [dragonPulseMoveId],
+        })).resolves.toEqual({
+          status: "updated",
+          rowVersion: 8n,
+          moveIds: [dragonPulseMoveId],
+        });
+      expect(fetchedPaths).toHaveLength(6);
+      expect(fetchedPaths[0]).toMatch(/^version-[0-9a-f]{64}\/manifest\.json$/);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("rejects v5 + retained Genetic v1 before any game-data fetch", async () => {
+    state.loadError = null;
+    state.pokemon = {
+      ...pokemon(7n),
+      speciesId: ampharosSpeciesId,
+      level: 20,
+      moveLoadout: { state: "selected", moveIds: [dragonPulseMoveId] },
+    };
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      await expect(app(singleProductionReleaseEnvironment(
+        V5,
+        PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION,
+        PRODUCTION_COMBAT_GENETIC_V1_RULES_RELEASE_DESCRIPTOR.productionSelectability!,
+      )).replaceMoveLoadout(accountId, {
+        pokemonInstanceId,
+        expectedRowVersion: 7n,
+        moveIds: [dragonPulseMoveId],
+      })).resolves.toEqual({ status: "authority_unavailable" });
+      expect(fetchSpy).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
     }

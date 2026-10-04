@@ -10,7 +10,7 @@ import { validateRngState } from "./rng";
 import { ownGet } from "./record-utils";
 import {
   GENETIC_COMBAT_RULES_RELEASE_V1,
-  GENETIC_COMBAT_RULES_VERSION_V1,
+  isGeneticCombatRulesVersion,
 } from "./genetic-combat-rules";
 import {
   MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
@@ -97,7 +97,7 @@ export function deriveStatsForRulesVersion(
   level: number,
   geneticBonuses?: BattleCombatantInit["geneticBonuses"],
 ): BattleCombatantInit["baseStats"] | undefined {
-  if (rulesVersion !== GENETIC_COMBAT_RULES_VERSION_V1 && rulesVersion !== MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1) {
+  if (!isGeneticCombatRulesVersion(rulesVersion) && rulesVersion !== MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1) {
     if (geneticBonuses !== undefined) return undefined;
     return deriveStats(baseStats, ivs, level);
   }

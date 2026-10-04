@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { canonicalJson } from "@pokenexus/game-data/node";
 import {
   GENETIC_COMBAT_RULES_VERSION_V1,
+  GENETIC_COMBAT_RULES_VERSION_V2,
   type EncounterIndividualizationAuthority,
   type GeneticProfile,
 } from "@pokenexus/game-core";
@@ -166,6 +167,34 @@ describe("TASK-109 trusted Player bootstrap authority", () => {
     expect(resolveProfiles).toHaveBeenCalledWith({
       gameDataVersion: "game-data-core-kanto-johto-v3",
       rulesVersion: GENETIC_COMBAT_RULES_VERSION_V1,
+      speciesId: starterSpeciesId,
+    });
+  });
+
+  it("materializes the same trusted bootstrap semantics under the exact v5 + Genetic v2 pair", async () => {
+    const starterSpeciesId = Object.keys(PREALPHA_STARTER_LOADOUTS)[0]!;
+    const v5Context = context({
+      pair: {
+        gameDataVersion: "game-data-core-kanto-johto-v5",
+        rulesVersion: GENETIC_COMBAT_RULES_VERSION_V2,
+      },
+      rules: {
+        rulesVersion: GENETIC_COMBAT_RULES_VERSION_V2,
+      } as unknown as MoveEligibilityContext["rules"],
+    });
+    const { service, commit, resolveProfiles } = await harness(v5Context);
+    await expect(service.bootstrap({
+      playerId: "player:v5-genetic-v2",
+      starterSpeciesId,
+      now: new Date("2026-10-03T15:00:00.000Z"),
+    })).resolves.toMatchObject({ status: "accepted" });
+    const input = commit.mock.calls[0]![0] as CommitPlayerBootstrapInput;
+    expect(input.pokemon.gameDataVersion).toBe("game-data-core-kanto-johto-v5");
+    expect(input.rulesVersion).toBe(GENETIC_COMBAT_RULES_VERSION_V2);
+    expect(input.pokemon.initialCurrentHp).toBeGreaterThan(0);
+    expect(resolveProfiles).toHaveBeenCalledWith({
+      gameDataVersion: "game-data-core-kanto-johto-v5",
+      rulesVersion: GENETIC_COMBAT_RULES_VERSION_V2,
       speciesId: starterSpeciesId,
     });
   });

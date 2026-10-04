@@ -1,7 +1,6 @@
 import type { HuntInputAuthorityRecord, OwnedTeamSnapshot } from "@pokenexus/database";
 import {
   ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
-  GENETIC_COMBAT_RULES_VERSION_V1,
   GENETIC_PROFILES,
   PLAYER_PROGRESSION_RULE_ID,
   POKEMON_PROGRESSION_RULE_ID,
@@ -9,6 +8,7 @@ import {
   deriveLevelAvailableMoves,
   deriveMaxHpForRulesVersion,
   geneticBudgetForScore,
+  isGeneticCombatRulesVersion,
   replayValidateSoloHuntCompletedCaptureSource,
   selectBootstrapMoveLoadout,
   type CaptureBallRuleV1,
@@ -1097,7 +1097,7 @@ export function createHuntRuntimeAuthorityPort(
           }
         : selector;
       ensureMoveContextForSelector(moveContext, effectiveSelector);
-      if (moveContext.pair.rulesVersion !== GENETIC_COMBAT_RULES_VERSION_V1) {
+      if (!isGeneticCombatRulesVersion(moveContext.pair.rulesVersion)) {
         throw unavailable("new Hunt runtime requires the accepted Genetic combat rules authority");
       }
       assertStrictSoloHuntStartTeamAdmission(team, moveContext);
@@ -1190,7 +1190,7 @@ export function createHuntRuntimeAuthorityPort(
       ) {
         throw unavailable("persisted Hunt content authority is unavailable");
       }
-      const geneticRuntime = authorityRecord.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1;
+      const geneticRuntime = isGeneticCombatRulesVersion(authorityRecord.rulesVersion);
       if (envelope.individualizationRequired !== geneticRuntime) {
         throw unavailable("persisted Hunt individualization mode does not match its frozen rulesVersion");
       }

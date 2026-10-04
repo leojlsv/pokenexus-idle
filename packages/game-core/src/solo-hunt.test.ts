@@ -4,6 +4,7 @@ import {
   createRngState,
   ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
   GENETIC_COMBAT_RULES_VERSION_V1,
+  GENETIC_COMBAT_RULES_VERSION_V2,
   initializeBattle,
   resolveCombatStimulus,
   type BattleInitInput,
@@ -1131,10 +1132,12 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     } as const;
   }
 
-  function geneticRuntimeInputs() {
+  function geneticRuntimeInputs(
+    rulesVersion: RulesVersion = GENETIC_COMBAT_RULES_VERSION_V1,
+  ) {
     const geneticContext: ResolvedCombatContext = {
       ...runtimeContext,
-      rulesVersion: GENETIC_COMBAT_RULES_VERSION_V1,
+      rulesVersion,
     };
     const secretKey = new Uint8Array(32).fill(41);
     return {
@@ -1311,6 +1314,23 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
       restoredCapture.accepted,
       restoredCapture.accepted ? undefined : restoredCapture.reason,
     ).toBe(true);
+  });
+
+  it("runs the same Genetic Hunt semantics under the v2 Genetic rules identity", () => {
+    const inputs = geneticRuntimeInputs(GENETIC_COMBAT_RULES_VERSION_V2);
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:genetic-v2-rebind",
+      inputs,
+      policyRng: createRngState(311),
+      combatDeterministicState: { rng: createRngState(312) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    expect(created.state.currentEncounter?.battle.context.rulesVersion)
+      .toBe(GENETIC_COMBAT_RULES_VERSION_V2);
+    expect(created.state.currentEncounter?.individualizationSnapshot).toBeDefined();
+    const advanced = advanceSoloHuntToCutoff(created.state, inputs, 1);
+    expect(advanced.accepted).toBe(true);
   });
 
   it("TASK-108 round-trips forward persisted HP through checkpoint restart without resetting to max", () => {

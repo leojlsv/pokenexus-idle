@@ -23,8 +23,12 @@ export {
 export type * from "./encounter-individualization";
 export {
   GENETIC_COMBAT_RULES_RELEASE_V1,
+  GENETIC_COMBAT_RULES_RELEASE_V2,
   GENETIC_COMBAT_RULES_SEMANTICS_HASH_V1,
+  GENETIC_COMBAT_RULES_SEMANTICS_HASH_V2,
   GENETIC_COMBAT_RULES_VERSION_V1,
+  GENETIC_COMBAT_RULES_VERSION_V2,
+  isGeneticCombatRulesVersion,
 } from "./genetic-combat-rules";
 export * from "./move-eligibility";
 export * from "./production-combat-rules";

@@ -23,7 +23,6 @@ import {
   type TransactionClient,
 } from "@pokenexus/database";
 import {
-  GENETIC_COMBAT_RULES_VERSION_V1,
   PLAYER_PROGRESSION_RULE_ID,
   POKEMON_PROGRESSION_RULE_ID,
   allocateGeneticBudget,
@@ -31,6 +30,7 @@ import {
   evaluatePlayerXpGrant,
   evaluatePokemonXpGrant,
   geneticBudgetForScore,
+  isGeneticCombatRulesVersion,
   type GeneticProfile,
   type PlayerXpGrantResult,
   type PokemonXpGrantResult,
@@ -212,7 +212,7 @@ function deriveProgressionMaxHp(
     );
   }
   const numericLevel = Number(level);
-  const geneticBonuses = context.progressionRules.rulesVersion === GENETIC_COMBAT_RULES_VERSION_V1
+  const geneticBonuses = isGeneticCombatRulesVersion(context.progressionRules.rulesVersion)
     ? allocateGeneticBudget(
         geneticBudgetForScore(pokemon.individualization.geneticScore),
         pokemon.individualization.expressedProfile as GeneticProfile,
