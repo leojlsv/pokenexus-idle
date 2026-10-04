@@ -4,6 +4,8 @@ export const BULBAPEDIA_GEN9_LEARNSET_PARSER_VERSION =
   "bulbapedia-gen9-learnset-v1" as const;
 export const BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION =
   "bulbapedia-gen8-learnset-v6" as const;
+export const BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION_V7 =
+  "bulbapedia-gen8-learnset-v7" as const;
 
 export interface BulbapediaLearnsetHtmlSource {
   url: string;
@@ -52,6 +54,7 @@ interface LearnsetParserConfig {
   generationLabel: "Generation VIII" | "Generation IX";
   pathGeneration: "VIII" | "IX";
   sourceGame: "Brilliant Diamond/Shining Pearl" | "Scarlet/Violet";
+  baseSpeciesHeadingAliases?: Readonly<Record<string, readonly string[]>>;
 }
 
 const GEN9_CONFIG: LearnsetParserConfig = {
@@ -66,6 +69,13 @@ const GEN8_BDSP_CONFIG: LearnsetParserConfig = {
   generationLabel: "Generation VIII",
   pathGeneration: "VIII",
   sourceGame: "Brilliant Diamond/Shining Pearl",
+};
+
+const GEN8_BDSP_V7_CONFIG: LearnsetParserConfig = {
+  ...GEN8_BDSP_CONFIG,
+  baseSpeciesHeadingAliases: {
+    deoxys: ["normal-forme"],
+  },
 };
 
 const HTML_ENTITIES: Record<string, string> = {
@@ -561,7 +571,9 @@ function baseSpeciesScopedSectionHtml(
   if (speciesHeadings.length === 0) return sectionHtml;
   const matching = speciesHeadings.filter((heading) => {
     try {
-      return canonicalizeSourceName(heading.label, "learnset h5 label") === sourceSpeciesKey;
+      const headingKey = canonicalizeSourceName(heading.label, "learnset h5 label");
+      return headingKey === sourceSpeciesKey
+        || config.baseSpeciesHeadingAliases?.[sourceSpeciesKey]?.includes(headingKey) === true;
     } catch {
       return false;
     }
@@ -958,4 +970,11 @@ export function parseBulbapediaGen8BdspLearnset(
   speciesSourceKey: string,
 ): ExtractedBulbapediaLearnset {
   return parseBulbapediaLearnset(source, speciesSourceKey, GEN8_BDSP_CONFIG);
+}
+
+export function parseBulbapediaGen8BdspLearnsetV7(
+  source: BulbapediaLearnsetHtmlSource,
+  speciesSourceKey: string,
+): ExtractedBulbapediaLearnset {
+  return parseBulbapediaLearnset(source, speciesSourceKey, GEN8_BDSP_V7_CONFIG);
 }

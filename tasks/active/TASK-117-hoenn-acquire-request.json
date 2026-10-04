@@ -1,0 +1,1665 @@
+{
+    "formatVersion":  "pokenexus.task117.hoenn-acquire-request.v1",
+    "state":  "AUTHORIZED",
+    "authorizedAt":  "2026-10-04T15:30:38Z",
+    "authorization":  "Human Owner explicitly authorized this exact ACQUIRE request in chat; scope remains limited to the provider/locator/surface set below.",
+    "derivedFrom":  {
+                        "provider":  "pokeapi",
+                        "upstreamRevision":  "bc92d3b6029ef1abe9e7ad424c400b338f3c11fe",
+                        "snapshotHash":  "sha256:8ef26f3e68509ee3c101a7063c32c67283dc95c67aa5f23a6ff2a829bd2bf9b8",
+                        "dexRange":  "252-386",
+                        "speciesCount":  135
+                    },
+    "requests":  [
+                     {
+                         "provider":  "bulbapedia",
+                         "upstreamRevision":  null,
+                         "expectedSourceSurfaces":  [
+                                                        "135 species pages",
+                                                        "135 Generation IX learnset pages",
+                                                        "135 Generation VIII BDSP fallback learnset pages"
+                                                    ],
+                         "locatorCount":  405,
+                         "reason":  "Acquire source evidence needed to extend TASK-117 analysis coverage from Kanto/Johto to Hoenn while preserving current source authority and offline deterministic ingest.",
+                         "canChangeCandidateFacts":  true,
+                         "locators":  [
+                                          {
+                                              "nationalDexNumber":  252,
+                                              "speciesSlug":  "treecko",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Treecko_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Treecko_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Treecko_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  253,
+                                              "speciesSlug":  "grovyle",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Grovyle_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Grovyle_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Grovyle_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  254,
+                                              "speciesSlug":  "sceptile",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Sceptile_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Sceptile_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Sceptile_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  255,
+                                              "speciesSlug":  "torchic",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Torchic_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Torchic_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Torchic_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  256,
+                                              "speciesSlug":  "combusken",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Combusken_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Combusken_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Combusken_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  257,
+                                              "speciesSlug":  "blaziken",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Blaziken_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Blaziken_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Blaziken_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  258,
+                                              "speciesSlug":  "mudkip",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Mudkip_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Mudkip_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Mudkip_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  259,
+                                              "speciesSlug":  "marshtomp",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Marshtomp_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Marshtomp_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Marshtomp_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  260,
+                                              "speciesSlug":  "swampert",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Swampert_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Swampert_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Swampert_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  261,
+                                              "speciesSlug":  "poochyena",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Poochyena_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Poochyena_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Poochyena_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  262,
+                                              "speciesSlug":  "mightyena",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Mightyena_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Mightyena_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Mightyena_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  263,
+                                              "speciesSlug":  "zigzagoon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Zigzagoon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Zigzagoon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Zigzagoon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  264,
+                                              "speciesSlug":  "linoone",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Linoone_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Linoone_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Linoone_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  265,
+                                              "speciesSlug":  "wurmple",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Wurmple_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Wurmple_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Wurmple_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  266,
+                                              "speciesSlug":  "silcoon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Silcoon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Silcoon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Silcoon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  267,
+                                              "speciesSlug":  "beautifly",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Beautifly_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Beautifly_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Beautifly_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  268,
+                                              "speciesSlug":  "cascoon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Cascoon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Cascoon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Cascoon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  269,
+                                              "speciesSlug":  "dustox",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Dustox_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Dustox_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Dustox_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  270,
+                                              "speciesSlug":  "lotad",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Lotad_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Lotad_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Lotad_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  271,
+                                              "speciesSlug":  "lombre",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Lombre_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Lombre_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Lombre_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  272,
+                                              "speciesSlug":  "ludicolo",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Ludicolo_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Ludicolo_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Ludicolo_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  273,
+                                              "speciesSlug":  "seedot",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Seedot_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Seedot_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Seedot_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  274,
+                                              "speciesSlug":  "nuzleaf",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Nuzleaf_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Nuzleaf_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Nuzleaf_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  275,
+                                              "speciesSlug":  "shiftry",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Shiftry_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Shiftry_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Shiftry_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  276,
+                                              "speciesSlug":  "taillow",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Taillow_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Taillow_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Taillow_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  277,
+                                              "speciesSlug":  "swellow",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Swellow_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Swellow_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Swellow_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  278,
+                                              "speciesSlug":  "wingull",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Wingull_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Wingull_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Wingull_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  279,
+                                              "speciesSlug":  "pelipper",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Pelipper_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Pelipper_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Pelipper_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  280,
+                                              "speciesSlug":  "ralts",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Ralts_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Ralts_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Ralts_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  281,
+                                              "speciesSlug":  "kirlia",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Kirlia_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Kirlia_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Kirlia_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  282,
+                                              "speciesSlug":  "gardevoir",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Gardevoir_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Gardevoir_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Gardevoir_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  283,
+                                              "speciesSlug":  "surskit",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Surskit_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Surskit_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Surskit_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  284,
+                                              "speciesSlug":  "masquerain",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Masquerain_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Masquerain_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Masquerain_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  285,
+                                              "speciesSlug":  "shroomish",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Shroomish_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Shroomish_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Shroomish_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  286,
+                                              "speciesSlug":  "breloom",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Breloom_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Breloom_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Breloom_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  287,
+                                              "speciesSlug":  "slakoth",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Slakoth_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Slakoth_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Slakoth_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  288,
+                                              "speciesSlug":  "vigoroth",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Vigoroth_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Vigoroth_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Vigoroth_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  289,
+                                              "speciesSlug":  "slaking",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Slaking_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Slaking_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Slaking_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  290,
+                                              "speciesSlug":  "nincada",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Nincada_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Nincada_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Nincada_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  291,
+                                              "speciesSlug":  "ninjask",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Ninjask_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Ninjask_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Ninjask_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  292,
+                                              "speciesSlug":  "shedinja",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Shedinja_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Shedinja_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Shedinja_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  293,
+                                              "speciesSlug":  "whismur",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Whismur_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Whismur_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Whismur_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  294,
+                                              "speciesSlug":  "loudred",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Loudred_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Loudred_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Loudred_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  295,
+                                              "speciesSlug":  "exploud",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Exploud_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Exploud_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Exploud_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  296,
+                                              "speciesSlug":  "makuhita",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Makuhita_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Makuhita_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Makuhita_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  297,
+                                              "speciesSlug":  "hariyama",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Hariyama_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Hariyama_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Hariyama_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  298,
+                                              "speciesSlug":  "azurill",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Azurill_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Azurill_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Azurill_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  299,
+                                              "speciesSlug":  "nosepass",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Nosepass_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Nosepass_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Nosepass_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  300,
+                                              "speciesSlug":  "skitty",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Skitty_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Skitty_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Skitty_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  301,
+                                              "speciesSlug":  "delcatty",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Delcatty_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Delcatty_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Delcatty_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  302,
+                                              "speciesSlug":  "sableye",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Sableye_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Sableye_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Sableye_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  303,
+                                              "speciesSlug":  "mawile",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Mawile_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Mawile_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Mawile_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  304,
+                                              "speciesSlug":  "aron",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Aron_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Aron_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Aron_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  305,
+                                              "speciesSlug":  "lairon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Lairon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Lairon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Lairon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  306,
+                                              "speciesSlug":  "aggron",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Aggron_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Aggron_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Aggron_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  307,
+                                              "speciesSlug":  "meditite",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Meditite_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Meditite_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Meditite_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  308,
+                                              "speciesSlug":  "medicham",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Medicham_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Medicham_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Medicham_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  309,
+                                              "speciesSlug":  "electrike",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Electrike_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Electrike_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Electrike_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  310,
+                                              "speciesSlug":  "manectric",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Manectric_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Manectric_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Manectric_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  311,
+                                              "speciesSlug":  "plusle",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Plusle_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Plusle_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Plusle_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  312,
+                                              "speciesSlug":  "minun",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Minun_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Minun_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Minun_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  313,
+                                              "speciesSlug":  "volbeat",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Volbeat_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Volbeat_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Volbeat_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  314,
+                                              "speciesSlug":  "illumise",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Illumise_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Illumise_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Illumise_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  315,
+                                              "speciesSlug":  "roselia",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Roselia_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Roselia_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Roselia_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  316,
+                                              "speciesSlug":  "gulpin",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Gulpin_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Gulpin_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Gulpin_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  317,
+                                              "speciesSlug":  "swalot",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Swalot_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Swalot_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Swalot_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  318,
+                                              "speciesSlug":  "carvanha",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Carvanha_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Carvanha_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Carvanha_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  319,
+                                              "speciesSlug":  "sharpedo",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Sharpedo_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Sharpedo_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Sharpedo_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  320,
+                                              "speciesSlug":  "wailmer",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Wailmer_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Wailmer_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Wailmer_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  321,
+                                              "speciesSlug":  "wailord",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Wailord_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Wailord_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Wailord_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  322,
+                                              "speciesSlug":  "numel",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Numel_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Numel_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Numel_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  323,
+                                              "speciesSlug":  "camerupt",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Camerupt_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Camerupt_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Camerupt_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  324,
+                                              "speciesSlug":  "torkoal",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Torkoal_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Torkoal_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Torkoal_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  325,
+                                              "speciesSlug":  "spoink",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Spoink_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Spoink_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Spoink_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  326,
+                                              "speciesSlug":  "grumpig",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Grumpig_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Grumpig_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Grumpig_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  327,
+                                              "speciesSlug":  "spinda",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Spinda_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Spinda_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Spinda_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  328,
+                                              "speciesSlug":  "trapinch",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Trapinch_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Trapinch_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Trapinch_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  329,
+                                              "speciesSlug":  "vibrava",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Vibrava_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Vibrava_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Vibrava_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  330,
+                                              "speciesSlug":  "flygon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Flygon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Flygon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Flygon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  331,
+                                              "speciesSlug":  "cacnea",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Cacnea_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Cacnea_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Cacnea_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  332,
+                                              "speciesSlug":  "cacturne",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Cacturne_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Cacturne_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Cacturne_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  333,
+                                              "speciesSlug":  "swablu",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Swablu_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Swablu_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Swablu_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  334,
+                                              "speciesSlug":  "altaria",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Altaria_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Altaria_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Altaria_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  335,
+                                              "speciesSlug":  "zangoose",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Zangoose_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Zangoose_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Zangoose_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  336,
+                                              "speciesSlug":  "seviper",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Seviper_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Seviper_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Seviper_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  337,
+                                              "speciesSlug":  "lunatone",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Lunatone_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Lunatone_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Lunatone_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  338,
+                                              "speciesSlug":  "solrock",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Solrock_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Solrock_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Solrock_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  339,
+                                              "speciesSlug":  "barboach",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Barboach_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Barboach_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Barboach_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  340,
+                                              "speciesSlug":  "whiscash",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Whiscash_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Whiscash_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Whiscash_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  341,
+                                              "speciesSlug":  "corphish",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Corphish_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Corphish_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Corphish_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  342,
+                                              "speciesSlug":  "crawdaunt",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Crawdaunt_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Crawdaunt_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Crawdaunt_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  343,
+                                              "speciesSlug":  "baltoy",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Baltoy_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Baltoy_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Baltoy_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  344,
+                                              "speciesSlug":  "claydol",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Claydol_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Claydol_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Claydol_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  345,
+                                              "speciesSlug":  "lileep",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Lileep_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Lileep_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Lileep_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  346,
+                                              "speciesSlug":  "cradily",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Cradily_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Cradily_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Cradily_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  347,
+                                              "speciesSlug":  "anorith",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Anorith_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Anorith_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Anorith_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  348,
+                                              "speciesSlug":  "armaldo",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Armaldo_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Armaldo_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Armaldo_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  349,
+                                              "speciesSlug":  "feebas",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Feebas_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Feebas_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Feebas_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  350,
+                                              "speciesSlug":  "milotic",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Milotic_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Milotic_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Milotic_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  351,
+                                              "speciesSlug":  "castform",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Castform_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Castform_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Castform_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  352,
+                                              "speciesSlug":  "kecleon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Kecleon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Kecleon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Kecleon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  353,
+                                              "speciesSlug":  "shuppet",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Shuppet_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Shuppet_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Shuppet_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  354,
+                                              "speciesSlug":  "banette",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Banette_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Banette_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Banette_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  355,
+                                              "speciesSlug":  "duskull",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Duskull_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Duskull_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Duskull_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  356,
+                                              "speciesSlug":  "dusclops",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Dusclops_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Dusclops_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Dusclops_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  357,
+                                              "speciesSlug":  "tropius",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Tropius_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Tropius_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Tropius_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  358,
+                                              "speciesSlug":  "chimecho",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Chimecho_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Chimecho_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Chimecho_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  359,
+                                              "speciesSlug":  "absol",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Absol_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Absol_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Absol_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  360,
+                                              "speciesSlug":  "wynaut",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Wynaut_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Wynaut_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Wynaut_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  361,
+                                              "speciesSlug":  "snorunt",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Snorunt_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Snorunt_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Snorunt_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  362,
+                                              "speciesSlug":  "glalie",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Glalie_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Glalie_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Glalie_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  363,
+                                              "speciesSlug":  "spheal",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Spheal_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Spheal_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Spheal_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  364,
+                                              "speciesSlug":  "sealeo",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Sealeo_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Sealeo_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Sealeo_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  365,
+                                              "speciesSlug":  "walrein",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Walrein_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Walrein_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Walrein_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  366,
+                                              "speciesSlug":  "clamperl",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Clamperl_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Clamperl_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Clamperl_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  367,
+                                              "speciesSlug":  "huntail",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Huntail_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Huntail_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Huntail_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  368,
+                                              "speciesSlug":  "gorebyss",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Gorebyss_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Gorebyss_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Gorebyss_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  369,
+                                              "speciesSlug":  "relicanth",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Relicanth_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Relicanth_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Relicanth_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  370,
+                                              "speciesSlug":  "luvdisc",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Luvdisc_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Luvdisc_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Luvdisc_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  371,
+                                              "speciesSlug":  "bagon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Bagon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Bagon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Bagon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  372,
+                                              "speciesSlug":  "shelgon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Shelgon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Shelgon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Shelgon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  373,
+                                              "speciesSlug":  "salamence",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Salamence_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Salamence_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Salamence_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  374,
+                                              "speciesSlug":  "beldum",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Beldum_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Beldum_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Beldum_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  375,
+                                              "speciesSlug":  "metang",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Metang_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Metang_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Metang_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  376,
+                                              "speciesSlug":  "metagross",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Metagross_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Metagross_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Metagross_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  377,
+                                              "speciesSlug":  "regirock",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Regirock_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Regirock_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Regirock_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  378,
+                                              "speciesSlug":  "regice",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Regice_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Regice_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Regice_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  379,
+                                              "speciesSlug":  "registeel",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Registeel_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Registeel_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Registeel_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  380,
+                                              "speciesSlug":  "latias",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Latias_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Latias_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Latias_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  381,
+                                              "speciesSlug":  "latios",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Latios_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Latios_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Latios_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  382,
+                                              "speciesSlug":  "kyogre",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Kyogre_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Kyogre_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Kyogre_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  383,
+                                              "speciesSlug":  "groudon",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Groudon_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Groudon_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Groudon_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  384,
+                                              "speciesSlug":  "rayquaza",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Rayquaza_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Rayquaza_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Rayquaza_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  385,
+                                              "speciesSlug":  "jirachi",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Jirachi_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Jirachi_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Jirachi_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          },
+                                          {
+                                              "nationalDexNumber":  386,
+                                              "speciesSlug":  "deoxys",
+                                              "speciesPage":  "https://bulbapedia.bulbagarden.net/wiki/Deoxys_(Pok%C3%A9mon)",
+                                              "generationIxLearnset":  "https://bulbapedia.bulbagarden.net/wiki/Deoxys_(Pok%C3%A9mon)/Generation_IX_learnset",
+                                              "generationViiiBdspFallback":  "https://bulbapedia.bulbagarden.net/wiki/Deoxys_(Pok%C3%A9mon)/Generation_VIII_learnset"
+                                          }
+                                      ]
+                     },
+                     {
+                         "provider":  "pokemondb",
+                         "upstreamRevision":  null,
+                         "expectedSourceSurfaces":  [
+                                                        "135 species pages"
+                                                    ],
+                         "locatorCount":  135,
+                         "reason":  "Acquire complementary Hoenn species factual pages under the existing Bulbapedia-primary / PokemonDB-complementary policy.",
+                         "canChangeCandidateFacts":  true,
+                         "locators":  [
+                                          {
+                                              "nationalDexNumber":  252,
+                                              "speciesSlug":  "treecko",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/treecko"
+                                          },
+                                          {
+                                              "nationalDexNumber":  253,
+                                              "speciesSlug":  "grovyle",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/grovyle"
+                                          },
+                                          {
+                                              "nationalDexNumber":  254,
+                                              "speciesSlug":  "sceptile",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/sceptile"
+                                          },
+                                          {
+                                              "nationalDexNumber":  255,
+                                              "speciesSlug":  "torchic",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/torchic"
+                                          },
+                                          {
+                                              "nationalDexNumber":  256,
+                                              "speciesSlug":  "combusken",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/combusken"
+                                          },
+                                          {
+                                              "nationalDexNumber":  257,
+                                              "speciesSlug":  "blaziken",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/blaziken"
+                                          },
+                                          {
+                                              "nationalDexNumber":  258,
+                                              "speciesSlug":  "mudkip",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/mudkip"
+                                          },
+                                          {
+                                              "nationalDexNumber":  259,
+                                              "speciesSlug":  "marshtomp",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/marshtomp"
+                                          },
+                                          {
+                                              "nationalDexNumber":  260,
+                                              "speciesSlug":  "swampert",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/swampert"
+                                          },
+                                          {
+                                              "nationalDexNumber":  261,
+                                              "speciesSlug":  "poochyena",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/poochyena"
+                                          },
+                                          {
+                                              "nationalDexNumber":  262,
+                                              "speciesSlug":  "mightyena",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/mightyena"
+                                          },
+                                          {
+                                              "nationalDexNumber":  263,
+                                              "speciesSlug":  "zigzagoon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/zigzagoon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  264,
+                                              "speciesSlug":  "linoone",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/linoone"
+                                          },
+                                          {
+                                              "nationalDexNumber":  265,
+                                              "speciesSlug":  "wurmple",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/wurmple"
+                                          },
+                                          {
+                                              "nationalDexNumber":  266,
+                                              "speciesSlug":  "silcoon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/silcoon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  267,
+                                              "speciesSlug":  "beautifly",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/beautifly"
+                                          },
+                                          {
+                                              "nationalDexNumber":  268,
+                                              "speciesSlug":  "cascoon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/cascoon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  269,
+                                              "speciesSlug":  "dustox",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/dustox"
+                                          },
+                                          {
+                                              "nationalDexNumber":  270,
+                                              "speciesSlug":  "lotad",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/lotad"
+                                          },
+                                          {
+                                              "nationalDexNumber":  271,
+                                              "speciesSlug":  "lombre",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/lombre"
+                                          },
+                                          {
+                                              "nationalDexNumber":  272,
+                                              "speciesSlug":  "ludicolo",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/ludicolo"
+                                          },
+                                          {
+                                              "nationalDexNumber":  273,
+                                              "speciesSlug":  "seedot",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/seedot"
+                                          },
+                                          {
+                                              "nationalDexNumber":  274,
+                                              "speciesSlug":  "nuzleaf",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/nuzleaf"
+                                          },
+                                          {
+                                              "nationalDexNumber":  275,
+                                              "speciesSlug":  "shiftry",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/shiftry"
+                                          },
+                                          {
+                                              "nationalDexNumber":  276,
+                                              "speciesSlug":  "taillow",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/taillow"
+                                          },
+                                          {
+                                              "nationalDexNumber":  277,
+                                              "speciesSlug":  "swellow",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/swellow"
+                                          },
+                                          {
+                                              "nationalDexNumber":  278,
+                                              "speciesSlug":  "wingull",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/wingull"
+                                          },
+                                          {
+                                              "nationalDexNumber":  279,
+                                              "speciesSlug":  "pelipper",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/pelipper"
+                                          },
+                                          {
+                                              "nationalDexNumber":  280,
+                                              "speciesSlug":  "ralts",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/ralts"
+                                          },
+                                          {
+                                              "nationalDexNumber":  281,
+                                              "speciesSlug":  "kirlia",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/kirlia"
+                                          },
+                                          {
+                                              "nationalDexNumber":  282,
+                                              "speciesSlug":  "gardevoir",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/gardevoir"
+                                          },
+                                          {
+                                              "nationalDexNumber":  283,
+                                              "speciesSlug":  "surskit",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/surskit"
+                                          },
+                                          {
+                                              "nationalDexNumber":  284,
+                                              "speciesSlug":  "masquerain",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/masquerain"
+                                          },
+                                          {
+                                              "nationalDexNumber":  285,
+                                              "speciesSlug":  "shroomish",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/shroomish"
+                                          },
+                                          {
+                                              "nationalDexNumber":  286,
+                                              "speciesSlug":  "breloom",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/breloom"
+                                          },
+                                          {
+                                              "nationalDexNumber":  287,
+                                              "speciesSlug":  "slakoth",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/slakoth"
+                                          },
+                                          {
+                                              "nationalDexNumber":  288,
+                                              "speciesSlug":  "vigoroth",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/vigoroth"
+                                          },
+                                          {
+                                              "nationalDexNumber":  289,
+                                              "speciesSlug":  "slaking",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/slaking"
+                                          },
+                                          {
+                                              "nationalDexNumber":  290,
+                                              "speciesSlug":  "nincada",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/nincada"
+                                          },
+                                          {
+                                              "nationalDexNumber":  291,
+                                              "speciesSlug":  "ninjask",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/ninjask"
+                                          },
+                                          {
+                                              "nationalDexNumber":  292,
+                                              "speciesSlug":  "shedinja",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/shedinja"
+                                          },
+                                          {
+                                              "nationalDexNumber":  293,
+                                              "speciesSlug":  "whismur",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/whismur"
+                                          },
+                                          {
+                                              "nationalDexNumber":  294,
+                                              "speciesSlug":  "loudred",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/loudred"
+                                          },
+                                          {
+                                              "nationalDexNumber":  295,
+                                              "speciesSlug":  "exploud",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/exploud"
+                                          },
+                                          {
+                                              "nationalDexNumber":  296,
+                                              "speciesSlug":  "makuhita",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/makuhita"
+                                          },
+                                          {
+                                              "nationalDexNumber":  297,
+                                              "speciesSlug":  "hariyama",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/hariyama"
+                                          },
+                                          {
+                                              "nationalDexNumber":  298,
+                                              "speciesSlug":  "azurill",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/azurill"
+                                          },
+                                          {
+                                              "nationalDexNumber":  299,
+                                              "speciesSlug":  "nosepass",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/nosepass"
+                                          },
+                                          {
+                                              "nationalDexNumber":  300,
+                                              "speciesSlug":  "skitty",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/skitty"
+                                          },
+                                          {
+                                              "nationalDexNumber":  301,
+                                              "speciesSlug":  "delcatty",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/delcatty"
+                                          },
+                                          {
+                                              "nationalDexNumber":  302,
+                                              "speciesSlug":  "sableye",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/sableye"
+                                          },
+                                          {
+                                              "nationalDexNumber":  303,
+                                              "speciesSlug":  "mawile",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/mawile"
+                                          },
+                                          {
+                                              "nationalDexNumber":  304,
+                                              "speciesSlug":  "aron",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/aron"
+                                          },
+                                          {
+                                              "nationalDexNumber":  305,
+                                              "speciesSlug":  "lairon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/lairon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  306,
+                                              "speciesSlug":  "aggron",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/aggron"
+                                          },
+                                          {
+                                              "nationalDexNumber":  307,
+                                              "speciesSlug":  "meditite",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/meditite"
+                                          },
+                                          {
+                                              "nationalDexNumber":  308,
+                                              "speciesSlug":  "medicham",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/medicham"
+                                          },
+                                          {
+                                              "nationalDexNumber":  309,
+                                              "speciesSlug":  "electrike",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/electrike"
+                                          },
+                                          {
+                                              "nationalDexNumber":  310,
+                                              "speciesSlug":  "manectric",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/manectric"
+                                          },
+                                          {
+                                              "nationalDexNumber":  311,
+                                              "speciesSlug":  "plusle",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/plusle"
+                                          },
+                                          {
+                                              "nationalDexNumber":  312,
+                                              "speciesSlug":  "minun",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/minun"
+                                          },
+                                          {
+                                              "nationalDexNumber":  313,
+                                              "speciesSlug":  "volbeat",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/volbeat"
+                                          },
+                                          {
+                                              "nationalDexNumber":  314,
+                                              "speciesSlug":  "illumise",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/illumise"
+                                          },
+                                          {
+                                              "nationalDexNumber":  315,
+                                              "speciesSlug":  "roselia",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/roselia"
+                                          },
+                                          {
+                                              "nationalDexNumber":  316,
+                                              "speciesSlug":  "gulpin",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/gulpin"
+                                          },
+                                          {
+                                              "nationalDexNumber":  317,
+                                              "speciesSlug":  "swalot",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/swalot"
+                                          },
+                                          {
+                                              "nationalDexNumber":  318,
+                                              "speciesSlug":  "carvanha",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/carvanha"
+                                          },
+                                          {
+                                              "nationalDexNumber":  319,
+                                              "speciesSlug":  "sharpedo",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/sharpedo"
+                                          },
+                                          {
+                                              "nationalDexNumber":  320,
+                                              "speciesSlug":  "wailmer",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/wailmer"
+                                          },
+                                          {
+                                              "nationalDexNumber":  321,
+                                              "speciesSlug":  "wailord",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/wailord"
+                                          },
+                                          {
+                                              "nationalDexNumber":  322,
+                                              "speciesSlug":  "numel",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/numel"
+                                          },
+                                          {
+                                              "nationalDexNumber":  323,
+                                              "speciesSlug":  "camerupt",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/camerupt"
+                                          },
+                                          {
+                                              "nationalDexNumber":  324,
+                                              "speciesSlug":  "torkoal",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/torkoal"
+                                          },
+                                          {
+                                              "nationalDexNumber":  325,
+                                              "speciesSlug":  "spoink",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/spoink"
+                                          },
+                                          {
+                                              "nationalDexNumber":  326,
+                                              "speciesSlug":  "grumpig",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/grumpig"
+                                          },
+                                          {
+                                              "nationalDexNumber":  327,
+                                              "speciesSlug":  "spinda",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/spinda"
+                                          },
+                                          {
+                                              "nationalDexNumber":  328,
+                                              "speciesSlug":  "trapinch",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/trapinch"
+                                          },
+                                          {
+                                              "nationalDexNumber":  329,
+                                              "speciesSlug":  "vibrava",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/vibrava"
+                                          },
+                                          {
+                                              "nationalDexNumber":  330,
+                                              "speciesSlug":  "flygon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/flygon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  331,
+                                              "speciesSlug":  "cacnea",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/cacnea"
+                                          },
+                                          {
+                                              "nationalDexNumber":  332,
+                                              "speciesSlug":  "cacturne",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/cacturne"
+                                          },
+                                          {
+                                              "nationalDexNumber":  333,
+                                              "speciesSlug":  "swablu",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/swablu"
+                                          },
+                                          {
+                                              "nationalDexNumber":  334,
+                                              "speciesSlug":  "altaria",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/altaria"
+                                          },
+                                          {
+                                              "nationalDexNumber":  335,
+                                              "speciesSlug":  "zangoose",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/zangoose"
+                                          },
+                                          {
+                                              "nationalDexNumber":  336,
+                                              "speciesSlug":  "seviper",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/seviper"
+                                          },
+                                          {
+                                              "nationalDexNumber":  337,
+                                              "speciesSlug":  "lunatone",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/lunatone"
+                                          },
+                                          {
+                                              "nationalDexNumber":  338,
+                                              "speciesSlug":  "solrock",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/solrock"
+                                          },
+                                          {
+                                              "nationalDexNumber":  339,
+                                              "speciesSlug":  "barboach",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/barboach"
+                                          },
+                                          {
+                                              "nationalDexNumber":  340,
+                                              "speciesSlug":  "whiscash",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/whiscash"
+                                          },
+                                          {
+                                              "nationalDexNumber":  341,
+                                              "speciesSlug":  "corphish",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/corphish"
+                                          },
+                                          {
+                                              "nationalDexNumber":  342,
+                                              "speciesSlug":  "crawdaunt",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/crawdaunt"
+                                          },
+                                          {
+                                              "nationalDexNumber":  343,
+                                              "speciesSlug":  "baltoy",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/baltoy"
+                                          },
+                                          {
+                                              "nationalDexNumber":  344,
+                                              "speciesSlug":  "claydol",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/claydol"
+                                          },
+                                          {
+                                              "nationalDexNumber":  345,
+                                              "speciesSlug":  "lileep",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/lileep"
+                                          },
+                                          {
+                                              "nationalDexNumber":  346,
+                                              "speciesSlug":  "cradily",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/cradily"
+                                          },
+                                          {
+                                              "nationalDexNumber":  347,
+                                              "speciesSlug":  "anorith",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/anorith"
+                                          },
+                                          {
+                                              "nationalDexNumber":  348,
+                                              "speciesSlug":  "armaldo",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/armaldo"
+                                          },
+                                          {
+                                              "nationalDexNumber":  349,
+                                              "speciesSlug":  "feebas",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/feebas"
+                                          },
+                                          {
+                                              "nationalDexNumber":  350,
+                                              "speciesSlug":  "milotic",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/milotic"
+                                          },
+                                          {
+                                              "nationalDexNumber":  351,
+                                              "speciesSlug":  "castform",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/castform"
+                                          },
+                                          {
+                                              "nationalDexNumber":  352,
+                                              "speciesSlug":  "kecleon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/kecleon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  353,
+                                              "speciesSlug":  "shuppet",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/shuppet"
+                                          },
+                                          {
+                                              "nationalDexNumber":  354,
+                                              "speciesSlug":  "banette",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/banette"
+                                          },
+                                          {
+                                              "nationalDexNumber":  355,
+                                              "speciesSlug":  "duskull",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/duskull"
+                                          },
+                                          {
+                                              "nationalDexNumber":  356,
+                                              "speciesSlug":  "dusclops",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/dusclops"
+                                          },
+                                          {
+                                              "nationalDexNumber":  357,
+                                              "speciesSlug":  "tropius",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/tropius"
+                                          },
+                                          {
+                                              "nationalDexNumber":  358,
+                                              "speciesSlug":  "chimecho",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/chimecho"
+                                          },
+                                          {
+                                              "nationalDexNumber":  359,
+                                              "speciesSlug":  "absol",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/absol"
+                                          },
+                                          {
+                                              "nationalDexNumber":  360,
+                                              "speciesSlug":  "wynaut",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/wynaut"
+                                          },
+                                          {
+                                              "nationalDexNumber":  361,
+                                              "speciesSlug":  "snorunt",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/snorunt"
+                                          },
+                                          {
+                                              "nationalDexNumber":  362,
+                                              "speciesSlug":  "glalie",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/glalie"
+                                          },
+                                          {
+                                              "nationalDexNumber":  363,
+                                              "speciesSlug":  "spheal",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/spheal"
+                                          },
+                                          {
+                                              "nationalDexNumber":  364,
+                                              "speciesSlug":  "sealeo",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/sealeo"
+                                          },
+                                          {
+                                              "nationalDexNumber":  365,
+                                              "speciesSlug":  "walrein",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/walrein"
+                                          },
+                                          {
+                                              "nationalDexNumber":  366,
+                                              "speciesSlug":  "clamperl",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/clamperl"
+                                          },
+                                          {
+                                              "nationalDexNumber":  367,
+                                              "speciesSlug":  "huntail",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/huntail"
+                                          },
+                                          {
+                                              "nationalDexNumber":  368,
+                                              "speciesSlug":  "gorebyss",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/gorebyss"
+                                          },
+                                          {
+                                              "nationalDexNumber":  369,
+                                              "speciesSlug":  "relicanth",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/relicanth"
+                                          },
+                                          {
+                                              "nationalDexNumber":  370,
+                                              "speciesSlug":  "luvdisc",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/luvdisc"
+                                          },
+                                          {
+                                              "nationalDexNumber":  371,
+                                              "speciesSlug":  "bagon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/bagon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  372,
+                                              "speciesSlug":  "shelgon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/shelgon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  373,
+                                              "speciesSlug":  "salamence",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/salamence"
+                                          },
+                                          {
+                                              "nationalDexNumber":  374,
+                                              "speciesSlug":  "beldum",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/beldum"
+                                          },
+                                          {
+                                              "nationalDexNumber":  375,
+                                              "speciesSlug":  "metang",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/metang"
+                                          },
+                                          {
+                                              "nationalDexNumber":  376,
+                                              "speciesSlug":  "metagross",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/metagross"
+                                          },
+                                          {
+                                              "nationalDexNumber":  377,
+                                              "speciesSlug":  "regirock",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/regirock"
+                                          },
+                                          {
+                                              "nationalDexNumber":  378,
+                                              "speciesSlug":  "regice",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/regice"
+                                          },
+                                          {
+                                              "nationalDexNumber":  379,
+                                              "speciesSlug":  "registeel",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/registeel"
+                                          },
+                                          {
+                                              "nationalDexNumber":  380,
+                                              "speciesSlug":  "latias",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/latias"
+                                          },
+                                          {
+                                              "nationalDexNumber":  381,
+                                              "speciesSlug":  "latios",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/latios"
+                                          },
+                                          {
+                                              "nationalDexNumber":  382,
+                                              "speciesSlug":  "kyogre",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/kyogre"
+                                          },
+                                          {
+                                              "nationalDexNumber":  383,
+                                              "speciesSlug":  "groudon",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/groudon"
+                                          },
+                                          {
+                                              "nationalDexNumber":  384,
+                                              "speciesSlug":  "rayquaza",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/rayquaza"
+                                          },
+                                          {
+                                              "nationalDexNumber":  385,
+                                              "speciesSlug":  "jirachi",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/jirachi"
+                                          },
+                                          {
+                                              "nationalDexNumber":  386,
+                                              "speciesSlug":  "deoxys",
+                                              "speciesPage":  "https://pokemondb.net/pokedex/deoxys"
+                                          }
+                                      ]
+                     }
+                 ],
+    "followUp":  {
+                     "required":  true,
+                     "reason":  "After offline learnset parsing, any Move IDs absent from the current 547-Move catalog require a separate exact ACQUIRE request for their source pages. This manifest does not authorize that future acquisition."
+                 }
+}

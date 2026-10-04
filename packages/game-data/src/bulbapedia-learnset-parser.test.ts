@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION,
+  BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION_V7,
   BULBAPEDIA_GEN9_LEARNSET_PARSER_VERSION,
   bulbapediaLearnsetDiscoveryKey,
   canonicalizeBulbapediaLearnsetSpeciesName,
   parseBulbapediaGen8BdspLearnset,
+  parseBulbapediaGen8BdspLearnsetV7,
   parseBulbapediaGen9Learnset,
 } from "./bulbapedia-learnset-parser";
 
@@ -433,6 +435,31 @@ describe("Bulbapedia Generation VIII BDSP learnset fallback parser", () => {
     expect(() =>
       parseBulbapediaGen8BdspLearnset(gen8Source(alternateOnly), RATTATA_SOURCE_KEY),
     ).toThrow(/form-scoped h5 blocks do not contain base Species rattata/i);
+  });
+
+  it("v7 selects Deoxys Normal Forme as the base-species block without changing v6 behavior", () => {
+    const deoxysUrl =
+      "https://bulbapedia.bulbagarden.net/wiki/Deoxys_(Pok%C3%A9mon)/Generation_VIII_learnset";
+    const deoxysSource = {
+      url: deoxysUrl,
+      sourceRecordId: "source:bulbapedia:deoxys-gen8-learnset",
+      html: `<main><h1>Deoxys - Generation VIII learnset</h1>
+        <p>Deoxys is available in <a href="/wiki/Pok%C3%A9mon_Brilliant_Diamond_and_Shining_Pearl">Brilliant Diamond and Shining Pearl</a>.</p>
+        <h4><span class="mw-headline" id="By_leveling_up">By leveling up</span></h4>
+        <h5><span class="mw-headline" id="Normal_Forme">Normal Forme</span></h5>
+        <table><tr><th>Level</th><th>Move</th><th>Type</th><th>Cat.</th><th>Power</th><th>Acc.</th><th>PP</th></tr>
+        ${levelingRow("1", "Leer")}</table>
+        <h5><span class="mw-headline" id="Attack_Forme">Attack Forme</span></h5>
+        <table><tr><th>Level</th><th>Move</th><th>Type</th><th>Cat.</th><th>Power</th><th>Acc.</th><th>PP</th></tr>
+        ${levelingRow("1", "Wrap")}</table></main>`,
+    };
+
+    expect(BULBAPEDIA_GEN8_LEARNSET_PARSER_VERSION_V7).toBe("bulbapedia-gen8-learnset-v7");
+    expect(() => parseBulbapediaGen8BdspLearnset(deoxysSource, "pokedex:deoxys:386"))
+      .toThrow(/form-scoped h5 blocks do not contain base Species deoxys/i);
+    const result = parseBulbapediaGen8BdspLearnsetV7(deoxysSource, "pokedex:deoxys:386");
+    expect(result.sourceSpeciesKey).toBe("deoxys");
+    expect(result.records.map((record) => record.moveSourceKey)).toEqual(["leer"]);
   });
 
   it("fails closed instead of treating a Legends: Arceus-only h5 block as BDSP", () => {

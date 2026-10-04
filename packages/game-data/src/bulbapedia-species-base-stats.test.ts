@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   BULBAPEDIA_SPECIES_BASE_STATS_PARSER_VERSION,
+  BULBAPEDIA_SPECIES_BASE_STATS_PARSER_VERSION_V5,
   parseBulbapediaSpeciesBaseStats,
+  parseBulbapediaSpeciesBaseStatsV5,
 } from "./bulbapedia-species-base-stats";
 
 const SOURCE_RECORD_ID = "source:bulbapedia:species-base-stats";
@@ -53,6 +55,7 @@ function h6(name: string, body: string): string {
 describe("Bulbapedia persistent-form Species Base Stats parser", () => {
   it("exports a stable parser version and parses a single base-only Base_stats table", () => {
     expect(BULBAPEDIA_SPECIES_BASE_STATS_PARSER_VERSION).toBe("bulbapedia-species-base-stats-v4");
+    expect(BULBAPEDIA_SPECIES_BASE_STATS_PARSER_VERSION_V5).toBe("bulbapedia-species-base-stats-v5");
     expect(parseBulbapediaSpeciesBaseStats(source("Bulbasaur", statTable()))).toEqual([
       {
         sourceName: "Bulbasaur",
@@ -61,6 +64,41 @@ describe("Bulbapedia persistent-form Species Base Stats parser", () => {
         sourceRecordId: SOURCE_RECORD_ID,
       },
     ]);
+  });
+
+  it("v5 accepts Generation III historical splits without widening v4", () => {
+    const evidence = source(
+      "Beautifly",
+      h6("Generations III-V", statTable([60, 70, 50, 100, 50, 65])) +
+        h6("Generation VI onward", statTable([60, 70, 50, 100, 50, 65])),
+    );
+    expect(() => parseBulbapediaSpeciesBaseStats(evidence)).toThrow(/unsupported base-stat version headings/i);
+    expect(parseBulbapediaSpeciesBaseStatsV5(evidence)[0].baseStats).toEqual({
+      hp: 60,
+      atk: 70,
+      def: 50,
+      spa: 100,
+      spd: 50,
+      spe: 65,
+    });
+  });
+
+  it("v5 keeps the mainline table when an isolated Legends: Z-A h6 variant follows it", () => {
+    const mainline = [30, 40, 55, 40, 55, 60] as const;
+    const za = [30, 40, 55, 50, 55, 60] as const;
+    const evidence = source(
+      "Meditite",
+      statTable(mainline) + h6("Pokémon Legends: Z-A", statTable(za)),
+    );
+    expect(() => parseBulbapediaSpeciesBaseStats(evidence)).toThrow(/unsupported base-stat version-heading structure/i);
+    expect(parseBulbapediaSpeciesBaseStatsV5(evidence)[0].baseStats).toEqual({
+      hp: 30,
+      atk: 40,
+      def: 55,
+      spa: 40,
+      spd: 55,
+      spe: 60,
+    });
   });
 
   it("selects only the exact current onward table from a recognized historical h6 pair", () => {

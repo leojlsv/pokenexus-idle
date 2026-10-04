@@ -2,6 +2,8 @@ import type { StatBlock } from "@pokenexus/game-types";
 
 export const BULBAPEDIA_SPECIES_BASE_STATS_PARSER_VERSION =
   "bulbapedia-species-base-stats-v4" as const;
+export const BULBAPEDIA_SPECIES_BASE_STATS_PARSER_VERSION_V5 =
+  "bulbapedia-species-base-stats-v5" as const;
 
 export const BULBAPEDIA_SPECIES_BASE_STATS_URL_PREFIX =
   "https://bulbapedia.bulbagarden.net/wiki/" as const;
@@ -266,7 +268,20 @@ const CURRENT_BASE_STATS_VERSION_PAIRS = new Set<string>([
   "Generation II to VI\u0000Generation VII onwards",
 ]);
 
-function currentStructuredStatTable(html: string, label: string): TableMatch {
+const CURRENT_BASE_STATS_VERSION_PAIRS_V5 = new Set<string>([
+  ...CURRENT_BASE_STATS_VERSION_PAIRS,
+  "Generations III-V\u0000Generation VI onward",
+  "Generations III-VI\u0000Generation VII onward",
+  "Generations III-VI\u0000Generation VII onwards",
+]);
+
+type BaseStatsParserMode = "v4" | "v5";
+
+function currentStructuredStatTable(
+  html: string,
+  label: string,
+  mode: BaseStatsParserMode,
+): TableMatch {
   const versionHeadings = h6Headings(html);
   if (versionHeadings.length === 0) {
     const tables = structuredStatTables(html);
@@ -275,11 +290,27 @@ function currentStructuredStatTable(html: string, label: string): TableMatch {
     }
     return tables[0];
   }
+  if (
+    mode === "v5" &&
+    versionHeadings.length === 1 &&
+    versionHeadings[0].name === "Pokémon Legends: Z-A"
+  ) {
+    const prefixTables = structuredStatTables(html.slice(0, versionHeadings[0].headingStart));
+    const zaTables = structuredStatTables(html.slice(versionHeadings[0].contentStart));
+    if (prefixTables.length !== 1 || zaTables.length !== 1) {
+      throw new Error(
+        label +
+          ": Pokémon Legends: Z-A split requires exactly one mainline table before and one Z-A table after the h6 heading",
+      );
+    }
+    return prefixTables[0];
+  }
   if (versionHeadings.length !== 2) {
     throw new Error(label + ": unsupported base-stat version-heading structure");
   }
   const pairKey = versionHeadings[0].name + "\u0000" + versionHeadings[1].name;
-  if (!CURRENT_BASE_STATS_VERSION_PAIRS.has(pairKey)) {
+  const acceptedPairs = mode === "v5" ? CURRENT_BASE_STATS_VERSION_PAIRS_V5 : CURRENT_BASE_STATS_VERSION_PAIRS;
+  if (!acceptedPairs.has(pairKey)) {
     throw new Error(
       label + ": unsupported base-stat version headings " +
         JSON.stringify(versionHeadings.map((heading) => heading.name)),
@@ -368,8 +399,9 @@ function assertNoUnaccountedSameStatsStatements(
   }
 }
 
-export function parseBulbapediaSpeciesBaseStats(
+function parseBulbapediaSpeciesBaseStatsWithMode(
   source: BulbapediaSpeciesBaseStatsHtmlSource,
+  mode: BaseStatsParserMode,
 ): ExtractedBulbapediaSpeciesBaseStats[] {
   const sourceName = parseSourceName(source);
   const section = baseStatsSection(source.html);
@@ -378,7 +410,7 @@ export function parseBulbapediaSpeciesBaseStats(
   const result: ExtractedBulbapediaSpeciesBaseStats[] = [];
 
   if (headings.length === 0) {
-    const tables = [currentStructuredStatTable(section, "Bulbapedia Species Base Stats")];
+    const tables = [currentStructuredStatTable(section, "Bulbapedia Species Base Stats", mode)];
     const statement = scopeStatementBeforeSelectedTable(section, tables[0]);
     const sharedNames = statement ? parseSharedExactStatement(statement) : null;
     const allForms = statement ? parseAllFormsStatement(statement) : null;
@@ -403,7 +435,7 @@ export function parseBulbapediaSpeciesBaseStats(
     if (headings[0].name === sourceName) {
       throw new Error("Bulbapedia Species Base Stats: structured table appears outside an h5 form scope");
     }
-    const table = currentStructuredStatTable(prefix, "Bulbapedia Species Base Stats " + sourceName);
+    const table = currentStructuredStatTable(prefix, "Bulbapedia Species Base Stats " + sourceName, mode);
     const statement = scopeStatementBeforeSelectedTable(prefix, table);
     const sharedNames = statement ? parseSharedExactStatement(statement) : null;
     const allForms = statement ? parseAllFormsStatement(statement) : null;
@@ -431,7 +463,7 @@ export function parseBulbapediaSpeciesBaseStats(
     const content = section.slice(heading.contentStart, end);
     if (isBattleOnlyTransformationHeading(heading.name)) continue;
     const tables = [
-      currentStructuredStatTable(content, "Bulbapedia Species Base Stats " + heading.name),
+      currentStructuredStatTable(content, "Bulbapedia Species Base Stats " + heading.name, mode),
     ];
     const statement = scopeStatementBeforeSelectedTable(content, tables[0]);
     const allForms = statement ? parseAllFormsStatement(statement) : null;
@@ -462,4 +494,16 @@ export function parseBulbapediaSpeciesBaseStats(
   }
   assertNoUnaccountedSameStatsStatements(section, recognizedStatements);
   return result;
+}
+
+export function parseBulbapediaSpeciesBaseStats(
+  source: BulbapediaSpeciesBaseStatsHtmlSource,
+): ExtractedBulbapediaSpeciesBaseStats[] {
+  return parseBulbapediaSpeciesBaseStatsWithMode(source, "v4");
+}
+
+export function parseBulbapediaSpeciesBaseStatsV5(
+  source: BulbapediaSpeciesBaseStatsHtmlSource,
+): ExtractedBulbapediaSpeciesBaseStats[] {
+  return parseBulbapediaSpeciesBaseStatsWithMode(source, "v5");
 }

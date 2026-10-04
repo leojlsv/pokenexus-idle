@@ -1,8 +1,13 @@
 import type { StatBlock } from "@pokenexus/game-types";
-import { parseBulbapediaSpeciesBaseStats } from "./bulbapedia-species-base-stats.js";
+import {
+  parseBulbapediaSpeciesBaseStats,
+  parseBulbapediaSpeciesBaseStatsV5,
+} from "./bulbapedia-species-base-stats.js";
 
 export const BULBAPEDIA_BASE_SPECIES_EVIDENCE_PARSER_VERSION =
   "bulbapedia-base-species-evidence-v8" as const;
+export const BULBAPEDIA_BASE_SPECIES_EVIDENCE_PARSER_VERSION_V9 =
+  "bulbapedia-base-species-evidence-v9" as const;
 
 export const BULBAPEDIA_SPECIES_PAGE_PARSER_VERSION =
   "bulbapedia-species-page-v17" as const;
@@ -396,13 +401,22 @@ function boundedSectionByHeadlineId(html: string, id: string, label: string): st
 export function parseBulbapediaBaseSpeciesEvidence(
   source: BulbapediaSpeciesEvidenceHtmlSource,
 ): ExtractedBulbapediaBaseSpeciesEvidence {
+  return parseBaseSpeciesEvidenceWithStats(source, parseBulbapediaSpeciesBaseStats, []);
+}
+
+function parseBaseSpeciesEvidenceWithStats(
+  source: BulbapediaSpeciesEvidenceHtmlSource,
+  parseBaseStats: typeof parseBulbapediaSpeciesBaseStats,
+  baseFormAliases: readonly string[],
+): ExtractedBulbapediaBaseSpeciesEvidence {
   const pageTitle = parseBaseSpeciesTitleFromUrl(source);
   const intro = parseIntroEvidence(source, pageTitle);
-  const baseStatsEvidence = parseBulbapediaSpeciesBaseStats(source).filter(
+  const acceptedBaseNames = new Set([intro.sourceName, ...baseFormAliases].map((name) => name.normalize("NFC")));
+  const baseStatsEvidence = parseBaseStats(source).filter(
     (entry) =>
       entry.scope.kind === "exact" &&
       entry.scope.sourceFormNames.some(
-        (sourceFormName) => sourceFormName.normalize("NFC") === intro.sourceName.normalize("NFC"),
+        (sourceFormName) => acceptedBaseNames.has(sourceFormName.normalize("NFC")),
       ),
   );
   if (baseStatsEvidence.length !== 1) {
@@ -415,6 +429,14 @@ export function parseBulbapediaBaseSpeciesEvidence(
     baseStats: baseStatsEvidence[0].baseStats,
     sourceRecordId: source.sourceRecordId,
   };
+}
+
+export function parseBulbapediaBaseSpeciesEvidenceV9(
+  source: BulbapediaSpeciesEvidenceHtmlSource,
+): ExtractedBulbapediaBaseSpeciesEvidence {
+  const pageTitle = parseBaseSpeciesTitleFromUrl(source);
+  const aliases = pageTitle === "Deoxys" ? ["Normal Forme"] : [];
+  return parseBaseSpeciesEvidenceWithStats(source, parseBulbapediaSpeciesBaseStatsV5, aliases);
 }
 
 function requireRegionalFormListSource(source: BulbapediaSpeciesEvidenceHtmlSource): void {

@@ -1,0 +1,213 @@
+{
+  "formatVersion": "pokenexus.task117.hoenn-move-acquire-request.v1",
+  "state": "AUTHORIZED",
+  "authorizedAt": "2026-10-04T16:48:33Z",
+  "authorization": "Human Owner explicitly authorized this exact 34-page Move ACQUIRE request in chat; scope remains limited to the listed provider/locator/surface set.",
+  "derivedFrom": {
+    "taskId": "TASK-117",
+    "priorAcquireAuthorizedRequestHash": "sha256:0c16d7f92776d07c961f2e7800883a0bdc999179e4cae6793b3cf595a9eae867",
+    "bulbapediaSnapshotId": "source-snapshot:bulbapedia:52e7cc9cc41a9870190a59c12b699865dd231db9f5bae8edebae3290ccd7b3a7",
+    "pokemondbSnapshotId": "source-snapshot:pokemondb:4bff6719b2454a4594577fca71f6cfc77d359cd08fc52283e6d11832b647a9ca",
+    "pokeapiSnapshotId": "source-snapshot:pokeapi:8ef26f3e68509ee3c101a7063c32c67283dc95c67aa5f23a6ff2a829bd2bf9b8",
+    "retainedZaSnapshotId": "source-snapshot:bulbapedia:abbf22fac38c85d94d52eadd6e24e503c0231766472fe8c59dc7925195c03a4a",
+    "learnsetValidationHash": "sha256:7b311af70ad05a46eeeb018c80c686d47c16175346127585ca79a368be6b36c3",
+    "learnsetCoverage": {
+      "requestedSpecies": 135,
+      "parsedSpecies": 135,
+      "totalParsedRows": 7328,
+      "parseErrors": 0
+    },
+    "currentMoveCatalogCount": 547,
+    "missingMoveCount": 17,
+    "missingMoveSourceKeys": [
+      "boomburst",
+      "doom-desire",
+      "dragon-ascent",
+      "force-palm",
+      "frost-breath",
+      "leaf-tornado",
+      "leafage",
+      "luster-purge",
+      "mind-reader",
+      "mist-ball",
+      "noble-roar",
+      "origin-pulse",
+      "power-up-punch",
+      "precipice-blades",
+      "psycho-boost",
+      "spiky-shield",
+      "tail-glow"
+    ]
+  },
+  "reuseWithoutNetwork": {
+    "selectedGameScalars": "Already present in the authorized Hoenn Bulbapedia Generation VIII BDSP fallback learnset snapshot.",
+    "moveIdentityAndContactAudit": "Already present in the pinned PokéAPI snapshot.",
+    "zaBaseCooldown": "Reuse the retained Bulbapedia Pokémon Legends: Z-A move-list snapshot; no refresh is authorized by this request."
+  },
+  "requests": [
+    {
+      "provider": "bulbapedia",
+      "upstreamRevision": null,
+      "expectedSourceSurfaces": [
+        "17 canonical Move pages"
+      ],
+      "locatorCount": 17,
+      "reason": "Acquire exact per-Move primary/reference and target-fallback evidence for the 17 Move source keys discovered by offline Hoenn Learnset parsing. No discovery URLs or alternate surfaces are authorized.",
+      "canChangeCandidateFacts": true,
+      "locators": [
+        {
+          "moveSourceKey": "boomburst",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Boomburst_(move)"
+        },
+        {
+          "moveSourceKey": "doom-desire",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Doom_Desire_(move)"
+        },
+        {
+          "moveSourceKey": "dragon-ascent",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Dragon_Ascent_(move)"
+        },
+        {
+          "moveSourceKey": "force-palm",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Force_Palm_(move)"
+        },
+        {
+          "moveSourceKey": "frost-breath",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Frost_Breath_(move)"
+        },
+        {
+          "moveSourceKey": "leaf-tornado",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Leaf_Tornado_(move)"
+        },
+        {
+          "moveSourceKey": "leafage",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Leafage_(move)"
+        },
+        {
+          "moveSourceKey": "luster-purge",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Luster_Purge_(move)"
+        },
+        {
+          "moveSourceKey": "mind-reader",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Mind_Reader_(move)"
+        },
+        {
+          "moveSourceKey": "mist-ball",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Mist_Ball_(move)"
+        },
+        {
+          "moveSourceKey": "noble-roar",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Noble_Roar_(move)"
+        },
+        {
+          "moveSourceKey": "origin-pulse",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Origin_Pulse_(move)"
+        },
+        {
+          "moveSourceKey": "power-up-punch",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Power-Up_Punch_(move)"
+        },
+        {
+          "moveSourceKey": "precipice-blades",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Precipice_Blades_(move)"
+        },
+        {
+          "moveSourceKey": "psycho-boost",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Psycho_Boost_(move)"
+        },
+        {
+          "moveSourceKey": "spiky-shield",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Spiky_Shield_(move)"
+        },
+        {
+          "moveSourceKey": "tail-glow",
+          "movePage": "https://bulbapedia.bulbagarden.net/wiki/Tail_Glow_(move)"
+        }
+      ]
+    },
+    {
+      "provider": "pokemondb",
+      "upstreamRevision": null,
+      "expectedSourceSurfaces": [
+        "17 canonical Move pages"
+      ],
+      "locatorCount": 17,
+      "reason": "Acquire exact per-Move structured complementary target evidence for the same 17 Move source keys. No provider fallback, discovery, redirects or additional pages are authorized.",
+      "canChangeCandidateFacts": true,
+      "locators": [
+        {
+          "moveSourceKey": "boomburst",
+          "movePage": "https://pokemondb.net/move/boomburst"
+        },
+        {
+          "moveSourceKey": "doom-desire",
+          "movePage": "https://pokemondb.net/move/doom-desire"
+        },
+        {
+          "moveSourceKey": "dragon-ascent",
+          "movePage": "https://pokemondb.net/move/dragon-ascent"
+        },
+        {
+          "moveSourceKey": "force-palm",
+          "movePage": "https://pokemondb.net/move/force-palm"
+        },
+        {
+          "moveSourceKey": "frost-breath",
+          "movePage": "https://pokemondb.net/move/frost-breath"
+        },
+        {
+          "moveSourceKey": "leaf-tornado",
+          "movePage": "https://pokemondb.net/move/leaf-tornado"
+        },
+        {
+          "moveSourceKey": "leafage",
+          "movePage": "https://pokemondb.net/move/leafage"
+        },
+        {
+          "moveSourceKey": "luster-purge",
+          "movePage": "https://pokemondb.net/move/luster-purge"
+        },
+        {
+          "moveSourceKey": "mind-reader",
+          "movePage": "https://pokemondb.net/move/mind-reader"
+        },
+        {
+          "moveSourceKey": "mist-ball",
+          "movePage": "https://pokemondb.net/move/mist-ball"
+        },
+        {
+          "moveSourceKey": "noble-roar",
+          "movePage": "https://pokemondb.net/move/noble-roar"
+        },
+        {
+          "moveSourceKey": "origin-pulse",
+          "movePage": "https://pokemondb.net/move/origin-pulse"
+        },
+        {
+          "moveSourceKey": "power-up-punch",
+          "movePage": "https://pokemondb.net/move/power-up-punch"
+        },
+        {
+          "moveSourceKey": "precipice-blades",
+          "movePage": "https://pokemondb.net/move/precipice-blades"
+        },
+        {
+          "moveSourceKey": "psycho-boost",
+          "movePage": "https://pokemondb.net/move/psycho-boost"
+        },
+        {
+          "moveSourceKey": "spiky-shield",
+          "movePage": "https://pokemondb.net/move/spiky-shield"
+        },
+        {
+          "moveSourceKey": "tail-glow",
+          "movePage": "https://pokemondb.net/move/tail-glow"
+        }
+      ]
+    }
+  ],
+  "followUp": {
+    "required": false,
+    "condition": "If offline parsing finds ambiguous/missing target or other required Move facts after this exact acquisition, materialize a new exact Human ACQUIRE request; do not fetch automatically."
+  }
+}

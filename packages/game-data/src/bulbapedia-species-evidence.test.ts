@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   BULBAPEDIA_BASE_SPECIES_EVIDENCE_PARSER_VERSION,
+  BULBAPEDIA_BASE_SPECIES_EVIDENCE_PARSER_VERSION_V9,
   BULBAPEDIA_REGIONAL_FORM_EVIDENCE_PARSER_VERSION,
   BULBAPEDIA_REGIONAL_FORM_LIST_URL,
   BULBAPEDIA_SPECIES_PAGE_URL_PREFIX,
   canonicalizeBulbapediaRegionAdjective,
   parseBulbapediaBaseSpeciesEvidence,
+  parseBulbapediaBaseSpeciesEvidenceV9,
   parseBulbapediaRegionalForms,
 } from "./bulbapedia-species-evidence";
 
@@ -75,9 +77,42 @@ function regionalSource(rows: string) {
 describe("Bulbapedia base Species evidence", () => {
   it("exports stable parser/source constants", () => {
     expect(BULBAPEDIA_BASE_SPECIES_EVIDENCE_PARSER_VERSION).toBe("bulbapedia-base-species-evidence-v8");
+    expect(BULBAPEDIA_BASE_SPECIES_EVIDENCE_PARSER_VERSION_V9).toBe("bulbapedia-base-species-evidence-v9");
     expect(BULBAPEDIA_REGIONAL_FORM_EVIDENCE_PARSER_VERSION).toBe("bulbapedia-regional-form-evidence-v2");
     expect(BULBAPEDIA_SPECIES_PAGE_URL_PREFIX).toBe("https://bulbapedia.bulbagarden.net/wiki/");
     expect(BULBAPEDIA_REGIONAL_FORM_LIST_URL).toBe("https://bulbapedia.bulbagarden.net/wiki/Regional_form");
+  });
+
+  it("v9 binds Deoxys Normal Forme as the base-stat identity without changing v8", () => {
+    const table = (values: readonly number[]) => `<table>
+      ${statRow("HP", "/wiki/HP", values[0])}
+      ${statRow("Attack", "/wiki/Stat#Attack", values[1])}
+      ${statRow("Defense", "/wiki/Stat#Defense", values[2])}
+      ${statRow("Sp. Atk", "/wiki/Stat#Special_Attack", values[3])}
+      ${statRow("Sp. Def", "/wiki/Stat#Special_Defense", values[4])}
+      ${statRow("Speed", "/wiki/Stat#Speed", values[5])}
+    </table>`;
+    const source = {
+      url: `${BULBAPEDIA_SPECIES_PAGE_URL_PREFIX}Deoxys_(Pok%C3%A9mon)`,
+      sourceRecordId: "source:bulbapedia:deoxys",
+      html: `<main>
+        <h1>Deoxys (Pokémon)</h1>
+        <p><b>Deoxys</b> (Japanese: デオキシス) is a <a href="/wiki/Psychic_(type)">Psychic-type</a> <a href="/wiki/Pok%C3%A9mon_(species)" title="Pokémon (species)">Pokémon</a> introduced in <a href="/wiki/Generation_III">Generation III</a>.</p>
+        <h4><span class="mw-headline" id="Base_stats">Base stats</span></h4>
+        <h5><span class="mw-headline" id="Normal_Forme">Normal Forme</span></h5>${table([50, 150, 50, 150, 50, 150])}
+        <h5><span class="mw-headline" id="Attack_Forme">Attack Forme</span></h5>${table([50, 180, 20, 180, 20, 150])}
+        <h5><span class="mw-headline" id="Defense_Forme">Defense Forme</span></h5>${table([50, 70, 160, 70, 160, 90])}
+        <h5><span class="mw-headline" id="Speed_Forme">Speed Forme</span></h5>${table([50, 95, 90, 95, 90, 180])}
+        <h4><span class="mw-headline" id="Other">Other</span></h4>
+      </main>`,
+    };
+    expect(() => parseBulbapediaBaseSpeciesEvidence(source)).toThrow(/found 0/i);
+    expect(parseBulbapediaBaseSpeciesEvidenceV9(source)).toMatchObject({
+      sourceName: "Deoxys",
+      introducedGeneration: 3,
+      typeSourceKeys: ["psychic"],
+      baseStats: { hp: 50, atk: 150, def: 50, spa: 150, spd: 50, spe: 150 },
+    });
   });
 
   it("extracts exact identity, introduction Types and six base stats", () => {

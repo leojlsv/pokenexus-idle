@@ -3,8 +3,10 @@ import {
   BULBAPEDIA_KANTO_JOHTO_SPECIES_DISCOVERY_PARSER_VERSION,
   BULBAPEDIA_KANTO_JOHTO_SPECIES_DISCOVERY_URL,
   BULBAPEDIA_SPECIES_STATIC_FACTS_PARSER_VERSION,
+  BULBAPEDIA_SPECIES_STATIC_FACTS_PARSER_VERSION_V13,
   parseBulbapediaKantoJohtoSpeciesDiscovery,
   parseBulbapediaSpeciesStaticFacts,
+  parseBulbapediaSpeciesStaticFactsV13,
 } from "./bulbapedia-species-static-facts.js";
 
 const SOURCE_ID = "source:bulbapedia:species-static-test";
@@ -97,6 +99,7 @@ function source(name: string, body: string) {
 describe("Bulbapedia Species static facts", () => {
   it("exports a stable version and extracts Rattata-like base + Alolan explicit evidence", () => {
     expect(BULBAPEDIA_SPECIES_STATIC_FACTS_PARSER_VERSION).toBe("bulbapedia-species-static-facts-v12");
+    expect(BULBAPEDIA_SPECIES_STATIC_FACTS_PARSER_VERSION_V13).toBe("bulbapedia-species-static-facts-v13");
     const abilities = `<table><tr>
       <td><a href="/wiki/Run_Away_(Ability)">Run Away</a> or <a href="/wiki/Guts_(Ability)">Guts</a><br><small>Rattata</small></td>
       <td><a href="/wiki/Gluttony_(Ability)">Gluttony</a> or <a href="/wiki/Hustle_(Ability)">Hustle</a><br><small>Alolan Form</small></td></tr>
@@ -253,6 +256,26 @@ describe("Bulbapedia Species static facts", () => {
     ]);
   });
 
+  it("v13 accepts the exact Shiftry historical second-Ability label without widening v12", () => {
+    const abilities = `<table><tr>
+      <td><a href="/wiki/Chlorophyll_(Ability)">Chlorophyll</a> or <a href="/wiki/Wind_Rider_(Ability)">Wind Rider</a><br><small>Gen IX+</small></td>
+      <td><a href="/wiki/Early_Bird_(Ability)">Early Bird</a><br><small>Second Ability Gen III - VIII</small></td>
+    </tr></table>`;
+    const evidence = source("Shiftry", commonFields({
+      abilities,
+      height: metricRows([["1.3", null]], "m"),
+      weight: metricRows([["59.6", null]], "kg"),
+      evYield: evRows([[null, [0, 3, 0, 0, 0, 0]]]),
+    }));
+    expect(() => parseBulbapediaSpeciesStaticFacts(evidence)).toThrow(/unsupported generation-scoped label/i);
+    expect(parseBulbapediaSpeciesStaticFactsV13(evidence).abilities.map(
+      ({ abilitySourceKey, sourceAbilitySlot, formLabels }) => ({ abilitySourceKey, sourceAbilitySlot, formLabels }),
+    )).toEqual([
+      { abilitySourceKey: "chlorophyll", sourceAbilitySlot: "normal-1", formLabels: [null] },
+      { abilitySourceKey: "wind-rider", sourceAbilitySlot: "normal-2", formLabels: [null] },
+    ]);
+  });
+
   it("accepts the exact singular Ability header used by single-Ability Species", () => {
     const abilities = `<table><tr><td><a href="/wiki/Shed_Skin_(Ability)">Shed Skin</a></td></tr></table>`;
     const body = commonFields({
@@ -380,6 +403,24 @@ describe("Bulbapedia Species static facts", () => {
         evYield: unsupportedGeneration,
       }))),
     ).toThrow(/unsupported historical annotation/i);
+
+    const generationThreeTotal = evYield.replaceAll("2 in Generation III", "3 in Generation III");
+    expect(() =>
+      parseBulbapediaSpeciesStaticFacts(source("Dusclops", commonFields({
+        abilities,
+        height: metricRows([["1.6", null]], "m"),
+        weight: metricRows([["30.6", null]], "kg"),
+        evYield: generationThreeTotal,
+      }))),
+    ).toThrow(/unsupported historical annotation "3 in Generation III"/i);
+    expect(() =>
+      parseBulbapediaSpeciesStaticFactsV13(source("Dusclops", commonFields({
+        abilities,
+        height: metricRows([["1.6", null]], "m"),
+        weight: metricRows([["30.6", null]], "kg"),
+        evYield: generationThreeTotal,
+      }))),
+    ).not.toThrow();
   });
 
   it("ignores unrelated hidden Ability placeholders but rejects hidden metric-scope drift", () => {
@@ -548,6 +589,39 @@ describe("Bulbapedia Species static facts", () => {
       weight,
       evYield: evRows([[null, [0, 0, 0, 0, 0, 2]]]),
     })))).toThrow(/hidden form-label association is not an accepted inactive scope/i);
+  });
+
+  it("v13 recognizes only the observed hidden base metric aliases for Castform and Deoxys", () => {
+    for (const [name, alias, ability] of [
+      ["Castform", "Normal", "Forecast"],
+      ["Deoxys", "Normal Forme", "Pressure"],
+    ] as const) {
+      const abilityHref = ability.replace(/ /g, "_");
+      const abilities = `<table><tr><td><a href="/wiki/${abilityHref}_(Ability)">${ability}</a></td></tr></table>`;
+      const height = `<table>
+        <tr><td>imperial</td><td>1.7 m</td></tr>
+        <tr style="display:none"><td colspan="2"><small>${alias}</small></td></tr>
+      </table>`;
+      const weight = `<table>
+        <tr><td>lbs</td><td>60.8 kg</td></tr>
+        <tr style="display:none"><td colspan="2"><small>${alias}</small></td></tr>
+      </table>`;
+      const evidence = source(name, commonFields({
+        abilities,
+        height,
+        weight,
+        evYield: evRows([[null, [0, 1, 0, 1, 0, 1]]]),
+        gender: name === "Deoxys" ? "Gender unknown" : undefined,
+      }));
+      expect(() => parseBulbapediaSpeciesStaticFacts(evidence)).toThrow(/hidden form-label association/i);
+      const parsed = parseBulbapediaSpeciesStaticFactsV13(evidence);
+      expect(parsed.heightMillimeters).toEqual([
+        { formLabels: [null], fact: { status: "known", value: 1700 } },
+      ]);
+      expect(parsed.weightGrams).toEqual([
+        { formLabels: [null], fact: { status: "known", value: 60_800 } },
+      ]);
+    }
   });
 
   it("accepts the exact hidden One form marker only for a single base form", () => {
