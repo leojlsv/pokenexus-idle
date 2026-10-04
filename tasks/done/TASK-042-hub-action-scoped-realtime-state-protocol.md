@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -168,18 +168,26 @@ The consultant identified no remaining advisory blocker with those boundaries ex
   providing explicit discovery/invitation surfaces.
 - An overly broad action-session contract could recreate the same global lobby topology under a
   different name; participant and purpose bounds must remain feature-specific.
-- No runtime implementation, migration, deployment, public enablement or Git-history integration is
-  authorized by this architecture acceptance alone.
+- Repository/history integration for this architecture package was separately authorized by the
+  Human Owner on 2026-10-04T14:46:00Z and merged into canonical `main`. Runtime implementation,
+  migration, deployment and public enablement remain separately gated.
 
 ## Expected files / boundaries
 
 - `docs/decisions/ADR-007-hub-action-scoped-realtime.md`
-- `tasks/active/TASK-042-hub-action-scoped-realtime-state-protocol.md`
+- `tasks/done/TASK-042-hub-action-scoped-realtime-state-protocol.md`
 - `docs/project/PROJECT_ROADMAP.md`
 - generated `docs/project/PROJECT_ROADMAP.html`
 
 Accepted architecture documents were amended only after the Human Owner accepted ADR-007. Runtime
 source remains unchanged; downstream implementation is separately gated.
+
+### Repository integration evidence — 2026-10-04
+
+- Accepted architecture/source commit: `469015e56a5e9968f618eab055096abd08599c93`.
+- Canonical merge commit: `22da731c30a41c3de67008a44a0225dce8e90bdb`.
+- Human Owner separately authorized Git-history integration on 2026-10-04T14:46:00Z.
+- No `apps/` or `packages/` runtime source was part of the architecture package.
 
 ## Completion
 
