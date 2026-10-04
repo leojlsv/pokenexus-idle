@@ -3,6 +3,7 @@
 - Status: APPROVED — Human Owner accepted the complete detailed Class-A SPEC-017 on 2026-09-29 after independent QA and security/persistence contract reviews with no P0/P1/P2. The documented owned-HP damage inference is accepted for MVP. Backend implementation, migration, workload conformance, independent implementation review and public enablement remain separately gated.
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
+- Forward amendment authority: **SPEC-020 (APPROVED 2026-10-02)**. Historical `pokenexus.combat-presentation.v1` remains immutable; forward rules capable of in-Battle Revive use the accepted v2 projection/cleanup contract, while post-Battle Revive and D-F16 remain Hunt activity. The Battle N+1 publication gate accepts committed `resolved_non_win` + settled Revive/cadence effects as defined by SPEC-020.
 - Related ADR: ADR-004
 - Related specs: SPEC-002, SPEC-003, SPEC-011, SPEC-013, SPEC-015, SPEC-016
 - Related tasks: TASK-028, TASK-035, TASK-037, TASK-038, TASK-039, TASK-040, TASK-102 (Class-A contract acceptance), TASK-103 (backend implementation)

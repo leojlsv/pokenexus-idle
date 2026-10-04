@@ -15,8 +15,9 @@
 - Consultant execution surface(s): N/A
 - Specs: APPROVED SPEC-011/016/020
 - Related: TASK-022/024/025/027/031/100/106
-- Branch: not created
-- Worktree: not created
+- Branch: `main`
+- Worktree: `.worktrees/main-governance-integration`
+- Implementation branch/worktree: not created; this DRAFT remains control-plane only until separate frontend implementation authorization.
 
 ## Objective
 

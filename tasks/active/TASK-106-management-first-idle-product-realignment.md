@@ -14,8 +14,9 @@
 - Consultant execution surface(s): fresh independent ChatGPT advisory worker(s)
 - Spec: `docs/specs/SPEC-020-management-first-idle-product-realignment.md`
 - ADR: N/A
-- Branch: current documentation realignment is being prepared in the existing isolated worktree; dedicated implementation branch not authorized
-- Worktree: current evidence/reconciliation work only
+- Branch: `main`
+- Worktree: `.worktrees/main-governance-integration`
+- Implementation branch/worktree: not authorized by this ACCEPTANCE record; downstream runtime remains separately scoped.
 
 ## Objective
 

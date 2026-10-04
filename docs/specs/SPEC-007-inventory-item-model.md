@@ -3,6 +3,7 @@
 - Status: APPROVED
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
+- Forward amendment authority: **SPEC-020 / SPEC-021 (APPROVED 2026-10-02)**. Forward Pre-alpha Potion/Revive automation, Revive tiers/cleanup/provenance and persistent vitality semantics follow those specs where they supersede this historical baseline; pinned historical behavior remains replay-compatible.
 - Required consultants:
   - Gameplay Systems Consultant (`GSC`)
   - Player Experience & Economy Consultant (`PXE`)

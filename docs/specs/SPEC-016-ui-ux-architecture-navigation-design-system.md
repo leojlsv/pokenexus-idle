@@ -3,6 +3,7 @@
 - Status: APPROVED
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
+- Forward amendment authority: **SPEC-020 / SPEC-021 (APPROVED 2026-10-02)** for the management-first Pre-alpha surface/control model: Cards-only first Hunt presentation, no manual Potion/capture/Checkpoint/Claim execution, non-locomotion first HUB, persistent vitality/PokéCenter and automation-management surfaces.
 - Related task: `TASK-026`
 - Related ADRs: ADR-001, ADR-002, ADR-004, ADR-005, ADR-006
 - Related specs: SPEC-001, SPEC-003, SPEC-005, SPEC-010, SPEC-011, SPEC-013, SPEC-015
@@ -458,6 +459,11 @@ written. `TASK-100` is the canonical downstream task for that ownership.
 `TASK-100 — Collection, Pokémon & Team Management UI` owns the authenticated management surfaces after TASK-027 has
 provided the application shell: Collection/Pokémon detail, saved-Team management and ordered Move-loadout editing
 against the accepted Player State API, including OCC/error/reconciliation behavior and behavior/E2E coverage.
+
+Under the approved SPEC-020/021 first-Pre-alpha forward authority, the Inventory browsing surface defined in section
+5.4 remains separate from TASK-100's already-active Collection/Pokémon/Team scope and is assigned to TASK-111: bounded
+owned quantities and item information only, with no client-side consume/grant/use authority. This is downstream
+implementation ownership only; it does not reinterpret historical Inventory/gameplay semantics.
 
 TASK-027 remains shell/navigation infrastructure and must not silently absorb those product features.
 

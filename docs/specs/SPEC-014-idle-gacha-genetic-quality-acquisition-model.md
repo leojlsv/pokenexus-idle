@@ -3,6 +3,7 @@
 - Status: APPROVED
 - Owner: Human Owner
 - Coordinator: PM / Architecture Coordinator
+- Forward amendment authority: **SPEC-020 (APPROVED 2026-10-02)** for management-first capture automation. Manual pending-capture/per-Encounter Ball input remains historical compatibility only for forward Pre-alpha Hunts.
 - Related ADRs: ADR-002, ADR-004, ADR-005
 - Related specs: SPEC-003, SPEC-005, SPEC-007, SPEC-009, SPEC-013
 - Related tasks: TASK-096, TASK-097, TASK-036, TASK-037, TASK-038, TASK-041
