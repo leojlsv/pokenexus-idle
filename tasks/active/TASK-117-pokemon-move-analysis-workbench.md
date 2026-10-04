@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: BLOCKED
+- State: ACCEPTANCE
 - Class: B — isolated local analysis UI/data tooling inside accepted static-data architecture
 - Owner: Lead Developer / Frontend Developer
 - Owner execution surface: ChatGPT coding agent
@@ -77,18 +77,18 @@ III completion therefore has an explicit source-coverage dependency rather than 
 - [x] Learn Level is editable per `level-up` row as a non-authoritative override while the canonical Learnset row
       remains unchanged and resettable.
 - [x] Learnset supports a compact line mode as the default plus a detailed card mode.
-- [x] Export All and Export Selected produce deterministic `pokenexus.pokemon-move-workbench.v2` JSON for the
+- [x] Export All and Export Selected produce deterministic `pokenexus.pokemon-move-workbench.v3` JSON for the
       current Generation I–III analysis scope.
 - [x] Export includes only referenced Moves for the exported Species while preserving complete canonical rows and
       exact source/provenance identifiers present on those rows.
 - [x] Re-import of an exported file reproduces the same selected scope and Learn Level overrides; malformed,
       wrong-base or invalid/non-level-up overrides fail closed with a useful validation error.
-- [x] Current coverage is explicitly reported as 251 base Kanto/Johto Species plus accepted forms, with the Gen III
-      386-base-Species target shown as incomplete until authoritative Hoenn Learnsets are available.
-- [ ] Gen III completion reaches National Dex 001–386 only from an explicitly accepted local source/staging input;
+- [x] Coverage distinguishes the immutable published v5 base from the exact local Hoenn staging artifact and reports
+      complete National Dex 001–386 base-Species analysis coverage without presenting staged Hoenn rows as published.
+- [x] Gen III completion reaches National Dex 001–386 only from an explicitly accepted local source/staging input;
       no missing rows are synthesized.
 - [x] Relevant automated tests, web typecheck/lint/build and `git diff --check` pass.
-- [x] Independent QA reports no unresolved P0/P1 before completion.
+- [x] Fresh independent QA reports no unresolved P0/P1 for the final Hoenn-complete workbench.
 
 ## Validation / tests
 
@@ -105,30 +105,50 @@ III completion therefore has an explicit source-coverage dependency rather than 
 - [x] `corepack pnpm --filter @pokenexus/web build:pokemon-analysis`
 - [x] `git diff --check`
 
-## Current blocker
+## Current state
 
-The local workbench implementation is complete and validated for the accepted v5 data. The remaining product
-target is the 135 missing base Species from National Dex 252–386 with complete authoritative Learnsets. The
-retained local PokéAPI snapshot does not include the required Pokémon Move/Learnset surfaces, and SPEC-022
-requires a Human ACQUIRE gate before adding a new provider/revision/surface set. TASK-117 therefore remains
-BLOCKED on accepted Hoenn source evidence rather than synthesizing or silently changing source authority.
+Both Hoenn SPEC-022 ACQUIRE gates are complete. The Human Owner explicitly authorized the first exact
+`TASK-117-hoenn-acquire-request.json` at `2026-10-04T15:30:38Z`, and the operation stayed inside that exact
+provider/locator set:
 
-The exact first acquisition gate is now materialized as
-`tasks/active/TASK-117-hoenn-acquire-request.json`, derived from the already-pinned PokéAPI revision
-`bc92d3b6029ef1abe9e7ad424c400b338f3c11fe`. It is explicitly `PROPOSED_NOT_AUTHORIZED` and contains:
+- PokémonDB: **135/135** exact Species pages acquired into immutable snapshot
+  `source-snapshot:pokemondb:4bff6719b2454a4594577fca71f6cfc77d359cd08fc52283e6d11832b647a9ca`;
+- Bulbapedia: all 405 authorized locators were attempted under the current access policy. The 135 Generation IX
+  Learnset URLs returned source-level 404, while all 135 Species pages and all 135 already-authorized Generation
+  VIII BDSP fallback Learnset pages were acquired into immutable snapshot
+  `source-snapshot:bulbapedia:52e7cc9cc41a9870190a59c12b699865dd231db9f5bae8edebae3290ccd7b3a7`;
+- both snapshot manifests and every retained file hash pass `verifyLocalSourceSnapshot`;
+- the Generation VIII parser gained an additive v7 path for the real Deoxys `Normal Forme` base-species scope;
+  historical v6 behavior remains unchanged;
+- final offline validation covers **135/135 Hoenn base Species**, **7,328 Learnset rows**, **437 unique source Move
+  slugs**, and **0 parse errors**. Evidence hash:
+  `sha256:7b311af70ad05a46eeeb018c80c686d47c16175346127585ca79a368be6b36c3`.
 
-- Bulbapedia: 405 exact locators — 135 Species pages, 135 Generation IX Learnset pages and 135 Generation VIII
-  BDSP fallback Learnset pages;
-- PokémonDB: 135 exact complementary Species-page locators;
-- reason, candidate-fact impact and the exact 252–386 roster for the one-shot SPEC-022 gate;
-- an explicit follow-up gate for any Move source pages discovered missing from the current 547-Move catalog after
-  offline Learnset parsing. No external request has been executed by TASK-117.
+The Human Owner then explicitly authorized the exact second Move request at `2026-10-04T16:48:33Z`. Its
+authorized bytes hash to
+`sha256:eca256bf80ad71204a18b296138b57fa736f0b9c37bb56692f40b9849663ecbc`, covering only the 17 exact
+Bulbapedia Move pages and 17 exact PokémonDB Move pages listed in that request. Acquisition completed without
+redirects and produced:
 
-Current validation evidence before the visual-feedback delta: web **53/53 PASS**; model **8/8 PASS**;
-typecheck/lint/normal build/dedicated workbench build/diff check PASS; independent core re-gate
-**P0/P1/P2/P3 = 0/0/0/0 — ACCEPT**. Post-feedback validation is **54/54 PASS** with model **9/9**;
-typecheck, lint, dedicated workbench build and `git diff --check` PASS. A real 390 CSS-px browser measurement after
-the compact-line correction reports `innerWidth=390`, `htmlScrollWidth=375` and `moveTableWidth=317` (no root overflow).
+- PokémonDB Move snapshot
+  `source-snapshot:pokemondb:ef78f97b11afef8b2d627d9283172600059c70fd65ca8b698cc111905ff5f0a7`;
+- Bulbapedia Move snapshot
+  `source-snapshot:bulbapedia:32b6f43feb77a7e39a5ce6bc89bdd444e4f4e32473e5e68d38b4954e1a1e72a5`.
+
+The verified offline staging step combines the immutable v5 publication with the two Hoenn Species/Learnset
+snapshots, the two Move snapshots, the pinned PokéAPI snapshot and the retained Z-A Move-list snapshot. The exact
+staging artifact is `apps/web/src/pokemon-analysis/hoenn-staging.json`, SHA-256
+`2012d517189be550c470aa6a3a59059270cd41d7c452d9741fe8a23ad8507752`, with **135 Species / 17 Moves /
+19 Abilities / 7,328 Learnset rows**. The analysis surface therefore reaches exact base National Dex **001–386**;
+combined local counts are **564 Moves / 166 Abilities / 26,363 Learnset rows**.
+
+Current owner validation: web **55/55 PASS** including the exact 001–386 staging integrity test; game-data
+**412 PASS / 1 live skipped**; web typecheck/lint/normal build/dedicated workbench build PASS; game-data lint/build
+PASS; `git diff --check` PASS. A prior 390 CSS-px browser measurement for the unchanged compact-line layout reported
+`innerWidth=390`, `htmlScrollWidth=375` and `moveTableWidth=317`. Fresh exact-current independent QA is
+**READY — P0/P1/P2/P3 = 0/0/0/0**, and delegated Class-B functional/architectural acceptance is
+**ACCEPT — P0/P1/P2/P3 = 0/0/0/0**. No review blocker remains; repository-history integration remains a separate
+Human gate.
 
 ## Dependencies
 
@@ -136,13 +156,13 @@ the compact-line correction reports `innerWidth=390`, `htmlScrollWidth=375` and 
 - DONE: TASK-112/113 local immutable source-snapshot architecture/implementation.
 - DONE: TASK-114 schema-5 promotion contract/publication.
 - DONE: TASK-115 schema-5 runtime delivery.
-- Data completion dependency: accepted local Generation III Species + complete Learnset evidence. The retained pinned
-  PokéAPI snapshot has structured Species facts but does not contain the required Pokémon Move/Learnset surfaces.
+- Data completion dependency: complete. Both exact Hoenn ACQUIRE requests are authorized, executed and locally
+  verified; the final workbench staging artifact is pinned by SHA-256.
 
 ## Risks / irreversible actions
 
 - The largest semantic risk is confusing an editable Learn Level override with the canonical immutable Learnset
-  source row. The v2 JSON format and UI keep them structurally separate and fail closed if the base/reference changes.
+  source row. The v3 JSON format and UI keep them structurally separate and fail closed if the base/reference changes.
 - A workbench export is a staging/import artifact, not an authorization to publish content or rewrite provenance.
 - No irreversible action is owned by this task.
 
@@ -152,7 +172,9 @@ the compact-line correction reports `innerWidth=390`, `htmlScrollWidth=375` and 
 - `apps/web/src/pokemon-analysis-preview.tsx`
 - `apps/web/src/pokemon-analysis/*`
 - focused tests under `apps/web/src/pokemon-analysis/`
-- `tasks/active/TASK-117-hoenn-acquire-request.json` — proposed, non-authorized exact Hoenn ACQUIRE locator set
+- `tasks/active/TASK-117-hoenn-acquire-request.json` — exact first Hoenn ACQUIRE request; Human-authorized and executed
+- `tasks/active/TASK-117-hoenn-move-acquire-request.json` — exact 34-page follow-up Move ACQUIRE request; Human-authorized and executed
+- `apps/web/src/pokemon-analysis/hoenn-staging.json` — exact local Hoenn analysis/staging artifact; no publication mutation
 - this task record and roadmap metadata only as needed for canonical task visibility
 
 ## Completion

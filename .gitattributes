@@ -16,3 +16,6 @@ docs/specs/SPEC-012-production-move-support-v1.json -text whitespace=cr-at-eol
 packages/game-core/src/production-move-support-v1.json -text whitespace=cr-at-eol
 packages/game-core/src/production-move-support-v2.json -text whitespace=cr-at-eol
 packages/game-core/src/production-move-support-v3.json -text whitespace=cr-at-eol
+
+# TASK-117 ACQUIRE authorization is bound to the exact request bytes.
+tasks/active/TASK-117-hoenn-acquire-request.json -text whitespace=cr-at-eol

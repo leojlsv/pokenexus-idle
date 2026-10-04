@@ -1,6 +1,8 @@
 {
     "formatVersion":  "pokenexus.task117.hoenn-acquire-request.v1",
-    "state":  "PROPOSED_NOT_AUTHORIZED",
+    "state":  "AUTHORIZED",
+    "authorizedAt":  "2026-10-04T15:30:38Z",
+    "authorization":  "Human Owner explicitly authorized this exact ACQUIRE request in chat; scope remains limited to the provider/locator/surface set below.",
     "derivedFrom":  {
                         "provider":  "pokeapi",
                         "upstreamRevision":  "bc92d3b6029ef1abe9e7ad424c400b338f3c11fe",

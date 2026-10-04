@@ -9,6 +9,8 @@ import {
 
 export const BULBAPEDIA_SPECIES_STATIC_FACTS_PARSER_VERSION =
   "bulbapedia-species-static-facts-v12" as const;
+export const BULBAPEDIA_SPECIES_STATIC_FACTS_PARSER_VERSION_V13 =
+  "bulbapedia-species-static-facts-v13" as const;
 
 export const BULBAPEDIA_SPECIES_STATIC_FACTS_URL_PREFIX =
   "https://bulbapedia.bulbagarden.net/wiki/" as const;
@@ -186,7 +188,12 @@ function visibleText(html: string): string {
     .trim();
 }
 
-function stripHistoricalEvYieldAnnotations(html: string): string {
+type StaticFactsParserMode = "v12" | "v13";
+
+function stripHistoricalEvYieldAnnotations(
+  html: string,
+  mode: StaticFactsParserMode,
+): string {
   return html.replace(
     /<span\b([^>]*)>([\s\S]*?)<\/span>/gi,
     (match, attributes: string, innerHtml: string) => {
@@ -200,9 +207,10 @@ function stripHistoricalEvYieldAnnotations(html: string): string {
       if (
         decodedTitle !== "1 in Generation III" &&
         decodedTitle !== "2 in Generation III" &&
-        decodedTitle !== "3 prior to generation VIII"
+        decodedTitle !== "3 prior to generation VIII" &&
+        !(mode === "v13" && decodedTitle === "3 in Generation III")
       ) {
-        throw new Error("EV yield: unsupported historical annotation");
+        throw new Error(`EV yield: unsupported historical annotation ${JSON.stringify(decodedTitle)}`);
       }
       return "";
     },
@@ -573,6 +581,7 @@ function formLabelFromDisplay(label: string, sourceName: string): string | null 
 function generationScopedAbilityLabel(
   label: string,
   sourceName: string,
+  mode: StaticFactsParserMode,
 ): "current-base" | "historical" | null {
   const cleaned = label
     .replace(/(?:^|\s+)Hidden Ability$/i, "")
@@ -587,7 +596,8 @@ function generationScopedAbilityLabel(
   }
   if (
     new RegExp(`^Gen [IVX]+(?:-[IVX]+)? \\*(?: ${escapedSourceName})?$`, "u").test(cleaned) ||
-    new RegExp(`^${escapedSourceName} Gen [IVX]+-[IVX]+$`, "u").test(cleaned)
+    new RegExp(`^${escapedSourceName} Gen [IVX]+-[IVX]+$`, "u").test(cleaned) ||
+    (mode === "v13" && /^Second Ability Gen [IVX]+\s+-\s+[IVX]+$/u.test(cleaned))
   ) {
     return "historical";
   }
@@ -617,14 +627,18 @@ function explicitFormDisplayParts(label: string): string[] {
   return cleaned.split(/\s+and\s+/u);
 }
 
-function visibleFormCandidates(field: HtmlElement, sourceName: string): string[] {
+function visibleFormCandidates(
+  field: HtmlElement,
+  sourceName: string,
+  mode: StaticFactsParserMode,
+): string[] {
   const result: string[] = [];
   const table = firstTable(field.innerHtml, "form discovery");
   for (const row of visibleRows(table)) {
     for (const cell of visibleCells(row)) {
       for (const label of smallLabels(cell.innerHtml)) {
         if (/^(?:Gen\.|[IVX]+\+?$|cycles$)/i.test(label)) continue;
-        const generationScope = generationScopedAbilityLabel(label, sourceName);
+        const generationScope = generationScopedAbilityLabel(label, sourceName, mode);
         if (generationScope !== null) continue;
         if (/\bGen(?:eration)?\b/i.test(label)) {
           throw new Error(`form discovery: unsupported generation-scoped label ${JSON.stringify(label)}`);
@@ -639,24 +653,28 @@ function visibleFormCandidates(field: HtmlElement, sourceName: string): string[]
   return result;
 }
 
-function discoverFormLabels(sourceName: string, html: string): BulbapediaFormLabel[] {
+function discoverFormLabels(
+  sourceName: string,
+  html: string,
+  mode: StaticFactsParserMode,
+): BulbapediaFormLabel[] {
   const abilityField = fieldContainer(html, ["Abilities", "Ability"], /href=["']\/wiki\/Ability["']/i);
   const heightField = fieldContainer(html, "Height", /height/i);
   const weightField = fieldContainer(html, "Weight", /href=["']\/wiki\/Weight["']/i);
   const evField = fieldContainer(html, "EV yield", /effort_value_yield/i);
   const candidates = [
-    ...visibleFormCandidates(abilityField, sourceName),
-    ...visibleFormCandidates(heightField, sourceName),
-    ...visibleFormCandidates(weightField, sourceName),
+    ...visibleFormCandidates(abilityField, sourceName, mode),
+    ...visibleFormCandidates(heightField, sourceName, mode),
+    ...visibleFormCandidates(weightField, sourceName, mode),
   ];
   const evTable = firstTable(evField.innerHtml, "EV yield");
   for (const row of visibleRows(evTable)) {
     const cells = visibleCells(row);
     if (cells.length !== 1) continue;
-    const text = visibleText(stripHistoricalEvYieldAnnotations(cells[0].innerHtml)).normalize("NFC");
+    const text = visibleText(stripHistoricalEvYieldAnnotations(cells[0].innerHtml, mode)).normalize("NFC");
     if (!text || /^Total:\s*\d+$/i.test(text) || /^(?:\d+\s*(?:HP|Atk|Def|Sp\.Atk|Sp\.Def|Speed)\b)/i.test(text)) continue;
     if (text === sourceName) continue;
-    const generationScope = generationScopedAbilityLabel(text, sourceName);
+    const generationScope = generationScopedAbilityLabel(text, sourceName, mode);
     if (generationScope !== null) continue;
     if (/\bGen(?:eration)?\b/i.test(text)) {
       throw new Error(`form discovery: unsupported generation-scoped EV label ${JSON.stringify(text)}`);
@@ -877,6 +895,7 @@ function metricFacts(
   href: RegExp,
   unit: "m" | "kg",
   scale: number,
+  mode: StaticFactsParserMode,
 ): {
   facts: BulbapediaScopedFact<number>[];
   complementFormLabels: string[];
@@ -911,7 +930,14 @@ function metricFacts(
         }
       }
       if (pending === null) continue;
-      if (hiddenLabels.length === 1 && hiddenLabels[0].normalize("NFC") === sourceName.normalize("NFC")) {
+      const hiddenBaseAlias =
+        mode === "v13" &&
+        ((sourceName === "Castform" && hiddenLabels[0] === "Normal") ||
+          (sourceName === "Deoxys" && hiddenLabels[0] === "Normal Forme"));
+      if (
+        hiddenLabels.length === 1 &&
+        (hiddenLabels[0].normalize("NFC") === sourceName.normalize("NFC") || hiddenBaseAlias)
+      ) {
         result.push({ formLabels: [null], fact: pending });
         pending = null;
         continue;
@@ -984,7 +1010,12 @@ function metricFacts(
   };
 }
 
-function parseEvYield(html: string, forms: BulbapediaFormLabel[], sourceName: string): BulbapediaScopedFact<StatBlock<number>>[] {
+function parseEvYield(
+  html: string,
+  forms: BulbapediaFormLabel[],
+  sourceName: string,
+  mode: StaticFactsParserMode,
+): BulbapediaScopedFact<StatBlock<number>>[] {
   const field = fieldContainer(html, "EV yield", /effort_value_yield/i);
   const table = firstTable(field.innerHtml, "EV yield");
   const rows = visibleRows(table);
@@ -994,7 +1025,7 @@ function parseEvYield(html: string, forms: BulbapediaFormLabel[], sourceName: st
   for (const row of rows) {
     const cells = visibleCells(row);
     if (cells.length === 0) continue;
-    const sanitizedCells = cells.map((cell) => stripHistoricalEvYieldAnnotations(cell.innerHtml));
+    const sanitizedCells = cells.map((cell) => stripHistoricalEvYieldAnnotations(cell.innerHtml, mode));
     const text = sanitizedCells.map((cellHtml) => visibleText(cellHtml)).join(" ").trim();
     if (/^Total:\s*\d+$/i.test(text)) continue;
     if (cells.length === 1 && !/<small\b/i.test(cells[0].innerHtml)) {
@@ -1036,7 +1067,12 @@ function parseEvYield(html: string, forms: BulbapediaFormLabel[], sourceName: st
   return result;
 }
 
-function parseAbilities(html: string, forms: BulbapediaFormLabel[], sourceName: string): BulbapediaScopedAbilityEvidence[] {
+function parseAbilities(
+  html: string,
+  forms: BulbapediaFormLabel[],
+  sourceName: string,
+  mode: StaticFactsParserMode,
+): BulbapediaScopedAbilityEvidence[] {
   const field = fieldContainer(html, ["Abilities", "Ability"], /href=["']\/wiki\/Ability["']/i);
   const table = firstTable(field.innerHtml, "Abilities");
   const result: BulbapediaScopedAbilityEvidence[] = [];
@@ -1050,7 +1086,7 @@ function parseAbilities(html: string, forms: BulbapediaFormLabel[], sourceName: 
     if (hidden && links.length !== 1) throw new Error("Abilities: Hidden Ability value must contain exactly one Ability link");
     if (!hidden && links.length > 2) throw new Error("Abilities: normal Ability value contains more than two links");
 
-    const generationScope = rawLabel === null ? null : generationScopedAbilityLabel(rawLabel, sourceName);
+    const generationScope = rawLabel === null ? null : generationScopedAbilityLabel(rawLabel, sourceName, mode);
     if (generationScope === "historical") return;
     if (rawLabel !== null && generationScope === null && /\bGen(?:eration)?\b/i.test(rawLabel)) {
       throw new Error(`Abilities: unsupported generation-scoped label ${JSON.stringify(rawLabel)}`);
@@ -1114,17 +1150,18 @@ function parseAbilities(html: string, forms: BulbapediaFormLabel[], sourceName: 
   return result;
 }
 
-export function parseBulbapediaSpeciesStaticFacts(
+function parseBulbapediaSpeciesStaticFactsWithMode(
   source: BulbapediaSpeciesStaticFactsHtmlSource,
+  mode: StaticFactsParserMode,
 ): ExtractedBulbapediaSpeciesStaticFacts {
   const sourceName = requireCanonicalSpeciesSource(source);
-  const formLabels = discoverFormLabels(sourceName, source.html);
-  const height = metricFacts(source.html, formLabels, sourceName, "Height", /height/i, "m", 1000);
-  const weight = metricFacts(source.html, formLabels, sourceName, "Weight", /href=["']\/wiki\/Weight["']/i, "kg", 1000);
+  const formLabels = discoverFormLabels(sourceName, source.html, mode);
+  const height = metricFacts(source.html, formLabels, sourceName, "Height", /height/i, "m", 1000, mode);
+  const weight = metricFacts(source.html, formLabels, sourceName, "Weight", /href=["']\/wiki\/Weight["']/i, "kg", 1000, mode);
   return {
     sourceName,
     formLabels,
-    abilities: parseAbilities(source.html, formLabels, sourceName),
+    abilities: parseAbilities(source.html, formLabels, sourceName, mode),
     catchRate: parseCatchRate(source.html, formLabels),
     growthRate: parseGrowthRate(source.html, formLabels),
     baseExperience: parseLatestBaseExperience(source.html, formLabels),
@@ -1142,7 +1179,19 @@ export function parseBulbapediaSpeciesStaticFacts(
       heightMillimeters: height.hiddenPlaceholderFormLabels,
       weightGrams: weight.hiddenPlaceholderFormLabels,
     },
-    evYield: parseEvYield(source.html, formLabels, sourceName),
+    evYield: parseEvYield(source.html, formLabels, sourceName, mode),
     sourceRecordId: source.sourceRecordId,
   };
+}
+
+export function parseBulbapediaSpeciesStaticFacts(
+  source: BulbapediaSpeciesStaticFactsHtmlSource,
+): ExtractedBulbapediaSpeciesStaticFacts {
+  return parseBulbapediaSpeciesStaticFactsWithMode(source, "v12");
+}
+
+export function parseBulbapediaSpeciesStaticFactsV13(
+  source: BulbapediaSpeciesStaticFactsHtmlSource,
+): ExtractedBulbapediaSpeciesStaticFacts {
+  return parseBulbapediaSpeciesStaticFactsWithMode(source, "v13");
 }
