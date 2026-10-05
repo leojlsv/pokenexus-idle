@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "paths": {
       "@pokenexus/game-core": ["packages/game-core/src/index.ts"],
+      "@pokenexus/game-data/runtime": ["packages/game-data/src/runtime.ts"],
       "@pokenexus/game-protocol": ["packages/game-protocol/src/index.ts"],
       "@pokenexus/game-protocol/testing": ["packages/game-protocol/src/testing.ts"],
       "@pokenexus/game-types": ["packages/game-types/src/index.ts"]

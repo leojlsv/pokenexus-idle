@@ -14,6 +14,7 @@ describe("small-screen shell CSS contract", () => {
 
   it("prevents intrinsic shell width from creating horizontal page overflow", () => {
     expect(css).toContain("overflow-x: hidden");
+    expect(css).toContain("body { margin: 0; min-width: 0;");
     expect(css).toContain(".app-shell { min-width: 0;");
     expect(css).toContain(".main-content { min-width: 0;");
   });
