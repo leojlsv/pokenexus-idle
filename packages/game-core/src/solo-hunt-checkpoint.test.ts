@@ -4,13 +4,16 @@ import {
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
   decodeSoloHuntCheckpoint,
   decodeSoloHuntCheckpointV1,
   decodeSoloHuntCheckpointV2,
   decodeSoloHuntCheckpointV3,
+  decodeSoloHuntCheckpointV4,
   encodeSoloHuntCheckpointV1,
   encodeSoloHuntCheckpointV2,
   encodeSoloHuntCheckpointV3,
+  encodeSoloHuntCheckpointV4,
 } from "./solo-hunt-checkpoint";
 import {
   NO_SAVED_AUTO_POTION_POLICY,
@@ -211,6 +214,112 @@ describe("Solo Hunt checkpoint codec", () => {
 
     const missing = { ...state, automationPolicies: undefined } as unknown as SoloHuntRuntimeState;
     expect(() => encodeSoloHuntCheckpointV3(missing)).toThrow(/automation policy authority/i);
+  });
+
+  it("requires pinned original Shiny only in v4 and does not reinterpret legacy checkpoints", () => {
+    const v2State = {
+      ...geneticCheckpointState(),
+      pinnedTeam: [{
+        pokemonInstanceId: "pokemon:1",
+        speciesId: "species:1",
+        level: 5,
+        baseStats: { hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 },
+        ivs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+        types: ["type:grass"],
+        moveLoadout: ["move:tackle"],
+      }],
+      appliedHealingEvents: [],
+    } as unknown as SoloHuntRuntimeState;
+    const legacyBytes = encodeSoloHuntCheckpointV2(v2State);
+    expect(decodeSoloHuntCheckpoint(legacyBytes)).toEqual({ accepted: true, state: v2State });
+    const automationPolicies = {
+      capture: { policyVersion: "policy:capture", rowVersion: "4", enabled: true },
+      potion: NO_SAVED_AUTO_POTION_POLICY,
+      revive: NO_SAVED_AUTO_REVIVE_POLICY,
+    } as const;
+    const missingShinyState = {
+      ...v2State,
+      automationPolicies,
+      appliedAutomationEvents: [],
+    } as unknown as SoloHuntRuntimeState;
+    const v3Bytes = encodeSoloHuntCheckpointV3(missingShinyState);
+    expect(decodeSoloHuntCheckpointV3(v3Bytes)).toEqual({ accepted: true, state: missingShinyState });
+    expect(decodeSoloHuntCheckpoint(v3Bytes)).toEqual({ accepted: true, state: missingShinyState });
+    expect(() => encodeSoloHuntCheckpointV4(missingShinyState)).toThrow(/original owned Shiny/);
+
+    const shinyState = {
+      ...v2State,
+      automationPolicies,
+      appliedAutomationEvents: [],
+      pinnedTeam: v2State.pinnedTeam.map((member) => ({ ...member, shiny: true })),
+      completedEncounterProvenance: v2State.completedEncounterProvenance.map((provenance) => ({
+        ...provenance,
+        battleOrigin: {
+          battleId: "battle:checkpoint:1",
+          sourceVersions: {
+            gameDataVersion: v2State.gameDataVersion,
+            rulesVersion: v2State.rulesVersion,
+            combatEventSchemaVersion: "events:test",
+          },
+          individualizationSnapshot: v2State.completedEncounterProvenance[0]!.individualizationSnapshot!,
+          sides: [
+            { sideId: "side:owned", combatantIds: ["combatant:owned"], activeCombatantIds: ["combatant:owned"] },
+            { sideId: "side:wild", combatantIds: ["combatant:wild"], activeCombatantIds: ["combatant:wild"] },
+          ],
+          participants: [
+            {
+              kind: "owned" as const,
+              combatantId: "combatant:owned",
+              sideId: "side:owned",
+              pokemonInstanceId: "pokemon:1",
+              speciesId: "species:1",
+              level: 5,
+              shiny: true,
+              currentHp: 10,
+              maxHp: 10,
+            },
+            {
+              kind: "wild" as const,
+              combatantId: "combatant:wild",
+              sideId: "side:wild",
+              speciesId: "species:wild",
+              level: 5,
+              shiny: false,
+              state: "conscious" as const,
+            },
+          ],
+          initialEvents: [{
+            kind: "BattleStarted" as const,
+            battleId: "battle:checkpoint:1",
+            sequence: 1,
+            combatTimeMs: 0,
+          }],
+        },
+      })),
+    } as unknown as SoloHuntRuntimeState;
+    const v4Bytes = encodeSoloHuntCheckpointV4(shinyState);
+    expect(new TextDecoder().decode(v4Bytes)).toContain(SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4);
+    expect(decodeSoloHuntCheckpointV4(v4Bytes)).toEqual({ accepted: true, state: shinyState });
+    expect(decodeSoloHuntCheckpoint(v4Bytes)).toEqual({ accepted: true, state: shinyState });
+    expect(decodeSoloHuntCheckpointV3(v4Bytes)).toMatchObject({ accepted: false });
+    expect(decodeSoloHuntCheckpointV2(v4Bytes)).toMatchObject({ accepted: false });
+    const {
+      automationPolicies: _automationPolicies,
+      appliedAutomationEvents: _appliedAutomationEvents,
+      ...legacyShinyState
+    } = shinyState;
+    expect(decodeSoloHuntCheckpointV2(encodeSoloHuntCheckpointV2(
+      legacyShinyState as unknown as SoloHuntRuntimeState,
+    ))).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/unknown field shiny/),
+    });
+
+    const malformedShiny = {
+      ...shinyState,
+      pinnedTeam: shinyState.pinnedTeam.map((member) => ({ ...member, shiny: "yes" })),
+    } as unknown as SoloHuntRuntimeState;
+    expect(() => encodeSoloHuntCheckpointV4(malformedShiny)).toThrow(/original owned Shiny/);
   });
 
   it("fails closed for malformed or unknown schemas", () => {

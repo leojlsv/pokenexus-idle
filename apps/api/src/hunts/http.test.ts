@@ -139,6 +139,15 @@ function commandHeaders(extra: Record<string, string> = {}): Record<string, stri
 }
 
 describe("SPEC-015 Hunt HTTP routes", () => {
+  it("keeps the TASK-103 presentation GET unregistered until its independent enablement gate", async () => {
+    const { app, hunt, guards } = createTestApp();
+    const response = await app.request(`/player/hunts/${huntId}/presentation`, {}, {} as ApiBindings);
+
+    expect(response.status).toBe(404);
+    expect(guards).toEqual({ read: 0, command: 0 });
+    expect(hunt.calls).toEqual([]);
+  });
+
   it("uses the read-only session guard and authenticated self-scope for Hunt reads", async () => {
     const { app, hunt, guards } = createTestApp();
 

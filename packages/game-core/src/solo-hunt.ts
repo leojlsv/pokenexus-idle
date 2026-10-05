@@ -2,6 +2,7 @@ import type {
   AbilityId,
   BattleId,
   BattleCombatantState,
+  BattleInitInput,
   BattleSideId,
   BattleState,
   CadenceParticipant,
@@ -67,6 +68,7 @@ const SOLO_HUNT_STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 export interface SoloHuntTeamMemberSnapshot {
   readonly pokemonInstanceId: PokemonInstanceId;
   readonly speciesId: SpeciesId;
+  readonly shiny?: boolean;
   readonly level: number;
   readonly baseStats: StatBlock<number>;
   readonly ivs: StatBlock<number>;
@@ -146,6 +148,48 @@ export interface SoloHuntEncounterBattleInitInput {
   readonly preferredActivePokemonInstanceId?: PokemonInstanceId;
 }
 
+/**
+ * Private, immutable Battle-origin evidence. This is not a public event or snapshot:
+ * the publisher passes it to the versioned privacy projector, never to clients.
+ */
+export interface SoloHuntBattleOrigin {
+  readonly battleId: BattleId;
+  readonly sourceVersions: Readonly<{
+    readonly gameDataVersion: string;
+    readonly rulesVersion: string;
+    readonly combatEventSchemaVersion: string;
+  }>;
+  readonly individualizationSnapshot: EncounterIndividualizationSnapshot;
+  readonly sides: ReadonlyArray<{
+    readonly sideId: BattleSideId;
+    readonly combatantIds: ReadonlyArray<CombatantId>;
+    readonly activeCombatantIds: ReadonlyArray<CombatantId>;
+  }>;
+  readonly participants: ReadonlyArray<
+    | {
+        readonly kind: "owned";
+        readonly combatantId: CombatantId;
+        readonly sideId: BattleSideId;
+        readonly pokemonInstanceId: PokemonInstanceId;
+        readonly speciesId: SpeciesId;
+        readonly level: number;
+        readonly shiny: boolean;
+        readonly currentHp: number;
+        readonly maxHp: number;
+      }
+    | {
+        readonly kind: "wild";
+        readonly combatantId: CombatantId;
+        readonly sideId: BattleSideId;
+        readonly speciesId: SpeciesId;
+        readonly level: number;
+        readonly shiny: boolean;
+        readonly state: "conscious" | "ko";
+      }
+  >;
+  readonly initialEvents: ReadonlyArray<CombatEvent>;
+}
+
 export type SoloHuntEncounterBattleInitResult =
   | {
       readonly accepted: true;
@@ -153,6 +197,7 @@ export type SoloHuntEncounterBattleInitResult =
       readonly deterministicState: DeterministicState;
       readonly policy: SoloHuntMovePolicyState;
       readonly events: ReadonlyArray<CombatEvent>;
+      readonly origin?: SoloHuntBattleOrigin;
       readonly playerSideId: BattleSideId;
       readonly opponentSideId: BattleSideId;
     }
@@ -315,6 +360,7 @@ export interface SoloHuntCompletedEncounterProvenance {
   readonly terminalBattleTimeMs: number;
   readonly terminalEventSequence: number;
   readonly individualizationSnapshot?: EncounterIndividualizationSnapshot;
+  readonly battleOrigin?: SoloHuntBattleOrigin;
 }
 
 export interface SoloHuntPendingCaptureDecision {
@@ -351,6 +397,7 @@ export interface SoloHuntCurrentEncounterRuntime {
   readonly battleStimuli: ReadonlyArray<CombatStimulus>;
   readonly battleOutcome?: SoloHuntBattleOutcome;
   readonly individualizationSnapshot?: EncounterIndividualizationSnapshot;
+  readonly battleOrigin?: SoloHuntBattleOrigin;
 }
 
 export interface SoloHuntInterBattleRuntime {
@@ -488,7 +535,7 @@ export type AdvanceSoloHuntToEncounterBoundaryResult =
   | {
       readonly accepted: true;
       readonly state: SoloHuntRuntimeState;
-      readonly stopReason: "cutoff" | "encounterBoundary" | SoloHuntTerminalReason;
+      readonly stopReason: "cutoff" | "encounterBoundary" | "projectionBudget" | SoloHuntTerminalReason;
       readonly events: ReadonlyArray<SoloHuntSimulationEvent>;
     }
   | {
@@ -507,6 +554,7 @@ export type AdvanceSoloHuntToAutomationBoundaryResult =
         | "automationBoundary"
         | "encounterBoundary"
         | "activityBoundary"
+        | "projectionBudget"
         | SoloHuntTerminalReason;
       readonly events: ReadonlyArray<SoloHuntSimulationEvent>;
     }
@@ -877,7 +925,7 @@ export function initializeSoloHuntEncounterBattle(
     ] as const),
     [opponentKey, opponentId] as const,
   ]);
-  const battle = initializeBattle({
+  const battleInput: BattleInitInput = {
     battleId: encounterBattleId(input.huntRunIdentity, input.encounterOrdinal),
     context: input.context,
     sides: [
@@ -901,14 +949,72 @@ export function initializeSoloHuntEncounterBattle(
     ...(isManagementFirstCombatContext(input.context)
       ? { koInterventionSideId: SOLO_HUNT_PLAYER_SIDE_ID }
       : {}),
-  });
+  };
+  const battle = initializeBattle(battleInput);
   if (!battle.accepted) return reject(battle.reason);
+  const hasPinnedPresentationOrigin = input.team.every((member) => typeof member.shiny === "boolean")
+    && typeof individual?.shiny === "boolean";
+  const origin: SoloHuntBattleOrigin | undefined = hasPinnedPresentationOrigin
+    ? {
+        battleId: battleInput.battleId,
+        sourceVersions: {
+          gameDataVersion: String(input.context.gameDataVersion),
+          rulesVersion: String(input.context.rulesVersion),
+          combatEventSchemaVersion: String(input.context.combatEventSchemaVersion),
+        },
+        individualizationSnapshot: individual!,
+        sides: battleInput.sides.map((side) => ({
+          sideId: side.sideId,
+          combatantIds: [...side.combatantIds],
+          activeCombatantIds: [...side.initialActiveCombatantIds],
+        })),
+        participants: [
+          ...input.team.map((member) => {
+            const combatant = playerCombatants.find((candidate) =>
+              candidate.cadenceParticipant.identity === member.pokemonInstanceId);
+            if (!combatant || typeof member.shiny !== "boolean") {
+              throw new Error("Battle origin lost frozen owned Pokémon identity");
+            }
+            const stats = deriveStatsForRulesVersion(
+              input.context.rulesVersion,
+              member.baseStats,
+              member.ivs,
+              member.level,
+              member.geneticBonuses,
+            );
+            if (!stats) throw new Error("Battle origin could not derive pinned owned maximum HP");
+            return {
+              kind: "owned" as const,
+              combatantId: combatant.combatantId,
+              sideId: SOLO_HUNT_PLAYER_SIDE_ID,
+              pokemonInstanceId: member.pokemonInstanceId,
+              speciesId: member.speciesId,
+              level: member.level,
+              shiny: member.shiny,
+              currentHp: ownGet(cadence.hpByParticipant, cadenceParticipantKey(combatant.cadenceParticipant))!,
+              maxHp: stats.hp,
+            };
+          }),
+          {
+            kind: "wild" as const,
+            combatantId: opponentId,
+            sideId: SOLO_HUNT_OPPONENT_SIDE_ID,
+            speciesId: template.speciesId,
+            level: template.level,
+            shiny: individual!.shiny,
+            state: "conscious" as const,
+          },
+        ],
+        initialEvents: [...battle.events],
+      }
+    : undefined;
   return {
     accepted: true,
     state: battle.state,
     deterministicState: battle.deterministicState,
     policy,
     events: battle.events,
+    ...(origin ? { origin } : {}),
     playerSideId: SOLO_HUNT_PLAYER_SIDE_ID,
     opponentSideId: SOLO_HUNT_OPPONENT_SIDE_ID,
   };
@@ -1224,6 +1330,7 @@ function samePinnedTeam(
     return other !== undefined
       && member.pokemonInstanceId === other.pokemonInstanceId
       && member.speciesId === other.speciesId
+      && member.shiny === other.shiny
       && member.level === other.level
       && sameStatBlock(member.baseStats, other.baseStats)
       && sameStatBlock(member.ivs, other.ivs)
@@ -2064,6 +2171,8 @@ function validateCompletedEncounterEvidence(
 type SoloHuntEncounterReplayResult =
   | {
       readonly accepted: true;
+      readonly origin?: SoloHuntBattleOrigin;
+      readonly events: ReadonlyArray<CombatEvent>;
       readonly battle: BattleState;
       readonly deterministicState: DeterministicState;
       readonly policy: SoloHuntMovePolicyState;
@@ -2085,6 +2194,7 @@ function replaySoloHuntEncounterStimuli(
   deterministicState: DeterministicState,
   stimuli: ReadonlyArray<CombatStimulus>,
   individualizationSnapshot?: EncounterIndividualizationSnapshot,
+  collectEvents = false,
 ): SoloHuntEncounterReplayResult {
   const initialized = initializeSoloHuntEncounterBattle({
     huntRunIdentity,
@@ -2108,6 +2218,7 @@ function replaySoloHuntEncounterStimuli(
   let replayDeterministicState = initialized.deterministicState;
   let replayPolicy = initialized.policy;
   let participantActivations: ReadonlyArray<SoloHuntParticipantActivationProvenance> = [initialActivation];
+  const sourceEvents: CombatEvent[] = collectEvents ? [...initialized.events] : [];
 
   for (const stimulus of stimuli) {
     if (stimulus.kind === "useMove") {
@@ -2119,6 +2230,7 @@ function replaySoloHuntEncounterStimuli(
       if (resolved.kind !== "resolved" || !structurallyEqual(resolved.intent, stimulus)) {
         return { accepted: false, reason: "Solo Hunt replayed automatic Move does not match stored stimulus" };
       }
+      if (collectEvents) sourceEvents.push(...resolved.events);
       battle = resolved.state;
       replayDeterministicState = resolved.deterministicState;
       replayPolicy = resolved.policy;
@@ -2144,6 +2256,7 @@ function replaySoloHuntEncounterStimuli(
       ) {
         return { accepted: false, reason: "Solo Hunt replayed forced replacement does not match stored stimulus" };
       }
+      if (collectEvents) sourceEvents.push(...replacement.events);
       participantActivations = appendReplacementParticipantActivations(
         participantActivations,
         replacement.state,
@@ -2178,6 +2291,7 @@ function replaySoloHuntEncounterStimuli(
       }
       const advanced = resolveCombatStimulus(battle, stimulus, replayDeterministicState);
       if (!advanced.accepted) return { accepted: false, reason: advanced.reason };
+      if (collectEvents) sourceEvents.push(...advanced.events);
       battle = advanced.state;
       replayDeterministicState = advanced.deterministicState;
       continue;
@@ -2196,6 +2310,8 @@ function replaySoloHuntEncounterStimuli(
 
   return {
     accepted: true,
+    ...(initialized.origin ? { origin: initialized.origin } : {}),
+    events: sourceEvents,
     battle,
     deterministicState: replayDeterministicState,
     policy: replayPolicy,
@@ -2259,12 +2375,11 @@ function validateAppliedHealingEvents(
     }
     const magnitudeError = healingMagnitudeError(event.magnitude);
     if (magnitudeError) return magnitudeError;
-    const boundary = state.completedEncounters.find(
-      ({ encounterId, encounterOrdinal }) =>
-        encounterId === event.afterEncounterId && encounterOrdinal === event.afterEncounterOrdinal,
-    );
+    const boundary = state.completedEncounters[event.afterEncounterOrdinal - 1];
     if (
       !boundary
+      || boundary.encounterId !== event.afterEncounterId
+      || boundary.encounterOrdinal !== event.afterEncounterOrdinal
       || event.appliedAtHuntTimeMs < boundary.completedAtHuntTimeMs
       || event.appliedAtHuntTimeMs > boundary.completedAtHuntTimeMs + inputs.interBattleGapMs
     ) {
@@ -2618,6 +2733,12 @@ function validateReplayableHuntHistory(
       provenance.individualizationSnapshot,
     );
     if (!replay.accepted) return replay.reason;
+    if (
+      provenance.battleOrigin !== undefined
+      && !structurallyEqual(provenance.battleOrigin, replay.origin)
+    ) {
+      return "Solo Hunt completed Encounter immutable Battle origin does not replay exactly";
+    }
     const lifecycle = evaluateBattleLifecycle(replay.battle);
     if (replay.battle.status !== "ended") {
       return "Solo Hunt completed Encounter stimulus history does not replay to Battle end";
@@ -2786,6 +2907,12 @@ function validateReplayableHuntHistory(
     encounter.individualizationSnapshot,
   );
   if (!replay.accepted) return replay.reason;
+  if (
+    encounter.battleOrigin !== undefined
+    && !structurallyEqual(encounter.battleOrigin, replay.origin)
+  ) {
+    return "Solo Hunt current Encounter immutable Battle origin does not replay exactly";
+  }
   if (
     !structurallyEqual(replay.battle, encounter.battle)
     || !structurallyEqual(replay.policy, encounter.policy)
@@ -3264,6 +3391,7 @@ function buildCurrentEncounter(
     participantPokemonInstanceIds: [initialActivation.pokemonInstanceId],
     participantActivations: [initialActivation],
     battleStimuli: [],
+    ...(initialized.origin ? { battleOrigin: initialized.origin } : {}),
     ...(individualizationSnapshot ? { individualizationSnapshot } : {}),
     ...(outcome ? { battleOutcome: outcome } : {}),
   };
@@ -3468,6 +3596,7 @@ export type ApplySoloHuntAutomationItemResult =
   | {
       readonly accepted: true;
       readonly state: SoloHuntRuntimeState;
+      readonly events: ReadonlyArray<SoloHuntSimulationEvent>;
       readonly appliedHp: number;
       readonly resultingHp: number;
       readonly targetPokemonInstanceId: PokemonInstanceId;
@@ -3554,6 +3683,7 @@ export function applySoloHuntBattleAutoPotion(
   return {
     accepted: true,
     state: next,
+    events: wrapCombatEvents(encounter, applied.events),
     appliedHp: event.amount,
     resultingHp: event.resultingHp,
     targetPokemonInstanceId: input.targetPokemonInstanceId,
@@ -3609,6 +3739,7 @@ export function applySoloHuntBattleAutoRevive(
   return {
     accepted: true,
     state: next,
+    events: wrapCombatEvents(encounter, applied.events),
     appliedHp: event.amount,
     resultingHp: event.resultingHp,
     targetPokemonInstanceId: input.targetPokemonInstanceId,
@@ -3730,6 +3861,7 @@ function applySoloHuntInterBattleAutomation(
   return {
     accepted: true,
     state: next,
+    events: [],
     appliedHp,
     resultingHp,
     targetPokemonInstanceId: input.targetPokemonInstanceId,
@@ -3843,6 +3975,7 @@ export function applySoloHuntPostBattleAutoRevive(
   return {
     accepted: true,
     state: next,
+    events: [],
     appliedHp: revived.resultingHp,
     resultingHp: revived.resultingHp,
     targetPokemonInstanceId: input.targetPokemonInstanceId,
@@ -4017,6 +4150,7 @@ function completeEncounterProvenance(
     completedAtHuntTimeMs: state.logicalTimeMs,
     terminalBattleTimeMs: encounter.battle.combatTimeMs,
     terminalEventSequence: encounter.battle.eventSequence,
+    ...(encounter.battleOrigin ? { battleOrigin: encounter.battleOrigin } : {}),
     ...(encounter.individualizationSnapshot
       ? { individualizationSnapshot: encounter.individualizationSnapshot }
       : {}),
@@ -4064,8 +4198,11 @@ function advanceSoloHuntInternal(
     readonly stopAtAutomationBoundary: boolean;
     readonly skipInitialAutomationBoundary: boolean;
     readonly stopBeforeNextEncounter: boolean;
+    readonly maxCombatEvents?: number;
+    readonly maxCombatSourceBytes?: number;
   },
 ): AdvanceSoloHuntToAutomationBoundaryResult {
+  const { maxCombatEvents, maxCombatSourceBytes } = options;
   const originalState = state;
   const reject = (reason: string): AdvanceSoloHuntToAutomationBoundaryResult => ({
     accepted: false,
@@ -4075,6 +4212,18 @@ function advanceSoloHuntInternal(
   });
   if (!Number.isSafeInteger(cutoffMs) || cutoffMs < state.logicalTimeMs) {
     return reject("Solo Hunt cutoff must be a safe integer at or after current logical time");
+  }
+  if (
+    maxCombatEvents !== undefined
+    && (!Number.isSafeInteger(maxCombatEvents) || maxCombatEvents < 1)
+  ) {
+    return reject("Solo Hunt presentation budget must be a positive safe integer");
+  }
+  if (
+    maxCombatSourceBytes !== undefined
+    && (!Number.isSafeInteger(maxCombatSourceBytes) || maxCombatSourceBytes < 1)
+  ) {
+    return reject("Solo Hunt presentation source byte budget must be a positive safe integer");
   }
   const bindingError = validateRuntimeBinding(state, inputs);
   if (bindingError) return reject(bindingError);
@@ -4088,6 +4237,55 @@ function advanceSoloHuntInternal(
   let currentState = state;
   let skipCurrentAutomationBoundary = options.skipInitialAutomationBoundary;
   const events: SoloHuntSimulationEvent[] = [];
+  let sourceEventCount = 0;
+  let conservativeSourceBytes = 0;
+  const encoder = maxCombatSourceBytes === undefined ? null : new TextEncoder();
+  // The TASK-028 projector preserves the authoritative string/number fields of
+  // every CombatEvent and only adds a fixed HP-change wrapper. Across its
+  // current exhaustive union, projected canonical UTF-8 is bounded by raw
+  // canonical UTF-8 plus 128 bytes. JSON property sorting changes order, not
+  // encoded length. This deliberately overestimates the publisher's exact
+  // raw+public byte count without importing game-protocol into game-core.
+  const candidateBudget = (next: ReadonlyArray<CombatEvent>): {
+    readonly count: number;
+    readonly upperBytes: number;
+  } => ({
+    count: next.length,
+    upperBytes: encoder === null ? 0 : next.reduce((sum, event) =>
+      sum + 2 * encoder.encode(JSON.stringify(event)).byteLength + 128, 0),
+  });
+  const acceptBudget = (next: { readonly count: number; readonly upperBytes: number }): void => {
+    sourceEventCount += next.count;
+    conservativeSourceBytes += next.upperBytes;
+  };
+  let ownedStimuli: { encounterId: EncounterId; values: CombatStimulus[] } | undefined;
+  const appendStimulus = (
+    encounter: SoloHuntCurrentEncounterRuntime,
+    stimulus: CombatStimulus,
+  ): ReadonlyArray<CombatStimulus> => {
+    if (ownedStimuli?.encounterId !== encounter.encounterId) {
+      // The input checkpoint may be reused; only the local advancement owns this buffer.
+      ownedStimuli = { encounterId: encounter.encounterId, values: [...encounter.battleStimuli] };
+    }
+    ownedStimuli.values.push(stimulus);
+    return ownedStimuli.values;
+  };
+  const budgetReached = (): boolean =>
+    (maxCombatEvents !== undefined && sourceEventCount >= maxCombatEvents)
+    || (maxCombatSourceBytes !== undefined && sourceEventCount > 0
+      && conservativeSourceBytes >= maxCombatSourceBytes);
+  const wouldOverflow = (next: { readonly count: number; readonly upperBytes: number }): boolean =>
+    sourceEventCount > 0 && (
+      (maxCombatEvents !== undefined && sourceEventCount + next.count > maxCombatEvents)
+      || (maxCombatSourceBytes !== undefined
+        && conservativeSourceBytes + next.upperBytes > maxCombatSourceBytes)
+    );
+  const budgetYield = (): AdvanceSoloHuntToEncounterBoundaryResult => ({
+    accepted: true,
+    state: currentState,
+    stopReason: "projectionBudget",
+    events,
+  });
 
   while (true) {
     if (currentState.status === "terminal") {
@@ -4114,6 +4312,7 @@ function advanceSoloHuntInternal(
         }
         skipCurrentAutomationBoundary = false;
       }
+      if (budgetReached() && encounter.battle.status === "active") return budgetYield();
 
       if (encounter.battle.replacementPendingSideIds.length > 0) {
         const replacement = resolveSoloHuntForcedReplacement(
@@ -4123,7 +4322,10 @@ function advanceSoloHuntInternal(
           encounter.playerSideId,
         );
         if (!replacement.accepted) return reject(replacement.reason);
+        const nextBudget = candidateBudget(replacement.events);
+        if (wouldOverflow(nextBudget)) return budgetYield();
         events.push(...wrapCombatEvents(encounter, replacement.events));
+        acceptBudget(nextBudget);
         const outcome = battleOutcomeFromEvents(replacement.events);
         const activationEvent = replacement.events.find(
           (event): event is Extract<CombatEvent, { kind: "CombatantActivated" }> =>
@@ -4143,14 +4345,11 @@ function advanceSoloHuntInternal(
           battle: replacement.state,
           participantPokemonInstanceIds: participantIdsFromProvenance(participantActivations),
           participantActivations,
-          battleStimuli: [
-            ...encounter.battleStimuli,
-            {
-              kind: "forcedReplacement",
-              sideId: encounter.playerSideId,
-              combatantId: activationEvent.combatantId,
-            },
-          ],
+          battleStimuli: appendStimulus(encounter, {
+            kind: "forcedReplacement",
+            sideId: encounter.playerSideId,
+            combatantId: activationEvent.combatantId,
+          }),
           ...(outcome ? { battleOutcome: outcome } : {}),
         };
         currentState = {
@@ -4267,13 +4466,16 @@ function advanceSoloHuntInternal(
       );
       if (resolved.kind === "rejected") return reject(resolved.reason);
       if (resolved.kind === "resolved") {
+        const nextBudget = candidateBudget(resolved.events);
+        if (wouldOverflow(nextBudget)) return budgetYield();
         events.push(...wrapCombatEvents(encounter, resolved.events));
+        acceptBudget(nextBudget);
         const outcome = battleOutcomeFromEvents(resolved.events);
         encounter = {
           ...encounter,
           battle: resolved.state,
           policy: resolved.policy,
-          battleStimuli: [...encounter.battleStimuli, resolved.intent],
+          battleStimuli: appendStimulus(encounter, resolved.intent),
           ...(outcome ? { battleOutcome: outcome } : {}),
         };
         currentState = {
@@ -4303,15 +4505,15 @@ function advanceSoloHuntInternal(
         currentState.combatDeterministicState,
       );
       if (!advanced.accepted) return reject(advanced.reason);
+      const nextBudget = candidateBudget(advanced.events);
+      if (wouldOverflow(nextBudget)) return budgetYield();
       events.push(...wrapCombatEvents(encounter, advanced.events));
+      acceptBudget(nextBudget);
       const outcome = battleOutcomeFromEvents(advanced.events);
       encounter = {
         ...encounter,
         battle: advanced.state,
-        battleStimuli: [
-          ...encounter.battleStimuli,
-          { kind: "advanceTime", toMs: nextBoundaryMs },
-        ],
+        battleStimuli: appendStimulus(encounter, { kind: "advanceTime", toMs: nextBoundaryMs }),
         ...(outcome ? { battleOutcome: outcome } : {}),
       };
       currentState = {
@@ -4421,7 +4623,12 @@ function advanceSoloHuntInternal(
         between.activePokemonInstanceId,
       );
       if (!built.accepted) return reject(built.reason);
+      const initialCombatEvents = built.events.flatMap((event) =>
+        event.kind === "combat" ? [event.event] : []);
+      const nextBudget = candidateBudget(initialCombatEvents);
+      if (wouldOverflow(nextBudget)) return budgetYield();
       events.push(...built.events);
+      acceptBudget(nextBudget);
       currentState = {
         ...currentState,
         nextEncounterOrdinal: ordinal + 1,
@@ -4459,12 +4666,16 @@ export function advanceSoloHuntToEncounterBoundaryOrCutoff(
   state: SoloHuntRuntimeState,
   inputs: SoloHuntRuntimeInputs,
   cutoffMs: number,
+  maxCombatEvents?: number,
+  maxCombatSourceBytes?: number,
 ): AdvanceSoloHuntToEncounterBoundaryResult {
   return advanceSoloHuntInternal(state, inputs, cutoffMs, {
     stopAfterEncounterCompletion: true,
     stopAtAutomationBoundary: false,
     skipInitialAutomationBoundary: false,
     stopBeforeNextEncounter: false,
+    maxCombatEvents,
+    maxCombatSourceBytes,
   }) as AdvanceSoloHuntToEncounterBoundaryResult;
 }
 
@@ -4475,6 +4686,8 @@ export function advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
   options: {
     readonly skipInitialAutomationBoundary?: boolean;
     readonly stopBeforeNextEncounter?: boolean;
+    readonly maxCombatEvents?: number;
+    readonly maxCombatSourceBytes?: number;
   } = {},
 ): AdvanceSoloHuntToAutomationBoundaryResult {
   return advanceSoloHuntInternal(state, inputs, cutoffMs, {
@@ -4482,6 +4695,8 @@ export function advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
     stopAtAutomationBoundary: true,
     skipInitialAutomationBoundary: options.skipInitialAutomationBoundary === true,
     stopBeforeNextEncounter: options.stopBeforeNextEncounter === true,
+    maxCombatEvents: options.maxCombatEvents,
+    maxCombatSourceBytes: options.maxCombatSourceBytes,
   });
 }
 

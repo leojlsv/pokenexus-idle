@@ -68,11 +68,14 @@ import { assertStrictSoloHuntStartTeamAdmission } from "./start-admission";
 export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1 = "hunt-runtime-inputs-v1" as const;
 export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2 = "hunt-runtime-inputs-v2" as const;
 export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3 = "hunt-runtime-inputs-v3" as const;
+export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4 = "hunt-runtime-inputs-v4" as const;
 const INDIVIDUALIZATION_KEY_ID_DOMAIN = "pokenexus-individualization-authority-key-id-v1";
 const CAPTURE_BALL_POWERS = new Set<CaptureBallRuleV1["powerQuarterUnits"]>([4, 5, 6, 8, 9]);
 const GENETIC_PROFILE_SET = new Set<string>(GENETIC_PROFILES);
 
 export interface HuntRuntimeEnvironment extends PlayerStateEnvironment {
+  /** Private producer gate only. Public GET route/capability remains disabled. */
+  readonly HUNT_PRESENTATION_SOURCE_ENABLED?: string;
   readonly HUNT_CAPTURE_BALL_AUTHORITY_VERSION?: string;
   readonly HUNT_CAPTURE_BALL_RELEASES?: string;
   readonly HUNT_ITEM_RULE_RELEASES?: string;
@@ -196,7 +199,8 @@ interface PersistedRuntimeEnvelope {
   readonly schemaVersion:
     | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
     | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2
-    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3;
+    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3
+    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4;
   readonly inputs: Omit<SoloHuntRuntimeInputs, "individualizationAuthority">;
   readonly individualizationRequired: boolean;
 }
@@ -792,6 +796,7 @@ function buildTeamMembers(
     return {
       pokemonInstanceId: pokemon.pokemonInstanceId as never,
       speciesId: pokemon.speciesId as never,
+      shiny: pokemon.individualization.shiny,
       level: pokemon.level,
       baseStats: species.baseStats,
       ivs: pokemon.ivs,
@@ -965,9 +970,14 @@ export function serializeHuntRuntimeInputsForPersistence(
   inputs: SoloHuntRuntimeInputs,
 ): PersistedRuntimeEnvelope {
   const { individualizationAuthority: _secret, ...withoutSecret } = inputs;
+  const presentationSource = inputs.automationPolicies !== undefined
+    && inputs.team.length > 0
+    && inputs.team.every((member) => typeof member.shiny === "boolean");
   return {
-    schemaVersion: inputs.automationPolicies !== undefined
-      ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3
+    schemaVersion: presentationSource
+      ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4
+      : inputs.automationPolicies !== undefined
+        ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3
       : inputs.initialHpByPokemonInstanceId === undefined
         ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
         : HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2,
@@ -988,6 +998,7 @@ export function parsePersistedHuntRuntimeEnvelope(
         schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
         && schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2
         && schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3
+        && schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4
       )
       || typeof envelope.individualizationRequired !== "boolean"
     ) {
@@ -1027,6 +1038,23 @@ export function parsePersistedHuntRuntimeEnvelope(
       assertHuntAutomationPolicyAuthoritySnapshot(inputs.automationPolicies);
     }
     const context = record(inputs.context, "runtimeInputsJson.inputs.context");
+    if (schemaVersion === HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4) {
+      if (!Array.isArray(inputs.team) || inputs.team.length === 0) {
+        throw new TypeError("runtimeInputsJson.inputs.team is empty");
+      }
+      for (const [index, entry] of inputs.team.entries()) {
+        const member = record(entry, `runtimeInputsJson.inputs.team[${index}]`);
+        exactKeys(
+          member,
+          ["pokemonInstanceId", "speciesId", "shiny", "level", "baseStats", "ivs", "types", "moveLoadout"],
+          ["geneticBonuses", "abilityId"],
+          `runtimeInputsJson.inputs.team[${index}]`,
+        );
+        if (typeof member.shiny !== "boolean") {
+          throw new TypeError(`runtimeInputsJson.inputs.team[${index}].shiny must be boolean`);
+        }
+      }
+    }
     if (
       context.gameDataVersion !== recordValue.gameDataVersion
       || context.rulesVersion !== recordValue.rulesVersion
@@ -1200,9 +1228,13 @@ export function createHuntRuntimeAuthorityPort(
         moveContext,
         geneticProfiles: profiles,
       });
-      const teamMembers = buildTeamMembers(team, release.speciesById);
+      const sourceEnabled = env.HUNT_PRESENTATION_SOURCE_ENABLED === "1";
+      const inputTeam = buildTeamMembers(team, release.speciesById);
+      if (sourceEnabled && !inputTeam.every((member) => typeof member.shiny === "boolean")) {
+        throw unavailable("new Hunt is missing original owned Shiny authority");
+      }
       const maxHpByPokemonInstanceId = deriveTeamMaxHp(
-        teamMembers,
+        inputTeam,
         effectiveSelector.rulesVersion,
       );
       const inputs: SoloHuntRuntimeInputs = {
@@ -1212,7 +1244,8 @@ export function createHuntRuntimeAuthorityPort(
         contentVersion: release.contentVersion,
         contentHash: release.contentHash,
         context: combatContext,
-        team: teamMembers,
+        // Legacy Starts retain their strict pre-v3 Team byte shape.
+        team: sourceEnabled ? inputTeam : inputTeam.map(({ shiny: _shiny, ...member }) => member),
         encounterOptions: encounters.encounterOptions,
         opponentTemplates: encounters.opponentTemplates,
         interBattleGapMs,
@@ -1243,8 +1276,20 @@ export function createHuntRuntimeAuthorityPort(
       return deriveTeamMaxHp(teamMembers, moveContext.pair.rulesVersion);
     },
 
-    async loadPersistedRuntime(authorityRecord) {
+    async loadPersistedRuntime(authorityRecord, checkpointSchemaVersion) {
       const envelope = parsePersistedHuntRuntimeEnvelope(authorityRecord);
+      if (checkpointSchemaVersion !== undefined) {
+        const expectedCheckpointSchema = envelope.schemaVersion === HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
+          ? "pokenexus.solo-hunt-checkpoint.v1"
+          : envelope.schemaVersion === HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2
+            ? "pokenexus.solo-hunt-checkpoint.v2"
+            : envelope.schemaVersion === HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3
+              ? "pokenexus.solo-hunt-checkpoint.v3"
+              : "pokenexus.solo-hunt-checkpoint.v4";
+        if (checkpointSchemaVersion !== expectedCheckpointSchema) {
+          throw unavailable("persisted Hunt runtime input/checkpoint version binding is invalid");
+        }
+      }
       const release = await gameData.load(authorityRecord.gameDataVersion);
       if (
         release.contentVersion !== envelope.inputs.contentVersion
@@ -1461,6 +1506,12 @@ export function createHuntApplicationFromEnvironment(env: HuntRuntimeEnvironment
   const boundaryEffects: HuntBoundaryEffectsPort = {
     async automaticCapture(input) {
       try {
+        const provenance = input.state.completedEncounterProvenance[
+          input.boundary.encounterOrdinal - 1
+        ];
+        if (provenance?.encounterId !== input.boundary.encounterId) {
+          throw new Error("Automatic capture boundary lacks matching Encounter provenance");
+        }
         const service = await captureService(input.transaction, input.ballAuthorityVersion);
         const result = await service.attempt({
           subjectPlayerId: input.playerId,
@@ -1475,13 +1526,10 @@ export function createHuntApplicationFromEnvironment(env: HuntRuntimeEnvironment
           now: input.now,
         });
         if (result.status === "accepted") {
-          const provenance = input.state.completedEncounterProvenance.find(
-            ({ encounterId }) => encounterId === input.boundary.encounterId,
-          );
           return {
             status: "accepted",
             success: result.attempt.success,
-            shiny: result.attempt.success && provenance?.individualizationSnapshot?.shiny === true,
+            shiny: result.attempt.success && provenance.individualizationSnapshot?.shiny === true,
           };
         }
         return { status: "integrity_failure" };
@@ -1493,10 +1541,12 @@ export function createHuntApplicationFromEnvironment(env: HuntRuntimeEnvironment
 
     async reward(input) {
       try {
-        const evidence = input.state.completedEncounters.find(
-          ({ encounterId }) => encounterId === input.boundary.encounterId,
-        );
-        if (!evidence || evidence.completionKind !== "defeat") {
+        const evidence = input.state.completedEncounters[input.boundary.encounterOrdinal - 1];
+        if (
+          !evidence
+          || evidence.encounterId !== input.boundary.encounterId
+          || evidence.completionKind !== "defeat"
+        ) {
           throw new Error("Reward boundary lacks winning completed Encounter evidence");
         }
         const result = await rewardService.resolveAndApply({
@@ -1558,5 +1608,5 @@ export function createHuntApplicationFromEnvironment(env: HuntRuntimeEnvironment
     authority,
     boundaryEffects,
     manualCaptureEffects,
-  });
+  }, { presentationSourceEnabled: env.HUNT_PRESENTATION_SOURCE_ENABLED === "1" });
 }

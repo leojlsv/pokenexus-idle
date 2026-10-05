@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2, SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3 } from "@pokenexus/game-core";
+import {
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
+} from "@pokenexus/game-core";
 import {
   FORWARD_OFFLINE_PRODUCTIVE_CAP_MS,
   deriveFrozenProductiveTarget,
@@ -8,20 +12,25 @@ import {
 describe("TASK-110 offline productive target", () => {
   const now = new Date("2026-10-04T21:00:00.000Z");
 
-  it("caps forward V3 productive elapsed at exactly eight hours", () => {
-    const result = deriveFrozenProductiveTarget({
-      checkpointSchemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
-      checkpointLogicalTimeMs: 12_345,
-      logicalTimeAnchorAt: new Date(now.getTime() - 12 * 60 * 60 * 1000),
-      serverNow: now,
-    });
-    expect(result).toEqual({
-      targetLogicalTimeMs: 12_345 + FORWARD_OFFLINE_PRODUCTIVE_CAP_MS,
-      targetWallClockAt: now,
-      elapsedMs: 12 * 60 * 60 * 1000,
-      productiveElapsedMs: FORWARD_OFFLINE_PRODUCTIVE_CAP_MS,
-      capped: true,
-    });
+  it("caps forward management-first V3/V4 productive elapsed at exactly eight hours", () => {
+    for (const checkpointSchemaVersion of [
+      SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+      SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
+    ]) {
+      const result = deriveFrozenProductiveTarget({
+        checkpointSchemaVersion,
+        checkpointLogicalTimeMs: 12_345,
+        logicalTimeAnchorAt: new Date(now.getTime() - 12 * 60 * 60 * 1000),
+        serverNow: now,
+      });
+      expect(result).toEqual({
+        targetLogicalTimeMs: 12_345 + FORWARD_OFFLINE_PRODUCTIVE_CAP_MS,
+        targetWallClockAt: now,
+        elapsedMs: 12 * 60 * 60 * 1000,
+        productiveElapsedMs: FORWARD_OFFLINE_PRODUCTIVE_CAP_MS,
+        capped: true,
+      });
+    }
   });
 
   it("uses the full elapsed interval below eight hours for forward V3", () => {
@@ -50,14 +59,19 @@ describe("TASK-110 offline productive target", () => {
     expect(result.capped).toBe(false);
   });
 
-  it("fails closed on a backward database clock only for forward V3", () => {
+  it("fails closed on a backward database clock for forward management-first V3/V4", () => {
     const futureAnchor = new Date(now.getTime() + 1);
-    expect(() => deriveFrozenProductiveTarget({
-      checkpointSchemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
-      checkpointLogicalTimeMs: 7,
-      logicalTimeAnchorAt: futureAnchor,
-      serverNow: now,
-    })).toThrow(/cannot precede/i);
+    for (const checkpointSchemaVersion of [
+      SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+      SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
+    ]) {
+      expect(() => deriveFrozenProductiveTarget({
+        checkpointSchemaVersion,
+        checkpointLogicalTimeMs: 7,
+        logicalTimeAnchorAt: futureAnchor,
+        serverNow: now,
+      })).toThrow(/cannot precede/i);
+    }
 
     expect(deriveFrozenProductiveTarget({
       checkpointSchemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,

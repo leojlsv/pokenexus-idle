@@ -14,6 +14,7 @@ import {
   assertPublishedHuntPveManifest,
   deriveEncounterIndividualizationAuthorityKeyId,
   HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3,
+  HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4,
   normalizeHealingItemMagnitude,
   parsePersistedHuntRuntimeEnvelope,
   parseCaptureBallAuthorityReleases,
@@ -155,6 +156,68 @@ describe("Hunt runtime release authorities", () => {
       inputs: {
         ...persisted.inputs,
         automationPolicies: undefined,
+      },
+    }))).toThrow(HuntAuthorityUnavailableError);
+  });
+
+  it("TASK-103 uses additive runtime-inputs v4 only when automation and original Shiny authority are both pinned", () => {
+    const policies = {
+      capture: { policyVersion: null, rowVersion: "0", enabled: false },
+      potion: NO_SAVED_AUTO_POTION_POLICY,
+      revive: NO_SAVED_AUTO_REVIVE_POLICY,
+    } as const;
+    const teamMember = {
+      pokemonInstanceId: "pokemon:test",
+      speciesId: "species:test",
+      shiny: false,
+      level: 5,
+      baseStats: {},
+      ivs: {},
+      types: [],
+      moveLoadout: [],
+    };
+    const base = {
+      playerId: "player:test",
+      zoneId: "zone:test",
+      huntDefinitionId: "hunt:test",
+      contentVersion: "content:test",
+      contentHash: "sha256:content-test",
+      context: { gameDataVersion: "game-data:test", rulesVersion: "rules:test" },
+      team: [teamMember],
+      encounterOptions: [],
+      opponentTemplates: [],
+      interBattleGapMs: 0,
+      initialHpByPokemonInstanceId: { "pokemon:test": 17 },
+      automationPolicies: policies,
+    } as unknown as SoloHuntRuntimeInputs;
+    const recordFor = (runtimeInputsJson: Record<string, unknown>) => ({
+      huntId: "hunt-instance:test",
+      playerId: "player:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      runtimeInputsJson,
+      individualizationAuthorityVersion: null,
+      individualizationAuthorityKeyId: null,
+    });
+
+    const persisted = serializeHuntRuntimeInputsForPersistence(base);
+    expect(persisted.schemaVersion).toBe(HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4);
+    expect(parsePersistedHuntRuntimeEnvelope(recordFor(
+      persisted as unknown as Record<string, unknown>,
+    )).inputs.team).toEqual([teamMember]);
+
+    const withoutShiny: SoloHuntRuntimeInputs = {
+      ...base,
+      team: base.team.map(({ shiny: _shiny, ...member }) => member),
+    };
+    expect(serializeHuntRuntimeInputsForPersistence(withoutShiny).schemaVersion)
+      .toBe(HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3);
+
+    expect(() => parsePersistedHuntRuntimeEnvelope(recordFor({
+      ...persisted as unknown as Record<string, unknown>,
+      inputs: {
+        ...persisted.inputs,
+        team: [{ ...teamMember, shiny: undefined }],
       },
     }))).toThrow(HuntAuthorityUnavailableError);
   });

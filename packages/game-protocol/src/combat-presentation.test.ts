@@ -13,8 +13,11 @@ import {
 } from "@pokenexus/game-core";
 import {
   COMBAT_PRESENTATION_SCHEMA_VERSION_V1,
+  COMBAT_PRESENTATION_SCHEMA_VERSION_V2,
   projectCombatPresentationBootstrapV1,
+  projectCombatPresentationBootstrapV2,
   projectCombatPresentationContinuationV1,
+  projectCombatPresentationContinuationV2,
   type CombatPresentationBootstrapInputV1,
   type CombatPresentationBootstrapParticipantSourceV1,
   type CombatPresentationContinuationContextV1,
@@ -481,6 +484,30 @@ describe("Combat Presentation Event Contract v1", () => {
       amount: 7,
       resultingHp: 7,
     })])).toThrow(/requires combat presentation v2/);
+  });
+
+  it("projects CombatantRevived additively in presentation v2 with owned HP visibility", () => {
+    const started = projectCombatPresentationBootstrapV2(bootstrapInput());
+    expect(started.envelope.schemaVersion).toBe(COMBAT_PRESENTATION_SCHEMA_VERSION_V2);
+    const continued = projectCombatPresentationContinuationV2({
+      context: started.continuationContext,
+      events: [authoritativeEvent({
+        kind: "CombatantRevived",
+        sequence: 2,
+        combatTimeMs: 1,
+        combatantId: "combatant:owned",
+        amount: 7,
+        resultingHp: 7,
+      })],
+    });
+    expect(continued.envelope.events).toEqual([{
+      kind: "CombatantRevived",
+      sequence: 2,
+      combatTimeMs: 1,
+      combatantId: "combatant:owned",
+      hpChange: { visibility: "exact", amount: 7, resultingHp: 7 },
+    }]);
+    expect(continued.continuationContext.schemaVersion).toBe(COMBAT_PRESENTATION_SCHEMA_VERSION_V2);
   });
 
   it("rejects malformed bootstrap bindings and non-origin bootstrap events", () => {

@@ -4,6 +4,7 @@ export type TransactionIsolationLevel = "READ COMMITTED" | "REPEATABLE READ";
 
 export interface TransactionOptions {
   readonly isolationLevel?: TransactionIsolationLevel;
+  readonly readOnly?: boolean;
 }
 
 export type TransactionClient = Pick<Client, "query">;
@@ -17,7 +18,7 @@ export async function withTransaction<T>(
   let began = false;
 
   try {
-    await client.query(`BEGIN ISOLATION LEVEL ${isolationLevel}`);
+    await client.query(`BEGIN ISOLATION LEVEL ${isolationLevel}${options.readOnly ? ", READ ONLY" : ""}`);
     began = true;
     const result = await operation(client);
     await client.query("COMMIT");

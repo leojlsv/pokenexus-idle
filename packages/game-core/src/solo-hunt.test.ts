@@ -29,9 +29,11 @@ import {
   decodeSoloHuntCheckpointV1,
   decodeSoloHuntCheckpointV2,
   decodeSoloHuntCheckpointV3,
+  decodeSoloHuntCheckpointV4,
   encodeSoloHuntCheckpointV1,
   encodeSoloHuntCheckpointV2,
   encodeSoloHuntCheckpointV3,
+  encodeSoloHuntCheckpointV4,
 } from "./solo-hunt-checkpoint";
 import {
   createFreshSoloHuntCadence,
@@ -1221,6 +1223,7 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(created.accepted, created.accepted ? undefined : created.reason).toBe(true);
     if (!created.accepted) return;
 
+    const initialState = structuredClone(created.state);
     const bounded = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, 10_000);
     expect(bounded.accepted).toBe(true);
     if (!bounded.accepted) return;
@@ -1237,6 +1240,7 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(historicalRoundTrip.state.logicalTimeMs).toBe(bounded.state.logicalTimeMs);
     expect(historicalRoundTrip.state.completedEncounters).toEqual(bounded.state.completedEncounters);
 
+    const boundaryState = structuredClone(bounded.state);
     const resumed = advanceSoloHuntToCutoff(bounded.state, inputs, 10_000);
     const direct = advanceSoloHuntToCutoff(created.state, inputs, 10_000);
     expect(resumed.accepted).toBe(true);
@@ -1245,6 +1249,320 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(resumed.state).toEqual(direct.state);
     expect(resumed.stopReason).toBe(direct.stopReason);
     expect([...bounded.events, ...resumed.events]).toEqual(direct.events);
+    expect(created.state).toEqual(initialState);
+    expect(bounded.state).toEqual(boundaryState);
+  });
+
+  it("persists the real pre-reaction Battle source under strict v4 across bounded same-Battle yields", () => {
+    const base = geneticRuntimeInputs();
+    const inputs = {
+      ...base,
+      context: {
+        ...base.context,
+        moveRules: {
+          ...base.context.moveRules,
+          first: { ...base.context.moveRules.first, power: 10 },
+        },
+      },
+      opponentTemplates: base.opponentTemplates.map((template) => ({
+        ...template,
+        baseStats: { ...template.baseStats, hp: 120 },
+      })),
+      team: base.team.map((member) => ({ ...member, shiny: true })),
+      automationPolicies: {
+        capture: { policyVersion: null, rowVersion: "0", enabled: false },
+        potion: NO_SAVED_AUTO_POTION_POLICY,
+        revive: NO_SAVED_AUTO_REVIVE_POLICY,
+      },
+    };
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:versioned-source-yield",
+      inputs,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    const initialOrigin = created.state.currentEncounter?.battleOrigin;
+    expect(initialOrigin?.participants.find((participant) => participant.kind === "owned")).toMatchObject({
+      shiny: true,
+      pokemonInstanceId: inputs.team[0]!.pokemonInstanceId,
+    });
+    expect(initialOrigin?.initialEvents[0]).toMatchObject({
+      kind: "BattleStarted", sequence: 1, combatTimeMs: 0,
+    });
+    const initialBytes = encodeSoloHuntCheckpointV4(created.state);
+    const initialDecoded = decodeSoloHuntCheckpointV4(initialBytes);
+    expect(initialDecoded).toEqual({ accepted: true, state: {
+      ...created.state, appliedHealingEvents: [],
+    } });
+    if (!initialDecoded.accepted) return;
+
+    const cutoff = 4000;
+    const direct = advanceSoloHuntToEncounterBoundaryOrCutoff(initialDecoded.state, inputs, cutoff);
+    expect(direct.accepted).toBe(true);
+    if (!direct.accepted) return;
+    let current = initialDecoded.state;
+    const emitted: typeof direct.events[number][] = [];
+    let yielded = 0;
+    for (let count = 0; count < 40; count += 1) {
+      const step = advanceSoloHuntToEncounterBoundaryOrCutoff(current, inputs, cutoff, 3);
+      expect(step.accepted, step.accepted ? undefined : step.reason).toBe(true);
+      if (!step.accepted) return;
+      expect(step.events.filter((candidate) => candidate.kind === "combat").length).toBeLessThanOrEqual(3);
+      emitted.push(...step.events);
+      const restored = decodeSoloHuntCheckpointV4(encodeSoloHuntCheckpointV4(step.state));
+      expect(restored.accepted).toBe(true);
+      if (!restored.accepted) return;
+      current = restored.state;
+      if (step.stopReason !== "projectionBudget") break;
+      yielded += 1;
+    }
+    expect(yielded).toBeGreaterThan(0);
+    expect(current).toEqual(direct.state);
+    expect(emitted).toEqual(direct.events);
+  });
+
+  it.each([1, 2] as const)(
+    "counts the later Battle bootstrap before applying a multi-event stimulus with budget %s",
+    (budget) => {
+      const inputs = runtimeInputs();
+      const created = createSoloHuntRuntime({
+        huntRunIdentity: "hunt-run:next-battle-budget",
+        inputs,
+        policyRng: createRngState(123),
+        combatDeterministicState: { rng: createRngState(999) },
+      });
+      expect(created.accepted).toBe(true);
+      if (!created.accepted) return;
+      const completed = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, 10_000);
+      expect(completed.accepted).toBe(true);
+      if (!completed.accepted) return;
+      expect(completed.stopReason).toBe("encounterBoundary");
+      expect(completed.state.interBattle?.remainingGapMs).toBe(0);
+      const cutoff = completed.state.logicalTimeMs + 10_000;
+      const first = advanceSoloHuntToEncounterBoundaryOrCutoff(completed.state, inputs, cutoff, budget);
+      expect(first.accepted).toBe(true);
+      if (!first.accepted) return;
+      expect(first.stopReason).toBe("projectionBudget");
+      expect(first.events.filter((entry) => entry.kind === "combat")).toHaveLength(1);
+      expect(first.events[0]).toMatchObject({ kind: "combat", event: { kind: "BattleStarted" } });
+      const resumed = advanceSoloHuntToEncounterBoundaryOrCutoff(first.state, inputs, cutoff, 128);
+      const direct = advanceSoloHuntToEncounterBoundaryOrCutoff(completed.state, inputs, cutoff);
+      expect(resumed.accepted).toBe(true);
+      expect(direct.accepted).toBe(true);
+      if (!resumed.accepted || !direct.accepted) return;
+      expect(resumed.state).toEqual(direct.state);
+      expect([...first.events, ...resumed.events]).toEqual(direct.events);
+    },
+  );
+
+  it("does not split the next Battle bootstrap when the byte ceiling is smaller than the indivisible group", () => {
+    const inputs = runtimeInputs();
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:next-battle-source-byte-budget",
+      inputs,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    const completed = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, 10_000);
+    expect(completed.accepted).toBe(true);
+    if (!completed.accepted) return;
+    expect(completed.stopReason).toBe("encounterBoundary");
+    const cutoff = completed.state.logicalTimeMs + 10_000;
+    const before = structuredClone(completed.state);
+    const bounded = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      completed.state, inputs, cutoff, 128, 1,
+    );
+    expect(bounded.accepted).toBe(true);
+    if (!bounded.accepted) return;
+    expect(bounded.stopReason).toBe("projectionBudget");
+    expect(bounded.events[0]).toMatchObject({
+      kind: "combat", event: { kind: "BattleStarted" },
+    });
+    expect(bounded.events.filter((entry) => entry.kind === "combat")).toHaveLength(1);
+    expect(completed.state).toEqual(before);
+    const remainder = advanceSoloHuntToEncounterBoundaryOrCutoff(bounded.state, inputs, cutoff);
+    const direct = advanceSoloHuntToEncounterBoundaryOrCutoff(completed.state, inputs, cutoff);
+    expect(remainder.accepted).toBe(true);
+    expect(direct.accepted).toBe(true);
+    if (!remainder.accepted || !direct.accepted) return;
+    expect(remainder.state).toEqual(direct.state);
+    expect([...bounded.events, ...remainder.events]).toEqual(direct.events);
+  });
+
+  it("defers a two-event Move after 126 events instead of exceeding a 127-event limit", () => {
+    const base = runtimeInputs({
+      ...runtimeContext,
+      typeChart: { normal: { normal: 0 } },
+    });
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:127-plus-2",
+      inputs: base,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    const cutoff = 100_000;
+    const first = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, base, cutoff, 127);
+    expect(first.accepted).toBe(true);
+    if (!first.accepted) return;
+    expect(first.stopReason).toBe("projectionBudget");
+    expect(first.events.filter((entry) => entry.kind === "combat")).toHaveLength(126);
+    const second = advanceSoloHuntToEncounterBoundaryOrCutoff(first.state, base, cutoff, 127);
+    const direct = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, base, cutoff);
+    expect(second.accepted).toBe(true);
+    expect(direct.accepted).toBe(true);
+    if (!second.accepted || !direct.accepted) return;
+    expect([...first.events, ...second.events])
+      .toEqual(direct.events.slice(0, first.events.length + second.events.length));
+  });
+
+  it("defers a complete two-event Move after exactly 127 source events at the production 128-event cap", () => {
+    const oneTickEffectId = id<EffectId>("effect:source-budget-one-tick");
+    const oneTickAbilityId = id<AbilityId>("ability:source-budget-one-tick");
+    const sourceContext: ResolvedCombatContext = {
+      ...runtimeContext,
+      typeChart: { normal: { normal: 0 } },
+      abilityRules: {
+        [oneTickAbilityId]: {
+          abilityId: oneTickAbilityId,
+          reactions: [{
+            trigger: "battleStart",
+            target: "self",
+            order: 1,
+            effects: [{ kind: "applyEffect", effectId: oneTickEffectId }],
+          }],
+        },
+      },
+      effectRules: {
+        [oneTickEffectId]: {
+          effectId: oneTickEffectId,
+          lifetimeScope: "battle",
+          stackingPolicy: "replace",
+          durationMs: 1,
+        },
+      },
+    };
+    const base = runtimeInputs(sourceContext);
+    const inputs = {
+      ...base,
+      team: base.team.map((member) => ({ ...member, abilityId: oneTickAbilityId })),
+    };
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:precise-127-plus-2",
+      inputs,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    expect(created.events.filter((entry) =>
+      entry.kind === "combat" && entry.event.kind === "EffectApplied")).toHaveLength(1);
+    const cutoff = 100_000;
+    const initialCheckpoint = structuredClone(created.state);
+    const first = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, cutoff, 128);
+    expect(first.accepted).toBe(true);
+    if (!first.accepted) return;
+    expect(created.state).toEqual(initialCheckpoint);
+    expect(first.stopReason).toBe("projectionBudget");
+    const published = first.events.filter((entry) => entry.kind === "combat");
+    expect(published).toHaveLength(127);
+    expect(published.filter((entry) => entry.event.kind === "EffectRemoved")).toHaveLength(1);
+    expect(published.filter((entry) => entry.event.kind === "MoveUsed")).toHaveLength(63);
+    expect(published.filter((entry) => entry.event.kind === "MoveImmune")).toHaveLength(63);
+    const firstCheckpoint = structuredClone(first.state);
+    const second = advanceSoloHuntToEncounterBoundaryOrCutoff(first.state, inputs, cutoff, 128);
+    expect(first.state).toEqual(firstCheckpoint);
+    const direct = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, cutoff);
+    expect(second.accepted).toBe(true);
+    expect(direct.accepted).toBe(true);
+    if (!second.accepted || !direct.accepted) return;
+    expect(second.events.slice(0, 2).map((entry) => entry.kind === "combat"
+      ? entry.event.kind : entry.kind)).toEqual(["MoveUsed", "MoveImmune"]);
+    expect([...first.events, ...second.events])
+      .toEqual(direct.events.slice(0, first.events.length + second.events.length));
+  });
+
+  it("defers complete source stimuli at a cumulative conservative UTF-8 budget without changing gameplay", () => {
+    const inputs = runtimeInputs({
+      ...runtimeContext,
+      typeChart: { normal: { normal: 0 } },
+    });
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:source-byte-yield",
+      inputs,
+      policyRng: createRngState(123),
+      combatDeterministicState: { rng: createRngState(999) },
+    });
+    expect(created.accepted).toBe(true);
+    if (!created.accepted) return;
+    const cutoff = 10_000;
+    const original = structuredClone(created.state);
+    const direct = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, cutoff);
+    expect(direct.accepted).toBe(true);
+    if (!direct.accepted) return;
+    const directCombat = direct.events.flatMap((entry) =>
+      entry.kind === "combat" ? [entry.event] : []);
+    expect(directCombat.slice(0, 4).map((event) => event.kind))
+      .toEqual(["MoveUsed", "MoveImmune", "MoveUsed", "MoveImmune"]);
+    const utf8 = new TextEncoder();
+    const upperBound = (events: typeof directCombat): number => events.reduce((sum, event) =>
+      sum + 2 * utf8.encode(JSON.stringify(event)).byteLength + 128, 0);
+    const firstStimulusBytes = upperBound(directCombat.slice(0, 2));
+    const twoStimuliBytes = upperBound(directCombat.slice(0, 4));
+    expect(firstStimulusBytes).toBeGreaterThan(1);
+    expect(twoStimuliBytes).toBeGreaterThan(firstStimulusBytes);
+
+    // If a single complete stimulus exceeds the conservative estimate, it is
+    // still applied once; the exact publisher decides presentation availability.
+    const indivisible = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      created.state, inputs, cutoff, 128, firstStimulusBytes - 1,
+    );
+    expect(indivisible.accepted).toBe(true);
+    if (!indivisible.accepted) return;
+    expect(indivisible.stopReason).toBe("projectionBudget");
+    expect(indivisible.events).toEqual(direct.events.slice(0, 2));
+    expect(indivisible.state).not.toEqual(created.state);
+
+    const oneStimulus = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      created.state, inputs, cutoff, 128, twoStimuliBytes - 1,
+    );
+    const twoStimuli = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      created.state, inputs, cutoff, 128, twoStimuliBytes,
+    );
+    expect(oneStimulus.accepted).toBe(true);
+    expect(twoStimuli.accepted).toBe(true);
+    if (!oneStimulus.accepted || !twoStimuli.accepted) return;
+    expect(oneStimulus.stopReason).toBe("projectionBudget");
+    expect(oneStimulus.events).toEqual(direct.events.slice(0, 2));
+    expect(twoStimuli.stopReason).toBe("projectionBudget");
+    expect(twoStimuli.events).toEqual(direct.events.slice(0, 4));
+    expect(created.state).toEqual(original);
+
+    let current = created.state;
+    const segmented: typeof direct.events[number][] = [];
+    let yields = 0;
+    for (let index = 0; index < 100; index += 1) {
+      const step = advanceSoloHuntToEncounterBoundaryOrCutoff(
+        current, inputs, cutoff, 128, twoStimuliBytes - 1,
+      );
+      expect(step.accepted, step.accepted ? undefined : step.reason).toBe(true);
+      if (!step.accepted) return;
+      expect(step.events.filter((entry) => entry.kind === "combat").length)
+        .toBeLessThanOrEqual(128);
+      segmented.push(...step.events);
+      current = step.state;
+      if (step.stopReason !== "projectionBudget") break;
+      expect(step.events.some((entry) => entry.kind === "combat")).toBe(true);
+      yields += 1;
+    }
+    expect(yields).toBeGreaterThan(1);
+    expect(current).toEqual(direct.state);
+    expect(segmented).toEqual(direct.events);
   });
 
   it.each([
@@ -1607,6 +1925,21 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
       && event.huntTimeMs === 1000
       && event.event.kind === "MoveUsed",
     )).toBe(false);
+    const byteSplit = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      created.state, inputs, 1000, 128, 1,
+    );
+    expect(byteSplit.accepted).toBe(true);
+    if (!byteSplit.accepted) return;
+    expect(byteSplit.stopReason).toBe("projectionBudget");
+    expect(byteSplit.state.currentEncounter?.battle.replacementPendingSideIds)
+      .toEqual([encounter.playerSideId]);
+    const byteResumed = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      byteSplit.state, inputs, 1000, 128, 1,
+    );
+    expect(byteResumed.accepted).toBe(true);
+    if (!byteResumed.accepted) return;
+    expect(byteResumed.state).toEqual(advanced.state);
+    expect([...byteSplit.events, ...byteResumed.events]).toEqual(advanced.events);
     const activeId = advanced.state.currentEncounter.battle.sides
       .find((side) => side.sideId === encounter.playerSideId)!.activeCombatantIds[0];
     expect(advanced.state.currentEncounter.battle.combatants[activeId].cadenceParticipant).toEqual({

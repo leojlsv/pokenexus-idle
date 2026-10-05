@@ -25,6 +25,7 @@ import {
   insertPostBattleReviveAppliedInTransaction,
   insertResolvedEncounterActivityInTransaction,
   insertRetreatAbandonmentInTransaction,
+  insertHuntPresentationStreamInTransaction,
   loadAndLockOwnedTeamSnapshot,
   loadAutoCapturePolicyByVersion,
   loadAutoPotionPolicyByVersion,
@@ -44,6 +45,8 @@ import {
   loadHuntCheckpoint,
   loadHealingCommandByCommandId,
   loadHuntInputAuthority,
+  loadHuntPresentationStream,
+  HUNT_PRESENTATION_SOURCE_EVENT_BATCH_BYTES_MAX,
   loadInventory,
   loadOwnedSoloHunt,
   loadPendingManualCapture,
@@ -66,6 +69,8 @@ import {
   deletePendingZoneSelectionInTransaction,
   supersedeOvertakenPublicHuntCommandsInTransaction,
   terminalizeSoloHuntInTransaction,
+  sealHuntPresentationTerminalInTransaction,
+  markHuntPresentationUnavailableInTransaction,
   resolveHealingCommandInTransaction,
   removeInventoryEntriesInTransaction,
   updatePublicCommandClaimEffectsInTransaction,
@@ -110,10 +115,12 @@ import {
   declineSoloHuntPostBattleAutoRevive,
   encodeSoloHuntCheckpointV3,
   encodeSoloHuntCheckpointV2,
+  encodeSoloHuntCheckpointV4,
   NO_SAVED_AUTO_POTION_POLICY,
   NO_SAVED_AUTO_REVIVE_POLICY,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
   geneticBudgetForScore,
   geneticCaptureChanceBp,
   isAutoPotionEligible,
@@ -129,6 +136,7 @@ import {
   type SoloHuntRuntimeState,
   type SoloHuntPendingEncounterSelection,
   type SoloHuntTeamMemberSnapshot,
+  type SoloHuntSimulationEvent,
 } from "@pokenexus/game-core";
 import {
   hashNormalizedIntent,
@@ -144,6 +152,7 @@ import {
 import { noLivingHuntDisposition, publicRetreatTerminalReason } from "./terminal-disposition";
 import { captureBoundaryOpeningDecision } from "./capture-product-policy";
 import { deriveFrozenProductiveTarget } from "./offline-reconciliation";
+import { publishCommittedHuntPresentation } from "./presentation-source";
 
 const FORWARD_SOLO_HUNT_RECOVERY_DURATION_MS = 30_000;
 
@@ -215,7 +224,10 @@ export interface HuntRuntimeAuthorityPort {
   deriveCurrentTeamMaxHp(
     team: OwnedTeamSnapshot,
   ): Promise<Readonly<Record<string, number>>>;
-  loadPersistedRuntime(record: HuntInputAuthorityRecord): Promise<SoloHuntRuntimeInputs>;
+  loadPersistedRuntime(
+    record: HuntInputAuthorityRecord,
+    checkpointSchemaVersion?: string,
+  ): Promise<SoloHuntRuntimeInputs>;
   loadHistoricalEncounter(
     evidence: Pick<
       SoloHuntCompletedEncounterEvidence,
@@ -642,18 +654,34 @@ function healingAdvanceFenceLogicalTimeMs(record: HuntHealingCommandRecord): num
   return record.dueLogicalTimeMs;
 }
 
-function decodeCheckpointState(bytes: Uint8Array): SoloHuntRuntimeState {
+function decodeCheckpointState(bytes: Uint8Array, schemaVersion?: string): SoloHuntRuntimeState {
   const decoded = decodeSoloHuntCheckpoint(bytes);
   if (!decoded.accepted) throw new Error(`Solo Hunt checkpoint decode failed: ${decoded.reason}`);
+  if (schemaVersion !== undefined) {
+    const parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as { schemaVersion?: unknown };
+    if (parsed.schemaVersion !== schemaVersion) {
+      throw new Error("Solo Hunt checkpoint schema column does not match canonical bytes");
+    }
+  }
   return decoded.state;
 }
 
-function encodeCheckpointState(state: SoloHuntRuntimeState): {
+function encodeCheckpointState(
+  state: SoloHuntRuntimeState,
+  presentationSourceEnabled = false,
+): {
   readonly schemaVersion:
     | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2
-    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3;
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4;
   readonly stateBytes: Uint8Array;
 } {
+  if (presentationSourceEnabled) {
+    return {
+      schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
+      stateBytes: encodeSoloHuntCheckpointV4(state),
+    };
+  }
   if (state.automationPolicies !== undefined) {
     return {
       schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
@@ -664,6 +692,41 @@ function encodeCheckpointState(state: SoloHuntRuntimeState): {
     schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
     stateBytes: encodeSoloHuntCheckpointV2(state),
   };
+}
+
+function encodeWritableCheckpoint(
+  schemaVersion: string,
+  state: SoloHuntRuntimeState,
+): { readonly schemaVersion: string; readonly stateBytes: Uint8Array } {
+  if (schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4) {
+    return { schemaVersion, stateBytes: encodeSoloHuntCheckpointV4(state) };
+  }
+  if (schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+    return { schemaVersion, stateBytes: encodeSoloHuntCheckpointV3(state) };
+  }
+  return {
+    schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+    stateBytes: encodeSoloHuntCheckpointV2(state),
+  };
+}
+
+function isManagementFirstCheckpointSchemaVersion(schemaVersion: string): boolean {
+  return schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+    || schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4;
+}
+
+const PRESENTATION_PRODUCER_EVENT_YIELD_TARGET = 128;
+
+function presentationProducerEventBudget(checkpointSchemaVersion: string): number | undefined {
+  return checkpointSchemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4
+    ? PRESENTATION_PRODUCER_EVENT_YIELD_TARGET
+    : undefined;
+}
+
+function presentationProducerSourceByteBudget(checkpointSchemaVersion: string): number | undefined {
+  return checkpointSchemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4
+    ? HUNT_PRESENTATION_SOURCE_EVENT_BATCH_BYTES_MAX
+    : undefined;
 }
 
 function geneticBonusesForOwnedPokemon(record: OwnedPokemonRecord) {
@@ -738,7 +801,11 @@ function currentOwnedHpByPokemonInstanceId(
 function huntUsesPersistentVitality(authority: HuntInputAuthorityRecord): boolean {
   const schemaVersion = authority.runtimeInputsJson.schemaVersion;
   if (schemaVersion === "hunt-runtime-inputs-v1") return false;
-  if (schemaVersion === "hunt-runtime-inputs-v2" || schemaVersion === "hunt-runtime-inputs-v3") return true;
+  if (
+    schemaVersion === "hunt-runtime-inputs-v2"
+    || schemaVersion === "hunt-runtime-inputs-v3"
+    || schemaVersion === "hunt-runtime-inputs-v4"
+  ) return true;
   throw new HuntAuthorityUnavailableError(
     "persisted Hunt runtime authority has unsupported vitality semantics",
   );
@@ -1210,6 +1277,7 @@ interface AutomationSpendCandidate {
   readonly family: "potion" | "revive";
   readonly phase: "battle" | "inter_battle" | "post_battle";
   readonly nextState: SoloHuntRuntimeState;
+  readonly generatedEvents: ReadonlyArray<SoloHuntSimulationEvent>;
   readonly provenanceIdentity: string;
   readonly policyVersion: string;
   readonly itemId: string;
@@ -1318,7 +1386,74 @@ export class HuntApplication implements HuntHttpApplication {
   constructor(
     private readonly connectionString: string,
     private readonly ports: HuntApplicationPorts,
+    private readonly options: {
+      readonly presentationSourceEnabled?: boolean;
+    } = {},
   ) {}
+
+  private async sealTerminalPresentationInTransaction(
+    transaction: TransactionClient,
+    playerId: string,
+    huntId: string,
+    checkpointId: string,
+    presentationTerminalRecordedAt: string | null,
+  ): Promise<void> {
+    const checkpoint = await loadHuntCheckpoint(transaction, playerId, checkpointId);
+    if (!checkpoint || checkpoint.schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4) return;
+    if (presentationTerminalRecordedAt === null) {
+      throw new Error("First presentation-enabled Hunt terminalization did not return its SQL presentation timestamp");
+    }
+    const state = decodeCheckpointState(checkpoint.stateBytes, checkpoint.schemaVersion);
+    const stream = await loadHuntPresentationStream(transaction, playerId, huntId, true);
+    if (!stream) {
+      const authority = await loadHuntInputAuthority(transaction, playerId, huntId);
+      if (!authority) throw new Error("Terminal presentation-enabled Hunt lost immutable input authority");
+      await insertHuntPresentationStreamInTransaction(transaction, {
+        huntId,
+        playerId,
+        inputSchemaVersion: "hunt-runtime-inputs-v4",
+        checkpointSchemaVersion: checkpoint.schemaVersion,
+        gameDataVersion: checkpoint.gameDataVersion,
+        rulesVersion: checkpoint.rulesVersion,
+        sourceEventSchemaVersion: String(
+          state.currentEncounter?.battle.context.combatEventSchemaVersion
+          ?? "pokenexus.missing-source-event-version",
+        ),
+        presentationSchemaVersion: "pokenexus.combat-presentation.v2",
+      });
+      await markHuntPresentationUnavailableInTransaction(
+        transaction,
+        playerId,
+        huntId,
+        "missing_presentation_stream",
+      );
+    }
+    const encounter = state.currentEncounter;
+    const completed = state.completedEncounterProvenance[state.completedEncounterProvenance.length - 1];
+    const proof = encounter?.battleOrigin
+      ? {
+          encounterOrdinal: encounter.encounterOrdinal,
+          battleId: String(encounter.battleOrigin.battleId),
+          terminalEventSequence: encounter.battle.eventSequence,
+          requireBattleEnded: encounter.battle.status === "ended",
+        }
+      : completed?.battleOrigin
+        ? {
+            encounterOrdinal: completed.encounterOrdinal,
+            battleId: String(completed.battleOrigin.battleId),
+            terminalEventSequence: completed.terminalEventSequence,
+            requireBattleEnded: true,
+          }
+        : null;
+    await sealHuntPresentationTerminalInTransaction(
+      transaction,
+      playerId,
+      huntId,
+      checkpoint.logicalTimeMs,
+      presentationTerminalRecordedAt,
+      proof,
+    );
+  }
 
   private async pendingManualCaptureFromClient(
     client: TransactionClient,
@@ -1399,7 +1534,7 @@ export class HuntApplication implements HuntHttpApplication {
     if (active && !active.terminalAt) {
       const checkpoint = await loadHuntCheckpoint(client, playerId, active.checkpointId);
       if (!checkpoint) throw new Error("Active Hunt checkpoint is unavailable");
-      const state = decodeCheckpointState(checkpoint.stateBytes);
+      const state = decodeCheckpointState(checkpoint.stateBytes, checkpoint.schemaVersion);
       const currentAuthority = state.currentEncounter
         ? await this.ports.authority.loadHistoricalEncounter({
             encounterDefinitionId: state.currentEncounter.selection.encounterDefinitionId,
@@ -1761,6 +1896,10 @@ export class HuntApplication implements HuntHttpApplication {
           if (built.selector.recoveryDurationMs !== FORWARD_SOLO_HUNT_RECOVERY_DURATION_MS) {
             return error(503, "authority_unavailable");
           }
+          const presentationSourceEnabled = this.options.presentationSourceEnabled === true;
+          if (presentationSourceEnabled && built.persistedInputs.schemaVersion !== "hunt-runtime-inputs-v4") {
+            throw new HuntAuthorityUnavailableError("presentation-enabled Start lacks input-v4 authority");
+          }
           const huntRunIdentity = `hunt-run:${crypto.randomUUID()}`;
           const created = createSoloHuntRuntime({
             huntRunIdentity,
@@ -1776,7 +1915,7 @@ export class HuntApplication implements HuntHttpApplication {
             );
             return result;
           }
-          const initialCheckpoint = encodeCheckpointState(created.state);
+          const initialCheckpoint = encodeCheckpointState(created.state, presentationSourceEnabled);
           const checkpoint = await createHuntCheckpoint(transaction, {
             subjectPlayerId: playerId,
             huntRunIdentity,
@@ -1821,6 +1960,27 @@ export class HuntApplication implements HuntHttpApplication {
             individualizationAuthorityVersion: built.individualizationAuthorityVersion,
             individualizationAuthorityKeyId: built.individualizationAuthorityKeyId,
           });
+          if (presentationSourceEnabled) {
+            await insertHuntPresentationStreamInTransaction(transaction, {
+              huntId: hunt.huntId,
+              playerId,
+              inputSchemaVersion: "hunt-runtime-inputs-v4",
+              checkpointSchemaVersion: initialCheckpoint.schemaVersion,
+              gameDataVersion: built.inputs.context.gameDataVersion,
+              rulesVersion: built.inputs.context.rulesVersion,
+              sourceEventSchemaVersion: String(built.inputs.context.combatEventSchemaVersion),
+              presentationSchemaVersion: "pokenexus.combat-presentation.v2",
+            });
+            await publishCommittedHuntPresentation({
+              transaction,
+              playerId,
+              huntId: hunt.huntId,
+              checkpointSchemaVersion: initialCheckpoint.schemaVersion,
+              committedState: created.state,
+              inputs: built.inputs,
+              generatedEvents: created.events,
+            });
+          }
           await syncPendingZoneSelectionInTransaction(transaction, playerId, created.state);
           const ballAuthority = await this.ports.authority.currentBallAuthority();
           const stateResult = await this.stateFromClient(transaction, playerId, ballAuthority);
@@ -2024,8 +2184,8 @@ export class HuntApplication implements HuntHttpApplication {
           const checkpoint = await loadHuntCheckpoint(transaction, playerId, lockedSource.checkpointId);
           const inputAuthority = await loadHuntInputAuthority(transaction, playerId, lockedSource.huntId);
           if (!checkpoint || !inputAuthority) return error(503, "authority_unavailable");
-          const inputs = await this.ports.authority.loadPersistedRuntime(inputAuthority);
-          const state = decodeCheckpointState(checkpoint.stateBytes);
+          const inputs = await this.ports.authority.loadPersistedRuntime(inputAuthority, checkpoint.schemaVersion);
+          const state = decodeCheckpointState(checkpoint.stateBytes, checkpoint.schemaVersion);
           const validated = replayValidateSoloHuntCompletedCaptureSource(state, inputs, body.encounterId as never);
           if (!validated.accepted) {
             const result = error(409, "capture_unavailable");
@@ -2166,7 +2326,7 @@ export class HuntApplication implements HuntHttpApplication {
         const checkpoint = await loadHuntCheckpoint(transaction, playerId, hunt.checkpointId);
         const inputAuthority = await loadHuntInputAuthority(transaction, playerId, hunt.huntId);
         if (!checkpoint || !inputAuthority) return error(503, "authority_unavailable");
-        const state = decodeCheckpointState(checkpoint.stateBytes);
+        const state = decodeCheckpointState(checkpoint.stateBytes, checkpoint.schemaVersion);
         if (state.automationPolicies !== undefined) {
           const claimed = await claimPublicHuntCommandInTransaction(transaction, {
             playerId,
@@ -2428,7 +2588,7 @@ export class HuntApplication implements HuntHttpApplication {
               const checkpoint = await loadHuntCheckpoint(transaction, playerId, active.checkpointId);
               if (!checkpoint) throw new HuntAuthorityUnavailableError("policy prelude checkpoint is unavailable");
               advancementHuntId = active.huntId;
-              if (checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+              if (isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)) {
                 const pendingReturns = await loadPendingHuntAdvanceCommands(
                   transaction,
                   playerId,
@@ -2566,7 +2726,7 @@ export class HuntApplication implements HuntHttpApplication {
               if (checkpoint.logicalTimeMs < current.targetLogicalTimeMs) {
                 return inProgress(checkpoint.logicalTimeMs, current.targetLogicalTimeMs);
               }
-              if (checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+              if (isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)) {
                 if (!current.targetWallClockAt) return error(503, "authority_unavailable");
                 const anchorMs = checkpoint.logicalTimeAnchorAt.getTime();
                 const frozenReturnMs = current.targetWallClockAt.getTime();
@@ -2995,13 +3155,13 @@ export class HuntApplication implements HuntHttpApplication {
         if (checkpoint.logicalTimeMs !== logicalTimeMs) {
           throw new Error("Due heal checkpoint is not at its frozen logical boundary");
         }
-        const state = decodeCheckpointState(checkpoint.stateBytes);
+        const state = decodeCheckpointState(checkpoint.stateBytes, checkpoint.schemaVersion);
         if (state.status !== "active" || !state.interBattle) {
           throw new Error("Due heal is not at an active inter-Battle boundary");
         }
         let inputs: SoloHuntRuntimeInputs;
         try {
-          inputs = await this.ports.authority.loadPersistedRuntime(inputAuthority);
+          inputs = await this.ports.authority.loadPersistedRuntime(inputAuthority, checkpoint.schemaVersion);
         } catch {
           return { status: "authority_unavailable" } as const;
         }
@@ -3068,7 +3228,7 @@ export class HuntApplication implements HuntHttpApplication {
         if (debit.status !== "updated") {
           throw new Error(`Due heal Inventory debit failed: ${debit.status}`);
         }
-        const healedCheckpoint = encodeCheckpointState(healed.state);
+        const healedCheckpoint = encodeWritableCheckpoint(checkpoint.schemaVersion, healed.state);
         const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
           playerId,
           checkpointId: hunt.checkpointId,
@@ -3253,8 +3413,11 @@ export class HuntApplication implements HuntHttpApplication {
         }));
     }
 
-    const inputs = await this.ports.authority.loadPersistedRuntime(snapshot.inputAuthority);
-    let state = decodeCheckpointState(snapshot.checkpoint.stateBytes);
+    const inputs = await this.ports.authority.loadPersistedRuntime(
+      snapshot.inputAuthority,
+      snapshot.checkpoint.schemaVersion,
+    );
+    let state = decodeCheckpointState(snapshot.checkpoint.stateBytes, snapshot.checkpoint.schemaVersion);
 
     const incomplete = await withPgClient({ connectionString: this.connectionString }, (client) =>
       loadEarliestIncompleteEncounterBoundary(client, snapshot.hunt.huntId));
@@ -3318,9 +3481,14 @@ export class HuntApplication implements HuntHttpApplication {
         state,
         inputs,
         advanced.stopReason,
+        snapshot.checkpoint.schemaVersion,
+        advanced.events,
       );
       if (persisted.httpStatus !== 204) return persisted;
-      if (advanced.stopReason === "encounterBoundary") return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+      if (
+        advanced.stopReason === "encounterBoundary"
+        || advanced.stopReason === "projectionBudget"
+      ) return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
       if (blockerFence === state.logicalTimeMs) return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
     }
 
@@ -3401,12 +3569,19 @@ export class HuntApplication implements HuntHttpApplication {
           hunt: locked,
           state,
         });
-        await terminalizeSoloHuntInTransaction(transaction, {
+        const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
           terminalReason,
           ...terminalizationTiming(locked, state),
         });
+        await this.sealTerminalPresentationInTransaction(
+          transaction,
+          playerId,
+          hunt.huntId,
+          hunt.checkpointId,
+          terminal.presentationTerminalRecordedAt,
+        );
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         return null;
       }));
@@ -3438,8 +3613,11 @@ export class HuntApplication implements HuntHttpApplication {
     if (replay) return { status: "response", result: replay };
     if (snapshot.hunt.terminalAt) return { status: "done" };
 
-    const inputs = await this.ports.authority.loadPersistedRuntime(snapshot.inputAuthority);
-    let state = decodeCheckpointState(snapshot.checkpoint.stateBytes);
+    const inputs = await this.ports.authority.loadPersistedRuntime(
+      snapshot.inputAuthority,
+      snapshot.checkpoint.schemaVersion,
+    );
+    let state = decodeCheckpointState(snapshot.checkpoint.stateBytes, snapshot.checkpoint.schemaVersion);
     if (state.logicalTimeMs > targetLogicalTimeMs) {
       const result = error(409, "command_superseded");
       const serialized = await withPgClient({ connectionString: this.connectionString }, (client) =>
@@ -3523,6 +3701,7 @@ export class HuntApplication implements HuntHttpApplication {
       ? Math.min(targetLogicalTimeMs, blockerFence)
       : targetLogicalTimeMs;
     let stopReason: string;
+    let generatedEvents: ReadonlyArray<SoloHuntSimulationEvent>;
     let automationGuard: AutomationPersistenceGuard | undefined;
     if (state.automationPolicies !== undefined) {
       const stopBeforeNextEncounter = await this.shouldStopBeforeNextEncounter(
@@ -3537,6 +3716,7 @@ export class HuntApplication implements HuntHttpApplication {
         snapshot.checkpoint.rowVersion,
         state,
         inputs,
+        snapshot.checkpoint.schemaVersion,
         advanceTarget,
         targetLogicalTimeMs,
         undefined,
@@ -3547,12 +3727,14 @@ export class HuntApplication implements HuntHttpApplication {
       }
       state = automationProgress.state;
       stopReason = automationProgress.stopReason;
+      generatedEvents = automationProgress.generatedEvents;
       automationGuard = automationProgress.automationGuard;
     } else {
       const advanced = advanceSoloHuntToEncounterBoundaryOrCutoff(state, inputs, advanceTarget);
       if (!advanced.accepted) throw new Error(advanced.reason);
       state = advanced.state;
       stopReason = advanced.stopReason;
+      generatedEvents = advanced.events;
     }
     const persisted = await this.persistAdvancedStateAndMaybeBoundary(
       playerId,
@@ -3562,6 +3744,8 @@ export class HuntApplication implements HuntHttpApplication {
       state,
       inputs,
       stopReason,
+      snapshot.checkpoint.schemaVersion,
+      generatedEvents,
       automationGuard,
     );
     if (persisted.httpStatus !== 204) return { status: "response", result: persisted };
@@ -3569,6 +3753,7 @@ export class HuntApplication implements HuntHttpApplication {
       stopReason === "encounterBoundary"
       || stopReason === "automationBoundary"
       || stopReason === "activityBoundary"
+      || stopReason === "projectionBudget"
       || blockerFence === state.logicalTimeMs
     ) {
       return { status: "response", result: inProgress(state.logicalTimeMs, targetLogicalTimeMs) };
@@ -3868,6 +4053,7 @@ export class HuntApplication implements HuntHttpApplication {
         family,
         phase,
         nextState: applied.state,
+        generatedEvents: applied.events,
         provenanceIdentity,
         policyVersion: record.policyVersion,
         itemId: selectedItemId,
@@ -3894,6 +4080,8 @@ export class HuntApplication implements HuntHttpApplication {
     expectedCheckpointRowVersion: bigint,
     snapshot: AutomationExecutionSnapshot,
     candidate: AutomationSpendCandidate,
+    inputs: SoloHuntRuntimeInputs,
+    generatedEvents: ReadonlyArray<SoloHuntSimulationEvent>,
   ): Promise<"committed" | "retry" | "authority_unavailable"> {
     try {
       return await withPgClient({ connectionString: this.connectionString }, (client) =>
@@ -3924,7 +4112,9 @@ export class HuntApplication implements HuntHttpApplication {
           const selected = selectEligibleAutomationItem(policy.orderedItems, inventoryQuantities(inventory));
           if (!policy.enabled || selected !== candidate.itemId) return "retry" as const;
 
-          const encoded = encodeCheckpointState(candidate.nextState);
+          const checkpoint = await loadHuntCheckpoint(transaction, playerId, hunt.checkpointId);
+          if (!checkpoint) return "authority_unavailable" as const;
+          const encoded = encodeWritableCheckpoint(checkpoint.schemaVersion, candidate.nextState);
           const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
             playerId,
             checkpointId: hunt.checkpointId,
@@ -3934,6 +4124,15 @@ export class HuntApplication implements HuntHttpApplication {
             stateBytes: encoded.stateBytes,
           });
           if (persisted.status !== "updated") return "retry" as const;
+          await publishCommittedHuntPresentation({
+            transaction,
+            playerId,
+            huntId: hunt.huntId,
+            checkpointSchemaVersion: encoded.schemaVersion,
+            committedState: candidate.nextState,
+            inputs,
+            generatedEvents,
+          });
           await syncPendingZoneSelectionInTransaction(transaction, playerId, candidate.nextState);
 
           const debited = await removeInventoryEntriesInTransaction(transaction, {
@@ -4027,6 +4226,7 @@ export class HuntApplication implements HuntHttpApplication {
     expectedCheckpointRowVersion: bigint,
     state: SoloHuntRuntimeState,
     inputs: SoloHuntRuntimeInputs,
+    checkpointSchemaVersion: string,
     advanceTargetLogicalTimeMs: number,
     continuationTargetLogicalTimeMs: number,
     retreatTieLogicalTimeMs?: number,
@@ -4037,6 +4237,7 @@ export class HuntApplication implements HuntHttpApplication {
         readonly status: "advanced";
         readonly state: SoloHuntRuntimeState;
         readonly stopReason: string;
+        readonly generatedEvents: ReadonlyArray<SoloHuntSimulationEvent>;
         readonly automationGuard?: AutomationPersistenceGuard;
       }
   > {
@@ -4048,13 +4249,15 @@ export class HuntApplication implements HuntHttpApplication {
       {
         skipInitialAutomationBoundary: shouldSuppressInitialPotionAfterRevive(state),
         stopBeforeNextEncounter,
+        maxCombatEvents: presentationProducerEventBudget(checkpointSchemaVersion),
+        maxCombatSourceBytes: presentationProducerSourceByteBudget(checkpointSchemaVersion),
       },
     );
     if (!advanced.accepted) throw new Error(advanced.reason);
     state = advanced.state;
     let stopReason = advanced.stopReason;
     if (advanced.stopReason !== "automationBoundary") {
-      return { status: "advanced", state, stopReason };
+      return { status: "advanced", state, stopReason, generatedEvents: advanced.events };
     }
 
     if (
@@ -4062,7 +4265,7 @@ export class HuntApplication implements HuntHttpApplication {
       && state.logicalTimeMs === retreatTieLogicalTimeMs
       && state !== initialState
     ) {
-      return { status: "advanced", state, stopReason: "cutoff" };
+      return { status: "advanced", state, stopReason: "cutoff", generatedEvents: advanced.events };
     }
 
     const automationSnapshot = await this.loadAutomationExecutionSnapshot(
@@ -4092,6 +4295,8 @@ export class HuntApplication implements HuntHttpApplication {
         expectedCheckpointRowVersion,
         automationSnapshot,
         decision.candidate,
+        inputs,
+        [...advanced.events, ...decision.candidate.generatedEvents],
       );
       if (committed === "authority_unavailable") {
         return { status: "response", result: error(503, "authority_unavailable") };
@@ -4113,11 +4318,12 @@ export class HuntApplication implements HuntHttpApplication {
         status: "advanced",
         state,
         stopReason: state.terminalReason ?? "noLivingTeam",
+        generatedEvents: advanced.events,
         automationGuard,
       };
     }
     if (state !== boundaryState) {
-      return { status: "advanced", state, stopReason, automationGuard };
+      return { status: "advanced", state, stopReason, generatedEvents: advanced.events, automationGuard };
     }
 
     const resumeState = state;
@@ -4125,7 +4331,12 @@ export class HuntApplication implements HuntHttpApplication {
       state,
       inputs,
       advanceTargetLogicalTimeMs,
-      { skipInitialAutomationBoundary: true, stopBeforeNextEncounter },
+      {
+        skipInitialAutomationBoundary: true,
+        stopBeforeNextEncounter,
+        maxCombatEvents: presentationProducerEventBudget(checkpointSchemaVersion),
+        maxCombatSourceBytes: presentationProducerSourceByteBudget(checkpointSchemaVersion),
+      },
     );
     if (!resumed.accepted) throw new Error(resumed.reason);
     state = resumed.state;
@@ -4138,7 +4349,13 @@ export class HuntApplication implements HuntHttpApplication {
     ) {
       stopReason = "cutoff";
     }
-    return { status: "advanced", state, stopReason, automationGuard };
+    return {
+      status: "advanced",
+      state,
+      stopReason,
+      generatedEvents: [...advanced.events, ...resumed.events],
+      automationGuard,
+    };
   }
 
   private async advanceMutation(
@@ -4176,7 +4393,7 @@ export class HuntApplication implements HuntHttpApplication {
             existing.command.targetLogicalTimeMs === null
             || existing.command.advancementHuntId !== huntId
             || (
-              checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+              isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)
               && existing.command.targetWallClockAt === null
             )
           ) {
@@ -4189,7 +4406,7 @@ export class HuntApplication implements HuntHttpApplication {
             huntId,
           }, 102);
         }
-        if (checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+        if (isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)) {
           const pendingReturns = await loadPendingHuntAdvanceCommands(
             transaction,
             playerId,
@@ -4290,7 +4507,7 @@ export class HuntApplication implements HuntHttpApplication {
         const replay = commandReplayResult(claimed.command);
         if (replay) return replay;
         if (
-          checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)
           && claimed.command.targetLogicalTimeMs !== null
           && claimed.command.targetWallClockAt === null
         ) {
@@ -4349,7 +4566,7 @@ export class HuntApplication implements HuntHttpApplication {
     if (!snapshot) return error(404, "not_found");
     const replay = commandReplayResult(snapshot.command);
     if (replay) return replay;
-    let state = decodeCheckpointState(snapshot.checkpoint.stateBytes);
+    let state = decodeCheckpointState(snapshot.checkpoint.stateBytes, snapshot.checkpoint.schemaVersion);
     if (snapshot.hunt.terminalAt) {
       if (kind === "retreat") {
         return this.finalizeRetreatAgainstExistingTerminal(
@@ -4368,7 +4585,10 @@ export class HuntApplication implements HuntHttpApplication {
         false,
       );
     }
-    const inputs = await this.ports.authority.loadPersistedRuntime(snapshot.inputAuthority);
+    const inputs = await this.ports.authority.loadPersistedRuntime(
+      snapshot.inputAuthority,
+      snapshot.checkpoint.schemaVersion,
+    );
     if (state.logicalTimeMs > frozen.targetLogicalTimeMs) {
       return this.finalizeAdvanceCommand(
         playerId, idempotencyKey, snapshot.hunt, snapshot.command, kind, state, true,
@@ -4422,6 +4642,7 @@ export class HuntApplication implements HuntHttpApplication {
         snapshot.checkpoint.rowVersion,
         state,
         inputs,
+        snapshot.checkpoint.schemaVersion,
         advanceTarget,
         frozen.targetLogicalTimeMs,
         terminalizeAfterCutoff ? frozen.targetLogicalTimeMs : undefined,
@@ -4438,6 +4659,8 @@ export class HuntApplication implements HuntHttpApplication {
         state,
         inputs,
         stopReason,
+        snapshot.checkpoint.schemaVersion,
+        automationProgress.generatedEvents,
         automationProgress.automationGuard,
       );
       if (freezeResult.httpStatus !== 204) return freezeResult;
@@ -4445,6 +4668,7 @@ export class HuntApplication implements HuntHttpApplication {
         stopReason === "encounterBoundary"
         || stopReason === "automationBoundary"
         || stopReason === "activityBoundary"
+        || stopReason === "projectionBudget"
       ) {
         return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
       }
@@ -4470,6 +4694,8 @@ export class HuntApplication implements HuntHttpApplication {
         state,
         inputs,
         advanced.stopReason,
+        snapshot.checkpoint.schemaVersion,
+        advanced.events,
       );
       if (freezeResult.httpStatus !== 204) return freezeResult;
       if (advanced.stopReason === "encounterBoundary") return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
@@ -4508,6 +4734,8 @@ export class HuntApplication implements HuntHttpApplication {
     state: SoloHuntRuntimeState,
     inputs: SoloHuntRuntimeInputs,
     stopReason: string,
+    checkpointSchemaVersion: string,
+    generatedEvents: ReadonlyArray<SoloHuntSimulationEvent>,
     automationGuard?: AutomationPersistenceGuard,
   ): Promise<HuntHttpResult> {
     try {
@@ -4546,7 +4774,7 @@ export class HuntApplication implements HuntHttpApplication {
             );
           }
         }
-        const advancedCheckpoint = encodeCheckpointState(state);
+        const advancedCheckpoint = encodeWritableCheckpoint(checkpointSchemaVersion, state);
         const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
           playerId,
           checkpointId: hunt.checkpointId,
@@ -4570,6 +4798,15 @@ export class HuntApplication implements HuntHttpApplication {
           );
         }
         if (persisted.status === "not_found") return error(404, "not_found");
+        await publishCommittedHuntPresentation({
+          transaction,
+          playerId,
+          huntId: hunt.huntId,
+          checkpointSchemaVersion: advancedCheckpoint.schemaVersion,
+          committedState: state,
+          inputs,
+          generatedEvents,
+        });
         await syncPendingZoneSelectionInTransaction(transaction, playerId, state);
         if (stopReason === "activityBoundary") {
           await sealLatestResolvedEncounterActivityInTransaction(transaction, {
@@ -4909,10 +5146,10 @@ export class HuntApplication implements HuntHttpApplication {
           if (state.pendingCaptureDecision?.encounterId === boundary.encounterId) {
             const checkpoint = await loadHuntCheckpoint(transaction, playerId, hunt.checkpointId);
             if (!checkpoint) throw new Error("Boundary completion lost checkpoint");
-            const latest = decodeCheckpointState(checkpoint.stateBytes);
+            const latest = decodeCheckpointState(checkpoint.stateBytes, checkpoint.schemaVersion);
             if (latest.pendingCaptureDecision?.encounterId === boundary.encounterId) {
               const cleared = { ...latest, pendingCaptureDecision: undefined };
-              const clearedCheckpoint = encodeCheckpointState(cleared);
+              const clearedCheckpoint = encodeWritableCheckpoint(checkpoint.schemaVersion, cleared);
               const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
                 playerId,
                 checkpointId: hunt.checkpointId,
@@ -4991,7 +5228,7 @@ export class HuntApplication implements HuntHttpApplication {
         const checkpoint = await loadHuntCheckpoint(transaction, playerId, lockedHunt.checkpointId);
         if (!checkpoint) return error(503, "authority_unavailable");
         if (
-          checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)
           && current.targetLogicalTimeMs !== null
           && current.targetWallClockAt === null
         ) {
@@ -5012,7 +5249,7 @@ export class HuntApplication implements HuntHttpApplication {
         }
         if (
           !lockedHunt.terminalAt
-          && checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          && isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)
           && current.targetLogicalTimeMs !== null
           && checkpoint.logicalTimeMs === current.targetLogicalTimeMs
           && current.targetWallClockAt !== null
@@ -5022,7 +5259,7 @@ export class HuntApplication implements HuntHttpApplication {
         }
         if (
           !lockedHunt.terminalAt
-          && checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          && isManagementFirstCheckpointSchemaVersion(checkpoint.schemaVersion)
           && current.targetLogicalTimeMs !== null
           && checkpoint.logicalTimeMs === current.targetLogicalTimeMs
           && current.targetWallClockAt !== null
@@ -5134,6 +5371,13 @@ export class HuntApplication implements HuntHttpApplication {
           terminalReason,
           ...terminalizationTiming(lockedHunt, state),
         });
+        await this.sealTerminalPresentationInTransaction(
+          transaction,
+          playerId,
+          hunt.huntId,
+          hunt.checkpointId,
+          terminal.presentationTerminalRecordedAt,
+        );
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         let resultBody: unknown;
         if (kind === "retreat") {
@@ -5229,6 +5473,13 @@ export class HuntApplication implements HuntHttpApplication {
           terminalReason: "retreat",
           ...terminalizationTiming(lockedHunt, state),
         });
+        await this.sealTerminalPresentationInTransaction(
+          transaction,
+          playerId,
+          hunt.huntId,
+          hunt.checkpointId,
+          terminal.presentationTerminalRecordedAt,
+        );
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         const resultBody = {
           status: "terminal",
@@ -5337,12 +5588,19 @@ export class HuntApplication implements HuntHttpApplication {
           hunt: lockedHunt,
           state,
         });
-        await terminalizeSoloHuntInTransaction(transaction, {
+        const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
           terminalReason,
           ...terminalizationTiming(lockedHunt, state),
         });
+        await this.sealTerminalPresentationInTransaction(
+          transaction,
+          playerId,
+          hunt.huntId,
+          hunt.checkpointId,
+          terminal.presentationTerminalRecordedAt,
+        );
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         const stateResult = await this.stateFromClient(transaction, playerId, ballAuthority);
         if (stateResult.httpStatus !== 200) return stateResult;

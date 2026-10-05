@@ -14,6 +14,19 @@ describe("withTransaction", () => {
     ]);
   });
 
+  it("opens a stable READ ONLY snapshot for the presentation reader without changing normal writes", async () => {
+    const query = vi.fn().mockResolvedValue({ rows: [] });
+    const result = await withTransaction({ query } as never, async () => "snapshot", {
+      isolationLevel: "REPEATABLE READ",
+      readOnly: true,
+    });
+    expect(result).toBe("snapshot");
+    expect(query.mock.calls.map(([sql]) => sql)).toEqual([
+      "BEGIN ISOLATION LEVEL REPEATABLE READ, READ ONLY",
+      "COMMIT",
+    ]);
+  });
+
   it("rolls back and rethrows when the operation fails", async () => {
     const query = vi.fn().mockResolvedValue({ rows: [] });
     const failure = new Error("operation failed");

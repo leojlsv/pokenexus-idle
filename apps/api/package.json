@@ -5,21 +5,24 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "prebuild": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data build",
+    "prebuild": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data --filter @pokenexus/game-protocol build",
     "build": "wrangler deploy --dry-run --outdir dist",
-    "pretypecheck": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data build",
+    "pretypecheck": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data --filter @pokenexus/game-protocol build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "pretest": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data build",
+    "pretest": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data --filter @pokenexus/game-protocol build",
     "test": "vitest run --config vitest.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "pretest:worker-compat": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data build",
+    "pretest:worker-compat": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data --filter @pokenexus/game-protocol build",
     "test:worker-compat": "wrangler deploy integration/reward-worker-bundle-entry.ts --dry-run --compatibility-date 2026-09-21 --compatibility-flag nodejs_compat --outdir .wrangler/reward-worker-compat --name pokenexus-reward-worker-compat",
+    "pretest:hunt-presentation-worker-compat": "corepack pnpm --filter @pokenexus/database --filter @pokenexus/game-core --filter @pokenexus/game-data --filter @pokenexus/game-protocol build",
+    "test:hunt-presentation-worker-compat": "wrangler deploy integration/hunt-presentation-worker-bundle-entry.ts --dry-run --compatibility-date 2026-09-21 --compatibility-flag nodejs_compat --outdir .wrangler/hunt-presentation-worker-compat --name pokenexus-hunt-presentation-worker-compat",
     "lint": "eslint ."
   },
   "dependencies": {
     "@pokenexus/database": "workspace:*",
     "@pokenexus/game-core": "workspace:*",
     "@pokenexus/game-data": "workspace:*",
+    "@pokenexus/game-protocol": "workspace:*",
     "@simplewebauthn/server": "14.0.2",
     "hono": "^4.6.16"
   },
