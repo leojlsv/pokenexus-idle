@@ -3,7 +3,7 @@
 ## Metadata
 
 - State: ACCEPTANCE
-- Acceptance note: exact-current reconciliation against integrated TASK-107/108/110 authority is complete. Full disposable PostgreSQL, workspace type/lint/test/build, Worker-bundle compatibility, independent implementation QA and independent security/persistence audit are green with no unresolved P0/P1. Human Owner authorized TASK-103 local repository-history integration on 2026-10-05. Merge/push, public HTTP registration/auth transport, deployed production workload evidence, persistent migration execution, deployment and public feed enablement remain separate gates.
+- Acceptance note: exact-current reconciliation against integrated TASK-107/108/110 authority is complete. Full disposable PostgreSQL, workspace type/lint/test/build, Worker-bundle compatibility, independent implementation QA and independent security/persistence audit are green with no unresolved P0/P1. Human Owner authorized repository-history integration and local canonical-main merge on 2026-10-05; the merge completed at `d0593c7`. Push, public HTTP registration/auth transport, deployed production workload evidence, persistent migration execution, deployment and public feed enablement remain separate gates.
 - Class: B — implement the forward presentation contract defined by approved SPEC-017 as amended by approved SPEC-020/021 without redefining gameplay semantics; mandatory independent security/persistence audit remains required
 - Owner: Lead Developer (one assigned ChatGPT delegated implementation worker)
 - Owner execution surface: ChatGPT delegated implementation worker (explicit non-default Lead Developer assignment; unique implementation owner retained)
@@ -15,8 +15,8 @@
 - Consultant execution surface(s): N/A
 - Spec: `docs/specs/SPEC-017-public-hunt-combat-presentation-feed.md` — APPROVED 2026-09-29, forward-amended by APPROVED SPEC-020/021
 - Related: ADR-004; SPEC-002/003/011/013/015/016/020/021; TASK-028/035/037/038/097/101/102/104/105/106/108/039/040
-- Branch: `reconcile/TASK-103-current` (exact-current reconciliation against integrated management-first `main`; local repository-history integration authorized 2026-10-05; merge pending)
-- Worktree: `.worktrees/TASK-103-current-reconcile` (current acceptance snapshot; historical `.worktrees/TASK-103-authoritative-hunt-presentation-backend` remains preserved and untouched)
+- Branch: `main` (local canonical-main integration completed at merge `d0593c7` from accepted implementation `0696d7d`; push remains separate)
+- Worktree: `.worktrees/TASK-103-final-integration` (current clean local `main`; historical TASK-103 worktrees remain preserved and untouched)
 
 ## Objective
 
@@ -65,7 +65,8 @@ Preserve and rebase the existing server-authoritative, privacy-projected and bou
 - [x] Relevant `pnpm` lint/typecheck/unit/build and isolated DB/Worker integration checks pass; exact-current PostgreSQL evidence is recorded below and is not inferred from pure or synthetic tests.
 - [x] Independent **implementation** QA and independent security/persistence audit inspect the exact implementation/migration diff and report no unresolved P0/P1; exact-current 2026-10-05 reports are READY with no blockers.
 - [x] Human Owner separately authorized local TASK-103 repository-history integration on 2026-10-05.
-- [ ] Human Owner separately authorizes merge/push and, only after performance, security, conformance and real deployment evidence, explicitly accepts public feed enablement. Until then the public route/capability and real TASK-039/040 consumers remain disabled.
+- [x] Human Owner authorized local canonical-main merge on 2026-10-05; merge `d0593c7` integrates accepted implementation `0696d7d` without enabling the public route.
+- [ ] Human Owner separately authorizes push and, only after performance, security, conformance and real deployment evidence, explicitly accepts public feed enablement. Until then the public route/capability remains disabled.
 
 ## Preserved pre-rebase validation and implementation evidence
 
@@ -80,7 +81,7 @@ Preserve and rebase the existing server-authoritative, privacy-projected and bou
 - Independent exact-current implementation QA: **READY**, no P0/P1 blocker and no acceptance-critical proof gap. It independently confirmed V1 immutability, V4/V2 binding, authentic in-Battle Revive cleanup, post-Battle Hunt-activity separation, D-F16 gating, direct/segmented/restart/replay/Retreat determinism, OCC/idempotency, terminal sealing/retention and disabled public endpoint.
 - Independent exact-current security/persistence audit: **READY**, no P0/P1 implementation-acceptance blocker. It confirmed owner-scoped storage reads, HMAC cursor scope/TTL/version/snapshot checks, privacy projection/no wild numeric HP or private origin/RNG leakage, canonical byte/hash-chain and gap checks, OCC rollback/idempotency, `409` snapshot and `410` unavailable/expired behavior, D-F16 ordering, terminal seal/30-day retention, and that the presentation GET remains unregistered.
 - `corepack pnpm roadmap:check` passes on this exact-current state with **118 tasks**. `portfolio:check-local` remains intentionally red because its owner-worktree reconciliation compares this current snapshot with the preserved historical TASK-103/TASK-039 worktrees; those historical trees must not be mutated to silence the validator.
-- **Acceptance boundary:** this is implementation acceptance plus Human authorization for local TASK-103 repository-history integration only. The public HTTP presentation route remains disconnected. Full route/session/Origin/CORS/cache transport validation, deployed production Worker/DB workload/SLA evidence, persistent migration execution, merge/push/deploy and Human public-feed enablement remain open and separately authorized gates.
+- **Acceptance boundary:** implementation acceptance and local canonical-main merge are complete. The public HTTP presentation route remains disconnected. Full route/session/Origin/CORS/cache transport validation, deployed production Worker/DB workload/SLA evidence, persistent migration execution, push/deploy and Human public-feed enablement remain open and separately authorized gates.
 
 Everything below this heading records the already-produced TASK-103 implementation/evidence snapshot. It remains useful regression evidence, but it predates the accepted SPEC-020/021 forward amendments and therefore cannot by itself satisfy the rebased Definition of Done. Dated references below to `ACTIVE`, `READY`, manual healing/capture or earlier open gates describe those historical checkpoints only and are superseded for forward execution by the current metadata plus APPROVED SPEC-020/021. Fresh exact-current validation/review is required after the blocked runtime prerequisites are implemented and TASK-103 resumes.
 
