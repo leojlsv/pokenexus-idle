@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: BLOCKED
-- Readiness note: post-Class-A contract rebase is complete at the task-definition level, but further implementation is blocked until the approved SPEC-020/021 runtime prerequisites are separately scoped/authorized and available; no production endpoint enablement, migration execution or Git-history action is approved by this task state
+- State: READY
+- Readiness note: post-Class-A contract rebase is complete and the required management-first runtime prerequisites TASK-107/108/110 are now repository-integrated. The preserved TASK-103 implementation may resume under its existing Class-B owner/reviewer/auditor flow; public endpoint enablement, persistent migration execution, deployment and repository-history completion remain separate gates.
 - Class: B — implement the forward presentation contract defined by approved SPEC-017 as amended by approved SPEC-020/021 without redefining gameplay semantics; mandatory independent security/persistence audit remains required
 - Owner: Lead Developer (one assigned ChatGPT delegated implementation worker)
 - Owner execution surface: ChatGPT delegated implementation worker (explicit non-default Lead Developer assignment; unique implementation owner retained)
@@ -26,7 +26,7 @@ Preserve and rebase the existing server-authoritative, privacy-projected and bou
 
 - Human Owner explicitly accepted detailed SPEC-017 on 2026-09-29 and the forward SPEC-020/021 Class-A amendment package on 2026-10-02; both final focused semantic and architecture/replay reviews reported P0/P1/P2 = 0/0/0. This is **contract acceptance**, not approval of runtime implementation, migration execution, live endpoint, deploy, Git-history modification or renderer cutover.
 - SHA-256 `754A4ACFE38FB2A3CA1694AEE72F48B2878AF40E176798A5E75B79A7663555B2` identifies the historical pre-realignment SPEC-017 semantic snapshot reviewed before its status annotations. It is retained as evidence only; current forward authority is the current APPROVED SPEC-017 as amended by APPROVED SPEC-020/021.
-- This task retains **one** backend implementation owner and all existing TASK-103 source/evidence. TASK-039 remains independently FE-owned. Neither task may resume runtime implementation solely because SPEC-020/021 are approved: prerequisite game-core/vitality/Hunt-authority slices must first satisfy their own task gates. The dedicated task-scoped branch/worktree and existing dirty source are preserved; never reset, clean, force-merge or silently cherry-pick unreviewed work.
+- This task retains **one** backend implementation owner and all existing TASK-103 source/evidence. TASK-039 remains independently FE-owned. TASK-107/108/110 have satisfied their own runtime gates and are repository-integrated, so TASK-103 may resume from its preserved branch/worktree without inferring upstream gameplay authority. Never reset, clean, force-merge or silently cherry-pick unreviewed work.
 - Before executing schema changes against any database, demonstrate a disposable isolated PostgreSQL test environment. Never run migrations or schema-dropping integration tests against a persistent, shared or production database. Production publication/cutover and repository history require explicit Human permission.
 
 ## In scope
@@ -245,6 +245,6 @@ Everything below this heading records the already-produced TASK-103 implementati
 ## Dependencies and handoff
 
 - Historical foundations/evidence complete: TASK-028/035/037/038/097/101; SPEC-017 approved; TASK-102 contract acceptance retained.
-- Forward unblock dependencies: TASK-107 provides authentic `CombatantRevived`/cleanup and cadence source semantics; TASK-108 provides persisted starting-HP/vitality authority; TASK-110 provides Capture/Potion/Revive policy authority, D-F16 `resolved_non_win` + `PostBattleReviveApplied` + consumed-selection provenance, and offline/checkpoint/OCC integration. TASK-103 resumes only after those authoritative sources exist; it must not implement them by inference.
+- Forward unblock dependencies are satisfied: TASK-107 provides authentic `CombatantRevived`/cleanup and cadence source semantics; TASK-108 provides persisted starting-HP/vitality authority; TASK-110 provides Capture/Potion/Revive policy authority, D-F16 `resolved_non_win` + `PostBattleReviveApplied` + consumed-selection provenance, and offline/checkpoint/OCC integration. TASK-103 must consume those integrated sources rather than implement them by inference.
 - Source areas: `packages/game-core/src/solo-hunt.ts`, `solo-hunt-checkpoint.ts`, `packages/game-protocol/src/combat-presentation.ts` (reuse, do not alter exported privacy semantics), `apps/api/src/hunts/runtime.ts`, `application.ts`, `http.ts`, `packages/database/src/hunt-orchestration-repository.ts`, additive database migrations, API and integration tests. Keep frontend integration inside FE-owned TASK-039/040.
-- Implementation handoff follows `docs/agents/handoff-protocol.md`; report unimplemented/untested gates explicitly. This BLOCKED task and its preserved evidence do not certify forward implementation; fresh implementation QA/audit is required after unblock.
+- Implementation handoff follows `docs/agents/handoff-protocol.md`; report unimplemented/untested gates explicitly. This READY task and its preserved evidence do not certify forward implementation; fresh exact-current implementation QA/audit remains required before acceptance.

@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Acceptance note: exact-current implementation is complete; independent QA and Independent Auditor report no unresolved P0/P1, and fresh delegated Class-B PM/Architecture acceptance is `ACCEPT 0/0/0/0`. Repository/history integration, persistent migration execution, production activation, deploy and public enablement remain separately gated.
+- State: DONE
+- Completion note: exact-current implementation is complete; independent QA and Independent Auditor report no unresolved P0/P1, fresh delegated Class-B PM/Architecture acceptance is `ACCEPT 0/0/0/0`, and the Human Owner authorized continuation through repository/history completion on 2026-10-05. Persistent migration execution, production activation, deploy and public enablement remain separately gated.
 - Class: B — implement accepted management-first Hunt authority without reopening product decisions
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker
@@ -17,7 +17,7 @@
 - Related: TASK-023/024/035/036/037/038/101/104/105/106/107
 - Branch: `feat/TASK-110-management-first-hunt-automation-offline-provenance`
 - Worktree: `.worktrees/TASK-110-management-first-hunt-automation-offline-provenance`
-- Implementation branch/worktree: created from `origin/main` at `352713f1c74cb89b7ed4d20ba88f57163eda54db`; exact-current implementation, independent QA/IA and delegated Class-B acceptance are complete in this worktree. Git-history integration remains separately gated.
+- Implementation branch/worktree: created from `origin/main` at `352713f1c74cb89b7ed4d20ba88f57163eda54db`; accepted implementation committed as `ad91067` and repository-integrated through the dedicated TASK-110 final integration branch on 2026-10-05.
 
 ## Objective
 
@@ -149,8 +149,8 @@ Rebase authoritative Solo Hunt orchestration onto the accepted management-first 
 
 - This slice owns high-risk exactly-once Inventory/reward/replay and offline/OCC behavior; independent audit is mandatory.
 - A partial migration or mixed old/new authority can corrupt replay; all forward version gates must fail closed.
-- No persistent migration execution, production enablement, deploy or Git-history action is authorized by this implementation gate.
+- Repository/history completion is authorized and complete. No persistent migration execution, production enablement, deploy or public activation is authorized by this completion gate.
 
 ## Readiness / execution gate
 
-READY gate was satisfied on 2026-10-04 and implementation advanced in the dedicated owner worktree. Exact-current implementation validation, independent QA/IA and delegated Class-B acceptance completed on 2026-10-05. The task remains in ACCEPTANCE until separately authorized repository/history completion; this state does not authorize persistent migration execution, production activation, deploy or public enablement.
+READY gate was satisfied on 2026-10-04 and implementation advanced in the dedicated owner worktree. Exact-current implementation validation, independent QA/IA and delegated Class-B acceptance completed on 2026-10-05, followed by Human-authorized repository/history completion. TASK-110 is DONE. This completion does not authorize persistent migration execution, production activation, deploy or public enablement.

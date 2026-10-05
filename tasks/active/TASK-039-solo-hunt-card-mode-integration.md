@@ -15,7 +15,7 @@
 - Prior partial-review evidence: independent technical QA PARTIAL READY and UX source PARTIAL READY for read/capture/advance/retreat, policy replacement, explicit healing and gated Start transport (no identified frontend P0/P1 after source corrections); isolated synthetic browser command/viewport validation passed; real API, content publication and assistive-technology gates pending
 - Historical backend ownership boundary: this FE-owned task worktree also contains preserved SPEC-018 read-only API catalog-release/artifact source. That source is evidence only and is **not** part of the rebased FE implementation authority. Any future backend modification or repository integration of that slice must be owned/reviewed under a separate backend-authorized task; no backend role exception is created here.
 - Historical Human feedback: "funcionalidades validadas" on 2026-09-28 for the previously demonstrated read-only functionality; "Ok, aprovado" on 2026-09-28 in response to the then-current manual-capture implementation and QA results. These approvals remain evidence for those historical slices but do not override the later Human-approved SPEC-020 management/automation direction.
-- Dependencies: TASK-029, TASK-038, TASK-101 — DONE; approved SPEC-020/021; TASK-109 first-Pre-alpha bootstrap/admission; TASK-110 authoritative Hunt automation/activity; rebased TASK-103 presentation backend
+- Dependencies: TASK-029, TASK-038, TASK-101, TASK-109 and TASK-110 — DONE; approved SPEC-020/021; rebased TASK-103 presentation backend — READY but not yet accepted/integrated
 - Specs: SPEC-013, SPEC-015, SPEC-016, SPEC-017, SPEC-018 as forward-amended by APPROVED SPEC-020/021; TASK-028 presentation event contract
 - Branch: `feat/TASK-039-solo-hunt-card-integration`
 - Worktree: `.worktrees/TASK-039-solo-hunt-card-integration`
@@ -58,7 +58,7 @@ Connect the Cards-only first-Pre-alpha client to the accepted Solo Hunt, Team, I
 
 ## Execution note
 
-All existing read/manual-capture/healing/checkpoint/claim implementation and QA evidence below is preserved as historical source evidence. It does **not** define the forward first-Pre-alpha UX after SPEC-020/021. Further runtime edits are blocked until the prerequisite vitality/Hunt-authority/presentation implementations satisfy their own gates; then this task may resume from the preserved source without reintroducing superseded manual controls. A missing authoritative input is escalated rather than inferred on the client.
+All existing read/manual-capture/healing/checkpoint/claim implementation and QA evidence below is preserved as historical source evidence. It does **not** define the forward first-Pre-alpha UX after SPEC-020/021. Vitality and Hunt-authority prerequisites are now integrated; further runtime edits remain blocked only until TASK-103 satisfies its own implementation/acceptance gate. Then this task may resume from the preserved source without reintroducing superseded manual controls. A missing authoritative input is escalated rather than inferred on the client.
 
 ## Implemented read-only slice
 
