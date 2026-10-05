@@ -19,6 +19,7 @@
 - Specs: SPEC-013, SPEC-015, SPEC-016, SPEC-017, SPEC-018 as forward-amended by APPROVED SPEC-020/021; TASK-028 presentation event contract
 - Source branch: `reconcile/TASK-039-current` at `5b30db4`, merged into canonical local `main` as `9df7eeb` on 2026-10-05
 - Source worktree: `.worktrees/TASK-039-current-reconcile` (clean reconciliation from canonical `main` `b8f11ed`; preserved historical worktree `.worktrees/TASK-039-solo-hunt-card-integration` remains untouched)
+- Repository integration: canonical `main` was pushed through `35094f9` on 2026-10-05; TASK-039 remains ACTIVE only for the external/live acceptance gates documented below
 
 ## Objective
 
