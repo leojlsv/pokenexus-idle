@@ -3,6 +3,11 @@ import type { ApiApp, ApiContext } from "../auth/http";
 import type { StatusCode } from "hono/utils/http-status";
 import type { HuntHttpApplication, HuntHttpResult } from "./application";
 import {
+  HUNT_CATALOG_ARTIFACT_BASE_PATH,
+  catalogArtifactName,
+  type VerifiedHuntCatalogRelease,
+} from "./catalog-release";
+import {
   HUNT_MUTATION_BODY_MAX_BYTES,
   HuntProtocolError,
   isCanonicalUuid,
@@ -25,6 +30,7 @@ export interface RegisterHuntRoutesOptions {
   readonly huntFor: (c: ApiContext) => HuntHttpApplication;
   readonly playerIdFor: (c: ApiContext, accountId: string) => Promise<string | null>;
   readonly security: HuntHttpSecurity;
+  readonly catalogReleaseFor?: (c: ApiContext) => Promise<VerifiedHuntCatalogRelease>;
 }
 
 function invalidRequest(c: ApiContext): Response {
@@ -150,7 +156,67 @@ async function requirePlayerId(
   return playerId ?? c.json({ error: "not_found" }, 404);
 }
 
+function privateCatalogFailure(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("Content-Type", "application/json; charset=UTF-8");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+function catalogJson(c: ApiContext, body: unknown, status: 200 | 404 | 503): Response {
+  return c.newResponse(JSON.stringify(body), status, {
+    "Cache-Control": "private, no-store",
+    "Content-Type": "application/json; charset=UTF-8",
+  });
+}
+
 export function registerHuntRoutes(app: ApiApp, options: RegisterHuntRoutesOptions): void {
+  app.get("/player/hunts/catalog-release", async (c) => {
+    const principal = await options.security.requireSession(c);
+    if (principal instanceof Response) return privateCatalogFailure(principal);
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return privateCatalogFailure(playerId);
+    try {
+      if (!options.catalogReleaseFor) throw new Error("Hunt catalog release provider is unavailable");
+      const verified = await options.catalogReleaseFor(c);
+      return catalogJson(c, verified.descriptor, 200);
+    } catch {
+      return catalogJson(c, { error: "authority_unavailable" }, 503);
+    }
+  });
+
+  app.get(`${HUNT_CATALOG_ARTIFACT_BASE_PATH}*`, async (c) => {
+    const principal = await options.security.requireSession(c);
+    if (principal instanceof Response) return privateCatalogFailure(principal);
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return privateCatalogFailure(playerId);
+    const path = c.req.path.slice(HUNT_CATALOG_ARTIFACT_BASE_PATH.length);
+    if (!/^version-[0-9a-f]{64}\/(?:manifest\.json|catalogs\/(?:zones|hunts)\.json)$/u.test(path)) {
+      return catalogJson(c, { error: "not_found" }, 404);
+    }
+    try {
+      if (!options.catalogReleaseFor) throw new Error("Hunt catalog release provider is unavailable");
+      const verified = await options.catalogReleaseFor(c);
+      const name = catalogArtifactName(path, verified.directoryName);
+      if (name === "release_drift") {
+        return catalogJson(c, { error: "authority_unavailable" }, 503);
+      }
+      if (name === null) {
+        return catalogJson(c, { error: "not_found" }, 404);
+      }
+      return c.newResponse(Uint8Array.from(verified.artifacts[name]), 200, {
+        "Cache-Control": "private, no-store",
+        "Content-Type": "application/json; charset=UTF-8",
+      });
+    } catch {
+      return catalogJson(c, { error: "authority_unavailable" }, 503);
+    }
+  });
+
   app.get("/player/hunts/state", async (c) => {
     const principal = await options.security.requireSession(c);
     if (principal instanceof Response) return principal;
