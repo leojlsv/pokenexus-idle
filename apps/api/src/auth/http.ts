@@ -29,6 +29,7 @@ import {
   createHuntApplicationFromEnvironment,
   type HuntRuntimeEnvironment,
 } from "../hunts/runtime";
+import { loadVerifiedHuntCatalogRelease } from "../hunts/catalog-release";
 
 export const SESSION_COOKIE_NAME = "__Host-pokenexus_session";
 export const RESTRICTED_COOKIE_NAME = "__Host-pokenexus_restricted";
@@ -407,6 +408,7 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
   registerHuntRoutes(app, {
     huntFor,
     playerIdFor: async (c, accountId) => (await playerFor(c).loadProfile(accountId))?.playerId ?? null,
+    catalogReleaseFor: (c) => loadVerifiedHuntCatalogRelease(c.env),
     security: {
       requireSession: (c) => requireSession(c, runtimeFor(c), false),
       requireCommandSession: (c) => requireSessionMutation(c, runtimeFor(c), true),

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import type { AuthSessionPrincipal } from "../auth/application";
 import type { ApiBindings, ApiVariables } from "../auth/http";
+import type { VerifiedHuntCatalogRelease } from "./catalog-release";
 import { HUNT_MUTATION_BODY_MAX_BYTES } from "./protocol";
 import { registerHuntRoutes } from "./http";
 
@@ -106,12 +107,21 @@ function createTestApp(input: {
   readonly playerIdResult?: string | null;
   readonly sessionResult?: AuthSessionPrincipal | Response;
   readonly commandResult?: AuthSessionPrincipal | Response;
+  readonly catalogReleaseResult?: VerifiedHuntCatalogRelease | Error;
 } = {}) {
   const app = new Hono<{ Bindings: ApiBindings; Variables: ApiVariables }>();
   const hunt = input.hunt ?? new FakeHuntApplication();
   const guards = { read: 0, command: 0 };
+  const catalog = { calls: 0 };
   registerHuntRoutes(app, {
     huntFor: () => hunt,
+    catalogReleaseFor: async () => {
+      catalog.calls += 1;
+      if (!input.catalogReleaseResult || input.catalogReleaseResult instanceof Error) {
+        throw input.catalogReleaseResult ?? new Error("no accepted release");
+      }
+      return input.catalogReleaseResult;
+    },
     playerIdFor: async (_c, requestAccountId) => {
       expect(requestAccountId).toBe(accountId);
       return input.playerIdResult === undefined ? playerId : input.playerIdResult;
@@ -127,7 +137,7 @@ function createTestApp(input: {
       },
     },
   });
-  return { app, hunt, guards };
+  return { app, hunt, guards, catalog };
 }
 
 function commandHeaders(extra: Record<string, string> = {}): Record<string, string> {
@@ -139,6 +149,111 @@ function commandHeaders(extra: Record<string, string> = {}): Record<string, stri
 }
 
 describe("SPEC-015 Hunt HTTP routes", () => {
+  it("serves the authenticated SPEC-018 descriptor and only exact verified publication bytes", async () => {
+    const directory = `version-${"e".repeat(64)}`;
+    const manifestBytes = new TextEncoder().encode('{"manifest":"verbatim"}');
+    const zonesBytes = new TextEncoder().encode('[{"id":"zone:a"}]');
+    const huntsBytes = new TextEncoder().encode('[{"id":"hunt:a"}]');
+    const release: VerifiedHuntCatalogRelease = {
+      descriptor: {
+        gameDataVersion: "game-data:published",
+        bundleHash: `sha256:${"f".repeat(64)}`,
+        artifactBasePath: "/player/hunts/catalog-artifacts/",
+      },
+      directoryName: directory,
+      artifacts: {
+        "manifest.json": manifestBytes,
+        "catalogs/zones.json": zonesBytes,
+        "catalogs/hunts.json": huntsBytes,
+      },
+    };
+    const { app, catalog, guards, hunt } = createTestApp({ catalogReleaseResult: release });
+
+    const descriptor = await app.request("/player/hunts/catalog-release", {}, {} as ApiBindings);
+    expect(descriptor.status).toBe(200);
+    expect(descriptor.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(descriptor.headers.get("Content-Type")).toBe("application/json; charset=UTF-8");
+    await expect(descriptor.json()).resolves.toEqual(release.descriptor);
+
+    for (const [suffix, expected] of [
+      ["manifest.json", manifestBytes],
+      ["catalogs/zones.json", zonesBytes],
+      ["catalogs/hunts.json", huntsBytes],
+    ] as const) {
+      const response = await app.request(
+        `/player/hunts/catalog-artifacts/${directory}/${suffix}`,
+        {},
+        {} as ApiBindings,
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+      expect(response.headers.get("Content-Type")).toBe("application/json; charset=UTF-8");
+      expect(new Uint8Array(await response.arrayBuffer())).toEqual(expected);
+    }
+
+    const drift = await app.request(
+      `/player/hunts/catalog-artifacts/version-${"a".repeat(64)}/manifest.json`,
+      {},
+      {} as ApiBindings,
+    );
+    expect(drift.status).toBe(503);
+    expect(drift.headers.get("Cache-Control")).toBe("private, no-store");
+    await expect(drift.json()).resolves.toEqual({ error: "authority_unavailable" });
+    expect(catalog.calls).toBe(5);
+    expect(guards).toEqual({ read: 5, command: 0 });
+    expect(hunt.calls).toEqual([]);
+  });
+
+  it("rejects non-allowlisted artifact paths before consulting release authority", async () => {
+    const { app, catalog, guards } = createTestApp();
+    for (const path of [
+      `/player/hunts/catalog-artifacts/version-${"e".repeat(64)}/catalogs/species.json`,
+      `/player/hunts/catalog-artifacts/version-${"e".repeat(64)}/catalogs/encounter-definitions.json`,
+    ]) {
+      const response = await app.request(path, {}, {} as ApiBindings);
+      expect(response.status).toBe(404);
+      expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+      await expect(response.json()).resolves.toEqual({ error: "not_found" });
+    }
+    expect(catalog.calls).toBe(0);
+    expect(guards).toEqual({ read: 2, command: 0 });
+  });
+
+  it("fails closed when catalog authority is unavailable", async () => {
+    const { app, catalog } = createTestApp({ catalogReleaseResult: new Error("unavailable") });
+    const descriptor = await app.request("/player/hunts/catalog-release", {}, {} as ApiBindings);
+    const artifact = await app.request(
+      `/player/hunts/catalog-artifacts/version-${"e".repeat(64)}/catalogs/zones.json`,
+      {},
+      {} as ApiBindings,
+    );
+    expect([descriptor.status, artifact.status]).toEqual([503, 503]);
+    await expect(descriptor.json()).resolves.toEqual({ error: "authority_unavailable" });
+    await expect(artifact.json()).resolves.toEqual({ error: "authority_unavailable" });
+    expect(catalog.calls).toBe(2);
+  });
+
+  it("never resolves catalog authority without a valid session and an owned Player", async () => {
+    const unauthorized = new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+    const blocked = createTestApp({ sessionResult: unauthorized });
+    const noPlayer = createTestApp({ playerIdResult: null });
+    for (const path of [
+      "/player/hunts/catalog-release",
+      `/player/hunts/catalog-artifacts/version-${"e".repeat(64)}/manifest.json`,
+    ]) {
+      const withoutSession = await blocked.app.request(path, {}, {} as ApiBindings);
+      const withoutPlayer = await noPlayer.app.request(path, {}, {} as ApiBindings);
+      expect(withoutSession.status).toBe(401);
+      expect(withoutPlayer.status).toBe(404);
+      expect(withoutSession.headers.get("Cache-Control")).toBe("private, no-store");
+      expect(withoutPlayer.headers.get("Cache-Control")).toBe("private, no-store");
+    }
+    expect(blocked.catalog.calls).toBe(0);
+    expect(noPlayer.catalog.calls).toBe(0);
+    expect(blocked.guards.command).toBe(0);
+    expect(noPlayer.guards.command).toBe(0);
+  });
+
   it("keeps the TASK-103 presentation GET unregistered until its independent enablement gate", async () => {
     const { app, hunt, guards } = createTestApp();
     const response = await app.request(`/player/hunts/${huntId}/presentation`, {}, {} as ApiBindings);

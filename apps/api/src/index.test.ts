@@ -13,4 +13,13 @@ describe("api entrypoint", () => {
       route.method === "GET" && route.path === "/player/hunts/:huntId/presentation",
     )).toBe(false);
   });
+
+  it("registers the authenticated SPEC-018 Hunt catalog reads", () => {
+    expect(app.routes.some((route) =>
+      route.method === "GET" && route.path === "/player/hunts/catalog-release",
+    )).toBe(true);
+    expect(app.routes.some((route) =>
+      route.method === "GET" && route.path === "/player/hunts/catalog-artifacts/*",
+    )).toBe(true);
+  });
 });
