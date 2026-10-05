@@ -126,7 +126,8 @@ describe("discoverMigrations", () => {
 
   it("publishes TASK-109 one-time Player bootstrap authority after persistent vitality", async () => {
     const migrations = await discoverMigrations();
-    expect(migrations.at(-1)?.fileName).toBe("0011_first_prealpha_player_bootstrap.sql");
+    expect(migrations.find(({ fileName }) => fileName === "0011_first_prealpha_player_bootstrap.sql")?.fileName)
+      .toBe("0011_first_prealpha_player_bootstrap.sql");
     const sql = await readFile(
       join(canonicalMigrationsDirectory, "0011_first_prealpha_player_bootstrap.sql"),
       "utf8",
@@ -137,5 +138,41 @@ describe("discoverMigrations", () => {
     expect(sql).toContain("team_id uuid NOT NULL UNIQUE");
     expect(sql).toContain("FOREIGN KEY (player_id, pokemon_instance_id)");
     expect(sql).toContain("FOREIGN KEY (player_id, team_id)");
+  });
+
+  it("publishes TASK-110 independent Auto-Potion and Auto-Revive policy authority", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.find(({ fileName }) => fileName === "0012_hunt_potion_revive_policies.sql")?.fileName)
+      .toBe("0012_hunt_potion_revive_policies.sql");
+    const sql = await readFile(
+      join(canonicalMigrationsDirectory, "0012_hunt_potion_revive_policies.sql"),
+      "utf8",
+    );
+    expect(sql).toContain("current_auto_potion_policy_version uuid");
+    expect(sql).toContain("auto_potion_policy_row_version bigint NOT NULL DEFAULT 0");
+    expect(sql).toContain("current_auto_revive_policy_version uuid");
+    expect(sql).toContain("auto_revive_policy_row_version bigint NOT NULL DEFAULT 0");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_auto_potion_policies");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_auto_revive_policies");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_auto_potion_policy_intervals");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_auto_revive_policy_intervals");
+    expect(sql).toContain("threshold_percent smallint NOT NULL CHECK (threshold_percent IN (90,80,70,60,50,40,30,20,10))");
+    expect(sql).toContain("item_rule_version bytea NOT NULL");
+    expect(sql).toContain("game_data_version bytea NOT NULL");
+    expect(sql).toContain("rules_version bytea NOT NULL");
+  });
+
+  it("publishes TASK-110 automatic Potion/Revive exactly-once item-use provenance", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.at(-1)?.fileName).toBe("0013_hunt_automation_item_uses.sql");
+    const sql = await readFile(
+      join(canonicalMigrationsDirectory, "0013_hunt_automation_item_uses.sql"),
+      "utf8",
+    );
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_automation_item_uses");
+    expect(sql).toContain("PRIMARY KEY (hunt_id, provenance_identity)");
+    expect(sql).toContain("automation_family text NOT NULL CHECK (automation_family IN ('potion', 'revive'))");
+    expect(sql).toContain("inventory_row_version_before bigint NOT NULL");
+    expect(sql).toContain("inventory_row_version_after bigint NOT NULL");
   });
 });

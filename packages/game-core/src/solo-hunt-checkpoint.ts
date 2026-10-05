@@ -9,11 +9,13 @@ import {
   ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
   GENETIC_PROFILES,
 } from "./encounter-individualization";
+import { assertHuntAutomationPolicyAuthoritySnapshot } from "./hunt-automation-policy";
 import { validateRngState } from "./rng";
 import type { DeterministicRngState } from "./types";
 
 export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1 = "pokenexus.solo-hunt-checkpoint.v1" as const;
 export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2 = "pokenexus.solo-hunt-checkpoint.v2" as const;
+export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3 = "pokenexus.solo-hunt-checkpoint.v3" as const;
 export const SOLO_HUNT_DEFAULT_SEGMENT_MS = 60 * 60 * 1000;
 
 const GENETIC_GRADES = ["Normal", "Uncommon", "Rare", "Epic", "Apex"] as const;
@@ -204,16 +206,25 @@ function assertCadenceEffect(value: unknown, label: string): void {
   if (value.remainingToNextTickMs !== undefined) assertNonNegativeSafeInteger(value, "remainingToNextTickMs", label);
 }
 
-function assertCadenceReadiness(value: unknown, label: string): void {
+function assertCadenceReadiness(value: unknown, label: string, forwardV3: boolean): void {
   assertRecord(value, label);
-  assertAllowedKeys(value, ["participant", "moveLoadout", "nextActionRemainingMs", "moveCooldownRemainingMs"], label);
+  assertAllowedKeys(value, [
+    "participant",
+    "moveLoadout",
+    "nextActionRemainingMs",
+    "moveCooldownRemainingMs",
+    ...(forwardV3 ? ["autoPotionCooldownRemainingMs"] : []),
+  ], label);
   assertCadenceParticipant(value.participant, `${label}.participant`);
   assertStringArray(value.moveLoadout, `${label}.moveLoadout`);
   assertNonNegativeSafeInteger(value, "nextActionRemainingMs", label);
   assertNumericRecord(value.moveCooldownRemainingMs, `${label}.moveCooldownRemainingMs`);
+  if (forwardV3 && value.autoPotionCooldownRemainingMs !== undefined) {
+    assertNonNegativeSafeInteger(value, "autoPotionCooldownRemainingMs", label);
+  }
 }
 
-function assertCadence(value: unknown, label: string): void {
+function assertCadence(value: unknown, label: string, forwardV3 = false): void {
   assertRecord(value, label);
   assertAllowedKeys(value, [
     "effects", "hpByParticipant", "maxHpByParticipant", "readinessByParticipant", "actionLockRemainingMsByParticipant",
@@ -228,7 +239,7 @@ function assertCadence(value: unknown, label: string): void {
   assertNumericRecord(value.maxHpByParticipant, `${label}.maxHpByParticipant`);
   assertRecord(value.readinessByParticipant, `${label}.readinessByParticipant`);
   for (const [key, readiness] of Object.entries(value.readinessByParticipant)) {
-    assertCadenceReadiness(readiness, `${label}.readinessByParticipant.${key}`);
+    assertCadenceReadiness(readiness, `${label}.readinessByParticipant.${key}`, forwardV3);
   }
   assertNumericRecord(value.actionLockRemainingMsByParticipant, `${label}.actionLockRemainingMsByParticipant`);
 }
@@ -438,7 +449,7 @@ function assertParticipantActivation(value: unknown, label: string): void {
   assertNonNegativeSafeInteger(value, "eventSequence", label);
 }
 
-function assertCombatStimulus(value: unknown, label: string): void {
+function assertCombatStimulus(value: unknown, label: string, forwardV3: boolean): void {
   assertRecord(value, label);
   if (value.kind === "useMove") {
     assertAllowedKeys(value, ["kind", "actorId", "moveId", "targetId"], label);
@@ -458,6 +469,62 @@ function assertCombatStimulus(value: unknown, label: string): void {
     assertAllowedKeys(value, ["kind", "sideId", "combatantId"], label);
     assertNonEmptyString(value, "sideId", label);
     assertNonEmptyString(value, "combatantId", label);
+    return;
+  }
+  if (forwardV3 && value.kind === "externalHpHeal") {
+    assertAllowedKeys(value, ["kind", "targetId", "actionOwnerId", "magnitude", "provenanceId"], label);
+    assertNonEmptyString(value, "targetId", label);
+    assertNonEmptyString(value, "actionOwnerId", label);
+    assertNonEmptyString(value, "provenanceId", label);
+    assertRecord(value.magnitude, `${label}.magnitude`);
+    if (value.magnitude.kind === "integer") {
+      assertAllowedKeys(value.magnitude, ["kind", "amount"], `${label}.magnitude`);
+      if (!Number.isSafeInteger(value.magnitude.amount) || (value.magnitude.amount as number) <= 0) {
+        throw new Error(`Solo Hunt checkpoint ${label}.magnitude.amount must be a positive safe integer`);
+      }
+      return;
+    }
+    if (value.magnitude.kind === "maxHpFraction") {
+      assertAllowedKeys(value.magnitude, ["kind", "numerator", "denominator"], `${label}.magnitude`);
+      if (
+        !Number.isSafeInteger(value.magnitude.numerator)
+        || (value.magnitude.numerator as number) <= 0
+        || !Number.isSafeInteger(value.magnitude.denominator)
+        || (value.magnitude.denominator as number) <= 0
+      ) {
+        throw new Error(`Solo Hunt checkpoint ${label}.magnitude fraction must be positive safe integers`);
+      }
+      return;
+    }
+    throw new Error(`Solo Hunt checkpoint ${label}.magnitude has invalid kind`);
+  }
+  if (forwardV3 && value.kind === "koInterventionDecision") {
+    const revive = value.decision === "revive";
+    assertAllowedKeys(
+      value,
+      revive
+        ? ["kind", "sideId", "combatantId", "decision", "reviveFraction", "provenanceId"]
+        : ["kind", "sideId", "combatantId", "decision"],
+      label,
+    );
+    assertNonEmptyString(value, "sideId", label);
+    assertNonEmptyString(value, "combatantId", label);
+    if (value.decision !== "decline" && value.decision !== "revive") {
+      throw new Error(`Solo Hunt checkpoint ${label} has invalid KO intervention decision`);
+    }
+    if (revive) {
+      assertNonEmptyString(value, "provenanceId", label);
+      assertRecord(value.reviveFraction, `${label}.reviveFraction`);
+      assertAllowedKeys(value.reviveFraction, ["numerator", "denominator"], `${label}.reviveFraction`);
+      if (
+        !Number.isSafeInteger(value.reviveFraction.numerator)
+        || (value.reviveFraction.numerator as number) <= 0
+        || !Number.isSafeInteger(value.reviveFraction.denominator)
+        || (value.reviveFraction.denominator as number) <= 0
+      ) {
+        throw new Error(`Solo Hunt checkpoint ${label}.reviveFraction must be positive safe integers`);
+      }
+    }
     return;
   }
   throw new Error(`Solo Hunt checkpoint ${label} has invalid kind`);
@@ -480,12 +547,12 @@ function assertStages(value: unknown, label: string): void {
   }
 }
 
-function assertBattleCombatant(value: unknown, label: string): void {
+function assertBattleCombatant(value: unknown, label: string, forwardV3: boolean): void {
   assertRecord(value, label);
   assertAllowedKeys(value, [
     "combatantId", "sideId", "speciesId", "level", "types", "maxHp", "derivedStats", "currentHp",
     "moveLoadout", "nextActionAtMs", "moveReadyAtMs", "stages", "actionLockExpiresAtMsByScope",
-    "abilityId", "cadenceParticipant",
+    "abilityId", "cadenceParticipant", ...(forwardV3 ? ["autoPotionReadyAtMs"] : []),
   ], label);
   for (const key of ["combatantId", "sideId", "speciesId"] as const) assertNonEmptyString(value, key, label);
   assertNonNegativeSafeInteger(value, "level", label);
@@ -495,6 +562,9 @@ function assertBattleCombatant(value: unknown, label: string): void {
   assertFiniteNumber(value, "currentHp", label);
   assertStringArray(value.moveLoadout, `${label}.moveLoadout`);
   assertNonNegativeSafeInteger(value, "nextActionAtMs", label);
+  if (forwardV3 && value.autoPotionReadyAtMs !== undefined) {
+    assertNonNegativeSafeInteger(value, "autoPotionReadyAtMs", label);
+  }
   assertNumericRecord(value.moveReadyAtMs, `${label}.moveReadyAtMs`);
   assertStages(value.stages, `${label}.stages`);
   if (value.actionLockExpiresAtMsByScope !== undefined) {
@@ -544,7 +614,7 @@ function assertCombatContext(value: unknown, label: string): void {
   }
 }
 
-function assertCurrentEncounter(value: unknown): void {
+function assertCurrentEncounter(value: unknown, forwardV3: boolean): void {
   assertRecord(value, "currentEncounter");
   assertAllowedKeys(value, [
     "encounterId", "encounterOrdinal", "pendingSelectionIdentity", "selection", "battle",
@@ -566,6 +636,7 @@ function assertCurrentEncounter(value: unknown): void {
   assertAllowedKeys(value.battle, [
     "battleId", "context", "combatTimeMs", "eventSequence", "status", "sides", "combatants",
     "replacementPendingSideIds", "effects", "nextEffectApplicationSequence",
+    ...(forwardV3 ? ["koInterventionSideId", "koInterventionPending"] : []),
   ], "currentEncounter.battle");
   assertNonEmptyString(value.battle, "battleId", "currentEncounter.battle");
   assertCombatContext(value.battle.context, "currentEncounter.battle.context");
@@ -581,9 +652,28 @@ function assertCurrentEncounter(value: unknown): void {
     assertBattleSide(side, `currentEncounter.battle.sides[${index}]`);
   }
   assertStringArray(value.battle.replacementPendingSideIds, "currentEncounter.battle.replacementPendingSideIds");
+  if (forwardV3) {
+    if (
+      value.battle.koInterventionSideId !== undefined
+      && value.battle.koInterventionSideId !== null
+      && (typeof value.battle.koInterventionSideId !== "string" || value.battle.koInterventionSideId.length === 0)
+    ) {
+      throw new Error("Solo Hunt checkpoint currentEncounter.battle has invalid koInterventionSideId");
+    }
+    if (value.battle.koInterventionPending !== undefined && value.battle.koInterventionPending !== null) {
+      assertRecord(value.battle.koInterventionPending, "currentEncounter.battle.koInterventionPending");
+      assertAllowedKeys(
+        value.battle.koInterventionPending,
+        ["sideId", "combatantId"],
+        "currentEncounter.battle.koInterventionPending",
+      );
+      assertNonEmptyString(value.battle.koInterventionPending, "sideId", "currentEncounter.battle.koInterventionPending");
+      assertNonEmptyString(value.battle.koInterventionPending, "combatantId", "currentEncounter.battle.koInterventionPending");
+    }
+  }
   assertRecord(value.battle.combatants, "currentEncounter.battle.combatants");
   for (const [key, combatant] of Object.entries(value.battle.combatants)) {
-    assertBattleCombatant(combatant, `currentEncounter.battle.combatants.${key}`);
+    assertBattleCombatant(combatant, `currentEncounter.battle.combatants.${key}`, forwardV3);
   }
   assertRecord(value.battle.effects, "currentEncounter.battle.effects");
   for (const [key, effect] of Object.entries(value.battle.effects)) {
@@ -598,7 +688,7 @@ function assertCurrentEncounter(value: unknown): void {
   }
   assertRecordArray(value.battleStimuli, "currentEncounter.battleStimuli");
   for (const [index, stimulus] of value.battleStimuli.entries()) {
-    assertCombatStimulus(stimulus, `currentEncounter.battleStimuli[${index}]`);
+    assertCombatStimulus(stimulus, `currentEncounter.battleStimuli[${index}]`, forwardV3);
   }
   if (value.battleOutcome !== undefined) {
     assertRecord(value.battleOutcome, "currentEncounter.battleOutcome");
@@ -616,12 +706,19 @@ function assertCurrentEncounter(value: unknown): void {
   }
 }
 
-function assertInterBattle(value: unknown, interBattleGapMs: number): void {
+function assertInterBattle(value: unknown, interBattleGapMs: number, forwardV3: boolean): void {
   assertRecord(value, "interBattle");
-  assertAllowedKeys(value, ["cadence", "policy", "remainingGapMs"], "interBattle");
-  assertCadence(value.cadence, "interBattle.cadence");
+  assertAllowedKeys(
+    value,
+    ["cadence", "policy", "remainingGapMs", ...(forwardV3 ? ["activePokemonInstanceId"] : [])],
+    "interBattle",
+  );
+  assertCadence(value.cadence, "interBattle.cadence", forwardV3);
   assertPolicy(value.policy, "interBattle.policy");
   assertNonNegativeSafeInteger(value, "remainingGapMs", "interBattle");
+  if (forwardV3 && value.activePokemonInstanceId !== undefined) {
+    assertNonEmptyString(value, "activePokemonInstanceId", "interBattle");
+  }
   if ((value.remainingGapMs as number) > interBattleGapMs) {
     throw new Error("Solo Hunt checkpoint interBattle remainingGapMs exceeds interBattleGapMs");
   }
@@ -676,7 +773,72 @@ function assertAppliedHealingEvent(value: unknown, label: string): void {
   throw new Error(`Solo Hunt checkpoint ${label}.magnitude has invalid kind`);
 }
 
-function assertCompletedEncounter(value: unknown, label: string): void {
+function assertAppliedAutomationEvent(value: unknown, label: string): void {
+  assertRecord(value, label);
+  if (value.kind === "potion") {
+    assertAllowedKeys(value, [
+      "kind",
+      "provenanceId",
+      "afterEncounterId",
+      "afterEncounterOrdinal",
+      "appliedAtHuntTimeMs",
+      "targetPokemonInstanceId",
+      "magnitude",
+      "appliedHp",
+      "resultingHp",
+    ], label);
+    assertRecord(value.magnitude, `${label}.magnitude`);
+    if (value.magnitude.kind === "integer") {
+      assertAllowedKeys(value.magnitude, ["kind", "amount"], `${label}.magnitude`);
+      if (!Number.isSafeInteger(value.magnitude.amount) || (value.magnitude.amount as number) <= 0) {
+        throw new Error(`Solo Hunt checkpoint ${label}.magnitude.amount must be a positive safe integer`);
+      }
+    } else if (value.magnitude.kind === "maxHpFraction") {
+      assertAllowedKeys(value.magnitude, ["kind", "numerator", "denominator"], `${label}.magnitude`);
+      if (
+        !Number.isSafeInteger(value.magnitude.numerator)
+        || (value.magnitude.numerator as number) <= 0
+        || !Number.isSafeInteger(value.magnitude.denominator)
+        || (value.magnitude.denominator as number) <= 0
+      ) {
+        throw new Error(`Solo Hunt checkpoint ${label}.magnitude fraction must be positive safe integers`);
+      }
+    } else {
+      throw new Error(`Solo Hunt checkpoint ${label}.magnitude has invalid kind`);
+    }
+  } else if (value.kind === "revive") {
+    assertAllowedKeys(value, [
+      "kind",
+      "provenanceId",
+      "afterEncounterId",
+      "afterEncounterOrdinal",
+      "appliedAtHuntTimeMs",
+      "targetPokemonInstanceId",
+      "restoredHp",
+      "appliedHp",
+      "resultingHp",
+    ], label);
+    if (!Number.isSafeInteger(value.restoredHp) || (value.restoredHp as number) <= 0) {
+      throw new Error(`Solo Hunt checkpoint ${label}.restoredHp must be a positive safe integer`);
+    }
+  } else {
+    throw new Error(`Solo Hunt checkpoint ${label}.kind is invalid`);
+  }
+  assertNonEmptyString(value, "provenanceId", label);
+  assertNonEmptyString(value, "afterEncounterId", label);
+  if (!Number.isSafeInteger(value.afterEncounterOrdinal) || (value.afterEncounterOrdinal as number) < 1) {
+    throw new Error(`Solo Hunt checkpoint ${label}.afterEncounterOrdinal must be a positive safe integer`);
+  }
+  assertNonNegativeSafeInteger(value, "appliedAtHuntTimeMs", label);
+  assertNonEmptyString(value, "targetPokemonInstanceId", label);
+  for (const key of ["appliedHp", "resultingHp"] as const) {
+    if (!Number.isSafeInteger(value[key]) || (value[key] as number) <= 0) {
+      throw new Error(`Solo Hunt checkpoint ${label}.${key} must be a positive safe integer`);
+    }
+  }
+}
+
+function assertCompletedEncounter(value: unknown, label: string, forwardV3: boolean): void {
   assertRecord(value, label);
   assertAllowedKeys(value, [
     "rewardSourceIdentity", "huntRunIdentity", "encounterId", "encounterOrdinal", "pendingSelectionIdentity",
@@ -686,7 +848,6 @@ function assertCompletedEncounter(value: unknown, label: string): void {
     "derivationAuthorityVersion", "derivationAuthorityKeyId",
   ], label);
   for (const key of [
-    "rewardSourceIdentity",
     "huntRunIdentity",
     "encounterId",
     "pendingSelectionIdentity",
@@ -702,14 +863,23 @@ function assertCompletedEncounter(value: unknown, label: string): void {
   for (const key of ["encounterOrdinal", "level", "completedAtHuntTimeMs"] as const) {
     assertNonNegativeSafeInteger(value, key, label);
   }
-  if (value.completionKind !== "defeat") {
+  if (value.completionKind === "defeat") {
+    assertNonEmptyString(value, "rewardSourceIdentity", label);
+    if (!("rewardEnvelope" in value)) {
+      throw new Error(`Solo Hunt checkpoint ${label}.rewardEnvelope is required for defeat`);
+    }
+  } else if (forwardV3 && value.completionKind === "resolved_non_win") {
+    if (value.rewardSourceIdentity !== undefined || value.rewardEnvelope !== undefined) {
+      throw new Error(`Solo Hunt checkpoint ${label} resolved_non_win cannot contain reward authority`);
+    }
+  } else {
     throw new Error(`Solo Hunt checkpoint ${label} has invalid completionKind`);
   }
   assertStringArray(value.participantPokemonInstanceIds, `${label}.participantPokemonInstanceIds`);
   assertIndividualizationLinkage(value, label);
 }
 
-function assertCompletedEncounterProvenance(value: unknown, label: string): void {
+function assertCompletedEncounterProvenance(value: unknown, label: string, forwardV3: boolean): void {
   assertRecord(value, label);
   assertAllowedKeys(value, [
     "encounterId", "encounterOrdinal", "consumedPendingEncounterSelection", "participantActivations", "battleStimuli",
@@ -733,7 +903,7 @@ function assertCompletedEncounterProvenance(value: unknown, label: string): void
   }
   assertRecordArray(value.battleStimuli, `${label}.battleStimuli`);
   for (const [index, stimulus] of value.battleStimuli.entries()) {
-    assertCombatStimulus(stimulus, `${label}.battleStimuli[${index}]`);
+    assertCombatStimulus(stimulus, `${label}.battleStimuli[${index}]`, forwardV3);
   }
   if (value.individualizationSnapshot !== undefined) {
     assertIndividualizationSnapshot(value.individualizationSnapshot, `${label}.individualizationSnapshot`);
@@ -910,7 +1080,6 @@ function assertDecodedRuntimeConsistency(value: Record<string, unknown>): void {
       || evidence.encounterOrdinal !== expectedOrdinal
       || provenance.encounterOrdinal !== expectedOrdinal
       || evidence.encounterId !== decodedEncounterId(value.huntRunIdentity, expectedOrdinal)
-      || evidence.rewardSourceIdentity !== decodedRewardSourceIdentity(value.huntRunIdentity, expectedOrdinal)
       || evidence.encounterId !== provenance.encounterId
       || evidence.completedAtHuntTimeMs !== provenance.completedAtHuntTimeMs
       || evidence.pendingSelectionIdentity !== consumed.pendingSelectionIdentity
@@ -932,6 +1101,12 @@ function assertDecodedRuntimeConsistency(value: Record<string, unknown>): void {
       || (evidence.completedAtHuntTimeMs as number) > (value.logicalTimeMs as number)
     ) {
       throw new Error("Solo Hunt checkpoint completed Encounter evidence/provenance is context-incompatible");
+    }
+    if (
+      evidence.completionKind === "defeat"
+      && evidence.rewardSourceIdentity !== decodedRewardSourceIdentity(value.huntRunIdentity, expectedOrdinal)
+    ) {
+      throw new Error("Solo Hunt checkpoint winning Encounter reward authority is context-incompatible");
     }
     const consumedHasIndividualization = pendingCarriesIndividualization(consumed);
     const evidenceHasIndividualization = evidence.individualizationSnapshotIdentity !== undefined;
@@ -1050,7 +1225,10 @@ function assertDecodedRuntimeConsistency(value: Record<string, unknown>): void {
 
 function assertDecodedRuntimeState(
   value: unknown,
-  schemaVersion: typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1 | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+  schemaVersion:
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
 ): asserts value is SoloHuntRuntimeState {
   if (!isRecord(value)) throw new Error("Solo Hunt checkpoint state must be an object");
   const allowedKeys = [
@@ -1059,7 +1237,10 @@ function assertDecodedRuntimeState(
     "selectionStreamOrigin", "combatDeterministicOrigin", "policyRng", "combatDeterministicState", "currentEncounter",
     "interBattle", "pendingEncounterSelection", "completedEncounters", "completedEncounterProvenance",
     "pendingCaptureDecision", "status", "terminalReason",
-    ...(schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2 ? ["appliedHealingEvents"] : []),
+    ...(schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1 ? ["appliedHealingEvents"] : []),
+    ...(schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+      ? ["automationPolicies", "appliedAutomationEvents"]
+      : []),
   ];
   assertAllowedKeys(value, allowedKeys, "state");
   for (const key of [
@@ -1095,12 +1276,20 @@ function assertDecodedRuntimeState(
     assertTeamMember(member, `pinnedTeam[${index}]`);
   }
   for (const [index, evidence] of value.completedEncounters.entries()) {
-    assertCompletedEncounter(evidence, `completedEncounters[${index}]`);
+    assertCompletedEncounter(
+      evidence,
+      `completedEncounters[${index}]`,
+      schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+    );
   }
   for (const [index, provenance] of value.completedEncounterProvenance.entries()) {
-    assertCompletedEncounterProvenance(provenance, `completedEncounterProvenance[${index}]`);
+    assertCompletedEncounterProvenance(
+      provenance,
+      `completedEncounterProvenance[${index}]`,
+      schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+    );
   }
-  if (schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2) {
+  if (schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1) {
     if (!Array.isArray(value.appliedHealingEvents)) {
       throw new Error("Solo Hunt checkpoint v2 state is missing appliedHealingEvents");
     }
@@ -1154,6 +1343,65 @@ function assertDecodedRuntimeState(
       previousSequence = sequence;
     }
   }
+  if (schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+    if ((value.appliedHealingEvents as unknown[]).length !== 0) {
+      throw new Error("Solo Hunt checkpoint v3 cannot contain legacy manual healing provenance");
+    }
+    if (!Array.isArray(value.appliedAutomationEvents)) {
+      throw new Error("Solo Hunt checkpoint v3 state is missing appliedAutomationEvents");
+    }
+    assertRecordArray(value.appliedAutomationEvents, "appliedAutomationEvents");
+    const pinned = new Set(
+      value.pinnedTeam.map((member) => (member as Record<string, unknown>).pokemonInstanceId),
+    );
+    const seenProvenance = new Set<string>();
+    let previousEncounterOrdinal = 0;
+    let previousTime = -1;
+    for (const [index, event] of value.appliedAutomationEvents.entries()) {
+      assertAppliedAutomationEvent(event, `appliedAutomationEvents[${index}]`);
+      const provenanceId = event.provenanceId as string;
+      const encounterOrdinal = event.afterEncounterOrdinal as number;
+      const time = event.appliedAtHuntTimeMs as number;
+      if (seenProvenance.has(provenanceId)) {
+        throw new Error("Solo Hunt checkpoint automation provenance identity is duplicated");
+      }
+      if (time > (value.logicalTimeMs as number)) {
+        throw new Error("Solo Hunt checkpoint automation event occurs after checkpoint logical time");
+      }
+      const boundary = (value.completedEncounters as Array<Record<string, unknown>>).find((entry) =>
+        entry.encounterId === event.afterEncounterId && entry.encounterOrdinal === encounterOrdinal);
+      if (
+        !boundary
+        || (boundary.completedAtHuntTimeMs as number) > time
+        || time > (boundary.completedAtHuntTimeMs as number) + (value.interBattleGapMs as number)
+      ) {
+        throw new Error("Solo Hunt checkpoint automation event lacks its exact completed Encounter boundary");
+      }
+      if (!pinned.has(event.targetPokemonInstanceId)) {
+        throw new Error("Solo Hunt checkpoint automation target is not in the pinned Team");
+      }
+      if (
+        encounterOrdinal < previousEncounterOrdinal
+        || (encounterOrdinal === previousEncounterOrdinal && time < previousTime)
+      ) {
+        throw new Error("Solo Hunt checkpoint automation events are not in deterministic order");
+      }
+      seenProvenance.add(provenanceId);
+      previousEncounterOrdinal = encounterOrdinal;
+      previousTime = time;
+    }
+    if (value.automationPolicies === undefined) {
+      throw new Error("Solo Hunt checkpoint v3 state is missing automation policy authority");
+    }
+    try {
+      assertHuntAutomationPolicyAuthoritySnapshot(value.automationPolicies);
+    } catch (cause) {
+      throw new Error(
+        `Solo Hunt checkpoint v3 automation policy authority is invalid: ${cause instanceof Error ? cause.message : "unknown error"}`,
+        { cause },
+      );
+    }
+  }
   assertSelectionOrigin(value.selectionStreamOrigin);
   assertRecord(value.combatDeterministicOrigin, "combatDeterministicOrigin");
   assertAllowedKeys(value.combatDeterministicOrigin, ["rng"], "combatDeterministicOrigin");
@@ -1174,9 +1422,13 @@ function assertDecodedRuntimeState(
     throw new Error("Solo Hunt checkpoint state must contain exactly one runtime phase");
   }
   if (hasCurrentEncounter) {
-    assertCurrentEncounter(value.currentEncounter);
+    assertCurrentEncounter(value.currentEncounter, schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3);
   } else {
-    assertInterBattle(value.interBattle, value.interBattleGapMs as number);
+    assertInterBattle(
+      value.interBattle,
+      value.interBattleGapMs as number,
+      schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+    );
   }
   if (value.status !== "active" && value.status !== "terminal") {
     throw new Error("Solo Hunt checkpoint state has invalid status");
@@ -1199,6 +1451,12 @@ export function encodeSoloHuntCheckpointV1(state: SoloHuntRuntimeState): Uint8Ar
   if (state.appliedHealingEvents !== undefined) {
     throw new Error("Solo Hunt checkpoint v1 cannot encode explicit healing provenance");
   }
+  if (state.automationPolicies !== undefined) {
+    throw new Error("Solo Hunt checkpoint v1 cannot encode automation policy authority");
+  }
+  if (state.appliedAutomationEvents !== undefined) {
+    throw new Error("Solo Hunt checkpoint v1 cannot encode automation provenance");
+  }
   const payload = {
     schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
     state: canonicalize(state),
@@ -1207,12 +1465,35 @@ export function encodeSoloHuntCheckpointV1(state: SoloHuntRuntimeState): Uint8Ar
 }
 
 export function encodeSoloHuntCheckpointV2(state: SoloHuntRuntimeState): Uint8Array {
+  if (state.automationPolicies !== undefined) {
+    throw new Error("Solo Hunt checkpoint v2 cannot encode automation policy authority");
+  }
+  if (state.appliedAutomationEvents !== undefined) {
+    throw new Error("Solo Hunt checkpoint v2 cannot encode automation provenance");
+  }
   const normalized: SoloHuntRuntimeState = {
     ...state,
     appliedHealingEvents: state.appliedHealingEvents ?? [],
   };
   const payload = {
     schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+    state: canonicalize(normalized),
+  };
+  return new TextEncoder().encode(JSON.stringify(payload));
+}
+
+export function encodeSoloHuntCheckpointV3(state: SoloHuntRuntimeState): Uint8Array {
+  if (state.automationPolicies === undefined) {
+    throw new Error("Solo Hunt checkpoint v3 requires automation policy authority");
+  }
+  assertHuntAutomationPolicyAuthoritySnapshot(state.automationPolicies);
+  const normalized: SoloHuntRuntimeState = {
+    ...state,
+    appliedHealingEvents: state.appliedHealingEvents ?? [],
+    appliedAutomationEvents: state.appliedAutomationEvents ?? [],
+  };
+  const payload = {
+    schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
     state: canonicalize(normalized),
   };
   return new TextEncoder().encode(JSON.stringify(payload));
@@ -1281,6 +1562,31 @@ export function decodeSoloHuntCheckpointV2(bytes: Uint8Array): SoloHuntCheckpoin
   }
 }
 
+export function decodeSoloHuntCheckpointV3(bytes: Uint8Array): SoloHuntCheckpointDecodeResult {
+  try {
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
+      return { accepted: false, reason: "Solo Hunt checkpoint bytes are required" };
+    }
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const parsed = JSON.parse(text) as unknown;
+    if (!isRecord(parsed) || parsed.schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+      return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
+    }
+    assertAllowedKeys(parsed, ["schemaVersion", "state"], "payload");
+    const state = decanonicalize(parsed.state);
+    assertDecodedRuntimeState(state, SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3);
+    if (!sameBytes(bytes, encodeSoloHuntCheckpointV3(state))) {
+      return { accepted: false, reason: "Solo Hunt checkpoint bytes are not canonical" };
+    }
+    return { accepted: true, state };
+  } catch (error) {
+    return {
+      accepted: false,
+      reason: error instanceof Error ? error.message : "Malformed Solo Hunt checkpoint",
+    };
+  }
+}
+
 export function decodeSoloHuntCheckpoint(bytes: Uint8Array): SoloHuntCheckpointDecodeResult {
   try {
     if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
@@ -1291,6 +1597,7 @@ export function decodeSoloHuntCheckpoint(bytes: Uint8Array): SoloHuntCheckpointD
     if (!isRecord(parsed)) return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
     if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1) return decodeSoloHuntCheckpointV1(bytes);
     if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2) return decodeSoloHuntCheckpointV2(bytes);
+    if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) return decodeSoloHuntCheckpointV3(bytes);
     return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
   } catch (error) {
     return {

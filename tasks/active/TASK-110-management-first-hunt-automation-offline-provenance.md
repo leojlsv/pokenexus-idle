@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: DRAFT
-- Readiness note: this is the authoritative Hunt-orchestration rebase for approved SPEC-020/021; runtime/API/database implementation is not authorized in this session
+- State: ACCEPTANCE
+- Acceptance note: exact-current implementation is complete; independent QA and Independent Auditor report no unresolved P0/P1, and fresh delegated Class-B PM/Architecture acceptance is `ACCEPT 0/0/0/0`. Repository/history integration, persistent migration execution, production activation, deploy and public enablement remain separately gated.
 - Class: B — implement accepted management-first Hunt authority without reopening product decisions
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT delegated implementation worker
@@ -15,13 +15,24 @@
 - Consultant execution surface(s): N/A
 - Specs: APPROVED SPEC-015/020/021; APPROVED SPEC-013/014/017 as forward-amended
 - Related: TASK-023/024/035/036/037/038/101/104/105/106/107
-- Branch: `main`
-- Worktree: `.worktrees/main-governance-integration`
-- Implementation branch/worktree: not created; this DRAFT remains control-plane only until separate implementation authorization.
+- Branch: `feat/TASK-110-management-first-hunt-automation-offline-provenance`
+- Worktree: `.worktrees/TASK-110-management-first-hunt-automation-offline-provenance`
+- Implementation branch/worktree: created from `origin/main` at `352713f1c74cb89b7ed4d20ba88f57163eda54db`; exact-current implementation, independent QA/IA and delegated Class-B acceptance are complete in this worktree. Git-history integration remains separately gated.
 
 ## Objective
 
 Rebase authoritative Solo Hunt orchestration onto the accepted management-first contract: Capture/Potion/Revive are policy-driven automation, checkpoint/claim are internal reconciliation, offline productive progress is capped at one frozen 8-hour target, persistent vitality is authoritative, D-F16 post-Battle Revive has exactly-once replay provenance, and bounded Hunt activity supplies downstream presentation without mutating sealed Battle transcripts.
+
+## Implementation / acceptance status — 2026-10-05
+
+- Forward `hunt-runtime-inputs-v3` and `pokenexus.solo-hunt-checkpoint.v3` freeze exact Capture/Potion/Revive authority, persistent vitality and cadence state while preserving historical V1/V2 codecs and runtime shape.
+- Capture/Potion/Revive policy persistence, independent OCC/versioning, prospective active-Hunt intervals, deterministic ordered fallback/minimum-reserve selection and exactly-once Inventory debits are implemented. Forward Capture/Potion progression requires no manual productive action.
+- First-return offline reconciliation freezes one database-time return anchor and productive target capped at 8 hours; bounded continuations/retries reuse it and completed capped work rebases the checkpoint anchor without reclaiming excess absence.
+- D-F16 B atomically persists post-Battle Revive debit/vitality/cadence cleanup, exact consumed PendingEncounterSelection provenance and `resolved_non_win` with no capture/reward or early Encounter N+1 publication.
+- Retreat exact-boundary handling persists `abandoned_by_retreat` with zero automation spend; Retreat/`no_living` use the exact Player-wide 30-second database-clock recovery without healing on expiry. Ordinary unresolved-selection no-free-reroll remains intact.
+- Versioned Hunt activity persists immutable resolved Encounter summaries with Capture/XP/item/KO/Revive/resource evidence and stable reconnect pagination capped at 64 records.
+- Final PostgreSQL validation exposed and closed one forward activity bug: inter-Battle advancement had dropped the active Pokémon identity after a successful in-Battle Auto-Revive. The identity is now retained only for V3 automation states both at victory transition and through cadence advancement; a dedicated historical V2 post-victory encode/decode regression proves V1/V2 isolation remains strict.
+- Exact-current independent QA: **PASS, no unresolved P0/P1**. Exact-current Independent Auditor: **PASS, no unresolved P0/P1**. Fresh delegated Class-B PM/Architecture acceptance: **ACCEPT, P0/P1/P2/P3 = 0/0/0/0**.
 
 ## In scope
 
@@ -93,18 +104,18 @@ Rebase authoritative Solo Hunt orchestration onto the accepted management-first 
 
 ## Acceptance criteria
 
-- [ ] Capture/Potion/Revive policies persist with exact OFF sentinels, OCC/versioning, forward-only edits and deterministic item priority/reserve behavior.
-- [ ] No manual Potion/capture/Checkpoint/Claim path is required for productive Hunt progression.
-- [ ] Online and offline automation use identical item/order/replay semantics and exactly-once Inventory debits.
-- [ ] D-F16 B atomic commit/retry/restart cannot duplicate Revive debit, lose consumed-selection provenance, fabricate reward/capture or publish/select Encounter N+1 early.
-- [ ] Retreat exact-boundary tie preserves Battle snapshot and durable `abandoned_by_retreat` evidence with zero item spend.
-- [ ] Ordinary unresolved-selection no-free-reroll remains intact; only successful D-F16 B consumes its selection as a durably resolved non-win exception.
-- [ ] Retreat/`no_living` apply the exact 30-second Player-wide Solo Hunt Start recovery while HUB/management/PokéCenter remain available and recovery expiry performs no heal.
-- [ ] `no_living` and replacement behavior correctly follows failed/ineligible Revive.
-- [ ] Offline 8h target/anchor survives bounded continuation, retry and partial failure without multiple chunks or premature discard.
-- [ ] Bounded Hunt activity max-64 pagination/replay is stable across reconnect/restart and never rewrites sealed Combat transcripts.
-- [ ] Fail-closed faults produce no fabricated mutation.
-- [ ] Independent QA and IA report no unresolved P0/P1; Class-B acceptance completes after implementation.
+- [x] Capture/Potion/Revive policies persist with exact OFF sentinels, OCC/versioning, forward-only edits and deterministic item priority/reserve behavior.
+- [x] No manual Potion/capture/Checkpoint/Claim path is required for productive Hunt progression.
+- [x] Online and offline automation use identical item/order/replay semantics and exactly-once Inventory debits.
+- [x] D-F16 B atomic commit/retry/restart cannot duplicate Revive debit, lose consumed-selection provenance, fabricate reward/capture or publish/select Encounter N+1 early.
+- [x] Retreat exact-boundary tie preserves Battle snapshot and durable `abandoned_by_retreat` evidence with zero item spend.
+- [x] Ordinary unresolved-selection no-free-reroll remains intact; only successful D-F16 B consumes its selection as a durably resolved non-win exception.
+- [x] Retreat/`no_living` apply the exact 30-second Player-wide Solo Hunt Start recovery while HUB/management/PokéCenter remain available and recovery expiry performs no heal.
+- [x] `no_living` and replacement behavior correctly follows failed/ineligible Revive.
+- [x] Offline 8h target/anchor survives bounded continuation, retry and partial failure without multiple chunks or premature discard.
+- [x] Bounded Hunt activity max-64 pagination/replay is stable across reconnect/restart and never rewrites sealed Combat transcripts.
+- [x] Fail-closed faults produce no fabricated mutation.
+- [x] Independent QA and IA report no unresolved P0/P1; delegated Class-B acceptance is complete.
 
 ## Required validation
 
@@ -116,6 +127,15 @@ Rebase authoritative Solo Hunt orchestration onto the accepted management-first 
 - Concurrent policy edit vs advancement and Retreat vs automation boundary tests.
 - Fail-closed fault-injection for rules/content/policy/Inventory/vitality/replay authority.
 - Relevant workspace lint/typecheck/test/build plus Worker-compatible bounded advancement evidence.
+
+### Final validation evidence — 2026-10-05
+
+- `@pokenexus/game-core` unit: **257/257 PASS**; historical post-victory V2 round-trip and forward V3 activity-boundary active identity are covered.
+- `@pokenexus/database` unit: **36/36 PASS**; disposable PostgreSQL integration: **102/102 PASS**.
+- `@pokenexus/api` unit: **199/199 PASS**; disposable PostgreSQL integration: **84/84 PASS**.
+- `@pokenexus/game-core`, `@pokenexus/database` and `@pokenexus/api` typecheck: **PASS**; package lint: **PASS**.
+- API Wrangler dry-run build: **PASS**; database Worker-compatible dry-run and API reward Worker-compatible dry-run: **PASS**.
+- `roadmap:check` and `git diff --check`: **PASS** on the accepted implementation snapshot; roadmap is regenerated again after this acceptance-state update.
 
 ## Dependencies
 
@@ -129,8 +149,8 @@ Rebase authoritative Solo Hunt orchestration onto the accepted management-first 
 
 - This slice owns high-risk exactly-once Inventory/reward/replay and offline/OCC behavior; independent audit is mandatory.
 - A partial migration or mixed old/new authority can corrupt replay; all forward version gates must fail closed.
-- No persistent migration execution, production enablement, deploy or Git-history action is authorized by this DRAFT task.
+- No persistent migration execution, production enablement, deploy or Git-history action is authorized by this implementation gate.
 
 ## Readiness / execution gate
 
-Promotion to READY requires TASK-107/108/109 availability, explicit runtime/API/database implementation authorization, exact implementation owner assignment and confirmed independent QA + IA sessions.
+READY gate was satisfied on 2026-10-04 and implementation advanced in the dedicated owner worktree. Exact-current implementation validation, independent QA/IA and delegated Class-B acceptance completed on 2026-10-05. The task remains in ACCEPTANCE until separately authorized repository/history completion; this state does not authorize persistent migration execution, production activation, deploy or public enablement.

@@ -10,9 +10,24 @@ import {
   createPendingManualCaptureIfFreeInTransaction,
   createSoloHuntInTransaction,
   ensureAndLockPlayerHuntRoot,
+  insertAutoPotionPolicyInTransaction,
+  insertAutoRevivePolicyInTransaction,
   insertAutoCapturePolicyInTransaction,
+  insertAutomationItemUseInTransaction,
+  insertInitialAutoPotionPolicyIntervalInTransaction,
+  insertInitialAutoRevivePolicyIntervalInTransaction,
   insertInitialPolicyIntervalInTransaction,
+  insertPostBattleReviveAppliedInTransaction,
+  insertResolvedEncounterActivityInTransaction,
+  insertRetreatAbandonmentInTransaction,
+  loadAutomationItemUsesForEncounter,
+  loadAutoPotionPolicyByVersion,
+  loadAutoRevivePolicyByVersion,
+  loadCurrentAutoPotionPolicy,
+  loadCurrentAutoRevivePolicy,
   loadCurrentAutoCapturePolicy,
+  loadEffectiveAutoPotionPolicyVersion,
+  loadEffectiveAutoRevivePolicyVersion,
   loadEffectivePolicyVersion,
   loadEarliestHealingAdvanceBlocker,
   loadHealingCommandByCommandId,
@@ -20,9 +35,14 @@ import {
   loadOwnedSoloHunt,
   loadPendingManualCapture,
   loadPlayerHuntRoot,
+  loadPostBattleReviveAppliedByProvenance,
   loadPublicHuntCommand,
+  loadResolvedEncounterActivity,
+  loadResolvedEncounterActivityPage,
+  loadRetreatAbandonment,
   markHealingCommandsDueForEncounterInTransaction,
   persistOwnedHuntCheckpointInTransaction,
+  rebaseOwnedHuntCheckpointAnchorInTransaction,
   resolveHealingCommandInTransaction,
   supersedeOvertakenPublicHuntCommandsInTransaction,
   terminalizeSoloHuntInTransaction,
@@ -336,11 +356,15 @@ describe("TASK-038 Hunt orchestration persistence", () => {
       await second.query("BEGIN");
       const blocked = ensureAndLockPlayerHuntRoot(second, playerId);
       await new Promise((resolve) => setTimeout(resolve, 100));
-      const releasedAt = Date.now();
+      const releaseSample = await first.query<{ database_now: Date }>(
+        "SELECT clock_timestamp() AS database_now",
+      );
+      const releasedAt = releaseSample.rows[0]?.database_now;
+      if (!releasedAt) throw new Error("failed to sample PostgreSQL release time");
       await first.query("COMMIT");
       const acquired = await blocked;
       if (!acquired) throw new Error("blocked Player Hunt root disappeared");
-      expect(acquired.databaseNow.getTime()).toBeGreaterThanOrEqual(releasedAt - 10);
+      expect(acquired.databaseNow.getTime()).toBeGreaterThanOrEqual(releasedAt.getTime());
       await second.query("COMMIT");
     } finally {
       await Promise.allSettled([
@@ -434,6 +458,340 @@ describe("TASK-038 Hunt orchestration persistence", () => {
         effectiveLogicalTimeMs: 0,
       })));
     expect(stale).toEqual({ status: "stale", rowVersion: 2n });
+  });
+
+  it("exposes exact no-saved roots and accepts the first independent Potion/Revive policy versions at rowVersion 1", async () => {
+    const playerId = await withClient(async (client) => {
+      const id = await createPlayer(client);
+      await withTransaction(client, (transaction) => ensureAndLockPlayerHuntRoot(transaction, id));
+      return id;
+    });
+    const initialRoot = await withClient((client) => loadPlayerHuntRoot(client, playerId));
+    expect(initialRoot).toMatchObject({
+      currentAutoPotionPolicyVersion: null,
+      autoPotionPolicyRowVersion: 0n,
+      currentAutoRevivePolicyVersion: null,
+      autoRevivePolicyRowVersion: 0n,
+    });
+    expect(await withClient((client) => loadCurrentAutoPotionPolicy(client, playerId))).toBeNull();
+    expect(await withClient((client) => loadCurrentAutoRevivePolicy(client, playerId))).toBeNull();
+
+    const potion = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoPotionPolicyInTransaction(transaction, {
+        playerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        thresholdPercent: 50,
+        policyJson: {
+          enabled: true,
+          thresholdPercent: 50,
+          orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "2" }],
+        },
+        effectiveHuntId: null,
+        effectiveLogicalTimeMs: null,
+      })));
+    const revive = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoRevivePolicyInTransaction(transaction, {
+        playerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        policyJson: {
+          enabled: true,
+          orderedItems: [{ itemId: "item:revive-25", autoUseEnabled: true, minimumReserve: "1" }],
+        },
+        effectiveHuntId: null,
+        effectiveLogicalTimeMs: null,
+      })));
+    expect(potion.status).toBe("accepted");
+    expect(revive.status).toBe("accepted");
+    if (potion.status !== "accepted" || revive.status !== "accepted") return;
+    expect(potion.policy).toMatchObject({
+      rowVersion: 1n,
+      itemRuleVersion: "item-rules:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      enabled: true,
+      thresholdPercent: 50,
+    });
+    expect(revive.policy).toMatchObject({
+      rowVersion: 1n,
+      itemRuleVersion: "item-rules:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      enabled: true,
+    });
+    expect(await withClient((client) => loadPlayerHuntRoot(client, playerId))).toMatchObject({
+      currentAutoPotionPolicyVersion: potion.policy.policyVersion,
+      autoPotionPolicyRowVersion: 1n,
+      currentAutoRevivePolicyVersion: revive.policy.policyVersion,
+      autoRevivePolicyRowVersion: 1n,
+    });
+  });
+
+  it("binds current Potion/Revive policy pointers to the same Player and exact OCC rowVersion", async () => {
+    const [leftPlayerId, rightPlayerId] = await withClient(async (client) => {
+      const left = await createPlayer(client);
+      const right = await createPlayer(client);
+      await withTransaction(client, async (transaction) => {
+        await ensureAndLockPlayerHuntRoot(transaction, left);
+        await ensureAndLockPlayerHuntRoot(transaction, right);
+      });
+      return [left, right] as const;
+    });
+
+    const rightPotion = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoPotionPolicyInTransaction(transaction, {
+        playerId: rightPlayerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        thresholdPercent: 50,
+        policyJson: { enabled: true, thresholdPercent: 50, orderedItems: [] },
+        effectiveHuntId: null,
+        effectiveLogicalTimeMs: null,
+      })));
+    const rightRevive = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoRevivePolicyInTransaction(transaction, {
+        playerId: rightPlayerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        policyJson: { enabled: true, orderedItems: [] },
+        effectiveHuntId: null,
+        effectiveLogicalTimeMs: null,
+      })));
+    expect(rightPotion.status).toBe("accepted");
+    expect(rightRevive.status).toBe("accepted");
+    if (rightPotion.status !== "accepted" || rightRevive.status !== "accepted") return;
+
+    await expect(withClient((client) => client.query(
+      `UPDATE pokenexus.player_hunt_roots
+          SET current_auto_potion_policy_version = $2, auto_potion_policy_row_version = 1
+        WHERE player_id = $1`,
+      [leftPlayerId, rightPotion.policy.policyVersion],
+    ))).rejects.toMatchObject({ code: "23503" });
+    await expect(withClient((client) => client.query(
+      `UPDATE pokenexus.player_hunt_roots
+          SET current_auto_revive_policy_version = $2, auto_revive_policy_row_version = 1
+        WHERE player_id = $1`,
+      [leftPlayerId, rightRevive.policy.policyVersion],
+    ))).rejects.toMatchObject({ code: "23503" });
+
+    const leftPotion = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoPotionPolicyInTransaction(transaction, {
+        playerId: leftPlayerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        thresholdPercent: 50,
+        policyJson: { enabled: true, thresholdPercent: 50, orderedItems: [] },
+        effectiveHuntId: null,
+        effectiveLogicalTimeMs: null,
+      })));
+    const leftRevive = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoRevivePolicyInTransaction(transaction, {
+        playerId: leftPlayerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        policyJson: { enabled: true, orderedItems: [] },
+        effectiveHuntId: null,
+        effectiveLogicalTimeMs: null,
+      })));
+    expect(leftPotion.status).toBe("accepted");
+    expect(leftRevive.status).toBe("accepted");
+    if (leftPotion.status !== "accepted" || leftRevive.status !== "accepted") return;
+
+    await expect(withClient((client) => client.query(
+      `UPDATE pokenexus.player_hunt_roots
+          SET auto_potion_policy_row_version = 2
+        WHERE player_id = $1`,
+      [leftPlayerId],
+    ))).rejects.toMatchObject({ code: "23503" });
+    await expect(withClient((client) => client.query(
+      `UPDATE pokenexus.player_hunt_roots
+          SET auto_revive_policy_row_version = 2
+        WHERE player_id = $1`,
+      [leftPlayerId],
+    ))).rejects.toMatchObject({ code: "23503" });
+
+    expect(await withClient((client) => loadCurrentAutoPotionPolicy(client, leftPlayerId)))
+      .toMatchObject({ policyVersion: leftPotion.policy.policyVersion, rowVersion: 1n });
+    expect(await withClient((client) => loadCurrentAutoRevivePolicy(client, leftPlayerId)))
+      .toMatchObject({ policyVersion: leftRevive.policy.policyVersion, rowVersion: 1n });
+  });
+
+  it("keeps Potion and Revive OCC independent while serializing concurrent writers through the Player Hunt root", async () => {
+    const playerId = await withClient(async (client) => {
+      const id = await createPlayer(client);
+      await withTransaction(client, (transaction) => ensureAndLockPlayerHuntRoot(transaction, id));
+      return id;
+    });
+    const potionInput = {
+      playerId,
+      expectedRowVersion: 0n,
+      itemRuleVersion: "item-rules:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      enabled: true,
+      thresholdPercent: 60,
+      policyJson: { enabled: true, thresholdPercent: 60, orderedItems: [] },
+      effectiveHuntId: null,
+      effectiveLogicalTimeMs: null,
+    };
+    const reviveInput = {
+      playerId,
+      expectedRowVersion: 0n,
+      itemRuleVersion: "item-rules:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      enabled: false,
+      policyJson: { enabled: false, orderedItems: [] },
+      effectiveHuntId: null,
+      effectiveLogicalTimeMs: null,
+    };
+    const [potion, revive] = await Promise.all([
+      withClient((client) => withTransaction(client, (transaction) =>
+        insertAutoPotionPolicyInTransaction(transaction, potionInput))),
+      withClient((client) => withTransaction(client, (transaction) =>
+        insertAutoRevivePolicyInTransaction(transaction, reviveInput))),
+    ]);
+    expect(potion.status).toBe("accepted");
+    expect(revive.status).toBe("accepted");
+    expect(await withClient((client) => loadPlayerHuntRoot(client, playerId))).toMatchObject({
+      autoPotionPolicyRowVersion: 1n,
+      autoRevivePolicyRowVersion: 1n,
+    });
+
+    const [left, right] = await Promise.all([
+      withClient((client) => withTransaction(client, (transaction) =>
+        insertAutoPotionPolicyInTransaction(transaction, { ...potionInput, expectedRowVersion: 1n }))),
+      withClient((client) => withTransaction(client, (transaction) =>
+        insertAutoPotionPolicyInTransaction(transaction, { ...potionInput, expectedRowVersion: 1n }))),
+    ]);
+    expect([left.status, right.status].sort()).toEqual(["accepted", "stale"]);
+    expect(await withClient((client) => loadPlayerHuntRoot(client, playerId))).toMatchObject({
+      autoPotionPolicyRowVersion: 2n,
+      autoRevivePolicyRowVersion: 1n,
+    });
+  });
+
+  it("retains immutable Potion/Revive versions and applies each family's active-Hunt interval prospectively", async () => {
+    const seeded = await withClient(async (client) => {
+      const playerId = await createPlayer(client);
+      const hunt = await createHunt(client, playerId);
+      await withTransaction(client, async (transaction) => {
+        await insertInitialAutoPotionPolicyIntervalInTransaction(transaction, hunt.huntId, null);
+        await insertInitialAutoRevivePolicyIntervalInTransaction(transaction, hunt.huntId, null);
+      });
+      return { playerId, ...hunt };
+    });
+
+    const firstPotion = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoPotionPolicyInTransaction(transaction, {
+        playerId: seeded.playerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:v1",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        thresholdPercent: 70,
+        policyJson: { enabled: true, thresholdPercent: 70, orderedItems: [] },
+        effectiveHuntId: seeded.huntId,
+        effectiveLogicalTimeMs: 500,
+      })));
+    const firstRevive = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoRevivePolicyInTransaction(transaction, {
+        playerId: seeded.playerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:v1",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: true,
+        policyJson: { enabled: true, orderedItems: [] },
+        effectiveHuntId: seeded.huntId,
+        effectiveLogicalTimeMs: 700,
+      })));
+    expect(firstPotion.status).toBe("accepted");
+    expect(firstRevive.status).toBe("accepted");
+    if (firstPotion.status !== "accepted" || firstRevive.status !== "accepted") return;
+    expect(await withClient((client) => loadEffectiveAutoPotionPolicyVersion(client, seeded.huntId, 499))).toBeNull();
+    expect(await withClient((client) => loadEffectiveAutoPotionPolicyVersion(client, seeded.huntId, 500)))
+      .toBe(firstPotion.policy.policyVersion);
+    expect(await withClient((client) => loadEffectiveAutoRevivePolicyVersion(client, seeded.huntId, 699))).toBeNull();
+    expect(await withClient((client) => loadEffectiveAutoRevivePolicyVersion(client, seeded.huntId, 700)))
+      .toBe(firstRevive.policy.policyVersion);
+
+    const secondPotion = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoPotionPolicyInTransaction(transaction, {
+        playerId: seeded.playerId,
+        expectedRowVersion: 1n,
+        itemRuleVersion: "item-rules:v2",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: false,
+        thresholdPercent: 30,
+        policyJson: { enabled: false, thresholdPercent: 30, orderedItems: [] },
+        effectiveHuntId: seeded.huntId,
+        effectiveLogicalTimeMs: 900,
+      })));
+    expect(secondPotion.status).toBe("accepted");
+    if (secondPotion.status !== "accepted") return;
+    expect(await withClient((client) => loadAutoPotionPolicyByVersion(
+      client,
+      seeded.playerId,
+      firstPotion.policy.policyVersion,
+    ))).toMatchObject({
+      policyVersion: firstPotion.policy.policyVersion,
+      rowVersion: 1n,
+      itemRuleVersion: "item-rules:v1",
+      thresholdPercent: 70,
+      enabled: true,
+    });
+    expect(await withClient((client) => loadAutoRevivePolicyByVersion(
+      client,
+      seeded.playerId,
+      firstRevive.policy.policyVersion,
+    ))).toMatchObject({
+      policyVersion: firstRevive.policy.policyVersion,
+      rowVersion: 1n,
+      itemRuleVersion: "item-rules:v1",
+      enabled: true,
+    });
+    expect(await withClient((client) => loadEffectiveAutoPotionPolicyVersion(client, seeded.huntId, 899)))
+      .toBe(firstPotion.policy.policyVersion);
+    expect(await withClient((client) => loadEffectiveAutoPotionPolicyVersion(client, seeded.huntId, 900)))
+      .toBe(secondPotion.policy.policyVersion);
+
+    const stale = await withClient((client) => withTransaction(client, (transaction) =>
+      insertAutoRevivePolicyInTransaction(transaction, {
+        playerId: seeded.playerId,
+        expectedRowVersion: 0n,
+        itemRuleVersion: "item-rules:v2",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        enabled: false,
+        policyJson: { enabled: false, orderedItems: [] },
+        effectiveHuntId: seeded.huntId,
+        effectiveLogicalTimeMs: 900,
+      })));
+    expect(stale).toEqual({ status: "stale", rowVersion: 1n });
+    expect(await withClient((client) => loadEffectiveAutoRevivePolicyVersion(client, seeded.huntId, 900)))
+      .toBe(firstRevive.policy.policyVersion);
   });
 
   it("moves the logical anchor with checkpoint time and anchors recovery to that terminal boundary", async () => {
@@ -664,6 +1022,44 @@ describe("TASK-038 Hunt orchestration persistence", () => {
     });
   });
 
+  it("rebases a Hunt checkpoint wall-clock anchor with explicit OCC and rejects a stale repeat", async () => {
+    const seeded = await withClient(async (client) => {
+      const playerId = await createPlayer(client);
+      return { playerId, ...(await createHunt(client, playerId)) };
+    });
+    const hunt = await withClient((client) => loadOwnedSoloHunt(client, seeded.playerId, seeded.huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    const before = await withClient((client) => loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!before) throw new Error("missing checkpoint fixture");
+    const targetAnchor = new Date("2026-09-28T03:00:00.000Z");
+
+    const first = await withClient((client) => withTransaction(client, (transaction) =>
+      rebaseOwnedHuntCheckpointAnchorInTransaction(transaction, {
+        playerId: seeded.playerId,
+        checkpointId: hunt.checkpointId,
+        expectedRowVersion: before.rowVersion,
+        expectedLogicalTimeMs: before.logicalTimeMs,
+        logicalTimeAnchorAt: targetAnchor,
+      })));
+    expect(first).toEqual({ status: "updated", rowVersion: before.rowVersion + 1n });
+    expect((await withClient((client) => loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId)))
+      ?.logicalTimeAnchorAt.toISOString()).toBe(targetAnchor.toISOString());
+
+    const stale = await withClient((client) => withTransaction(client, (transaction) =>
+      rebaseOwnedHuntCheckpointAnchorInTransaction(transaction, {
+        playerId: seeded.playerId,
+        checkpointId: hunt.checkpointId,
+        expectedRowVersion: before.rowVersion,
+        expectedLogicalTimeMs: before.logicalTimeMs,
+        logicalTimeAnchorAt: new Date("2026-09-29T03:00:00.000Z"),
+      })));
+    expect(stale).toMatchObject({
+      status: "stale",
+      rowVersion: before.rowVersion + 1n,
+      logicalTimeMs: before.logicalTimeMs,
+    });
+  });
+
   it("rolls back a newly accepted healing command together with its domain record", async () => {
     const seeded = await withClient(async (client) => {
       const playerId = await createPlayer(client);
@@ -704,5 +1100,349 @@ describe("TASK-038 Hunt orchestration persistence", () => {
     expect(await withClient((client) => loadPublicHuntCommand(client, seeded.playerId, idempotencyKey))).toBeNull();
     expect(await withClient((client) => loadHealingCommandByCommandId(client, commandId))).toBeNull();
     expect((await withClient((client) => loadPlayerHuntRoot(client, seeded.playerId)))?.commandSequence).toBe(0n);
+  });
+
+  it("persists immutable post-Battle Revive, Retreat, and bounded Hunt activity provenance", async () => {
+    const seeded = await withClient(async (client) => {
+      const playerId = await createPlayer(client);
+      return { playerId, ...(await createHunt(client, playerId)) };
+    });
+    const hunt = await withClient((client) => loadOwnedSoloHunt(client, seeded.playerId, seeded.huntId));
+    if (!hunt) throw new Error("missing provenance Hunt fixture");
+    const checkpoint = await withClient((client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing provenance checkpoint fixture");
+    const provenanceIdentity = "automation:post-battle-revive:1";
+    const policyVersion = generateUuidV7();
+    const encounterId = "encounter:resolved-non-win:1";
+    const itemUse = {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      provenanceIdentity,
+      automationFamily: "revive" as const,
+      phase: "post_battle" as const,
+      encounterId,
+      encounterOrdinal: 1,
+      targetPokemonInstanceId: seeded.pokemonInstanceId,
+      targetCombatantId: "combatant:player:1",
+      logicalTimeMs: 1250,
+      policyVersion,
+      itemId: "item:revive",
+      itemRuleVersion: "item-rules:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      magnitudeJson: { kind: "max-hp-fraction", numerator: 1, denominator: 4 },
+      appliedHp: 15,
+      resultingHp: 15,
+      inventoryRowVersionBefore: 7n,
+      inventoryRowVersionAfter: 8n,
+    };
+    const postBattle = {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      provenanceIdentity,
+      debitCorrelationIdentity: provenanceIdentity,
+      huntRunIdentity: "hunt-run:post-battle-revive:test",
+      encounterId,
+      encounterOrdinal: 1,
+      battleId: "battle:resolved-non-win:1",
+      targetPokemonInstanceId: seeded.pokemonInstanceId,
+      targetCombatantId: "combatant:player:1",
+      logicalTimeMs: 1250,
+      policyVersion,
+      itemId: "item:revive",
+      itemRuleVersion: "item-rules:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      reviveFractionNumerator: 1 as const,
+      reviveFractionDenominator: 4 as const,
+      appliedHp: 15,
+      resultingHp: 15,
+      resultingReadinessJson: { nextActionRemainingMs: 3000, moveCooldownRemainingMs: { first: 500 } },
+      pendingSelectionIdentity: "pending:resolved-non-win:1",
+      consumedPendingSelectionJson: {
+        pendingSelectionIdentity: "pending:resolved-non-win:1",
+        speciesId: "species:test",
+      },
+      completedEncounterProvenanceJson: {
+        encounterId,
+        encounterOrdinal: 1,
+        terminalEventSequence: 9,
+      },
+      inventoryRowVersionBefore: 7n,
+      inventoryRowVersionAfter: 8n,
+    };
+    const activityJson = {
+      schemaVersion: "pokenexus.hunt-activity.v1",
+      encounterOrdinal: 1,
+      encounterId,
+      resolvedAtHuntTimeMs: 1250,
+      encounterDisposition: "resolved_non_win",
+      consumedItems: [{ itemId: "item:revive", quantity: "1" }],
+    };
+
+    const inserted = await withClient((client) => withTransaction(client, async (transaction) => {
+      expect(await insertAutomationItemUseInTransaction(transaction, itemUse))
+        .toMatchObject({ status: "inserted" });
+      const revive = await insertPostBattleReviveAppliedInTransaction(transaction, postBattle);
+      const activity = await insertResolvedEncounterActivityInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        encounterOrdinal: 1,
+        encounterId,
+        resolvedLogicalTimeMs: 1250,
+        encounterDisposition: "resolved_non_win",
+        activityJson,
+      });
+      const retreat = await insertRetreatAbandonmentInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        huntRunIdentity: "hunt-run:post-battle-revive:test",
+        logicalTimeMs: 1250,
+        checkpointId: checkpoint.checkpointId,
+        checkpointRowVersion: checkpoint.rowVersion,
+        battleId: "battle:resolved-non-win:1",
+        sideId: "side:player",
+        combatantId: "combatant:player",
+        koInterventionPending: true,
+      });
+      return { revive, activity, retreat };
+    }));
+    expect(inserted).toMatchObject({
+      revive: { status: "inserted" },
+      activity: { status: "inserted" },
+      retreat: { status: "inserted" },
+    });
+
+    expect(await withClient((client) => loadPostBattleReviveAppliedByProvenance(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      provenanceIdentity,
+    }))).toMatchObject({
+      huntRunIdentity: "hunt-run:post-battle-revive:test",
+      encounterId,
+      reviveFractionNumerator: 1,
+      reviveFractionDenominator: 4,
+      pendingSelectionIdentity: "pending:resolved-non-win:1",
+      inventoryRowVersionBefore: 7n,
+      inventoryRowVersionAfter: 8n,
+    });
+    expect(await withClient((client) => loadAutomationItemUsesForEncounter(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      encounterOrdinal: 1,
+    }))).toHaveLength(1);
+    expect(await withClient((client) => loadRetreatAbandonment(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+    }))).toMatchObject({
+      disposition: "abandoned_by_retreat",
+      logicalTimeMs: 1250,
+      battleId: "battle:resolved-non-win:1",
+      sideId: "side:player",
+      combatantId: "combatant:player",
+      koInterventionPending: true,
+    });
+
+    const exactRetry = await withClient((client) => withTransaction(client, async (transaction) => ({
+      revive: await insertPostBattleReviveAppliedInTransaction(transaction, postBattle),
+      activity: await insertResolvedEncounterActivityInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        encounterOrdinal: 1,
+        encounterId,
+        resolvedLogicalTimeMs: 1250,
+        encounterDisposition: "resolved_non_win",
+        activityJson,
+      }),
+      retreat: await insertRetreatAbandonmentInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        huntRunIdentity: "hunt-run:post-battle-revive:test",
+        logicalTimeMs: 1250,
+        checkpointId: checkpoint.checkpointId,
+        checkpointRowVersion: checkpoint.rowVersion,
+        battleId: "battle:resolved-non-win:1",
+        sideId: "side:player",
+        combatantId: "combatant:player",
+        koInterventionPending: true,
+      }),
+    })));
+    expect(exactRetry).toMatchObject({
+      revive: { status: "existing" },
+      activity: { status: "existing" },
+      retreat: { status: "existing" },
+    });
+    await expect(withClient((client) => withTransaction(client, (transaction) =>
+      insertPostBattleReviveAppliedInTransaction(transaction, {
+        ...postBattle,
+        resultingHp: 16,
+      })))).rejects.toThrow(/different immutable envelope/);
+    await expect(withClient((client) => withTransaction(client, (transaction) =>
+      insertResolvedEncounterActivityInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        encounterOrdinal: 1,
+        encounterId,
+        resolvedLogicalTimeMs: 1250,
+        encounterDisposition: "resolved_non_win",
+        activityJson: { ...activityJson, resolvedAtHuntTimeMs: 1251 },
+      })))).rejects.toThrow(/different immutable payload/);
+    await expect(withClient((client) => withTransaction(client, (transaction) =>
+      insertRetreatAbandonmentInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        huntRunIdentity: "hunt-run:post-battle-revive:test",
+        logicalTimeMs: 1251,
+        checkpointId: checkpoint.checkpointId,
+        checkpointRowVersion: checkpoint.rowVersion,
+        battleId: "battle:resolved-non-win:1",
+        sideId: "side:player",
+        combatantId: "combatant:player",
+        koInterventionPending: true,
+      })))).rejects.toThrow(/different immutable envelope/);
+
+    const page = await withClient((client) => loadResolvedEncounterActivityPage(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      afterEncounterOrdinal: null,
+      limit: 64,
+    }));
+    expect(page).toMatchObject({
+      hasMore: false,
+      records: [{ encounterOrdinal: 1, encounterId, encounterDisposition: "resolved_non_win" }],
+    });
+    await expect(withClient((client) => loadResolvedEncounterActivityPage(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      afterEncounterOrdinal: null,
+      limit: 65,
+    }))).rejects.toThrow(/1\.\.64/);
+  });
+
+  it("rolls back automation provenance/activity atomically and anchors forward recovery to terminal transaction time", async () => {
+    const seeded = await withClient(async (client) => {
+      const playerId = await createPlayer(client);
+      return { playerId, ...(await createHunt(client, playerId)) };
+    });
+    const policyVersion = generateUuidV7();
+    const provenanceIdentity = "automation:rollback:1";
+    await expect(withClient((client) => withTransaction(client, async (transaction) => {
+      await insertAutomationItemUseInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        provenanceIdentity,
+        automationFamily: "revive",
+        phase: "post_battle",
+        encounterId: "encounter:rollback:1",
+        encounterOrdinal: 1,
+        targetPokemonInstanceId: seeded.pokemonInstanceId,
+        targetCombatantId: "combatant:rollback:1",
+        logicalTimeMs: 2000,
+        policyVersion,
+        itemId: "item:revive",
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        magnitudeJson: { kind: "max-hp-fraction", numerator: 1, denominator: 4 },
+        appliedHp: 10,
+        resultingHp: 10,
+        inventoryRowVersionBefore: 0n,
+        inventoryRowVersionAfter: 1n,
+      });
+      await insertPostBattleReviveAppliedInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        provenanceIdentity,
+        debitCorrelationIdentity: provenanceIdentity,
+        huntRunIdentity: "hunt-run:rollback",
+        encounterId: "encounter:rollback:1",
+        encounterOrdinal: 1,
+        battleId: "battle:rollback:1",
+        targetPokemonInstanceId: seeded.pokemonInstanceId,
+        targetCombatantId: "combatant:rollback:1",
+        logicalTimeMs: 2000,
+        policyVersion,
+        itemId: "item:revive",
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+        reviveFractionNumerator: 1,
+        reviveFractionDenominator: 4,
+        appliedHp: 10,
+        resultingHp: 10,
+        resultingReadinessJson: { nextActionRemainingMs: 3000 },
+        pendingSelectionIdentity: "pending:rollback:1",
+        consumedPendingSelectionJson: { pendingSelectionIdentity: "pending:rollback:1" },
+        completedEncounterProvenanceJson: { encounterId: "encounter:rollback:1" },
+        inventoryRowVersionBefore: 0n,
+        inventoryRowVersionAfter: 1n,
+      });
+      await insertResolvedEncounterActivityInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        encounterOrdinal: 1,
+        encounterId: "encounter:rollback:1",
+        resolvedLogicalTimeMs: 2000,
+        encounterDisposition: "resolved_non_win",
+        activityJson: { encounterId: "encounter:rollback:1" },
+      });
+      throw new Error("inject automation provenance rollback");
+    }))).rejects.toThrow(/inject automation provenance rollback/);
+    expect(await withClient((client) => loadPostBattleReviveAppliedByProvenance(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      provenanceIdentity,
+    }))).toBeNull();
+    expect(await withClient((client) => loadResolvedEncounterActivity(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      encounterId: "encounter:rollback:1",
+    }))).toBeNull();
+    expect(await withClient((client) => loadAutomationItemUsesForEncounter(client, {
+      playerId: seeded.playerId,
+      huntId: seeded.huntId,
+      encounterOrdinal: 1,
+    }))).toEqual([]);
+
+    const terminalAt = new Date("2026-09-28T10:15:30.000Z");
+    const terminal = await withClient((client) => withTransaction(client, async (transaction) => {
+      await ensureAndLockPlayerHuntRoot(transaction, seeded.playerId);
+      return terminalizeSoloHuntInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        terminalReason: "retreat",
+        recoveryDurationMs: 30_000,
+        terminalAt,
+      });
+    }));
+    expect(terminal.hunt.terminalAt?.toISOString()).toBe(terminalAt.toISOString());
+    expect(terminal.recoveryReadyAt.toISOString())
+      .toBe(new Date(terminalAt.getTime() + 30_000).toISOString());
+  });
+
+  it("samples forward terminal time at terminalization and derives the full 30-second recovery from it", async () => {
+    const seeded = await withClient(async (client) => {
+      const playerId = await createPlayer(client);
+      return { playerId, ...(await createHunt(client, playerId)) };
+    });
+
+    const result = await withClient((client) => withTransaction(client, async (transaction) => {
+      const root = await ensureAndLockPlayerHuntRoot(transaction, seeded.playerId);
+      if (!root) throw new Error("missing forward terminal-time root");
+      await transaction.query("SELECT pg_sleep(0.05)");
+      const terminal = await terminalizeSoloHuntInTransaction(transaction, {
+        playerId: seeded.playerId,
+        huntId: seeded.huntId,
+        terminalReason: "retreat",
+        recoveryDurationMs: 30_000,
+        terminalAt: "database_clock",
+      });
+      return { rootSample: root.databaseNow, terminal };
+    }));
+
+    expect(result.terminal.hunt.terminalAt).not.toBeNull();
+    expect(result.terminal.hunt.terminalAt!.getTime() - result.rootSample.getTime()).toBeGreaterThanOrEqual(40);
+    expect(result.terminal.recoveryReadyAt.getTime() - result.terminal.hunt.terminalAt!.getTime()).toBe(30_000);
   });
 });

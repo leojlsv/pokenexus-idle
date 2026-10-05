@@ -191,7 +191,7 @@ function repository(existing: CaptureAttemptRecord | null = null) {
 }
 
 function rewardReplayValidator(input: {
-  readonly evidence: SoloHuntCompletedEncounterEvidence;
+  readonly evidence: Extract<SoloHuntCompletedEncounterEvidence, { readonly completionKind: "defeat" }>;
   readonly pinnedTeam: readonly SoloHuntTeamMemberSnapshot[];
   readonly subjectPlayerId?: string;
 }): SoloHuntRewardSourceReplayValidator {

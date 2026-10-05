@@ -1,6 +1,7 @@
 import {
   GENETIC_COMBAT_RULES_VERSION_V1,
   GENETIC_COMBAT_RULES_VERSION_V2,
+  MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
   MOVE_ELIGIBILITY_RULE_ARTIFACT_ID,
   PRODUCTION_COMBAT_GAME_DATA_VERSION,
   PRODUCTION_COMBAT_GAME_DATA_VERSION_V2,
@@ -97,6 +98,9 @@ export const PRODUCTION_COMBAT_GENETIC_V1_RULES_VERSION =
 export const PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION =
   GENETIC_COMBAT_RULES_VERSION_V2;
 
+export const PRODUCTION_COMBAT_MANAGEMENT_FIRST_V1_RULES_VERSION =
+  MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1;
+
 export const PRODUCTION_COMBAT_V2_RULES_RELEASE_DESCRIPTOR: MoveEligibilityRulesDescriptor =
   Object.freeze({
     rulesVersion: PRODUCTION_COMBAT_V2_RULES_VERSION,
@@ -154,6 +158,12 @@ export const PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR: MoveEligibil
     rulesVersion: PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION,
   });
 
+export const PRODUCTION_COMBAT_MANAGEMENT_FIRST_V1_RULES_RELEASE_DESCRIPTOR: MoveEligibilityRulesDescriptor =
+  Object.freeze({
+    ...PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR,
+    rulesVersion: PRODUCTION_COMBAT_MANAGEMENT_FIRST_V1_RULES_VERSION,
+  });
+
 export interface ExactMoveEligibilityRulesVersionResolver {
   resolve(rulesVersion: string): Promise<{
     readonly rules: MoveEligibilityRulesDescriptor;
@@ -187,7 +197,9 @@ function assertImmutableProductionRulesReleaseDescriptor(
           ? PRODUCTION_COMBAT_V5_RULES_RELEASE_DESCRIPTOR
           : rules.rulesVersion === PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION
             ? PRODUCTION_COMBAT_GENETIC_V2_RULES_RELEASE_DESCRIPTOR
-            : null;
+            : rules.rulesVersion === PRODUCTION_COMBAT_MANAGEMENT_FIRST_V1_RULES_VERSION
+              ? PRODUCTION_COMBAT_MANAGEMENT_FIRST_V1_RULES_RELEASE_DESCRIPTOR
+              : null;
   if (expected === null) {
     if (
       rules.productionSelectability !== undefined
@@ -229,6 +241,9 @@ function expectedGameDataVersionForProductionRulesVersion(
     return PRODUCTION_COMBAT_GAME_DATA_VERSION_V3;
   }
   if (rulesVersion === PRODUCTION_COMBAT_GENETIC_V2_RULES_VERSION) {
+    return PRODUCTION_COMBAT_GAME_DATA_VERSION_V3;
+  }
+  if (rulesVersion === PRODUCTION_COMBAT_MANAGEMENT_FIRST_V1_RULES_VERSION) {
     return PRODUCTION_COMBAT_GAME_DATA_VERSION_V3;
   }
   return null;

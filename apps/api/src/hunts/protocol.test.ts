@@ -4,6 +4,8 @@ import {
   HuntProtocolError,
   hashNormalizedIntent,
   parseAutoCapturePolicyReplaceBody,
+  parseAutoPotionPolicyReplaceBody,
+  parseAutoRevivePolicyReplaceBody,
   parseEmptyMutationBodyText,
   parseHuntItemUseBody,
   parseManualCaptureBody,
@@ -116,6 +118,61 @@ describe("SPEC-015 Hunt protocol parsing", () => {
       }],
     }));
     expect(validateAutoCapturePolicyRelationships(parsed)).toMatch(/catchRateMin/u);
+  });
+
+  it("parses exact Auto-Potion policy bodies and rejects unsupported thresholds or duplicate items", () => {
+    expect(parseAutoPotionPolicyReplaceBody(JSON.stringify({
+      expectedRowVersion: "0",
+      enabled: true,
+      thresholdPercent: 50,
+      orderedItems: [
+        { itemId: "item:potion", autoUseEnabled: true, minimumReserve: "2" },
+      ],
+    }))).toEqual({
+      expectedRowVersion: "0",
+      enabled: true,
+      thresholdPercent: 50,
+      orderedItems: [
+        { itemId: "item:potion", autoUseEnabled: true, minimumReserve: "2" },
+      ],
+    });
+    expect(() => parseAutoPotionPolicyReplaceBody(JSON.stringify({
+      expectedRowVersion: "0",
+      enabled: true,
+      thresholdPercent: 55,
+      orderedItems: [],
+    }))).toThrowError(HuntProtocolError);
+    expect(() => parseAutoPotionPolicyReplaceBody(JSON.stringify({
+      expectedRowVersion: "0",
+      enabled: false,
+      thresholdPercent: 50,
+      orderedItems: [
+        { itemId: "item:potion", autoUseEnabled: true, minimumReserve: "0" },
+        { itemId: "item:potion", autoUseEnabled: false, minimumReserve: "1" },
+      ],
+    }))).toThrowError(HuntProtocolError);
+  });
+
+  it("parses exact Auto-Revive policy bodies and rejects structural drift", () => {
+    expect(parseAutoRevivePolicyReplaceBody(JSON.stringify({
+      expectedRowVersion: "3",
+      enabled: false,
+      orderedItems: [
+        { itemId: "item:revive", autoUseEnabled: true, minimumReserve: "1" },
+      ],
+    }))).toEqual({
+      expectedRowVersion: "3",
+      enabled: false,
+      orderedItems: [
+        { itemId: "item:revive", autoUseEnabled: true, minimumReserve: "1" },
+      ],
+    });
+    expect(() => parseAutoRevivePolicyReplaceBody(JSON.stringify({
+      expectedRowVersion: "3",
+      enabled: false,
+      orderedItems: [],
+      cooldownSeconds: 5,
+    }))).toThrowError(HuntProtocolError);
   });
 
   it("produces stable intent hashes for normalized objects", async () => {

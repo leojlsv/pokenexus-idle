@@ -21,6 +21,7 @@ export {
   sameIndividualizationSnapshot,
 } from "./encounter-individualization";
 export type * from "./encounter-individualization";
+export * from "./hunt-automation-policy";
 export {
   GENETIC_COMBAT_RULES_RELEASE_V1,
   GENETIC_COMBAT_RULES_RELEASE_V2,
@@ -29,28 +30,41 @@ export {
   GENETIC_COMBAT_RULES_VERSION_V1,
   GENETIC_COMBAT_RULES_VERSION_V2,
   isGeneticCombatRulesVersion,
+  usesGeneticCombatSemantics,
 } from "./genetic-combat-rules";
 export * from "./move-eligibility";
 export * from "./production-combat-rules";
 export {
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
   SOLO_HUNT_DEFAULT_SEGMENT_MS,
   advanceSoloHuntSegmentedToCutoff,
   decodeSoloHuntCheckpoint,
   decodeSoloHuntCheckpointV1,
   decodeSoloHuntCheckpointV2,
+  decodeSoloHuntCheckpointV3,
   encodeSoloHuntCheckpointV1,
   encodeSoloHuntCheckpointV2,
+  encodeSoloHuntCheckpointV3,
 } from "./solo-hunt-checkpoint";
 export type { SoloHuntCheckpointDecodeResult } from "./solo-hunt-checkpoint";
 export { createRngState, nextRngState } from "./rng";
 export * from "./progression";
 export {
   advanceSoloHuntToCutoff,
+  advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff,
+  applySoloHuntBattleAutoPotion,
+  applySoloHuntBattleAutoRevive,
   applySoloHuntExplicitHealing,
+  applySoloHuntInterBattleAutoPotion,
+  applySoloHuntInterBattleAutoRevive,
+  applySoloHuntPostBattleAutoRevive,
   createSoloHuntMovePolicyState,
   createSoloHuntRuntime,
+  declineSoloHuntBattleAutoRevive,
+  declineSoloHuntInterBattleAutoRevive,
+  declineSoloHuntPostBattleAutoRevive,
   advanceSoloHuntToEncounterBoundaryOrCutoff,
   replayValidateSoloHuntCaptureSource,
   replayValidateSoloHuntCompletedCaptureSource,
@@ -59,13 +73,16 @@ export {
 } from "./solo-hunt";
 export type {
   AdvanceSoloHuntResult,
+  AdvanceSoloHuntToAutomationBoundaryResult,
   AdvanceSoloHuntToEncounterBoundaryResult,
+  ApplySoloHuntAutomationItemResult,
   ApplySoloHuntExplicitHealingResult,
   CreateSoloHuntRuntimeInput,
   CreateSoloHuntRuntimeResult,
   SoloHuntCompletedEncounterProvenance,
   SoloHuntCompletedEncounterEvidence,
   SoloHuntAppliedHealingEvent,
+  SoloHuntAppliedAutomationEvent,
   SoloHuntEncounterOption,
   SoloHuntMovePolicyState,
   SoloHuntMoveResolution,

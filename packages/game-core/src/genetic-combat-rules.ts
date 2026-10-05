@@ -1,4 +1,5 @@
 import type { RulesVersion } from "./types";
+import { MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1 } from "./management-first-combat-rules";
 
 export const GENETIC_COMBAT_RULES_VERSION_V1 =
   "combat-rules-genetics-v1" as RulesVersion;
@@ -42,6 +43,16 @@ export const GENETIC_COMBAT_RULES_RELEASE_V2 = Object.freeze({
 
 export function isGeneticCombatRulesVersion(value: string): boolean {
   return value === GENETIC_COMBAT_RULES_VERSION_V1 || value === GENETIC_COMBAT_RULES_VERSION_V2;
+}
+
+/**
+ * Forward management-first combat preserves the accepted Genetic derived-stat /
+ * individualization semantics while adding TASK-107 cadence/intervention rules.
+ * Keep this separate from isGeneticCombatRulesVersion so immutable Genetic
+ * release identity checks remain literal.
+ */
+export function usesGeneticCombatSemantics(value: string): boolean {
+  return isGeneticCombatRulesVersion(value) || value === MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1;
 }
 
 export function canonicalSerializeGeneticCombatRulesReleaseV1(): string {

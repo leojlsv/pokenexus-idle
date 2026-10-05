@@ -195,6 +195,8 @@ describe("PostgreSQL 17 migration foundation", () => {
       "0009_authoritative_hunt_api.sql",
       "0010_persistent_pokemon_vitality_pokecenter.sql",
       "0011_first_prealpha_player_bootstrap.sql",
+      "0012_hunt_potion_revive_policies.sql",
+      "0013_hunt_automation_item_uses.sql",
     ]);
     const [persistenceMigration, authMigration] = canonical;
 

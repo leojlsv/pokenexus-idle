@@ -3,11 +3,19 @@ import type { SoloHuntRuntimeState } from "./solo-hunt";
 import {
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+  decodeSoloHuntCheckpoint,
   decodeSoloHuntCheckpointV1,
   decodeSoloHuntCheckpointV2,
+  decodeSoloHuntCheckpointV3,
   encodeSoloHuntCheckpointV1,
   encodeSoloHuntCheckpointV2,
+  encodeSoloHuntCheckpointV3,
 } from "./solo-hunt-checkpoint";
+import {
+  NO_SAVED_AUTO_POTION_POLICY,
+  NO_SAVED_AUTO_REVIVE_POLICY,
+} from "./hunt-automation-policy";
 
 function checkpointState(): SoloHuntRuntimeState {
   return {
@@ -182,6 +190,27 @@ describe("Solo Hunt checkpoint codec", () => {
     const bytes = encodeSoloHuntCheckpointV2(healingState);
     expect(new TextDecoder().decode(bytes)).toContain(SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2);
     expect(decodeSoloHuntCheckpointV2(bytes)).toEqual({ accepted: true, state: healingState });
+  });
+
+  it("uses v3 to retain exact Capture/Potion/Revive authority across restart", () => {
+    const state = {
+      ...checkpointState(),
+      appliedHealingEvents: [],
+      appliedAutomationEvents: [],
+      automationPolicies: {
+        capture: { policyVersion: "policy:capture", rowVersion: "4", enabled: true },
+        potion: NO_SAVED_AUTO_POTION_POLICY,
+        revive: NO_SAVED_AUTO_REVIVE_POLICY,
+      },
+    } as unknown as SoloHuntRuntimeState;
+    const bytes = encodeSoloHuntCheckpointV3(state);
+    expect(new TextDecoder().decode(bytes)).toContain(SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3);
+    expect(decodeSoloHuntCheckpointV3(bytes)).toEqual({ accepted: true, state });
+    expect(decodeSoloHuntCheckpoint(bytes)).toEqual({ accepted: true, state });
+    expect(decodeSoloHuntCheckpointV2(bytes)).toMatchObject({ accepted: false });
+
+    const missing = { ...state, automationPolicies: undefined } as unknown as SoloHuntRuntimeState;
+    expect(() => encodeSoloHuntCheckpointV3(missing)).toThrow(/automation policy authority/i);
   });
 
   it("fails closed for malformed or unknown schemas", () => {

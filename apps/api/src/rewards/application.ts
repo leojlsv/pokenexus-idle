@@ -30,7 +30,7 @@ import {
   evaluatePlayerXpGrant,
   evaluatePokemonXpGrant,
   geneticBudgetForScore,
-  isGeneticCombatRulesVersion,
+  usesGeneticCombatSemantics,
   type GeneticProfile,
   type PlayerXpGrantResult,
   type PokemonXpGrantResult,
@@ -212,7 +212,7 @@ function deriveProgressionMaxHp(
     );
   }
   const numericLevel = Number(level);
-  const geneticBonuses = isGeneticCombatRulesVersion(context.progressionRules.rulesVersion)
+  const geneticBonuses = usesGeneticCombatSemantics(context.progressionRules.rulesVersion)
     ? allocateGeneticBudget(
         geneticBudgetForScore(pokemon.individualization.geneticScore),
         pokemon.individualization.expressedProfile as GeneticProfile,

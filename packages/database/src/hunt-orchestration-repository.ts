@@ -10,6 +10,10 @@ export interface PlayerHuntRootRecord {
   readonly recoveryReadyAt: Date | null;
   readonly currentPolicyVersion: string | null;
   readonly policyRowVersion: bigint;
+  readonly currentAutoPotionPolicyVersion: string | null;
+  readonly autoPotionPolicyRowVersion: bigint;
+  readonly currentAutoRevivePolicyVersion: string | null;
+  readonly autoRevivePolicyRowVersion: bigint;
   readonly commandSequence: bigint;
   readonly databaseNow: Date;
 }
@@ -75,6 +79,115 @@ export interface HuntAutoCapturePolicyRecord {
   readonly validationGameDataVersion: string;
   readonly enabled: boolean;
   readonly policyJson: Record<string, unknown>;
+  readonly createdAt: Date;
+}
+
+export interface HuntAutoPotionPolicyRecord {
+  readonly policyVersion: string;
+  readonly playerId: string;
+  readonly rowVersion: bigint;
+  readonly itemRuleVersion: string;
+  readonly gameDataVersion: string;
+  readonly rulesVersion: string;
+  readonly enabled: boolean;
+  readonly thresholdPercent: number;
+  readonly policyJson: Record<string, unknown>;
+  readonly createdAt: Date;
+}
+
+export interface HuntAutoRevivePolicyRecord {
+  readonly policyVersion: string;
+  readonly playerId: string;
+  readonly rowVersion: bigint;
+  readonly itemRuleVersion: string;
+  readonly gameDataVersion: string;
+  readonly rulesVersion: string;
+  readonly enabled: boolean;
+  readonly policyJson: Record<string, unknown>;
+  readonly createdAt: Date;
+}
+
+export interface HuntAutomationItemUseRecord {
+  readonly huntId: string;
+  readonly playerId: string;
+  readonly provenanceIdentity: string;
+  readonly automationFamily: "potion" | "revive";
+  readonly phase: "battle" | "inter_battle" | "post_battle";
+  readonly encounterId: string | null;
+  readonly encounterOrdinal: number | null;
+  readonly targetPokemonInstanceId: string;
+  readonly targetCombatantId: string | null;
+  readonly logicalTimeMs: number;
+  readonly policyVersion: string;
+  readonly itemId: string;
+  readonly itemRuleVersion: string;
+  readonly gameDataVersion: string;
+  readonly rulesVersion: string;
+  readonly magnitudeJson: Record<string, unknown>;
+  readonly appliedHp: number;
+  readonly resultingHp: number;
+  readonly inventoryRowVersionBefore: bigint;
+  readonly inventoryRowVersionAfter: bigint;
+  readonly createdAt: Date;
+}
+
+export interface HuntPostBattleReviveAppliedRecord {
+  readonly huntId: string;
+  readonly playerId: string;
+  readonly provenanceIdentity: string;
+  readonly debitCorrelationIdentity: string;
+  readonly factVersion: 1;
+  readonly huntRunIdentity: string;
+  readonly encounterId: string;
+  readonly encounterOrdinal: number;
+  readonly battleId: string;
+  readonly targetPokemonInstanceId: string;
+  readonly targetCombatantId: string;
+  readonly logicalTimeMs: number;
+  readonly policyVersion: string;
+  readonly itemId: string;
+  readonly itemRuleVersion: string;
+  readonly gameDataVersion: string;
+  readonly rulesVersion: string;
+  readonly reviveFractionNumerator: 1;
+  readonly reviveFractionDenominator: 1 | 2 | 4;
+  readonly appliedHp: number;
+  readonly resultingHp: number;
+  readonly resultingReadinessJson: Record<string, unknown>;
+  readonly pendingSelectionIdentity: string;
+  readonly consumedPendingSelectionJson: Record<string, unknown>;
+  readonly completedEncounterProvenanceJson: Record<string, unknown>;
+  readonly inventoryRowVersionBefore: bigint;
+  readonly inventoryRowVersionAfter: bigint;
+  readonly createdAt: Date;
+}
+
+export interface HuntRetreatAbandonmentRecord {
+  readonly huntId: string;
+  readonly playerId: string;
+  readonly factVersion: 1;
+  readonly disposition: "abandoned_by_retreat";
+  readonly huntRunIdentity: string;
+  readonly logicalTimeMs: number;
+  readonly checkpointId: string;
+  readonly checkpointRowVersion: bigint;
+  readonly battleId: string | null;
+  readonly sideId: string | null;
+  readonly combatantId: string | null;
+  readonly koInterventionPending: boolean;
+  readonly createdAt: Date;
+}
+
+export interface HuntResolvedEncounterActivityRecord {
+  readonly huntId: string;
+  readonly playerId: string;
+  readonly schemaVersion: "pokenexus.hunt-activity.v1";
+  readonly encounterOrdinal: number;
+  readonly encounterId: string;
+  readonly resolvedLogicalTimeMs: number;
+  readonly encounterDisposition: "victory" | "resolved_non_win";
+  readonly activityJson: Record<string, unknown>;
+  readonly canonicalPayload: Uint8Array;
   readonly createdAt: Date;
 }
 
@@ -145,6 +258,10 @@ interface RootRow {
   recovery_ready_at: Date | null;
   current_policy_version: string | null;
   policy_row_version: string;
+  current_auto_potion_policy_version: string | null;
+  auto_potion_policy_row_version: string;
+  current_auto_revive_policy_version: string | null;
+  auto_revive_policy_row_version: string;
   command_sequence: string;
   database_now: Date;
 }
@@ -194,6 +311,103 @@ interface PolicyRow {
   validation_game_data_version: Buffer;
   enabled: boolean;
   policy_json: Record<string, unknown>;
+  created_at: Date;
+}
+
+interface ItemAutomationPolicyRow {
+  policy_version: string;
+  player_id: string;
+  row_version: string;
+  item_rule_version: Buffer;
+  game_data_version: Buffer;
+  rules_version: Buffer;
+  enabled: boolean;
+  threshold_percent?: number;
+  policy_json: Record<string, unknown>;
+  created_at: Date;
+}
+
+interface AutomationItemUseRow {
+  hunt_id: string;
+  player_id: string;
+  provenance_identity: Buffer;
+  automation_family: "potion" | "revive";
+  phase: "battle" | "inter_battle" | "post_battle";
+  encounter_id: Buffer | null;
+  encounter_ordinal: string | null;
+  target_pokemon_instance_id: string;
+  target_combatant_id: Buffer | null;
+  logical_time_ms: string;
+  policy_version: string;
+  item_id: Buffer;
+  item_rule_version: Buffer;
+  game_data_version: Buffer;
+  rules_version: Buffer;
+  magnitude_json: Record<string, unknown>;
+  applied_hp: number;
+  resulting_hp: number;
+  inventory_row_version_before: string;
+  inventory_row_version_after: string;
+  created_at: Date;
+}
+
+interface PostBattleReviveAppliedRow {
+  hunt_id: string;
+  player_id: string;
+  provenance_identity: Buffer;
+  debit_correlation_identity: Buffer;
+  fact_version: number;
+  hunt_run_identity: Buffer;
+  encounter_id: Buffer;
+  encounter_ordinal: string;
+  battle_id: Buffer;
+  target_pokemon_instance_id: string;
+  target_combatant_id: Buffer;
+  logical_time_ms: string;
+  policy_version: string;
+  item_id: Buffer;
+  item_rule_version: Buffer;
+  game_data_version: Buffer;
+  rules_version: Buffer;
+  revive_fraction_numerator: number;
+  revive_fraction_denominator: number;
+  applied_hp: number;
+  resulting_hp: number;
+  resulting_readiness_json: Record<string, unknown>;
+  pending_selection_identity: Buffer;
+  consumed_pending_selection_json: Record<string, unknown>;
+  completed_encounter_provenance_json: Record<string, unknown>;
+  inventory_row_version_before: string;
+  inventory_row_version_after: string;
+  created_at: Date;
+}
+
+interface RetreatAbandonmentRow {
+  hunt_id: string;
+  player_id: string;
+  fact_version: number;
+  disposition: "abandoned_by_retreat";
+  hunt_run_identity: Buffer;
+  logical_time_ms: string;
+  checkpoint_id: string;
+  checkpoint_row_version: string;
+  battle_id: Buffer | null;
+  side_id: Buffer | null;
+  combatant_id: Buffer | null;
+  ko_intervention_pending: boolean;
+  created_at: Date;
+}
+
+interface ResolvedEncounterActivityRow {
+  hunt_id: string;
+  player_id: string;
+  schema_version: "pokenexus.hunt-activity.v1";
+  encounter_ordinal: string;
+  encounter_id: Buffer;
+  resolved_logical_time_ms: string;
+  encounter_disposition: "victory" | "resolved_non_win";
+  activity_json: Record<string, unknown>;
+  canonical_payload: Buffer;
   created_at: Date;
 }
 
@@ -271,6 +485,10 @@ function mapRoot(row: RootRow): PlayerHuntRootRecord {
     recoveryReadyAt: row.recovery_ready_at,
     currentPolicyVersion: row.current_policy_version,
     policyRowVersion: BigInt(row.policy_row_version),
+    currentAutoPotionPolicyVersion: row.current_auto_potion_policy_version,
+    autoPotionPolicyRowVersion: BigInt(row.auto_potion_policy_row_version),
+    currentAutoRevivePolicyVersion: row.current_auto_revive_policy_version,
+    autoRevivePolicyRowVersion: BigInt(row.auto_revive_policy_row_version),
     commandSequence: BigInt(row.command_sequence),
     databaseNow: row.database_now,
   };
@@ -334,6 +552,175 @@ function mapPolicy(row: PolicyRow): HuntAutoCapturePolicyRecord {
   };
 }
 
+function mapAutoPotionPolicy(row: ItemAutomationPolicyRow): HuntAutoPotionPolicyRecord {
+  if (row.threshold_percent === undefined) throw new Error("Auto-Potion policy row is missing threshold authority");
+  return {
+    policyVersion: row.policy_version,
+    playerId: row.player_id,
+    rowVersion: BigInt(row.row_version),
+    itemRuleVersion: decode(row.item_rule_version),
+    gameDataVersion: decode(row.game_data_version),
+    rulesVersion: decode(row.rules_version),
+    enabled: row.enabled,
+    thresholdPercent: row.threshold_percent,
+    policyJson: row.policy_json,
+    createdAt: row.created_at,
+  };
+}
+
+function mapAutoRevivePolicy(row: ItemAutomationPolicyRow): HuntAutoRevivePolicyRecord {
+  return {
+    policyVersion: row.policy_version,
+    playerId: row.player_id,
+    rowVersion: BigInt(row.row_version),
+    itemRuleVersion: decode(row.item_rule_version),
+    gameDataVersion: decode(row.game_data_version),
+    rulesVersion: decode(row.rules_version),
+    enabled: row.enabled,
+    policyJson: row.policy_json,
+    createdAt: row.created_at,
+  };
+}
+
+function mapAutomationItemUse(row: AutomationItemUseRow): HuntAutomationItemUseRecord {
+  const logicalTimeMs = Number(row.logical_time_ms);
+  const encounterOrdinal = row.encounter_ordinal === null ? null : Number(row.encounter_ordinal);
+  if (!Number.isSafeInteger(logicalTimeMs) || logicalTimeMs < 0) {
+    throw new Error("Persisted Hunt automation item-use logical time is outside the safe domain");
+  }
+  if (encounterOrdinal !== null && (!Number.isSafeInteger(encounterOrdinal) || encounterOrdinal < 1)) {
+    throw new Error("Persisted Hunt automation item-use Encounter ordinal is invalid");
+  }
+  return {
+    huntId: row.hunt_id,
+    playerId: row.player_id,
+    provenanceIdentity: decode(row.provenance_identity),
+    automationFamily: row.automation_family,
+    phase: row.phase,
+    encounterId: row.encounter_id === null ? null : decode(row.encounter_id),
+    encounterOrdinal,
+    targetPokemonInstanceId: row.target_pokemon_instance_id,
+    targetCombatantId: row.target_combatant_id === null ? null : decode(row.target_combatant_id),
+    logicalTimeMs,
+    policyVersion: row.policy_version,
+    itemId: decode(row.item_id),
+    itemRuleVersion: decode(row.item_rule_version),
+    gameDataVersion: decode(row.game_data_version),
+    rulesVersion: decode(row.rules_version),
+    magnitudeJson: row.magnitude_json,
+    appliedHp: row.applied_hp,
+    resultingHp: row.resulting_hp,
+    inventoryRowVersionBefore: BigInt(row.inventory_row_version_before),
+    inventoryRowVersionAfter: BigInt(row.inventory_row_version_after),
+    createdAt: row.created_at,
+  };
+}
+
+function mapPostBattleReviveApplied(row: PostBattleReviveAppliedRow): HuntPostBattleReviveAppliedRecord {
+  const logicalTimeMs = Number(row.logical_time_ms);
+  const encounterOrdinal = Number(row.encounter_ordinal);
+  if (!Number.isSafeInteger(logicalTimeMs) || logicalTimeMs < 0) {
+    throw new Error("Persisted post-Battle Revive logical time is outside the safe domain");
+  }
+  if (!Number.isSafeInteger(encounterOrdinal) || encounterOrdinal < 1) {
+    throw new Error("Persisted post-Battle Revive Encounter ordinal is invalid");
+  }
+  if (
+    row.fact_version !== 1
+    || row.revive_fraction_numerator !== 1
+    || (row.revive_fraction_denominator !== 1
+      && row.revive_fraction_denominator !== 2
+      && row.revive_fraction_denominator !== 4)
+  ) {
+    throw new Error("Persisted post-Battle Revive version/fraction is invalid");
+  }
+  return {
+    huntId: row.hunt_id,
+    playerId: row.player_id,
+    provenanceIdentity: decode(row.provenance_identity),
+    debitCorrelationIdentity: decode(row.debit_correlation_identity),
+    factVersion: 1,
+    huntRunIdentity: decode(row.hunt_run_identity),
+    encounterId: decode(row.encounter_id),
+    encounterOrdinal,
+    battleId: decode(row.battle_id),
+    targetPokemonInstanceId: row.target_pokemon_instance_id,
+    targetCombatantId: decode(row.target_combatant_id),
+    logicalTimeMs,
+    policyVersion: row.policy_version,
+    itemId: decode(row.item_id),
+    itemRuleVersion: decode(row.item_rule_version),
+    gameDataVersion: decode(row.game_data_version),
+    rulesVersion: decode(row.rules_version),
+    reviveFractionNumerator: 1,
+    reviveFractionDenominator: row.revive_fraction_denominator,
+    appliedHp: row.applied_hp,
+    resultingHp: row.resulting_hp,
+    resultingReadinessJson: row.resulting_readiness_json,
+    pendingSelectionIdentity: decode(row.pending_selection_identity),
+    consumedPendingSelectionJson: row.consumed_pending_selection_json,
+    completedEncounterProvenanceJson: row.completed_encounter_provenance_json,
+    inventoryRowVersionBefore: BigInt(row.inventory_row_version_before),
+    inventoryRowVersionAfter: BigInt(row.inventory_row_version_after),
+    createdAt: row.created_at,
+  };
+}
+
+function mapRetreatAbandonment(row: RetreatAbandonmentRow): HuntRetreatAbandonmentRecord {
+  const logicalTimeMs = Number(row.logical_time_ms);
+  if (
+    row.fact_version !== 1
+    || row.disposition !== "abandoned_by_retreat"
+    || !Number.isSafeInteger(logicalTimeMs)
+    || logicalTimeMs < 0
+  ) {
+    throw new Error("Persisted Retreat abandonment provenance is invalid");
+  }
+  return {
+    huntId: row.hunt_id,
+    playerId: row.player_id,
+    factVersion: 1,
+    disposition: "abandoned_by_retreat",
+    huntRunIdentity: decode(row.hunt_run_identity),
+    logicalTimeMs,
+    checkpointId: row.checkpoint_id,
+    checkpointRowVersion: BigInt(row.checkpoint_row_version),
+    battleId: row.battle_id === null ? null : decode(row.battle_id),
+    sideId: row.side_id === null ? null : decode(row.side_id),
+    combatantId: row.combatant_id === null ? null : decode(row.combatant_id),
+    koInterventionPending: row.ko_intervention_pending,
+    createdAt: row.created_at,
+  };
+}
+
+function mapResolvedEncounterActivity(
+  row: ResolvedEncounterActivityRow,
+): HuntResolvedEncounterActivityRecord {
+  const encounterOrdinal = Number(row.encounter_ordinal);
+  const resolvedLogicalTimeMs = Number(row.resolved_logical_time_ms);
+  if (
+    row.schema_version !== "pokenexus.hunt-activity.v1"
+    || !Number.isSafeInteger(encounterOrdinal)
+    || encounterOrdinal < 1
+    || !Number.isSafeInteger(resolvedLogicalTimeMs)
+    || resolvedLogicalTimeMs < 0
+  ) {
+    throw new Error("Persisted Hunt activity record is outside the supported domain");
+  }
+  return {
+    huntId: row.hunt_id,
+    playerId: row.player_id,
+    schemaVersion: row.schema_version,
+    encounterOrdinal,
+    encounterId: decode(row.encounter_id),
+    resolvedLogicalTimeMs,
+    encounterDisposition: row.encounter_disposition,
+    activityJson: row.activity_json,
+    canonicalPayload: new Uint8Array(row.canonical_payload),
+    createdAt: row.created_at,
+  };
+}
+
 function mapPendingManual(row: PendingManualRow): HuntPendingManualCaptureRecord {
   return {
     playerId: row.player_id,
@@ -382,7 +769,9 @@ export async function ensureAndLockPlayerHuntRoot(
   );
   const result = await client.query<RootRow>(
     `SELECT player_id, active_hunt_id, recovery_ready_at, current_policy_version,
-            policy_row_version::text, command_sequence::text,
+            policy_row_version::text, current_auto_potion_policy_version,
+            auto_potion_policy_row_version::text, current_auto_revive_policy_version,
+            auto_revive_policy_row_version::text, command_sequence::text,
             transaction_timestamp() AS database_now
        FROM pokenexus.player_hunt_roots
       WHERE player_id = $1
@@ -405,7 +794,9 @@ export async function loadPlayerHuntRoot(
 ): Promise<PlayerHuntRootRecord | null> {
   const result = await client.query<RootRow>(
     `SELECT player_id, active_hunt_id, recovery_ready_at, current_policy_version,
-            policy_row_version::text, command_sequence::text,
+            policy_row_version::text, current_auto_potion_policy_version,
+            auto_potion_policy_row_version::text, current_auto_revive_policy_version,
+            auto_revive_policy_row_version::text, command_sequence::text,
             transaction_timestamp() AS database_now
        FROM pokenexus.player_hunt_roots
       WHERE player_id = $1`,
@@ -430,6 +821,30 @@ export async function loadPublicHuntCommand(
     [playerId, idempotencyKey],
   );
   return result.rows[0] ? mapCommand(result.rows[0]) : null;
+}
+
+export async function loadPendingHuntAdvanceCommands(
+  client: HuntOrchestrationDbClient,
+  playerId: string,
+  huntId: string,
+  forUpdate = false,
+): Promise<ReadonlyArray<HuntPublicCommandRecord>> {
+  const result = await client.query<CommandRow>(
+    `SELECT command_id, player_id, idempotency_key::text, command_kind, intent_hash, intent_json, server_context_json,
+            command_status, acceptance_sequence::text, source_hunt_id, advancement_hunt_id,
+            target_logical_time_ms::text, target_wall_clock_at, claim_effects,
+            result_http_status, result_json, accepted_at, terminal_at,
+            continuation_expires_at, tombstone_expires_at
+       FROM pokenexus.hunt_public_commands
+      WHERE player_id = $1
+        AND advancement_hunt_id = $2
+        AND command_status = 'pending'
+        AND command_kind IN ('checkpoint', 'claim', 'retreat', 'policy_replace')
+        AND clock_timestamp() < continuation_expires_at
+      ORDER BY acceptance_sequence${forUpdate ? " FOR UPDATE" : ""}`,
+    [playerId, huntId],
+  );
+  return result.rows.map(mapCommand);
 }
 
 function sameHash(left: Uint8Array, right: Uint8Array): boolean {
@@ -802,6 +1217,7 @@ export async function terminalizeSoloHuntInTransaction(
     readonly huntId: string;
     readonly terminalReason: NonNullable<SoloHuntRecord["terminalReason"]>;
     readonly recoveryDurationMs: number;
+    readonly terminalAt?: Date | "database_clock";
   },
 ): Promise<{ readonly hunt: SoloHuntRecord; readonly recoveryReadyAt: Date }> {
   const root = await ensureAndLockPlayerHuntRoot(client, input.playerId);
@@ -826,19 +1242,36 @@ export async function terminalizeSoloHuntInTransaction(
   if (root.activeHuntId !== input.huntId) {
     throw new Error("Active Hunt terminalization lost current-Hunt invariant");
   }
-  const terminalBoundaryAt = row.logical_time_anchor_at;
+  const useDatabaseClock = input.terminalAt === "database_clock";
+  const fallbackTerminalBoundaryAt = useDatabaseClock
+    ? null
+    : input.terminalAt ?? row.logical_time_anchor_at;
   const terminalized = await client.query<HuntRow>(
-    `UPDATE pokenexus.solo_hunts
-        SET terminal_at = $3, terminal_reason = $4,
+    `WITH terminal_boundary AS (
+       SELECT CASE
+                WHEN $3::boolean THEN clock_timestamp()
+                ELSE $4::timestamptz
+              END AS terminal_at
+     )
+     UPDATE pokenexus.solo_hunts AS h
+        SET terminal_at = terminal_boundary.terminal_at, terminal_reason = $5,
             row_version = row_version + 1, updated_at = transaction_timestamp()
-      WHERE player_id = $1 AND hunt_id = $2 AND terminal_at IS NULL
-      RETURNING hunt_id, player_id, checkpoint_id, hunt_definition_id, zone_id,
-                recovery_duration_ms::text, started_at, terminal_at, terminal_reason,
-                initial_policy_version, row_version::text`,
-    [input.playerId, input.huntId, terminalBoundaryAt, input.terminalReason],
+       FROM terminal_boundary
+      WHERE h.player_id = $1 AND h.hunt_id = $2 AND h.terminal_at IS NULL
+      RETURNING h.hunt_id, h.player_id, h.checkpoint_id, h.hunt_definition_id, h.zone_id,
+                h.recovery_duration_ms::text, h.started_at, h.terminal_at, h.terminal_reason,
+                h.initial_policy_version, h.row_version::text`,
+    [
+      input.playerId,
+      input.huntId,
+      useDatabaseClock,
+      fallbackTerminalBoundaryAt,
+      input.terminalReason,
+    ],
   );
   const terminalHunt = terminalized.rows[0];
   if (!terminalHunt) throw new Error("Locked Hunt terminalization unexpectedly failed");
+  if (!terminalHunt.terminal_at) throw new Error("Locked Hunt terminalization did not persist terminal time");
   const recovery = await client.query<{ recovery_ready_at: Date }>(
     `UPDATE pokenexus.player_hunt_roots
         SET active_hunt_id = NULL,
@@ -846,7 +1279,7 @@ export async function terminalizeSoloHuntInTransaction(
             updated_at = transaction_timestamp()
       WHERE player_id = $1 AND active_hunt_id = $2
       RETURNING recovery_ready_at`,
-    [input.playerId, input.huntId, terminalBoundaryAt, input.recoveryDurationMs],
+    [input.playerId, input.huntId, terminalHunt.terminal_at, input.recoveryDurationMs],
   );
   const recoveryReadyAt = recovery.rows[0]?.recovery_ready_at;
   if (!recoveryReadyAt) throw new Error("Locked Hunt terminalization failed to release Player active-Hunt root");
@@ -964,6 +1397,830 @@ export async function insertInitialPolicyIntervalInTransaction(
      VALUES ($1,0,$2)`,
     [huntId, policyVersion],
   );
+}
+
+export async function loadCurrentAutoPotionPolicy(
+  client: HuntOrchestrationDbClient,
+  playerId: string,
+): Promise<HuntAutoPotionPolicyRecord | null> {
+  const root = await client.query<{ policy_version: string | null; row_version: string }>(
+    `SELECT current_auto_potion_policy_version AS policy_version,
+            auto_potion_policy_row_version::text AS row_version
+       FROM pokenexus.player_hunt_roots
+      WHERE player_id = $1`,
+    [playerId],
+  );
+  const current = root.rows[0];
+  if (!current) return null;
+  const rowVersion = BigInt(current.row_version);
+  if (current.policy_version === null) {
+    if (rowVersion !== 0n) throw new Error("Auto-Potion root has no current policy but a nonzero rowVersion");
+    return null;
+  }
+  const policy = await loadAutoPotionPolicyByVersion(client, playerId, current.policy_version);
+  if (!policy || policy.rowVersion !== rowVersion) {
+    throw new Error("Auto-Potion root current policy authority is inconsistent");
+  }
+  return policy;
+}
+
+export async function loadAutoPotionPolicyByVersion(
+  client: HuntOrchestrationDbClient,
+  playerId: string,
+  policyVersion: string,
+): Promise<HuntAutoPotionPolicyRecord | null> {
+  const result = await client.query<ItemAutomationPolicyRow>(
+    `SELECT policy_version, player_id, row_version::text, item_rule_version,
+            game_data_version, rules_version, enabled, threshold_percent, policy_json, created_at
+       FROM pokenexus.hunt_auto_potion_policies
+      WHERE player_id = $1 AND policy_version = $2`,
+    [playerId, policyVersion],
+  );
+  return result.rows[0] ? mapAutoPotionPolicy(result.rows[0]) : null;
+}
+
+export async function insertAutoPotionPolicyInTransaction(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly expectedRowVersion: bigint;
+    readonly itemRuleVersion: string;
+    readonly gameDataVersion: string;
+    readonly rulesVersion: string;
+    readonly enabled: boolean;
+    readonly thresholdPercent: number;
+    readonly policyJson: Record<string, unknown>;
+    readonly effectiveHuntId: string | null;
+    readonly effectiveLogicalTimeMs: number | null;
+  },
+): Promise<
+  | { readonly status: "accepted"; readonly policy: HuntAutoPotionPolicyRecord }
+  | { readonly status: "stale"; readonly rowVersion: bigint }
+> {
+  if ((input.effectiveHuntId === null) !== (input.effectiveLogicalTimeMs === null)) {
+    throw new Error("Auto-Potion effective Hunt identity and logical time must be provided together");
+  }
+  const root = await ensureAndLockPlayerHuntRoot(client, input.playerId);
+  if (!root) throw new Error("Auto-Potion policy subject Player does not exist");
+  if (root.autoPotionPolicyRowVersion !== input.expectedRowVersion) {
+    return { status: "stale", rowVersion: root.autoPotionPolicyRowVersion };
+  }
+  const nextVersion = root.autoPotionPolicyRowVersion + 1n;
+  const policyVersion = generateUuidV7();
+  const inserted = await client.query<ItemAutomationPolicyRow>(
+    `INSERT INTO pokenexus.hunt_auto_potion_policies (
+       policy_version, player_id, row_version, item_rule_version, game_data_version,
+       rules_version, enabled, threshold_percent, policy_json, created_at
+     ) VALUES ($1,$2,$3::bigint,$4,$5,$6,$7,$8,$9::jsonb,transaction_timestamp())
+     RETURNING policy_version, player_id, row_version::text, item_rule_version,
+               game_data_version, rules_version, enabled, threshold_percent, policy_json, created_at`,
+    [
+      policyVersion,
+      input.playerId,
+      nextVersion.toString(),
+      encode(input.itemRuleVersion, "itemRuleVersion"),
+      encode(input.gameDataVersion, "gameDataVersion"),
+      encode(input.rulesVersion, "rulesVersion"),
+      input.enabled,
+      input.thresholdPercent,
+      JSON.stringify(input.policyJson),
+    ],
+  );
+  const updated = await client.query(
+    `UPDATE pokenexus.player_hunt_roots
+        SET current_auto_potion_policy_version = $2,
+            auto_potion_policy_row_version = $3::bigint,
+            updated_at = transaction_timestamp()
+      WHERE player_id = $1 AND auto_potion_policy_row_version = $4::bigint`,
+    [input.playerId, policyVersion, nextVersion.toString(), input.expectedRowVersion.toString()],
+  );
+  if (updated.rowCount !== 1) throw new Error("Locked Auto-Potion policy OCC update unexpectedly failed");
+  if (input.effectiveHuntId !== null && input.effectiveLogicalTimeMs !== null) {
+    await client.query(
+      `INSERT INTO pokenexus.hunt_auto_potion_policy_intervals
+         (hunt_id, effective_logical_time_ms, policy_version)
+       VALUES ($1,$2,$3)
+       ON CONFLICT (hunt_id, effective_logical_time_ms)
+       DO UPDATE SET policy_version = EXCLUDED.policy_version`,
+      [input.effectiveHuntId, input.effectiveLogicalTimeMs, policyVersion],
+    );
+  }
+  return { status: "accepted", policy: mapAutoPotionPolicy(inserted.rows[0]!) };
+}
+
+export async function loadEffectiveAutoPotionPolicyVersion(
+  client: HuntOrchestrationDbClient,
+  huntId: string,
+  logicalTimeMs: number,
+): Promise<string | null> {
+  const result = await client.query<{ policy_version: string | null }>(
+    `SELECT policy_version
+       FROM pokenexus.hunt_auto_potion_policy_intervals
+      WHERE hunt_id = $1 AND effective_logical_time_ms <= $2
+      ORDER BY effective_logical_time_ms DESC
+      LIMIT 1`,
+    [huntId, logicalTimeMs],
+  );
+  return result.rows[0]?.policy_version ?? null;
+}
+
+export async function insertInitialAutoPotionPolicyIntervalInTransaction(
+  client: HuntOrchestrationDbClient,
+  huntId: string,
+  policyVersion: string | null,
+): Promise<void> {
+  await client.query(
+    `INSERT INTO pokenexus.hunt_auto_potion_policy_intervals
+       (hunt_id, effective_logical_time_ms, policy_version)
+     VALUES ($1,0,$2)`,
+    [huntId, policyVersion],
+  );
+}
+
+export async function loadCurrentAutoRevivePolicy(
+  client: HuntOrchestrationDbClient,
+  playerId: string,
+): Promise<HuntAutoRevivePolicyRecord | null> {
+  const root = await client.query<{ policy_version: string | null; row_version: string }>(
+    `SELECT current_auto_revive_policy_version AS policy_version,
+            auto_revive_policy_row_version::text AS row_version
+       FROM pokenexus.player_hunt_roots
+      WHERE player_id = $1`,
+    [playerId],
+  );
+  const current = root.rows[0];
+  if (!current) return null;
+  const rowVersion = BigInt(current.row_version);
+  if (current.policy_version === null) {
+    if (rowVersion !== 0n) throw new Error("Auto-Revive root has no current policy but a nonzero rowVersion");
+    return null;
+  }
+  const policy = await loadAutoRevivePolicyByVersion(client, playerId, current.policy_version);
+  if (!policy || policy.rowVersion !== rowVersion) {
+    throw new Error("Auto-Revive root current policy authority is inconsistent");
+  }
+  return policy;
+}
+
+export async function loadAutoRevivePolicyByVersion(
+  client: HuntOrchestrationDbClient,
+  playerId: string,
+  policyVersion: string,
+): Promise<HuntAutoRevivePolicyRecord | null> {
+  const result = await client.query<ItemAutomationPolicyRow>(
+    `SELECT policy_version, player_id, row_version::text, item_rule_version,
+            game_data_version, rules_version, enabled, policy_json, created_at
+       FROM pokenexus.hunt_auto_revive_policies
+      WHERE player_id = $1 AND policy_version = $2`,
+    [playerId, policyVersion],
+  );
+  return result.rows[0] ? mapAutoRevivePolicy(result.rows[0]) : null;
+}
+
+export async function insertAutoRevivePolicyInTransaction(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly expectedRowVersion: bigint;
+    readonly itemRuleVersion: string;
+    readonly gameDataVersion: string;
+    readonly rulesVersion: string;
+    readonly enabled: boolean;
+    readonly policyJson: Record<string, unknown>;
+    readonly effectiveHuntId: string | null;
+    readonly effectiveLogicalTimeMs: number | null;
+  },
+): Promise<
+  | { readonly status: "accepted"; readonly policy: HuntAutoRevivePolicyRecord }
+  | { readonly status: "stale"; readonly rowVersion: bigint }
+> {
+  if ((input.effectiveHuntId === null) !== (input.effectiveLogicalTimeMs === null)) {
+    throw new Error("Auto-Revive effective Hunt identity and logical time must be provided together");
+  }
+  const root = await ensureAndLockPlayerHuntRoot(client, input.playerId);
+  if (!root) throw new Error("Auto-Revive policy subject Player does not exist");
+  if (root.autoRevivePolicyRowVersion !== input.expectedRowVersion) {
+    return { status: "stale", rowVersion: root.autoRevivePolicyRowVersion };
+  }
+  const nextVersion = root.autoRevivePolicyRowVersion + 1n;
+  const policyVersion = generateUuidV7();
+  const inserted = await client.query<ItemAutomationPolicyRow>(
+    `INSERT INTO pokenexus.hunt_auto_revive_policies (
+       policy_version, player_id, row_version, item_rule_version, game_data_version,
+       rules_version, enabled, policy_json, created_at
+     ) VALUES ($1,$2,$3::bigint,$4,$5,$6,$7,$8::jsonb,transaction_timestamp())
+     RETURNING policy_version, player_id, row_version::text, item_rule_version,
+               game_data_version, rules_version, enabled, policy_json, created_at`,
+    [
+      policyVersion,
+      input.playerId,
+      nextVersion.toString(),
+      encode(input.itemRuleVersion, "itemRuleVersion"),
+      encode(input.gameDataVersion, "gameDataVersion"),
+      encode(input.rulesVersion, "rulesVersion"),
+      input.enabled,
+      JSON.stringify(input.policyJson),
+    ],
+  );
+  const updated = await client.query(
+    `UPDATE pokenexus.player_hunt_roots
+        SET current_auto_revive_policy_version = $2,
+            auto_revive_policy_row_version = $3::bigint,
+            updated_at = transaction_timestamp()
+      WHERE player_id = $1 AND auto_revive_policy_row_version = $4::bigint`,
+    [input.playerId, policyVersion, nextVersion.toString(), input.expectedRowVersion.toString()],
+  );
+  if (updated.rowCount !== 1) throw new Error("Locked Auto-Revive policy OCC update unexpectedly failed");
+  if (input.effectiveHuntId !== null && input.effectiveLogicalTimeMs !== null) {
+    await client.query(
+      `INSERT INTO pokenexus.hunt_auto_revive_policy_intervals
+         (hunt_id, effective_logical_time_ms, policy_version)
+       VALUES ($1,$2,$3)
+       ON CONFLICT (hunt_id, effective_logical_time_ms)
+       DO UPDATE SET policy_version = EXCLUDED.policy_version`,
+      [input.effectiveHuntId, input.effectiveLogicalTimeMs, policyVersion],
+    );
+  }
+  return { status: "accepted", policy: mapAutoRevivePolicy(inserted.rows[0]!) };
+}
+
+export async function loadEffectiveAutoRevivePolicyVersion(
+  client: HuntOrchestrationDbClient,
+  huntId: string,
+  logicalTimeMs: number,
+): Promise<string | null> {
+  const result = await client.query<{ policy_version: string | null }>(
+    `SELECT policy_version
+       FROM pokenexus.hunt_auto_revive_policy_intervals
+      WHERE hunt_id = $1 AND effective_logical_time_ms <= $2
+      ORDER BY effective_logical_time_ms DESC
+      LIMIT 1`,
+    [huntId, logicalTimeMs],
+  );
+  return result.rows[0]?.policy_version ?? null;
+}
+
+export async function insertInitialAutoRevivePolicyIntervalInTransaction(
+  client: HuntOrchestrationDbClient,
+  huntId: string,
+  policyVersion: string | null,
+): Promise<void> {
+  await client.query(
+    `INSERT INTO pokenexus.hunt_auto_revive_policy_intervals
+       (hunt_id, effective_logical_time_ms, policy_version)
+     VALUES ($1,0,$2)`,
+    [huntId, policyVersion],
+  );
+}
+
+const AUTOMATION_ITEM_USE_SELECT = `
+  hunt_id, player_id, provenance_identity, automation_family, phase,
+  encounter_id, encounter_ordinal::text, target_pokemon_instance_id,
+  target_combatant_id, logical_time_ms::text, policy_version, item_id,
+  item_rule_version, game_data_version, rules_version, magnitude_json,
+  applied_hp, resulting_hp, inventory_row_version_before::text,
+  inventory_row_version_after::text, created_at
+`;
+
+export async function loadAutomationItemUseByProvenance(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly provenanceIdentity: string;
+  },
+): Promise<HuntAutomationItemUseRecord | null> {
+  const result = await client.query<AutomationItemUseRow>(
+    `SELECT ${AUTOMATION_ITEM_USE_SELECT}
+       FROM pokenexus.hunt_automation_item_uses
+      WHERE player_id = $1
+        AND hunt_id = $2
+        AND provenance_identity = $3`,
+    [input.playerId, input.huntId, encode(input.provenanceIdentity, "provenanceIdentity")],
+  );
+  return result.rows[0] ? mapAutomationItemUse(result.rows[0]) : null;
+}
+
+export async function loadAutomationItemUsesForEncounter(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly encounterOrdinal: number;
+  },
+): Promise<readonly HuntAutomationItemUseRecord[]> {
+  if (!Number.isSafeInteger(input.encounterOrdinal) || input.encounterOrdinal < 1) {
+    throw new Error("Hunt automation item-use Encounter ordinal is invalid");
+  }
+  const result = await client.query<AutomationItemUseRow>(
+    `SELECT ${AUTOMATION_ITEM_USE_SELECT}
+       FROM pokenexus.hunt_automation_item_uses
+      WHERE player_id = $1
+        AND hunt_id = $2
+        AND encounter_ordinal = $3
+      ORDER BY logical_time_ms, created_at, provenance_identity`,
+    [input.playerId, input.huntId, input.encounterOrdinal],
+  );
+  return result.rows.map(mapAutomationItemUse);
+}
+
+function canonicalAutomationJson(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "undefined";
+  if (Array.isArray(value)) return `[${value.map(canonicalAutomationJson).join(",")}]`;
+  const source = value as Record<string, unknown>;
+  return `{${Object.keys(source).sort().map((key) =>
+    `${JSON.stringify(key)}:${canonicalAutomationJson(source[key])}`).join(",")}}`;
+}
+
+function sameAutomationItemUseEnvelope(
+  record: HuntAutomationItemUseRecord,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly provenanceIdentity: string;
+    readonly automationFamily: "potion" | "revive";
+    readonly phase: "battle" | "inter_battle" | "post_battle";
+    readonly encounterId: string | null;
+    readonly encounterOrdinal: number | null;
+    readonly targetPokemonInstanceId: string;
+    readonly targetCombatantId: string | null;
+    readonly logicalTimeMs: number;
+    readonly policyVersion: string;
+    readonly itemId: string;
+    readonly itemRuleVersion: string;
+    readonly gameDataVersion: string;
+    readonly rulesVersion: string;
+    readonly magnitudeJson: Record<string, unknown>;
+    readonly appliedHp: number;
+    readonly resultingHp: number;
+    readonly inventoryRowVersionBefore: bigint;
+    readonly inventoryRowVersionAfter: bigint;
+  },
+): boolean {
+  return record.playerId === input.playerId
+    && record.huntId === input.huntId
+    && record.provenanceIdentity === input.provenanceIdentity
+    && record.automationFamily === input.automationFamily
+    && record.phase === input.phase
+    && record.encounterId === input.encounterId
+    && record.encounterOrdinal === input.encounterOrdinal
+    && record.targetPokemonInstanceId === input.targetPokemonInstanceId
+    && record.targetCombatantId === input.targetCombatantId
+    && record.logicalTimeMs === input.logicalTimeMs
+    && record.policyVersion === input.policyVersion
+    && record.itemId === input.itemId
+    && record.itemRuleVersion === input.itemRuleVersion
+    && record.gameDataVersion === input.gameDataVersion
+    && record.rulesVersion === input.rulesVersion
+    && canonicalAutomationJson(record.magnitudeJson) === canonicalAutomationJson(input.magnitudeJson)
+    && record.appliedHp === input.appliedHp
+    && record.resultingHp === input.resultingHp
+    && record.inventoryRowVersionBefore === input.inventoryRowVersionBefore
+    && record.inventoryRowVersionAfter === input.inventoryRowVersionAfter;
+}
+
+export async function insertAutomationItemUseInTransaction(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly provenanceIdentity: string;
+    readonly automationFamily: "potion" | "revive";
+    readonly phase: "battle" | "inter_battle" | "post_battle";
+    readonly encounterId: string | null;
+    readonly encounterOrdinal: number | null;
+    readonly targetPokemonInstanceId: string;
+    readonly targetCombatantId: string | null;
+    readonly logicalTimeMs: number;
+    readonly policyVersion: string;
+    readonly itemId: string;
+    readonly itemRuleVersion: string;
+    readonly gameDataVersion: string;
+    readonly rulesVersion: string;
+    readonly magnitudeJson: Record<string, unknown>;
+    readonly appliedHp: number;
+    readonly resultingHp: number;
+    readonly inventoryRowVersionBefore: bigint;
+    readonly inventoryRowVersionAfter: bigint;
+  },
+): Promise<
+  | { readonly status: "inserted"; readonly record: HuntAutomationItemUseRecord }
+  | { readonly status: "existing"; readonly record: HuntAutomationItemUseRecord }
+> {
+  if (!Number.isSafeInteger(input.logicalTimeMs) || input.logicalTimeMs < 0) {
+    throw new Error("Hunt automation item-use logical time must be a non-negative safe integer");
+  }
+  if (
+    (input.encounterOrdinal !== null && (!Number.isSafeInteger(input.encounterOrdinal) || input.encounterOrdinal < 1))
+    || !Number.isSafeInteger(input.appliedHp)
+    || input.appliedHp <= 0
+    || !Number.isSafeInteger(input.resultingHp)
+    || input.resultingHp <= 0
+    || input.inventoryRowVersionBefore < 0n
+    || input.inventoryRowVersionAfter <= input.inventoryRowVersionBefore
+  ) {
+    throw new Error("Hunt automation item-use provenance is invalid");
+  }
+  const result = await client.query<AutomationItemUseRow>(
+    `INSERT INTO pokenexus.hunt_automation_item_uses (
+       hunt_id, player_id, provenance_identity, automation_family, phase,
+       encounter_id, encounter_ordinal, target_pokemon_instance_id,
+       target_combatant_id, logical_time_ms, policy_version, item_id,
+       item_rule_version, game_data_version, rules_version, magnitude_json,
+       applied_hp, resulting_hp, inventory_row_version_before,
+       inventory_row_version_after, created_at
+     ) VALUES (
+       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb,$17,$18,$19::bigint,$20::bigint,transaction_timestamp()
+     )
+     ON CONFLICT (hunt_id, provenance_identity) DO NOTHING
+     RETURNING ${AUTOMATION_ITEM_USE_SELECT}`,
+    [
+      input.huntId,
+      input.playerId,
+      encode(input.provenanceIdentity, "provenanceIdentity"),
+      input.automationFamily,
+      input.phase,
+      input.encounterId === null ? null : encode(input.encounterId, "encounterId"),
+      input.encounterOrdinal,
+      input.targetPokemonInstanceId,
+      input.targetCombatantId === null ? null : encode(input.targetCombatantId, "targetCombatantId"),
+      input.logicalTimeMs,
+      input.policyVersion,
+      encode(input.itemId, "itemId"),
+      encode(input.itemRuleVersion, "itemRuleVersion"),
+      encode(input.gameDataVersion, "gameDataVersion"),
+      encode(input.rulesVersion, "rulesVersion"),
+      JSON.stringify(input.magnitudeJson),
+      input.appliedHp,
+      input.resultingHp,
+      input.inventoryRowVersionBefore.toString(),
+      input.inventoryRowVersionAfter.toString(),
+    ],
+  );
+  if (result.rows[0]) return { status: "inserted", record: mapAutomationItemUse(result.rows[0]) };
+  const existing = await loadAutomationItemUseByProvenance(client, input);
+  if (!existing) throw new Error("Hunt automation item-use conflict lost its existing provenance row");
+  if (!sameAutomationItemUseEnvelope(existing, input)) {
+    throw new Error("Hunt automation item-use provenance identity conflicts with a different immutable envelope");
+  }
+  return { status: "existing", record: existing };
+}
+
+const POST_BATTLE_REVIVE_APPLIED_SELECT = `
+  hunt_id, player_id, provenance_identity, debit_correlation_identity, fact_version,
+  hunt_run_identity,
+  encounter_id, encounter_ordinal::text, battle_id,
+  target_pokemon_instance_id, target_combatant_id, logical_time_ms::text,
+  policy_version, item_id, item_rule_version, game_data_version, rules_version,
+  revive_fraction_numerator, revive_fraction_denominator, applied_hp, resulting_hp,
+  resulting_readiness_json, pending_selection_identity, consumed_pending_selection_json,
+  completed_encounter_provenance_json, inventory_row_version_before::text,
+  inventory_row_version_after::text, created_at
+`;
+
+type PostBattleReviveAppliedInsert = Omit<
+  HuntPostBattleReviveAppliedRecord,
+  "createdAt" | "factVersion"
+>;
+
+export async function loadPostBattleReviveAppliedByProvenance(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly provenanceIdentity: string;
+  },
+): Promise<HuntPostBattleReviveAppliedRecord | null> {
+  const result = await client.query<PostBattleReviveAppliedRow>(
+    `SELECT ${POST_BATTLE_REVIVE_APPLIED_SELECT}
+       FROM pokenexus.hunt_post_battle_revive_applied
+      WHERE player_id = $1
+        AND hunt_id = $2
+        AND provenance_identity = $3`,
+    [input.playerId, input.huntId, encode(input.provenanceIdentity, "provenanceIdentity")],
+  );
+  return result.rows[0] ? mapPostBattleReviveApplied(result.rows[0]) : null;
+}
+
+function samePostBattleReviveAppliedEnvelope(
+  record: HuntPostBattleReviveAppliedRecord,
+  input: PostBattleReviveAppliedInsert,
+): boolean {
+  return record.playerId === input.playerId
+    && record.huntId === input.huntId
+    && record.provenanceIdentity === input.provenanceIdentity
+    && record.debitCorrelationIdentity === input.debitCorrelationIdentity
+    && record.huntRunIdentity === input.huntRunIdentity
+    && record.encounterId === input.encounterId
+    && record.encounterOrdinal === input.encounterOrdinal
+    && record.battleId === input.battleId
+    && record.targetPokemonInstanceId === input.targetPokemonInstanceId
+    && record.targetCombatantId === input.targetCombatantId
+    && record.logicalTimeMs === input.logicalTimeMs
+    && record.policyVersion === input.policyVersion
+    && record.itemId === input.itemId
+    && record.itemRuleVersion === input.itemRuleVersion
+    && record.gameDataVersion === input.gameDataVersion
+    && record.rulesVersion === input.rulesVersion
+    && record.reviveFractionNumerator === input.reviveFractionNumerator
+    && record.reviveFractionDenominator === input.reviveFractionDenominator
+    && record.appliedHp === input.appliedHp
+    && record.resultingHp === input.resultingHp
+    && canonicalAutomationJson(record.resultingReadinessJson)
+      === canonicalAutomationJson(input.resultingReadinessJson)
+    && record.pendingSelectionIdentity === input.pendingSelectionIdentity
+    && canonicalAutomationJson(record.consumedPendingSelectionJson)
+      === canonicalAutomationJson(input.consumedPendingSelectionJson)
+    && canonicalAutomationJson(record.completedEncounterProvenanceJson)
+      === canonicalAutomationJson(input.completedEncounterProvenanceJson)
+    && record.inventoryRowVersionBefore === input.inventoryRowVersionBefore
+    && record.inventoryRowVersionAfter === input.inventoryRowVersionAfter;
+}
+
+export async function insertPostBattleReviveAppliedInTransaction(
+  client: HuntOrchestrationDbClient,
+  input: PostBattleReviveAppliedInsert,
+): Promise<
+  | { readonly status: "inserted"; readonly record: HuntPostBattleReviveAppliedRecord }
+  | { readonly status: "existing"; readonly record: HuntPostBattleReviveAppliedRecord }
+> {
+  if (
+    !Number.isSafeInteger(input.encounterOrdinal)
+    || input.encounterOrdinal < 1
+    || !Number.isSafeInteger(input.logicalTimeMs)
+    || input.logicalTimeMs < 0
+    || input.reviveFractionNumerator !== 1
+    || (input.reviveFractionDenominator !== 1
+      && input.reviveFractionDenominator !== 2
+      && input.reviveFractionDenominator !== 4)
+    || !Number.isSafeInteger(input.appliedHp)
+    || input.appliedHp < 1
+    || !Number.isSafeInteger(input.resultingHp)
+    || input.resultingHp < 1
+    || input.inventoryRowVersionBefore < 0n
+    || input.inventoryRowVersionAfter <= input.inventoryRowVersionBefore
+  ) {
+    throw new Error("Post-Battle Revive provenance is invalid");
+  }
+  const result = await client.query<PostBattleReviveAppliedRow>(
+    `INSERT INTO pokenexus.hunt_post_battle_revive_applied (
+       hunt_id, player_id, provenance_identity, debit_correlation_identity, fact_version,
+       hunt_run_identity,
+       encounter_id, encounter_ordinal, battle_id,
+       target_pokemon_instance_id, target_combatant_id, logical_time_ms,
+       policy_version, item_id, item_rule_version, game_data_version, rules_version,
+       revive_fraction_numerator, revive_fraction_denominator, applied_hp, resulting_hp,
+       resulting_readiness_json, pending_selection_identity, consumed_pending_selection_json,
+       completed_encounter_provenance_json, inventory_row_version_before,
+       inventory_row_version_after, created_at
+     ) VALUES (
+       $1,$2,$3,$4,1,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+       $21::jsonb,$22,$23::jsonb,$24::jsonb,$25::bigint,$26::bigint,transaction_timestamp()
+     )
+     ON CONFLICT (hunt_id, provenance_identity) DO NOTHING
+     RETURNING ${POST_BATTLE_REVIVE_APPLIED_SELECT}`,
+    [
+      input.huntId,
+      input.playerId,
+      encode(input.provenanceIdentity, "provenanceIdentity"),
+      encode(input.debitCorrelationIdentity, "debitCorrelationIdentity"),
+      encode(input.huntRunIdentity, "huntRunIdentity"),
+      encode(input.encounterId, "encounterId"),
+      input.encounterOrdinal,
+      encode(input.battleId, "battleId"),
+      input.targetPokemonInstanceId,
+      encode(input.targetCombatantId, "targetCombatantId"),
+      input.logicalTimeMs,
+      input.policyVersion,
+      encode(input.itemId, "itemId"),
+      encode(input.itemRuleVersion, "itemRuleVersion"),
+      encode(input.gameDataVersion, "gameDataVersion"),
+      encode(input.rulesVersion, "rulesVersion"),
+      input.reviveFractionNumerator,
+      input.reviveFractionDenominator,
+      input.appliedHp,
+      input.resultingHp,
+      JSON.stringify(input.resultingReadinessJson),
+      encode(input.pendingSelectionIdentity, "pendingSelectionIdentity"),
+      JSON.stringify(input.consumedPendingSelectionJson),
+      JSON.stringify(input.completedEncounterProvenanceJson),
+      input.inventoryRowVersionBefore.toString(),
+      input.inventoryRowVersionAfter.toString(),
+    ],
+  );
+  if (result.rows[0]) {
+    return { status: "inserted", record: mapPostBattleReviveApplied(result.rows[0]) };
+  }
+  const existing = await loadPostBattleReviveAppliedByProvenance(client, input);
+  if (!existing) throw new Error("Post-Battle Revive conflict lost its existing provenance row");
+  if (!samePostBattleReviveAppliedEnvelope(existing, input)) {
+    throw new Error("Post-Battle Revive provenance identity conflicts with a different immutable envelope");
+  }
+  return { status: "existing", record: existing };
+}
+
+const RETREAT_ABANDONMENT_SELECT = `
+  hunt_id, player_id, fact_version, disposition, hunt_run_identity,
+  logical_time_ms::text, checkpoint_id, checkpoint_row_version::text,
+  battle_id, side_id, combatant_id, ko_intervention_pending, created_at
+`;
+
+type RetreatAbandonmentInsert = Omit<
+  HuntRetreatAbandonmentRecord,
+  "createdAt" | "factVersion" | "disposition"
+>;
+
+export async function loadRetreatAbandonment(
+  client: HuntOrchestrationDbClient,
+  input: { readonly playerId: string; readonly huntId: string },
+): Promise<HuntRetreatAbandonmentRecord | null> {
+  const result = await client.query<RetreatAbandonmentRow>(
+    `SELECT ${RETREAT_ABANDONMENT_SELECT}
+       FROM pokenexus.hunt_retreat_abandonments
+      WHERE player_id = $1 AND hunt_id = $2`,
+    [input.playerId, input.huntId],
+  );
+  return result.rows[0] ? mapRetreatAbandonment(result.rows[0]) : null;
+}
+
+export async function insertRetreatAbandonmentInTransaction(
+  client: HuntOrchestrationDbClient,
+  input: RetreatAbandonmentInsert,
+): Promise<
+  | { readonly status: "inserted"; readonly record: HuntRetreatAbandonmentRecord }
+  | { readonly status: "existing"; readonly record: HuntRetreatAbandonmentRecord }
+> {
+  if (
+    !Number.isSafeInteger(input.logicalTimeMs)
+    || input.logicalTimeMs < 0
+    || input.checkpointRowVersion < 0n
+    || !input.koInterventionPending
+    || input.battleId === null
+    || input.sideId === null
+    || input.combatantId === null
+  ) {
+    throw new Error("Retreat abandonment provenance is invalid");
+  }
+  const result = await client.query<RetreatAbandonmentRow>(
+    `INSERT INTO pokenexus.hunt_retreat_abandonments (
+       hunt_id, player_id, fact_version, disposition, hunt_run_identity,
+       logical_time_ms, checkpoint_id, checkpoint_row_version,
+       battle_id, side_id, combatant_id, ko_intervention_pending, created_at
+     ) VALUES (
+       $1,$2,1,'abandoned_by_retreat',$3,$4,$5,$6::bigint,$7,$8,$9,$10,transaction_timestamp()
+     )
+     ON CONFLICT (hunt_id) DO NOTHING
+     RETURNING ${RETREAT_ABANDONMENT_SELECT}`,
+    [
+      input.huntId,
+      input.playerId,
+      encode(input.huntRunIdentity, "huntRunIdentity"),
+      input.logicalTimeMs,
+      input.checkpointId,
+      input.checkpointRowVersion.toString(),
+      input.battleId === null ? null : encode(input.battleId, "battleId"),
+      input.sideId === null ? null : encode(input.sideId, "sideId"),
+      input.combatantId === null ? null : encode(input.combatantId, "combatantId"),
+      input.koInterventionPending,
+    ],
+  );
+  if (result.rows[0]) return { status: "inserted", record: mapRetreatAbandonment(result.rows[0]) };
+  const existing = await loadRetreatAbandonment(client, input);
+  if (!existing) throw new Error("Retreat abandonment conflict lost its existing provenance row");
+  const same = existing.huntRunIdentity === input.huntRunIdentity
+    && existing.logicalTimeMs === input.logicalTimeMs
+    && existing.checkpointId === input.checkpointId
+    && existing.checkpointRowVersion === input.checkpointRowVersion
+    && existing.battleId === input.battleId
+    && existing.sideId === input.sideId
+    && existing.combatantId === input.combatantId
+    && existing.koInterventionPending === input.koInterventionPending;
+  if (!same) {
+    throw new Error("Retreat abandonment Hunt identity conflicts with a different immutable envelope");
+  }
+  return { status: "existing", record: existing };
+}
+
+const RESOLVED_ENCOUNTER_ACTIVITY_SELECT = `
+  hunt_id, player_id, schema_version, encounter_ordinal::text, encounter_id,
+  resolved_logical_time_ms::text, encounter_disposition, activity_json,
+  canonical_payload, created_at
+`;
+
+type ResolvedEncounterActivityInsert = Omit<
+  HuntResolvedEncounterActivityRecord,
+  "schemaVersion" | "canonicalPayload" | "createdAt"
+>;
+
+export async function loadResolvedEncounterActivity(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly encounterId: string;
+  },
+): Promise<HuntResolvedEncounterActivityRecord | null> {
+  const result = await client.query<ResolvedEncounterActivityRow>(
+    `SELECT ${RESOLVED_ENCOUNTER_ACTIVITY_SELECT}
+       FROM pokenexus.hunt_resolved_encounter_activity
+      WHERE player_id = $1 AND hunt_id = $2 AND encounter_id = $3`,
+    [input.playerId, input.huntId, encode(input.encounterId, "encounterId")],
+  );
+  return result.rows[0] ? mapResolvedEncounterActivity(result.rows[0]) : null;
+}
+
+export async function insertResolvedEncounterActivityInTransaction(
+  client: HuntOrchestrationDbClient,
+  input: ResolvedEncounterActivityInsert,
+): Promise<
+  | { readonly status: "inserted"; readonly record: HuntResolvedEncounterActivityRecord }
+  | { readonly status: "existing"; readonly record: HuntResolvedEncounterActivityRecord }
+> {
+  if (
+    !Number.isSafeInteger(input.encounterOrdinal)
+    || input.encounterOrdinal < 1
+    || !Number.isSafeInteger(input.resolvedLogicalTimeMs)
+    || input.resolvedLogicalTimeMs < 0
+  ) {
+    throw new Error("Hunt activity identity is outside the supported domain");
+  }
+  const canonicalPayload = Buffer.from(canonicalAutomationJson(input.activityJson), "utf8");
+  const result = await client.query<ResolvedEncounterActivityRow>(
+    `INSERT INTO pokenexus.hunt_resolved_encounter_activity (
+       hunt_id, player_id, schema_version, encounter_ordinal, encounter_id,
+       resolved_logical_time_ms, encounter_disposition, activity_json,
+       canonical_payload, created_at
+     ) VALUES (
+       $1,$2,'pokenexus.hunt-activity.v1',$3,$4,$5,$6,$7::jsonb,$8,transaction_timestamp()
+     )
+     ON CONFLICT (hunt_id, encounter_ordinal) DO NOTHING
+     RETURNING ${RESOLVED_ENCOUNTER_ACTIVITY_SELECT}`,
+    [
+      input.huntId,
+      input.playerId,
+      input.encounterOrdinal,
+      encode(input.encounterId, "encounterId"),
+      input.resolvedLogicalTimeMs,
+      input.encounterDisposition,
+      JSON.stringify(input.activityJson),
+      canonicalPayload,
+    ],
+  );
+  if (result.rows[0]) return { status: "inserted", record: mapResolvedEncounterActivity(result.rows[0]) };
+  const existing = await loadResolvedEncounterActivity(client, input);
+  if (!existing) throw new Error("Hunt activity conflict lost its existing immutable row");
+  if (
+    existing.encounterOrdinal !== input.encounterOrdinal
+    || existing.resolvedLogicalTimeMs !== input.resolvedLogicalTimeMs
+    || existing.encounterDisposition !== input.encounterDisposition
+    || Buffer.compare(Buffer.from(existing.canonicalPayload), canonicalPayload) !== 0
+  ) {
+    throw new Error("Hunt activity retry conflicts with a different immutable payload");
+  }
+  return { status: "existing", record: existing };
+}
+
+export async function loadResolvedEncounterActivityPage(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly huntId: string;
+    readonly afterEncounterOrdinal: number | null;
+    readonly limit: number;
+  },
+): Promise<{
+  readonly records: readonly HuntResolvedEncounterActivityRecord[];
+  readonly hasMore: boolean;
+}> {
+  if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 64) {
+    throw new Error("Hunt activity page limit must be in 1..64");
+  }
+  if (
+    input.afterEncounterOrdinal !== null
+    && (!Number.isSafeInteger(input.afterEncounterOrdinal) || input.afterEncounterOrdinal < 1)
+  ) {
+    throw new Error("Hunt activity cursor ordinal is invalid");
+  }
+  const result = await client.query<ResolvedEncounterActivityRow>(
+    `SELECT ${RESOLVED_ENCOUNTER_ACTIVITY_SELECT}
+       FROM pokenexus.hunt_resolved_encounter_activity
+      WHERE player_id = $1
+        AND hunt_id = $2
+        AND ($3::bigint IS NULL OR encounter_ordinal > $3::bigint)
+      ORDER BY encounter_ordinal
+      LIMIT $4`,
+    [
+      input.playerId,
+      input.huntId,
+      input.afterEncounterOrdinal,
+      input.limit + 1,
+    ],
+  );
+  const hasMore = result.rows.length > input.limit;
+  return {
+    records: result.rows.slice(0, input.limit).map(mapResolvedEncounterActivity),
+    hasMore,
+  };
 }
 
 export async function loadPendingManualCapture(
@@ -1500,5 +2757,60 @@ export async function persistOwnedHuntCheckpointInTransaction(
     ],
   );
   if (!updated.rows[0]) throw new Error("Locked Hunt checkpoint OCC update unexpectedly failed");
+  return { status: "updated", rowVersion: BigInt(updated.rows[0].row_version) };
+}
+
+export async function rebaseOwnedHuntCheckpointAnchorInTransaction(
+  client: HuntOrchestrationDbClient,
+  input: {
+    readonly playerId: string;
+    readonly checkpointId: string;
+    readonly expectedRowVersion: bigint;
+    readonly expectedLogicalTimeMs: number;
+    readonly logicalTimeAnchorAt: Date;
+  },
+): Promise<
+  | { readonly status: "updated"; readonly rowVersion: bigint }
+  | { readonly status: "stale"; readonly rowVersion: bigint; readonly logicalTimeMs: number }
+  | { readonly status: "not_found" }
+> {
+  if (!Number.isSafeInteger(input.expectedLogicalTimeMs) || input.expectedLogicalTimeMs < 0) {
+    throw new Error("Hunt checkpoint rebase logical time must be a non-negative safe integer");
+  }
+  if (!Number.isSafeInteger(input.logicalTimeAnchorAt.getTime())) {
+    throw new Error("Hunt checkpoint rebase anchor must be a valid safe-integer Date");
+  }
+  const locked = await client.query<{ row_version: string; logical_time_ms: string }>(
+    `SELECT row_version::text, logical_time_ms::text
+       FROM pokenexus.hunt_checkpoints
+      WHERE player_id = $1 AND checkpoint_id = $2
+      FOR UPDATE`,
+    [input.playerId, input.checkpointId],
+  );
+  const row = locked.rows[0];
+  if (!row) return { status: "not_found" };
+  const currentRowVersion = BigInt(row.row_version);
+  const currentLogicalTimeMs = Number(row.logical_time_ms);
+  if (
+    currentRowVersion !== input.expectedRowVersion
+    || currentLogicalTimeMs !== input.expectedLogicalTimeMs
+  ) {
+    return { status: "stale", rowVersion: currentRowVersion, logicalTimeMs: currentLogicalTimeMs };
+  }
+  const updated = await client.query<{ row_version: string }>(
+    `UPDATE pokenexus.hunt_checkpoints
+        SET logical_time_anchor_at = $4,
+            row_version = row_version + 1,
+            updated_at = transaction_timestamp()
+      WHERE player_id = $1 AND checkpoint_id = $2 AND row_version = $3::bigint
+      RETURNING row_version::text`,
+    [
+      input.playerId,
+      input.checkpointId,
+      input.expectedRowVersion.toString(),
+      input.logicalTimeAnchorAt,
+    ],
+  );
+  if (!updated.rows[0]) throw new Error("Locked Hunt checkpoint anchor rebase unexpectedly failed");
   return { status: "updated", rowVersion: BigInt(updated.rows[0].row_version) };
 }

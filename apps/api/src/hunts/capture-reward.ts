@@ -19,7 +19,7 @@ import {
   resolveCaptureAttemptV1,
   resolveSoloHuntEncounterReward,
   selectBootstrapMoveLoadout,
-  isGeneticCombatRulesVersion,
+  usesGeneticCombatSemantics,
   type CaptureBallRuleV1,
   type DeterministicRngState,
   type EncounterRewardInputV1,
@@ -368,7 +368,7 @@ export class SoloHuntCaptureResolutionService {
           species.baseStats,
           snapshot.ivs,
           snapshot.level,
-          isGeneticCombatRulesVersion(creation.pair.rulesVersion)
+          usesGeneticCombatSemantics(creation.pair.rulesVersion)
             ? snapshot.birthGeneticBonuses
             : undefined,
         )
