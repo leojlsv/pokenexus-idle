@@ -14,6 +14,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@pokenexus/game-data": "workspace:*",
     "@pokenexus/game-protocol": "workspace:*",
     "@pokenexus/game-types": "workspace:*",
     "pixi.js": "^8.6.6",

@@ -1,8 +1,11 @@
 import { useId } from "react";
 import type {
   CombatPresentationBootstrapEnvelopeV1,
+  CombatPresentationBootstrapEnvelopeV2,
   CombatPresentationContinuationEnvelopeV1,
+  CombatPresentationContinuationEnvelopeV2,
   CombatPresentationEventV1,
+  CombatPresentationEventV2,
   CombatPresentationParticipantV1,
 } from "@pokenexus/game-protocol";
 import "./combat-card.css";
@@ -34,11 +37,19 @@ export interface CardCombatState {
   readonly outcome?: string;
 }
 
+export type CardCombatBootstrapEnvelope =
+  | CombatPresentationBootstrapEnvelopeV1
+  | CombatPresentationBootstrapEnvelopeV2;
+export type CardCombatContinuationEnvelope =
+  | CombatPresentationContinuationEnvelopeV1
+  | CombatPresentationContinuationEnvelopeV2;
+export type CardCombatEvent = CombatPresentationEventV1 | CombatPresentationEventV2;
+
 function assertEnvelopeBinding(
   battleId: string,
   schemaVersion: string,
   sourceSchemaVersion: string,
-  envelope: CombatPresentationContinuationEnvelopeV1,
+  envelope: CardCombatContinuationEnvelope,
 ): void {
   if (
     envelope.battleId !== battleId ||
@@ -82,7 +93,7 @@ function withParticipant(
   return next;
 }
 
-export function combatPresentationEventText(event: CombatPresentationEventV1): string {
+export function combatPresentationEventText(event: CardCombatEvent): string {
   switch (event.kind) {
     case "BattleStarted":
       return "Battle started.";
@@ -102,6 +113,10 @@ export function combatPresentationEventText(event: CombatPresentationEventV1): s
       return `${event.combatantId} was knocked out.`;
     case "CombatantActivated":
       return `${event.combatantId} became active.`;
+    case "CombatantRevived":
+      return event.hpChange.visibility === "exact"
+        ? `${event.combatantId} was revived at ${event.hpChange.resultingHp} HP.`
+        : `${event.combatantId} was revived.`;
     case "BattleEnded":
       return event.outcome.kind === "draw" ? "Battle ended in a draw." : `${event.outcome.winnerSideId} won the battle.`;
     case "EffectApplied":
@@ -129,7 +144,7 @@ export function combatPresentationEventText(event: CombatPresentationEventV1): s
 
 function applyEvent(
   state: CardCombatState,
-  event: CombatPresentationEventV1,
+  event: CardCombatEvent,
 ): CardCombatState {
   let participants = state.participants;
   let outcome = state.outcome;
@@ -149,6 +164,30 @@ function applyEvent(
         ...participant,
         active: true,
       }));
+      break;
+    case "CombatantRevived":
+      participants = withParticipant(participants, event.combatantId, (participant) => {
+        if (event.hpChange.visibility === "exact") {
+          if (participant.vitality.visibility === "hidden" || participant.ownedMaxHp === undefined) {
+            throw new Error("numeric revived HP cannot target hidden vitality");
+          }
+          return {
+            ...participant,
+            vitality: {
+              visibility: "exact",
+              state: "conscious",
+              currentHp: event.hpChange.resultingHp,
+              maxHp: participant.ownedMaxHp,
+            },
+          };
+        }
+        return {
+          ...participant,
+          vitality: participant.vitality.visibility === "hidden"
+            ? { visibility: "hidden", state: "conscious" }
+            : { visibility: "unavailable", state: "conscious" },
+        };
+      });
       break;
     case "DamageApplied":
     case "HealingApplied":
@@ -219,7 +258,7 @@ function applyEvent(
 }
 
 export function createCardCombatState(
-  bootstrap: CombatPresentationBootstrapEnvelopeV1,
+  bootstrap: CardCombatBootstrapEnvelope,
 ): CardCombatState {
   const activeIds = new Set(bootstrap.initialSides.flatMap(({ activeCombatantIds }) => activeCombatantIds));
   const participantsById = new Map(
@@ -241,8 +280,8 @@ export function createCardCombatState(
 
 export function applyCardCombatContinuation(
   state: CardCombatState,
-  bootstrap: CombatPresentationBootstrapEnvelopeV1,
-  continuation: CombatPresentationContinuationEnvelopeV1,
+  bootstrap: CardCombatBootstrapEnvelope,
+  continuation: CardCombatContinuationEnvelope,
 ): CardCombatState {
   assertEnvelopeBinding(
     bootstrap.battleId,
@@ -257,8 +296,8 @@ export function applyCardCombatContinuation(
 }
 
 export function buildCardCombatState(
-  bootstrap: CombatPresentationBootstrapEnvelopeV1,
-  continuations: ReadonlyArray<CombatPresentationContinuationEnvelopeV1> = [],
+  bootstrap: CardCombatBootstrapEnvelope,
+  continuations: ReadonlyArray<CardCombatContinuationEnvelope> = [],
 ): CardCombatState {
   let state = createCardCombatState(bootstrap);
   for (const continuation of continuations) {
@@ -315,8 +354,8 @@ export function CardCombatRenderer({
   bootstrap,
   continuations = [],
 }: {
-  bootstrap: CombatPresentationBootstrapEnvelopeV1;
-  continuations?: ReadonlyArray<CombatPresentationContinuationEnvelopeV1>;
+  bootstrap: CardCombatBootstrapEnvelope;
+  continuations?: ReadonlyArray<CardCombatContinuationEnvelope>;
 }) {
   const headingId = useId();
   const state = buildCardCombatState(bootstrap, continuations);

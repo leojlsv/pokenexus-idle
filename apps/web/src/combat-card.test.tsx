@@ -16,7 +16,9 @@ import {
   projectCombatPresentationBootstrapV1,
   projectCombatPresentationContinuationV1,
   type CombatPresentationBootstrapEnvelopeV1,
+  type CombatPresentationBootstrapEnvelopeV2,
   type CombatPresentationContinuationEnvelopeV1,
+  type CombatPresentationContinuationEnvelopeV2,
   type CombatPresentationEventV1,
   type CombatPresentationContinuationContextV1,
 } from "@pokenexus/game-protocol";
@@ -366,6 +368,41 @@ describe("Card combat renderer foundation", () => {
       visibility: "unavailable",
       state: "ko",
     });
+  });
+
+  it("supports forward v2 CombatantRevived without changing historical v1 handling", () => {
+    const historical = COMBAT_PRESENTATION_FIXTURE_V1.bootstrap;
+    const bootstrap: CombatPresentationBootstrapEnvelopeV2 = {
+      ...historical,
+      schemaVersion: "pokenexus.combat-presentation.v2",
+      events: historical.events,
+    };
+    const continuation: CombatPresentationContinuationEnvelopeV2 = {
+      kind: "continuation",
+      schemaVersion: bootstrap.schemaVersion,
+      sourceCombatEventSchemaVersion: bootstrap.sourceCombatEventSchemaVersion,
+      battleId: bootstrap.battleId,
+      events: [
+        { kind: "CombatantKO", sequence: 20, combatTimeMs: 1_000, combatantId: "combatant:owned" },
+        {
+          kind: "CombatantRevived",
+          sequence: 21,
+          combatTimeMs: 1_000,
+          combatantId: "combatant:owned",
+          hpChange: { visibility: "exact", amount: 7, resultingHp: 7 },
+        },
+      ],
+    };
+
+    const state = buildCardCombatState(bootstrap, [continuation]);
+    expect(state.participants.find(({ combatantId }) => combatantId === "combatant:owned")?.vitality).toEqual({
+      visibility: "exact",
+      state: "conscious",
+      currentHp: 7,
+      maxHp: 30,
+    });
+    expect(state.eventFeed.at(-1)).toBe("combatant:owned was revived at 7 HP.");
+    expect(buildCardCombatState(historical, COMBAT_PRESENTATION_FIXTURE_V1.continuations)).toBeDefined();
   });
 
   it("rejects continuations for a different battle/schema binding", () => {

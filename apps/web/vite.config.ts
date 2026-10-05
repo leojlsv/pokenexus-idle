@@ -7,6 +7,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: "@pokenexus/game-data/runtime",
+        replacement: fileURLToPath(new URL("../../packages/game-data/src/runtime.ts", import.meta.url)),
+      },
+      {
         find: "@pokenexus/game-protocol/testing",
         replacement: fileURLToPath(new URL("../../packages/game-protocol/src/testing.ts", import.meta.url)),
       },

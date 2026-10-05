@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ClientSessionProvider, useClientSession } from "./client-session";
 import { EmptyState, ErrorState, LoadingState } from "./common-states";
+import { HuntApi } from "./hunt-api";
+import { ActiveHuntPage, HuntOverviewPage, HuntResultPage } from "./hunt-pages";
+import { HuntSettingsPage } from "./hunt-settings";
 import { primaryNavigation, routeDocumentTitle, useBrowserRoute } from "./routing";
 import type { AppRoute } from "./routing";
 import { readRendererPreference, writeRendererPreference } from "./renderer-preference";
@@ -8,6 +11,8 @@ import type { RendererPreference } from "./renderer-preference";
 import "./app.css";
 
 type Navigate = (href: string) => void;
+const defaultHuntApi = new HuntApi();
+const ignoreSessionLoss = () => undefined;
 
 function navigate(href: string): void {
   if (window.location.pathname === href) return;
@@ -42,16 +47,16 @@ function AppLink({ href, children, className, current }: {
 
 function pageDescription(route: AppRoute): string {
   switch (route.id) {
-    case "hunt": return "Choose a Zone and Hunt from authoritative game data.";
-    case "hunt-active": return "Your active Hunt is reconstructed from authoritative Hunt state.";
-    case "hunt-result": return "Completed Hunt results appear here when a result is available.";
+    case "hunt": return "Choose a published Hunt and saved Team, or use HUB PokéCenter management.";
+    case "hunt-active": return "Follow committed Hunt state and resolved activity without client-side combat simulation.";
+    case "hunt-result": return "Review authoritative resolved Encounter activity after returning to HUB.";
     case "pokemon": return "Browse your owned Pokémon when the management surface is available.";
     case "pokemon-detail": return "Pokémon detail and configuration are opened by stable instance identity.";
     case "teams": return "Saved Team management is available from this destination.";
     case "team-detail": return "A saved Team is addressed by its stable Team identity.";
     case "inventory": return "Review authoritative owned item quantities.";
     case "settings": return "Presentation preferences on this page are stored only on this device.";
-    case "hunt-settings": return "Hunt automation settings use authoritative server state when implemented.";
+    case "hunt-settings": return "Manage server-authoritative Capture, Potion and Revive automation policies.";
     case "not-found": return "This application route does not exist.";
   }
 }
@@ -72,11 +77,22 @@ function routeTitle(route: AppRoute): string {
   }
 }
 
-function RouteView({ route, preference, onPreferenceChange, onNavigate }: {
+function RouteView({
+  route,
+  preference,
+  onPreferenceChange,
+  onNavigate,
+  api = defaultHuntApi,
+  csrfToken = "",
+  onSessionLost = ignoreSessionLoss,
+}: {
   route: AppRoute;
   preference: RendererPreference;
   onPreferenceChange: (preference: RendererPreference) => void;
   onNavigate: Navigate;
+  api?: HuntApi;
+  csrfToken?: string;
+  onSessionLost?: () => void;
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -85,6 +101,17 @@ function RouteView({ route, preference, onPreferenceChange, onNavigate }: {
     headingRef.current?.focus({ preventScroll: true });
   }, [route.key]);
 
+  let routeContent: React.ReactNode = null;
+  if (route.id === "hunt") {
+    routeContent = <HuntOverviewPage api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
+  } else if (route.id === "hunt-active") {
+    routeContent = <ActiveHuntPage api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
+  } else if (route.id === "hunt-result") {
+    routeContent = <HuntResultPage api={api} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
+  } else if (route.id === "hunt-settings") {
+    routeContent = <HuntSettingsPage api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} />;
+  }
+
   return (
     <section className="page" aria-labelledby="page-title">
       <div className="page__header">
@@ -92,6 +119,8 @@ function RouteView({ route, preference, onPreferenceChange, onNavigate }: {
         <h1 id="page-title" ref={headingRef} tabIndex={-1}>{routeTitle(route)}</h1>
         <p>{pageDescription(route)}</p>
       </div>
+
+      {routeContent}
 
       {route.id === "settings" ? (
         <div className="panel" aria-labelledby="renderer-preference-title">
@@ -118,18 +147,29 @@ function RouteView({ route, preference, onPreferenceChange, onNavigate }: {
 
       {route.id === "not-found" ? (
         <button className="button" type="button" onClick={() => onNavigate("/hunt")}>Go to Hunt</button>
-      ) : (
+      ) : routeContent || route.id === "settings" ? null : (
         <EmptyState title="Area unavailable" message="This destination has no content in the current client version." />
       )}
     </section>
   );
 }
 
-export function AppShell({ route, preference, onPreferenceChange, onNavigate = navigate }: {
+export function AppShell({
+  route,
+  preference,
+  onPreferenceChange,
+  onNavigate = navigate,
+  api,
+  csrfToken,
+  onSessionLost,
+}: {
   route: AppRoute;
   preference: RendererPreference;
   onPreferenceChange: (preference: RendererPreference) => void;
   onNavigate?: Navigate;
+  api?: HuntApi;
+  csrfToken?: string;
+  onSessionLost?: () => void;
 }) {
   const primaryId = route.id === "hunt-settings" ? null : route.id.startsWith("hunt") ? "hunt" : route.id.startsWith("pokemon")
     ? "pokemon" : route.id.startsWith("team") ? "teams" : route.id;
@@ -154,14 +194,16 @@ export function AppShell({ route, preference, onPreferenceChange, onNavigate = n
       </nav>
 
       <main id="main-content" className="main-content" tabIndex={-1}>
-        <RouteView route={route} preference={preference} onPreferenceChange={onPreferenceChange} onNavigate={onNavigate} />
+        <RouteView route={route} preference={preference} onPreferenceChange={onPreferenceChange} onNavigate={onNavigate}
+          api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} />
       </main>
     </div>
   );
 }
 
-function AuthenticatedApp() {
+function AuthenticatedApp({ csrfToken, onSessionLost }: { readonly csrfToken: string; readonly onSessionLost: () => void }) {
   const route = useBrowserRoute();
+  const api = useMemo(() => new HuntApi(), []);
   const [preference, setPreference] = useState<RendererPreference>(() => readRendererPreference());
 
   const updatePreference = (next: RendererPreference) => {
@@ -169,7 +211,8 @@ function AuthenticatedApp() {
     writeRendererPreference(next);
   };
 
-  return <AppShell route={route} preference={preference} onPreferenceChange={updatePreference} />;
+  return <AppShell route={route} preference={preference} onPreferenceChange={updatePreference}
+    api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} />;
 }
 
 function SessionBoundary() {
@@ -192,7 +235,7 @@ function SessionBoundary() {
       </main>
     );
   }
-  return <AuthenticatedApp />;
+  return <AuthenticatedApp csrfToken={session.csrfToken} onSessionLost={session.retry} />;
 }
 
 export function App() {
