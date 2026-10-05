@@ -1219,7 +1219,7 @@ export async function terminalizeSoloHuntInTransaction(
     readonly recoveryDurationMs: number;
     readonly terminalAt?: Date | "database_clock";
   },
-): Promise<{ readonly hunt: SoloHuntRecord; readonly recoveryReadyAt: Date }> {
+): Promise<{ readonly hunt: SoloHuntRecord; readonly recoveryReadyAt: Date; readonly presentationTerminalRecordedAt: string | null }> {
   const root = await ensureAndLockPlayerHuntRoot(client, input.playerId);
   if (!root) throw new Error("Hunt terminalization lost Player Hunt root");
   const locked = await client.query<HuntRow & { logical_time_anchor_at: Date }>(
@@ -1237,7 +1237,7 @@ export async function terminalizeSoloHuntInTransaction(
   const existing = mapHunt(row);
   if (existing.terminalAt) {
     if (!root.recoveryReadyAt) throw new Error("Terminal Hunt is missing Player recovery anchor");
-    return { hunt: existing, recoveryReadyAt: root.recoveryReadyAt };
+    return { hunt: existing, recoveryReadyAt: root.recoveryReadyAt, presentationTerminalRecordedAt: null };
   }
   if (root.activeHuntId !== input.huntId) {
     throw new Error("Active Hunt terminalization lost current-Hunt invariant");
@@ -1246,7 +1246,7 @@ export async function terminalizeSoloHuntInTransaction(
   const fallbackTerminalBoundaryAt = useDatabaseClock
     ? null
     : input.terminalAt ?? row.logical_time_anchor_at;
-  const terminalized = await client.query<HuntRow>(
+  const terminalized = await client.query<HuntRow & { presentation_terminal_recorded_at: string }>(
     `WITH terminal_boundary AS (
        SELECT CASE
                 WHEN $3::boolean THEN clock_timestamp()
@@ -1260,7 +1260,9 @@ export async function terminalizeSoloHuntInTransaction(
       WHERE h.player_id = $1 AND h.hunt_id = $2 AND h.terminal_at IS NULL
       RETURNING h.hunt_id, h.player_id, h.checkpoint_id, h.hunt_definition_id, h.zone_id,
                 h.recovery_duration_ms::text, h.started_at, h.terminal_at, h.terminal_reason,
-                h.initial_policy_version, h.row_version::text`,
+                h.initial_policy_version, h.row_version::text,
+                to_char(statement_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US') || '+00:00'
+                  AS presentation_terminal_recorded_at`,
     [
       input.playerId,
       input.huntId,
@@ -1283,7 +1285,7 @@ export async function terminalizeSoloHuntInTransaction(
   );
   const recoveryReadyAt = recovery.rows[0]?.recovery_ready_at;
   if (!recoveryReadyAt) throw new Error("Locked Hunt terminalization failed to release Player active-Hunt root");
-  return { hunt: mapHunt(terminalHunt), recoveryReadyAt };
+  return { hunt: mapHunt(terminalHunt), recoveryReadyAt, presentationTerminalRecordedAt: terminalHunt.presentation_terminal_recorded_at };
 }
 
 export async function loadCurrentAutoCapturePolicy(
@@ -2480,9 +2482,9 @@ export async function loadEarliestIncompleteEncounterBoundary(
             reward_resolution_id, automatic_disposition, selected_item_id,
             automatic_attempt_correlation, automatic_capture_success, automatic_capture_shiny,
             manual_disposition
-       FROM pokenexus.hunt_encounter_boundaries
-      WHERE hunt_id = $1 AND boundary_status <> 'committed'
-      ORDER BY encounter_ordinal
+       FROM pokenexus.hunt_encounter_boundaries b
+      WHERE b.hunt_id = $1 AND b.boundary_status <> 'committed'
+      ORDER BY b.encounter_ordinal
       LIMIT 1${forUpdate ? " FOR UPDATE" : ""}`,
     [huntId],
   );
@@ -2617,10 +2619,10 @@ export async function loadEarliestDueHealingCommand(
             submission_cutoff_logical_time_ms::text, submission_phase, submission_encounter_id,
             due_logical_time_ms::text, acceptance_sequence::text, heal_status,
             result_reason, healed_hp, resolved_at
-       FROM pokenexus.hunt_healing_commands
-      WHERE source_hunt_id = $1 AND heal_status = 'scheduled'
-        AND due_logical_time_ms IS NOT NULL AND due_logical_time_ms <= $2
-      ORDER BY due_logical_time_ms, acceptance_sequence
+       FROM pokenexus.hunt_healing_commands h
+      WHERE h.source_hunt_id = $1 AND h.heal_status = 'scheduled'
+        AND h.due_logical_time_ms IS NOT NULL AND h.due_logical_time_ms <= $2
+      ORDER BY h.due_logical_time_ms, h.acceptance_sequence
       LIMIT 1${forUpdate ? " FOR UPDATE" : ""}`,
     [input.huntId, input.logicalTimeMs],
   );
@@ -2638,17 +2640,17 @@ export async function loadEarliestHealingAdvanceBlocker(
             submission_cutoff_logical_time_ms::text, submission_phase, submission_encounter_id,
             due_logical_time_ms::text, acceptance_sequence::text, heal_status,
             result_reason, healed_hp, resolved_at
-       FROM pokenexus.hunt_healing_commands
-      WHERE source_hunt_id = $1 AND heal_status = 'scheduled'
+       FROM pokenexus.hunt_healing_commands h
+      WHERE h.source_hunt_id = $1 AND h.heal_status = 'scheduled'
         AND (
-          (submission_phase IS NULL AND submission_cutoff_logical_time_ms <= $2)
-          OR (due_logical_time_ms IS NOT NULL AND due_logical_time_ms <= $2)
+          (h.submission_phase IS NULL AND h.submission_cutoff_logical_time_ms <= $2)
+          OR (h.due_logical_time_ms IS NOT NULL AND h.due_logical_time_ms <= $2)
         )
       ORDER BY CASE
-                 WHEN submission_phase IS NULL THEN submission_cutoff_logical_time_ms
-                 ELSE due_logical_time_ms
+                 WHEN h.submission_phase IS NULL THEN h.submission_cutoff_logical_time_ms
+                 ELSE h.due_logical_time_ms
                END,
-               acceptance_sequence
+               h.acceptance_sequence
       LIMIT 1${forUpdate ? " FOR UPDATE" : ""}`,
     [input.huntId, input.logicalTimeMs],
   );

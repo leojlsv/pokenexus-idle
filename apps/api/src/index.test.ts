@@ -7,4 +7,10 @@ describe("api entrypoint", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("PokeNexus API");
   });
+
+  it("does not expose the TASK-103 presentation feed through the deployed router", () => {
+    expect(app.routes.some((route) =>
+      route.method === "GET" && route.path === "/player/hunts/:huntId/presentation",
+    )).toBe(false);
+  });
 });

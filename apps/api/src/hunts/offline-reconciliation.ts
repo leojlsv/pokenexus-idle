@@ -1,4 +1,7 @@
-import { SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3 } from "@pokenexus/game-core";
+import {
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
+} from "@pokenexus/game-core";
 
 export const FORWARD_OFFLINE_PRODUCTIVE_CAP_MS = 8 * 60 * 60 * 1000;
 
@@ -27,12 +30,13 @@ export function deriveFrozenProductiveTarget(input: {
   }
   const anchorMs = safeTime(input.logicalTimeAnchorAt, "logicalTimeAnchorAt");
   const serverNowMs = safeTime(input.serverNow, "serverNow");
-  const forwardV3 = input.checkpointSchemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3;
-  if (forwardV3 && serverNowMs < anchorMs) {
-    throw new Error("forward V3 return database time cannot precede the committed wall-clock anchor");
+  const managementFirst = input.checkpointSchemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+    || input.checkpointSchemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4;
+  if (managementFirst && serverNowMs < anchorMs) {
+    throw new Error("forward management-first return database time cannot precede the committed wall-clock anchor");
   }
   const elapsedMs = Math.max(0, Math.floor(serverNowMs - anchorMs));
-  const productiveElapsedMs = forwardV3
+  const productiveElapsedMs = managementFirst
     ? Math.min(elapsedMs, FORWARD_OFFLINE_PRODUCTIVE_CAP_MS)
     : elapsedMs;
   const targetLogicalTimeMs = input.checkpointLogicalTimeMs + productiveElapsedMs;
@@ -44,6 +48,6 @@ export function deriveFrozenProductiveTarget(input: {
     targetWallClockAt: new Date(serverNowMs),
     elapsedMs,
     productiveElapsedMs,
-    capped: forwardV3 && elapsedMs > FORWARD_OFFLINE_PRODUCTIVE_CAP_MS,
+    capped: managementFirst && elapsedMs > FORWARD_OFFLINE_PRODUCTIVE_CAP_MS,
   };
 }

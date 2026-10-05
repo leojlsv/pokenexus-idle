@@ -1,4 +1,7 @@
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
+  canonicalPresentationJson,
   encodeOpaqueStringDbV1,
   claimPublicHuntCommandInTransaction,
   completePublicHuntCommandInTransaction,
@@ -19,6 +22,7 @@ import {
   loadEffectiveAutoRevivePolicyVersion,
   loadHealingCommandByCommandId,
   loadHuntCheckpoint,
+  loadHuntInputAuthority,
   loadInventory,
   loadOwnedSoloHunt,
   loadPendingManualCapture,
@@ -30,6 +34,7 @@ import {
   loadResolvedEncounterActivity,
   loadRewardResolutionById,
   loadRetreatAbandonment,
+  persistOwnedHuntCheckpointInTransaction,
   removeInventoryEntriesInTransaction,
   terminalizeSoloHuntInTransaction,
   withTransaction,
@@ -38,10 +43,14 @@ import {
 import { runMigrations } from "@pokenexus/database/migrations";
 import {
   advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff,
+  advanceSoloHuntToEncounterBoundaryOrCutoff,
   decodeSoloHuntCheckpoint,
+  encodeSoloHuntCheckpointV4,
   ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
+  GENETIC_COMBAT_RULES_VERSION_V1,
   MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
   MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
   type ResolvedCombatContext,
   type SoloHuntPendingEncounterSelection,
   type SoloHuntRuntimeInputs,
@@ -54,7 +63,12 @@ import {
   type HuntRuntimeAuthorityPort,
 } from "../src/hunts/application";
 import { hashNormalizedIntent } from "../src/hunts/protocol";
+import { createPresentationCursorCodec } from "../src/hunts/presentation-cursor";
+import { readHuntPresentationWithConsistentSnapshot } from "../src/hunts/presentation-read";
+import { publishCommittedHuntPresentation } from "../src/hunts/presentation-source";
 import { FORWARD_OFFLINE_PRODUCTIVE_CAP_MS } from "../src/hunts/offline-reconciliation";
+import { serializeHuntRuntimeInputsForPersistence } from "../src/hunts/runtime";
+import { createTask103RealHuntAuthority } from "./hunt-real-authority-test-fixture";
 
 const testDatabaseUrl = process.env.POKENEXUS_TEST_DATABASE_URL;
 if (!testDatabaseUrl) {
@@ -337,13 +351,17 @@ function lethalRuntimeInputs(
       "move:enemy": {
         ...enemyMove,
         targetScope,
-        power: 1_000,
+        power: 10_000,
       },
     },
   };
   return {
     ...inputs,
     context,
+    team: inputs.team.map((member) => ({
+      ...member,
+      baseStats: { ...member.baseStats, spe: 1 },
+    })),
     opponentTemplates: inputs.opponentTemplates.map((template) => ({
       ...template,
       rulesVersion: context.rulesVersion,
@@ -362,6 +380,7 @@ function application(): {
 }
 
 function applicationWithOptions(options: {
+  readonly presentationSourceEnabled?: boolean;
   readonly ballAuthority?: {
     readonly version: string;
     readonly balls: readonly {
@@ -420,9 +439,21 @@ function applicationWithOptions(options: {
         team.pokemon.map((pokemon) => pokemon.pokemonInstanceId),
         effectiveHuntDefinitionId,
       );
+      const sourceInputs = options.presentationSourceEnabled
+        ? {
+            ...baseInputs,
+            team: baseInputs.team.map((member) => {
+              const original = team.pokemon.find(
+                ({ pokemonInstanceId }) => pokemonInstanceId === member.pokemonInstanceId,
+              );
+              if (!original) throw new Error("fixture presentation Team lost original Pokémon authority");
+              return { ...member, shiny: original.individualization.shiny };
+            }),
+          }
+        : baseInputs;
       persisted = setPersisted(options.runtimeInputsTransform
-        ? options.runtimeInputsTransform(baseInputs)
-        : baseInputs);
+        ? options.runtimeInputsTransform(sourceInputs)
+        : sourceInputs);
       return {
         inputs: persisted,
         persistedInputs: {
@@ -469,11 +500,13 @@ function applicationWithOptions(options: {
       return {
         ...built,
         inputs: persisted,
-        persistedInputs: {
-          schemaVersion: "hunt-runtime-inputs-v3",
-          inputs: persisted,
-          individualizationRequired: true,
-        },
+        persistedInputs: options.presentationSourceEnabled
+          ? serializeHuntRuntimeInputsForPersistence(persisted) as unknown as Record<string, unknown>
+          : {
+              schemaVersion: "hunt-runtime-inputs-v3",
+              inputs: persisted,
+              individualizationRequired: true,
+            },
       };
     },
     async deriveCurrentTeamMaxHp(team) {
@@ -562,7 +595,9 @@ function applicationWithOptions(options: {
     },
   };
   return {
-    app: new HuntApplication(testDatabaseUrl!, ports),
+    app: new HuntApplication(testDatabaseUrl!, ports, {
+      presentationSourceEnabled: options.presentationSourceEnabled,
+    }),
     runtime() {
       if (!persisted) throw new Error("runtime fixture not initialized");
       return persisted;
@@ -575,6 +610,793 @@ function applicationWithOptions(options: {
 
 beforeEach(prepareSchema);
 afterAll(resetSchema);
+
+describe("TASK-103 forward V4/V2 presentation on real PostgreSQL", () => {
+  it("creates the V4/V2 stream atomically with Start and replays without duplicate presentation rows", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = applicationWithOptions({ presentationSourceEnabled: true });
+    const startKey = generateUuidV7();
+    const request = { huntDefinitionId: "hunt:test", teamId: seeded.teamId };
+
+    const started = await harness.app.start(seeded.playerId, startKey, request);
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+
+    const first = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const stream = await client.query<{
+        input_schema_version: string;
+        checkpoint_schema_version: string;
+        presentation_schema_version: string;
+        status: string;
+        published_event_index: string;
+      }>(
+        `SELECT input_schema_version, checkpoint_schema_version, presentation_schema_version,
+                status, published_event_index::text
+           FROM pokenexus.hunt_presentation_streams
+          WHERE player_id = $1 AND hunt_id = $2`,
+        [seeded.playerId, huntId],
+      );
+      const hunt = await loadOwnedSoloHunt(client, seeded.playerId, huntId);
+      if (!hunt) throw new Error("missing presentation-enabled Hunt after Start");
+      const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+      if (!checkpoint) throw new Error("missing presentation-enabled checkpoint after Start");
+      const events = await client.query<{
+        event_index: string;
+        public_event_json: Record<string, unknown>;
+        public_event_bytes: Buffer;
+        private_source_bytes: Buffer;
+      }>(
+        `SELECT event_index::text, public_event_json, public_event_bytes, private_source_bytes
+           FROM pokenexus.hunt_presentation_events
+          WHERE hunt_id = $1 ORDER BY event_index`,
+        [huntId],
+      );
+      return { stream: stream.rows[0], checkpoint, events: events.rows };
+    });
+
+    expect(first.stream).toMatchObject({
+      input_schema_version: "hunt-runtime-inputs-v4",
+      checkpoint_schema_version: "pokenexus.solo-hunt-checkpoint.v4",
+      presentation_schema_version: "pokenexus.combat-presentation.v2",
+      status: "available",
+    });
+    expect(first.checkpoint.schemaVersion).toBe("pokenexus.solo-hunt-checkpoint.v4");
+    expect(first.events.length).toBeGreaterThan(0);
+    expect(first.stream?.published_event_index).toBe(String(first.events.length));
+    expect(first.events[0]?.public_event_json).toMatchObject({ kind: "BattleStarted", sequence: 1 });
+    expect(first.events[0]?.public_event_bytes).toEqual(Buffer.from(
+      canonicalPresentationJson(first.events[0]!.public_event_json),
+    ));
+    expect(JSON.parse(first.events[0]!.private_source_bytes.toString("utf8"))).toMatchObject({
+      kind: "BattleStarted",
+      sequence: 1,
+    });
+
+    const replay = await harness.app.start(seeded.playerId, startKey, request);
+    expect(replay).toEqual(started);
+    const afterReplay = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query<{
+        event_index: string;
+        public_event_bytes: Buffer;
+        private_source_bytes: Buffer;
+      }>(
+        `SELECT event_index::text, public_event_bytes, private_source_bytes
+           FROM pokenexus.hunt_presentation_events
+          WHERE hunt_id = $1 ORDER BY event_index`,
+        [huntId],
+      ).then(({ rows }) => rows));
+    expect(afterReplay).toEqual(first.events.map((row) => ({
+      event_index: row.event_index,
+      public_event_bytes: row.public_event_bytes,
+      private_source_bytes: row.private_source_bytes,
+    })));
+
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing presentation-enabled Hunt before continuation");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '10 seconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+    const checkpointKey = generateUuidV7();
+    const continued = await settleBoundedCommand(
+      () => harness.app.checkpoint(seeded.playerId, checkpointKey, huntId),
+    );
+    expect(continued.httpStatus, JSON.stringify(continued.body)).toBe(200);
+    const afterContinuation = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const rows = await client.query<{
+        event_index: string;
+        public_event_bytes: Buffer;
+        private_source_bytes: Buffer;
+      }>(
+        `SELECT event_index::text, public_event_bytes, private_source_bytes
+           FROM pokenexus.hunt_presentation_events
+          WHERE hunt_id = $1 ORDER BY event_index`,
+        [huntId],
+      );
+      const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+      return { rows: rows.rows, checkpoint };
+    });
+    expect(afterContinuation.checkpoint?.schemaVersion).toBe("pokenexus.solo-hunt-checkpoint.v4");
+    expect(afterContinuation.rows.length).toBeGreaterThan(first.events.length);
+
+    const continuedReplay = await harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+    expect(continuedReplay).toEqual(continued);
+    const afterContinuationReplay = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query<{
+        event_index: string;
+        public_event_bytes: Buffer;
+        private_source_bytes: Buffer;
+      }>(
+        `SELECT event_index::text, public_event_bytes, private_source_bytes
+           FROM pokenexus.hunt_presentation_events
+          WHERE hunt_id = $1 ORDER BY event_index`,
+        [huntId],
+      ).then(({ rows }) => rows));
+    expect(afterContinuationReplay).toEqual(afterContinuation.rows);
+
+    const retreatKey = generateUuidV7();
+    const terminal = await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, retreatKey, huntId),
+    );
+    expect(terminal).toMatchObject({
+      httpStatus: 200,
+      body: { status: "terminal", terminalReason: "retreat" },
+    });
+    const sealed = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const stream = await client.query<{
+        status: string;
+        is_terminal: boolean;
+        presentation_terminal_recorded_at: Date | null;
+        presentation_terminal_recorded_at_ceil_ms: string | null;
+        published_event_index: string;
+      }>(
+        `SELECT status, is_terminal, presentation_terminal_recorded_at,
+                CEIL(EXTRACT(EPOCH FROM presentation_terminal_recorded_at) * 1000)::bigint::text
+                  AS presentation_terminal_recorded_at_ceil_ms,
+                published_event_index::text
+           FROM pokenexus.hunt_presentation_streams
+          WHERE player_id = $1 AND hunt_id = $2`,
+        [seeded.playerId, huntId],
+      );
+      const events = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.hunt_presentation_events WHERE hunt_id = $1",
+        [huntId],
+      );
+      return { stream: stream.rows[0], eventCount: events.rows[0]?.count };
+    });
+    expect(sealed.stream).toMatchObject({ status: "available", is_terminal: true });
+    expect(sealed.stream?.presentation_terminal_recorded_at).toBeInstanceOf(Date);
+    expect(sealed.stream?.published_event_index).toBe(sealed.eventCount);
+
+    const terminalRecordedAt = sealed.stream?.presentation_terminal_recorded_at;
+    if (!terminalRecordedAt) throw new Error("missing terminal presentation retention anchor");
+    const cursorCodec = createPresentationCursorCodec("current", {
+      current: new Uint8Array(32).fill(63),
+    });
+    const terminalCeilMs = sealed.stream?.presentation_terminal_recorded_at_ceil_ms;
+    if (!terminalCeilMs) throw new Error("missing terminal presentation retention millisecond ceiling");
+    const expiryMs = Number(BigInt(terminalCeilMs) + 30n * 24n * 60n * 60n * 1000n);
+    const retained = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      readHuntPresentationWithConsistentSnapshot(client, {
+        playerId: seeded.playerId,
+        huntId,
+        cursorCodec,
+        nowMs: expiryMs - 1,
+        limit: 1,
+      }));
+    expect(retained.httpStatus).toBe(200);
+    expect((retained.body as { stream: { isTerminal: boolean } }).stream.isTerminal).toBe(true);
+    const expired = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      readHuntPresentationWithConsistentSnapshot(client, {
+        playerId: seeded.playerId,
+        huntId,
+        cursorCodec,
+        nowMs: expiryMs,
+        limit: 1,
+      }));
+    expect(expired).toEqual({ httpStatus: 410, body: { error: "presentation_expired" } });
+
+    const terminalReplay = await harness.app.retreat(seeded.playerId, retreatKey, huntId);
+    expect(terminalReplay).toEqual(terminal);
+    const afterTerminalReplay = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const count = await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.hunt_presentation_events WHERE hunt_id = $1",
+        [huntId],
+      );
+      const stream = await client.query<{ presentation_terminal_recorded_at: Date | null }>(
+        "SELECT presentation_terminal_recorded_at FROM pokenexus.hunt_presentation_streams WHERE hunt_id = $1",
+        [huntId],
+      );
+      return { count: count.rows[0]?.count, terminalRecordedAt: stream.rows[0]?.presentation_terminal_recorded_at };
+    });
+    expect(afterTerminalReplay.count).toBe(sealed.eventCount);
+    expect(afterTerminalReplay.terminalRecordedAt).toEqual(terminalRecordedAt);
+  });
+
+  it("publishes only the winning V4 checkpoint CAS and rolls back a late presentation abort", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = applicationWithOptions({
+      presentationSourceEnabled: true,
+      runtimeInputsTransform: (inputs) => ({
+        ...inputs,
+        context: {
+          ...inputs.context,
+          typeChart: {
+            ...inputs.context.typeChart,
+            normal: { ...(inputs.context.typeChart.normal ?? {}), normal: 0 },
+          },
+        },
+      }),
+    });
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing V4 OCC Hunt fixture");
+
+    const before = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      events: await client.query<{ event_index: string; private_source_bytes: Buffer }>(
+        `SELECT e.event_index::text, e.private_source_bytes
+           FROM pokenexus.hunt_presentation_events e
+          WHERE e.hunt_id = $1 ORDER BY e.event_index`,
+        [huntId],
+      ).then(({ rows }) => rows),
+    }));
+    if (!before.checkpoint) throw new Error("missing V4 OCC checkpoint");
+    const decoded = decodeSoloHuntCheckpoint(before.checkpoint.stateBytes);
+    expect(decoded.accepted).toBe(true);
+    if (!decoded.accepted) return;
+    const advanced = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+      decoded.state,
+      harness.runtime(),
+      12_000,
+      { skipInitialAutomationBoundary: true },
+    );
+    expect(advanced.accepted).toBe(true);
+    if (!advanced.accepted) return;
+    const emitted = advanced.events.filter((event) => event.kind === "combat");
+    expect(emitted.length).toBeGreaterThan(0);
+    const stateBytes = encodeSoloHuntCheckpointV4(advanced.state);
+
+    const attempt = (expectedRowVersion: bigint, abortAfterPublish: boolean) =>
+      withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        withTransaction(client, async (transaction) => {
+          const root = await ensureAndLockPlayerHuntRoot(transaction, seeded.playerId);
+          if (!root) throw new Error("missing Player root for V4 OCC fixture");
+          const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
+            playerId: seeded.playerId,
+            checkpointId: hunt.checkpointId,
+            expectedRowVersion,
+            schemaVersion: "pokenexus.solo-hunt-checkpoint.v4",
+            logicalTimeMs: advanced.state.logicalTimeMs,
+            stateBytes,
+          });
+          if (persisted.status !== "updated") return persisted.status;
+          await publishCommittedHuntPresentation({
+            transaction,
+            playerId: seeded.playerId,
+            huntId,
+            checkpointSchemaVersion: "pokenexus.solo-hunt-checkpoint.v4",
+            committedState: advanced.state,
+            inputs: harness.runtime(),
+            generatedEvents: advanced.events,
+          });
+          if (abortAfterPublish) throw new Error("simulated post-publisher abort");
+          return persisted.status;
+        }));
+
+    await expect(attempt(before.checkpoint.rowVersion, true))
+      .rejects.toThrow("simulated post-publisher abort");
+    const afterAbort = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      events: await client.query<{ event_index: string; private_source_bytes: Buffer }>(
+        `SELECT e.event_index::text, e.private_source_bytes
+           FROM pokenexus.hunt_presentation_events e
+          WHERE e.hunt_id = $1 ORDER BY e.event_index`,
+        [huntId],
+      ).then(({ rows }) => rows),
+    }));
+    expect(afterAbort.checkpoint).toEqual(before.checkpoint);
+    expect(afterAbort.events).toEqual(before.events);
+
+    expect(await attempt(before.checkpoint.rowVersion, false)).toBe("updated");
+    const winner = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      events: await client.query<{ event_index: string; private_source_bytes: Buffer }>(
+        `SELECT e.event_index::text, e.private_source_bytes
+           FROM pokenexus.hunt_presentation_events e
+          WHERE e.hunt_id = $1 ORDER BY e.event_index`,
+        [huntId],
+      ).then(({ rows }) => rows),
+    }));
+    expect(winner.checkpoint?.rowVersion).toBe(before.checkpoint.rowVersion + 1n);
+    expect(winner.checkpoint?.stateBytes).toEqual(stateBytes);
+    expect(winner.events.slice(before.events.length).map((event) => event.private_source_bytes.toString("utf8")))
+      .toEqual(emitted.map((event) => canonicalPresentationJson(event.event)));
+
+    expect(await attempt(before.checkpoint.rowVersion, false)).toBe("stale");
+    const afterLoser = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      events: await client.query<{ event_index: string; private_source_bytes: Buffer }>(
+        `SELECT e.event_index::text, e.private_source_bytes
+           FROM pokenexus.hunt_presentation_events e
+          WHERE e.hunt_id = $1 ORDER BY e.event_index`,
+        [huntId],
+      ).then(({ rows }) => rows),
+    }));
+    expect(afterLoser).toEqual(winner);
+  });
+
+  it("keeps V4 PostgreSQL presentation bytes and checkpoint state identical across bounded 202 segmentation", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = applicationWithOptions({
+      presentationSourceEnabled: true,
+      runtimeInputsTransform: (inputs) => ({
+        ...inputs,
+        context: {
+          ...inputs.context,
+          typeChart: {
+            ...inputs.context.typeChart,
+            normal: { ...(inputs.context.typeChart.normal ?? {}), normal: 0 },
+          },
+        },
+      }),
+    });
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing V4 segmented Hunt fixture");
+    const initial = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      eventCount: await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.hunt_presentation_events WHERE hunt_id = $1",
+        [huntId],
+      ).then(({ rows }) => Number(rows[0]?.count ?? "0")),
+    }));
+    if (!initial.checkpoint) throw new Error("missing initial V4 segmented checkpoint");
+    const decoded = decodeSoloHuntCheckpoint(initial.checkpoint.stateBytes);
+    expect(decoded.accepted).toBe(true);
+    if (!decoded.accepted) return;
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '70 seconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+    const key = generateUuidV7();
+    const first = await harness.app.checkpoint(seeded.playerId, key, huntId);
+    expect(first).toMatchObject({ httpStatus: 202, body: { status: "in_progress" } });
+    const targetLogicalTimeMs = Number((first.body as {
+      progress: { targetLogicalTimeMs: string };
+    }).progress.targetLogicalTimeMs);
+    expect(Number.isSafeInteger(targetLogicalTimeMs)).toBe(true);
+    const direct = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      decoded.state,
+      harness.runtime(),
+      targetLogicalTimeMs,
+    );
+    expect(direct.accepted).toBe(true);
+    if (!direct.accepted) return;
+    const expectedCombat = direct.events.filter((event) => event.kind === "combat");
+    expect(expectedCombat.length).toBeGreaterThan(128);
+    const completed = await settleBoundedCommand(
+      () => harness.app.checkpoint(seeded.playerId, key, huntId),
+      128,
+    );
+    expect(completed.httpStatus, JSON.stringify(completed.body)).toBe(200);
+
+    const committed = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      events: await client.query<{ event_index: string; private_source_bytes: Buffer }>(
+        `SELECT e.event_index::text, e.private_source_bytes
+           FROM pokenexus.hunt_presentation_events e
+          WHERE e.hunt_id = $1 ORDER BY e.event_index`,
+        [huntId],
+      ).then(({ rows }) => rows),
+    }));
+    expect(committed.checkpoint?.stateBytes).toEqual(encodeSoloHuntCheckpointV4(direct.state));
+    const appended = committed.events.slice(initial.eventCount);
+    expect(appended.map((event) => event.private_source_bytes.toString("utf8")))
+      .toEqual(expectedCombat.map((event) => canonicalPresentationJson(event.event)));
+    expect(new Set(committed.events.map((event) => event.event_index)).size).toBe(committed.events.length);
+  }, 90_000);
+
+  it("rehydrates a V4 Hunt in a fresh process and replays the same key without changing presentation bytes", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = applicationWithOptions({ presentationSourceEnabled: true });
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing hard-restart presentation Hunt");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '1 second' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const checkpointKey = generateUuidV7();
+    const runFreshProcess = (once: boolean) => {
+      const result = spawnSync(process.execPath, [
+        "--experimental-transform-types",
+        fileURLToPath(new URL("./hunt-application-process-reload.mjs", import.meta.url)),
+        JSON.stringify({ playerId: seeded.playerId, huntId, key: checkpointKey, once }),
+      ], {
+        cwd: process.cwd(),
+        env: { ...process.env, POKENEXUS_TEST_DATABASE_URL: testDatabaseUrl },
+        encoding: "utf8",
+        timeout: 20_000,
+        maxBuffer: 128 * 1024,
+        windowsHide: true,
+      });
+      if (result.error || result.status !== 0 || result.signal !== null) {
+        throw new Error(
+          "TASK-103 hard-restart subprocess failed: " + (result.stderr || result.error?.message || result.status),
+        );
+      }
+      return JSON.parse(result.stdout.trim()) as {
+        pid: number;
+        completed: { httpStatus: number; body: unknown };
+        replay: { httpStatus: number; body: unknown } | null;
+        calls: string[];
+      };
+    };
+
+    const processIds = new Set<number>();
+    let completedChild: ReturnType<typeof runFreshProcess> | null = null;
+    for (let attempt = 0; attempt < 32; attempt += 1) {
+      const child = runFreshProcess(true);
+      expect(child.pid).not.toBe(process.pid);
+      expect(processIds.has(child.pid)).toBe(false);
+      processIds.add(child.pid);
+      expect([200, 202], JSON.stringify(child)).toContain(child.completed.httpStatus);
+      expect(child.replay).toBeNull();
+      expect(child.calls).toContain("loadPersistedRuntime");
+      expect(child.calls).not.toContain("unexpected_authority_operation");
+      if (child.completed.httpStatus === 200) {
+        completedChild = child;
+        break;
+      }
+    }
+    expect(completedChild, "hard-restart bounded continuation did not converge").not.toBeNull();
+    if (!completedChild) throw new Error("hard-restart bounded continuation did not converge");
+    const firstSnapshot = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+      const events = await client.query<{
+        event_index: string;
+        public_event_bytes: Buffer;
+        private_source_bytes: Buffer;
+      }>(
+        `SELECT e.event_index::text, e.public_event_bytes, e.private_source_bytes
+           FROM pokenexus.hunt_presentation_events e WHERE e.hunt_id = $1 ORDER BY e.event_index`,
+        [huntId],
+      );
+      return { checkpoint, events: events.rows };
+    });
+    expect(firstSnapshot.checkpoint?.schemaVersion).toBe("pokenexus.solo-hunt-checkpoint.v4");
+
+    const replayChild = runFreshProcess(false);
+    expect(replayChild.pid).not.toBe(process.pid);
+    expect(processIds.has(replayChild.pid)).toBe(false);
+    expect(replayChild.completed).toEqual(completedChild.completed);
+    expect(replayChild.replay).toEqual(completedChild.completed);
+    const secondEvents = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query<{
+        event_index: string;
+        public_event_bytes: Buffer;
+        private_source_bytes: Buffer;
+      }>(
+        `SELECT e.event_index::text, e.public_event_bytes, e.private_source_bytes
+           FROM pokenexus.hunt_presentation_events e WHERE e.hunt_id = $1 ORDER BY e.event_index`,
+        [huntId],
+      ).then(({ rows }) => rows));
+    expect(secondEvents).toEqual(firstSnapshot.events);
+  });
+
+  it("rehydrates a real published V4 authority in a fresh process only while the historical individualization release is retained", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const startup = await createTask103RealHuntAuthority({
+      connectionString: testDatabaseUrl,
+      current: "A",
+      retainA: true,
+    });
+    const ownedSpeciesId = "candidate:species:pokedex-blastoise-9:76d65051f7";
+    const ownedMoveId = "candidate:move:water-gun:797195321c";
+    const huntDefinitionId = "hunt:verdant-edge:wilds";
+    const publishedHunt = startup.published.huntsById.get(huntDefinitionId);
+    if (!publishedHunt || !startup.published.speciesById.has(ownedSpeciesId)) {
+      throw new Error("published real-authority Start fixture content is missing");
+    }
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const updated = await transaction.query(
+          `UPDATE pokenexus.pokemon_instances
+              SET species_id = $1, level = 1, total_experience = $2,
+                  individualization_content_version = $3,
+                  individualization_content_hash = $4,
+                  individualization_game_data_version = $5
+            WHERE owner_player_id = $6 AND pokemon_instance_id = $7`,
+          [
+            opaque(ownedSpeciesId),
+            0,
+            opaque(startup.published.contentVersion),
+            opaque(startup.published.contentHash),
+            opaque(startup.published.gameDataVersion),
+            seeded.playerId,
+            seeded.pokemonInstanceId,
+          ],
+        );
+        expect(updated.rowCount).toBe(1);
+        await transaction.query(
+          `INSERT INTO pokenexus.pokemon_move_loadout
+             (owner_player_id, pokemon_instance_id, slot, move_id)
+           VALUES ($1, $2, 1, $3)`,
+          [seeded.playerId, seeded.pokemonInstanceId, opaque(ownedMoveId)],
+        );
+      }));
+    const neverEffect = async (): Promise<never> => {
+      throw new Error("real-authority continuation must not cross a boundary effect");
+    };
+    const startupApp = new HuntApplication(testDatabaseUrl, {
+      authority: startup.authority,
+      boundaryEffects: { automaticCapture: neverEffect, reward: neverEffect },
+      manualCaptureEffects: { attempt: neverEffect },
+    }, { presentationSourceEnabled: true });
+    expect(await startup.authority.resolveStartSelector(huntDefinitionId)).toMatchObject({
+      huntDefinitionId,
+      zoneId: publishedHunt.zoneId,
+      gameDataVersion: startup.published.gameDataVersion,
+      rulesVersion: GENETIC_COMBAT_RULES_VERSION_V1,
+    });
+    const started = await startupApp.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId,
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("real-authority Start did not commit a Hunt");
+    const frozen = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      authority: await loadHuntInputAuthority(client, seeded.playerId, huntId),
+    }));
+    if (!frozen.checkpoint || !frozen.authority) throw new Error("real-authority V4 SQL authority is missing");
+    expect(frozen.checkpoint.schemaVersion).toBe(SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4);
+    expect(frozen.authority.runtimeInputsJson).toMatchObject({
+      schemaVersion: "hunt-runtime-inputs-v4",
+      individualizationRequired: true,
+    });
+    expect(JSON.stringify(frozen.authority.runtimeInputsJson)).not.toContain("secretKey");
+    const persistedInputs = await startup.authority.loadPersistedRuntime(
+      frozen.authority,
+      frozen.checkpoint.schemaVersion,
+    );
+    expect(persistedInputs.team[0]).toMatchObject({
+      pokemonInstanceId: seeded.pokemonInstanceId,
+      speciesId: ownedSpeciesId,
+      shiny: false,
+      level: 1,
+      moveLoadout: [ownedMoveId],
+    });
+    expect(persistedInputs.individualizationAuthority?.keyId).toBe(startup.oldKeyId);
+
+    const continuationKey = generateUuidV7();
+    const targetLogicalTimeMs = frozen.checkpoint.logicalTimeMs + 1;
+    const targetWallClockAt = new Date(frozen.checkpoint.logicalTimeAnchorAt.getTime() + 1);
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: continuationKey,
+          commandKind: "checkpoint",
+          intentHash: await hashNormalizedIntent({ huntId }),
+          intentJson: { huntId },
+          sourceHuntId: huntId,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs,
+          targetWallClockAt,
+        });
+        expect(claimed.status).toBe("accepted");
+      }));
+
+    const runRealChild = (retainA: boolean) => spawnSync(process.execPath, [
+      "--experimental-transform-types",
+      fileURLToPath(new URL("./hunt-real-authority-process-reload.mjs", import.meta.url)),
+      JSON.stringify({ playerId: seeded.playerId, huntId, key: continuationKey, retainA }),
+    ], {
+      cwd: process.cwd(),
+      env: { ...process.env, POKENEXUS_TEST_DATABASE_URL: testDatabaseUrl },
+      encoding: "utf8",
+      timeout: 20_000,
+      maxBuffer: 128 * 1024,
+      windowsHide: true,
+    });
+    const parseChild = (retainA: boolean) => {
+      const result = runRealChild(retainA);
+      if (result.error || result.status !== 0 || result.signal !== null) {
+        throw new Error(
+          `real runtime child failed (retainA=${retainA}): ${String(result.error ?? result.stderr).slice(0, 2000)}`,
+        );
+      }
+      const child = JSON.parse(result.stdout.trim()) as {
+        pid: number;
+        calls: string[];
+        completed: { httpStatus: number; body: unknown };
+        replay: { httpStatus: number; body: unknown };
+      };
+      expect(child.pid).not.toBe(process.pid);
+      expect(child.calls).toContain("real_loadPersistedRuntime");
+      expect(child.calls).not.toContain("unexpected_new_authority");
+      return child;
+    };
+
+    const denied = parseChild(false);
+    expect(denied.calls).toContain("historical_release_A_missing");
+    expect(denied.completed).toEqual({ httpStatus: 503, body: { error: "authority_unavailable" } });
+    expect(denied.replay).toEqual(denied.completed);
+
+    const allowed = parseChild(true);
+    expect(allowed.calls).not.toContain("historical_release_A_missing");
+    expect(allowed.completed.httpStatus, JSON.stringify(allowed)).toBe(200);
+    expect(allowed.replay).toEqual(allowed.completed);
+  }, 30_000);
+
+  it("publishes zero-gap Battle N+1 only after Battle N reward disposition is committed", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = applicationWithOptions({
+      presentationSourceEnabled: true,
+      runtimeInputsTransform: (inputs) => {
+        const playerMove = inputs.context.moveRules["move:player"];
+        if (!playerMove) throw new Error("missing zero-gap player Move fixture");
+        const context: ResolvedCombatContext = {
+          ...inputs.context,
+          moveRules: {
+            ...inputs.context.moveRules,
+            "move:player": { ...playerMove, power: 1_000 },
+          },
+        };
+        return {
+          ...inputs,
+          context,
+          opponentTemplates: inputs.opponentTemplates.map((template) => ({
+            ...template,
+            rulesVersion: context.rulesVersion,
+            baseStats: { ...template.baseStats, hp: 10 },
+          })),
+          interBattleGapMs: 0,
+        };
+      },
+      reward: async ({ transaction, playerId, boundary, inputs }) => {
+        const durable = await claimRewardResolutionInTransaction(transaction, {
+          subjectPlayerId: playerId,
+          sourceAuthority: "task103:zero-gap-v4-presentation-fixture",
+          sourceCorrelation: boundary.encounterId,
+          gameDataVersion: inputs.context.gameDataVersion,
+          rulesVersion: inputs.context.rulesVersion,
+          effects: [],
+        });
+        if (!durable.resolution.completion) {
+          await insertRewardCompletion(transaction, durable.resolution.resolutionId, new Date());
+        }
+        return {
+          rewardResolutionId: durable.resolution.resolutionId,
+          reward: { playerExperience: 0n, pokemonExperience: [], items: [] },
+        };
+      },
+    });
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing zero-gap V4 Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '500 seconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const snapshot = () => withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const boundaries = await client.query<{
+        encounter_ordinal: string;
+        boundary_status: string;
+        reward_resolution_id: string | null;
+      }>(
+        `SELECT encounter_ordinal::text, boundary_status, reward_resolution_id
+           FROM pokenexus.hunt_encounter_boundaries
+          WHERE hunt_id = $1 ORDER BY encounter_ordinal`,
+        [huntId],
+      );
+      const battles = await client.query<{
+        encounter_ordinal: string;
+        battle_id: string;
+      }>(
+        `SELECT encounter_ordinal::text, battle_id
+           FROM pokenexus.hunt_presentation_battles
+          WHERE hunt_id = $1 ORDER BY encounter_ordinal`,
+        [huntId],
+      );
+      return { boundaries: boundaries.rows, battles: battles.rows };
+    });
+    const initial = await snapshot();
+    expect(initial.boundaries).toHaveLength(0);
+    expect(initial.battles).toHaveLength(1);
+
+    const checkpointKey = generateUuidV7();
+    let second: Awaited<ReturnType<typeof snapshot>> | null = null;
+    for (let attempt = 0; attempt < 32; attempt += 1) {
+      const response = await harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+      expect([200, 202], JSON.stringify(response.body)).toContain(response.httpStatus);
+      const current = await snapshot();
+      expect(current.battles[0]).toEqual(initial.battles[0]);
+      if (current.battles.length >= 2) {
+        expect(current.boundaries[0]).toMatchObject({
+          encounter_ordinal: "1",
+          boundary_status: "committed",
+          reward_resolution_id: expect.any(String),
+        });
+        second = current;
+        break;
+      }
+      expect(response.httpStatus).toBe(202);
+    }
+    if (!second) throw new Error("zero-gap V4 Battle 2 did not publish within 32 bounded steps");
+    expect(second.battles.slice(0, 2).map(({ encounter_ordinal }) => encounter_ordinal))
+      .toEqual(["1", "2"]);
+
+    const ledger = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+      const events = await client.query<{
+        event_index: string;
+        battle_id: string;
+        sequence: string;
+        combat_time_ms: string;
+        private_source_bytes: Buffer;
+      }>(
+        `SELECT event_index::text, battle_id, sequence::text, combat_time_ms::text, private_source_bytes
+           FROM pokenexus.hunt_presentation_events
+          WHERE hunt_id = $1 ORDER BY event_index`,
+        [huntId],
+      );
+      return { checkpoint, events: events.rows };
+    });
+    expect(ledger.checkpoint?.schemaVersion).toBe("pokenexus.solo-hunt-checkpoint.v4");
+    const firstBattleId = second.battles[0]!.battle_id;
+    const secondBattleId = second.battles[1]!.battle_id;
+    const firstEndIndex = ledger.events.findLastIndex(({ battle_id }) => battle_id === firstBattleId);
+    const secondStartIndex = ledger.events.findIndex(({ battle_id }) => battle_id === secondBattleId);
+    expect(firstEndIndex).toBeGreaterThanOrEqual(0);
+    expect(secondStartIndex).toBe(firstEndIndex + 1);
+    expect(ledger.events[firstEndIndex]?.private_source_bytes.toString("utf8"))
+      .toContain('"kind":"BattleEnded"');
+    expect(ledger.events[secondStartIndex]).toMatchObject({
+      sequence: "1",
+      combat_time_ms: "0",
+      battle_id: secondBattleId,
+    });
+    expect(ledger.events[secondStartIndex]?.private_source_bytes.toString("utf8"))
+      .toContain('"kind":"BattleStarted"');
+  });
+});
 
 describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
   it("TASK-108 pins damaged vitality, writes terminal HP, and PokéCenter heals during recovery without replay churn", async () => {
@@ -3118,6 +3940,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     await addInventoryItem(seeded.playerId, "item:revive", 1n);
     const persistedRuntimeStore: { value: SoloHuntRuntimeInputs | null } = { value: null };
     const createHarness = () => applicationWithOptions({
+      presentationSourceEnabled: true,
       persistedRuntimeStore,
       runtimeInputsTransform: (inputs) => lethalRuntimeInputs(inputs, "allActive"),
     });
@@ -3142,6 +3965,16 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadOwnedSoloHunt(client, seeded.playerId, huntId));
     if (!hunt) throw new Error("missing D-F16 Hunt fixture");
+    const presentedBattles = () => withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query<{ encounter_ordinal: string; battle_id: string }>(
+        `SELECT encounter_ordinal::text, battle_id
+           FROM pokenexus.hunt_presentation_battles
+          WHERE hunt_id = $1 ORDER BY encounter_ordinal`,
+        [huntId],
+      ).then(({ rows }) => rows));
+    const initialBattles = await presentedBattles();
+    expect(initialBattles).toHaveLength(1);
+    expect(initialBattles[0]?.encounter_ordinal).toBe("1");
     await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       client.query(
         "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '10 seconds' WHERE checkpoint_id = $1",
@@ -3209,6 +4042,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     expect(rolledBack.pending).toEqual(beforeFailure.pending);
     expect(rolledBack.genericCount.rows[0]?.count).toBe("0");
     expect(rolledBack.dedicatedCount.rows[0]?.count).toBe("0");
+    expect(await presentedBattles()).toEqual(initialBattles);
 
     await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
       await client.query("DROP TRIGGER test_task110_fail_post_battle_revive ON pokenexus.hunt_post_battle_revive_applied");
@@ -3285,6 +4119,34 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     expect(completedProvenance?.consumedPendingEncounterSelection).toEqual(pendingBefore.selectionJson);
     expect(committed.dedicated?.completedEncounterProvenanceJson).toEqual(completedProvenance);
 
+    const presentationBeforeReplay = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const stream = await client.query<{
+        input_schema_version: string;
+        checkpoint_schema_version: string;
+        presentation_schema_version: string;
+      }>(
+        `SELECT input_schema_version, checkpoint_schema_version, presentation_schema_version
+           FROM pokenexus.hunt_presentation_streams
+          WHERE player_id = $1 AND hunt_id = $2`,
+        [seeded.playerId, huntId],
+      );
+      const events = await client.query<{ count: string; revived: string }>(
+        `SELECT count(*)::text AS count,
+                count(*) FILTER (WHERE public_event_json->>'kind' = 'CombatantRevived')::text AS revived
+           FROM pokenexus.hunt_presentation_events WHERE hunt_id = $1`,
+        [huntId],
+      );
+      const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+      return { stream: stream.rows[0], events: events.rows[0], checkpoint };
+    });
+    expect(presentationBeforeReplay.stream).toEqual({
+      input_schema_version: "hunt-runtime-inputs-v4",
+      checkpoint_schema_version: "pokenexus.solo-hunt-checkpoint.v4",
+      presentation_schema_version: "pokenexus.combat-presentation.v2",
+    });
+    expect(presentationBeforeReplay.checkpoint?.schemaVersion).toBe("pokenexus.solo-hunt-checkpoint.v4");
+    expect(presentationBeforeReplay.events?.revived).toBe("0");
+
     const replayHarness = createHarness();
     const beforeReplayInventory = committed.inventory;
     await replayHarness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
@@ -3299,14 +4161,43 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     expect(afterReplay.inventory?.rowVersion).toBe(beforeReplayInventory?.rowVersion);
     expect(afterReplay.inventory?.entries).toEqual(beforeReplayInventory?.entries);
     expect(afterReplay.uses).toHaveLength(1);
+    const presentationAfterReplayCount = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.hunt_presentation_events WHERE hunt_id = $1",
+        [huntId],
+      ).then(({ rows }) => rows[0]?.count));
+    expect(presentationAfterReplayCount).toBe(presentationBeforeReplay.events?.count);
     expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadEarliestIncompleteEncounterBoundary(client, huntId))).toBeNull();
+
+    // D-F16 publication gate: Battle N+1 must not appear from BattleEnded(draw)
+    // or a rolled-back post-Battle Revive attempt. Only after the durable
+    // resolved_non_win + PostBattleReviveApplied + consumed-selection commit
+    // may a later command admit the next zero-gap Battle.
+    expect(await presentedBattles()).toEqual(initialBattles);
+    const afterDurableResolution = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!afterDurableResolution) throw new Error("missing durable D-F16 checkpoint");
+    const durableState = decodeSoloHuntCheckpoint(afterDurableResolution.stateBytes);
+    expect(durableState.accepted).toBe(true);
+    if (!durableState.accepted) return;
+    const nextBattle = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      durableState.state,
+      replayHarness.runtime(),
+      durableState.state.logicalTimeMs + 60_000,
+    );
+    expect(nextBattle.accepted).toBe(true);
+    if (!nextBattle.accepted) return;
+    expect(nextBattle.events.some((entry) => entry.kind === "combat"
+      && entry.event.kind === "BattleStarted"
+      && entry.event.battleId !== initialBattles[0]?.battle_id)).toBe(true);
   });
 
   it("counts a successful in-Battle Auto-Revive KO in the sealed Hunt activity", async () => {
     const seeded = await seedPlayerTeamAndPotion();
     await addInventoryItem(seeded.playerId, "item:revive", 1n);
     const harness = applicationWithOptions({
+      presentationSourceEnabled: true,
       runtimeInputsTransform: (inputs) => {
         const playerMove = inputs.context.moveRules["move:player"];
         const enemyMove = inputs.context.moveRules["move:enemy"];
@@ -3321,7 +4212,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
             },
             "move:enemy": {
               ...enemyMove,
-              power: 1_000,
+              power: 10_000,
               moveCooldownMs: 60_000,
             },
           },
@@ -3329,6 +4220,10 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         return {
           ...inputs,
           context,
+          team: inputs.team.map((member) => ({
+            ...member,
+            baseStats: { ...member.baseStats, spe: 1 },
+          })),
           opponentTemplates: inputs.opponentTemplates.map((template) => ({
             ...template,
             rulesVersion: context.rulesVersion,
@@ -3481,6 +4376,25 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         targetPokemonInstanceId: seeded.pokemonInstanceId,
         itemId: "item:revive",
       }],
+    });
+    const presentation = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const events = await client.query<{ public_event_json: Record<string, unknown> }>(
+        `SELECT public_event_json FROM pokenexus.hunt_presentation_events
+          WHERE hunt_id = $1 ORDER BY event_index`,
+        [huntId],
+      );
+      const stream = await client.query<{ presentation_schema_version: string }>(
+        "SELECT presentation_schema_version FROM pokenexus.hunt_presentation_streams WHERE hunt_id = $1",
+        [huntId],
+      );
+      return { events: events.rows.map(({ public_event_json }) => public_event_json), stream: stream.rows[0] };
+    });
+    expect(presentation.stream?.presentation_schema_version).toBe("pokenexus.combat-presentation.v2");
+    const revived = presentation.events.filter((event) => event.kind === "CombatantRevived");
+    expect(revived).toHaveLength(1);
+    expect(revived[0]).toMatchObject({
+      kind: "CombatantRevived",
+      hpChange: { visibility: "exact", amount: 15, resultingHp: 15 },
     });
   });
 

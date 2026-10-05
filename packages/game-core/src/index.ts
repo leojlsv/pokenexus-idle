@@ -38,15 +38,18 @@ export {
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
   SOLO_HUNT_DEFAULT_SEGMENT_MS,
   advanceSoloHuntSegmentedToCutoff,
   decodeSoloHuntCheckpoint,
   decodeSoloHuntCheckpointV1,
   decodeSoloHuntCheckpointV2,
   decodeSoloHuntCheckpointV3,
+  decodeSoloHuntCheckpointV4,
   encodeSoloHuntCheckpointV1,
   encodeSoloHuntCheckpointV2,
   encodeSoloHuntCheckpointV3,
+  encodeSoloHuntCheckpointV4,
 } from "./solo-hunt-checkpoint";
 export type { SoloHuntCheckpointDecodeResult } from "./solo-hunt-checkpoint";
 export { createRngState, nextRngState } from "./rng";
@@ -80,6 +83,7 @@ export type {
   CreateSoloHuntRuntimeInput,
   CreateSoloHuntRuntimeResult,
   SoloHuntCompletedEncounterProvenance,
+  SoloHuntBattleOrigin,
   SoloHuntCompletedEncounterEvidence,
   SoloHuntAppliedHealingEvent,
   SoloHuntAppliedAutomationEvent,

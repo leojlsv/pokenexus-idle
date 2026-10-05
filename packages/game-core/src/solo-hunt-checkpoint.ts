@@ -16,6 +16,7 @@ import type { DeterministicRngState } from "./types";
 export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1 = "pokenexus.solo-hunt-checkpoint.v1" as const;
 export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2 = "pokenexus.solo-hunt-checkpoint.v2" as const;
 export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3 = "pokenexus.solo-hunt-checkpoint.v3" as const;
+export const SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4 = "pokenexus.solo-hunt-checkpoint.v4" as const;
 export const SOLO_HUNT_DEFAULT_SEGMENT_MS = 60 * 60 * 1000;
 
 const GENETIC_GRADES = ["Normal", "Uncommon", "Rare", "Epic", "Apex"] as const;
@@ -244,12 +245,15 @@ function assertCadence(value: unknown, label: string, forwardV3 = false): void {
   assertNumericRecord(value.actionLockRemainingMsByParticipant, `${label}.actionLockRemainingMsByParticipant`);
 }
 
-function assertTeamMember(value: unknown, label: string): void {
+function assertTeamMember(value: unknown, label: string, requireShiny: boolean): void {
   assertRecord(value, label);
   assertAllowedKeys(value, [
     "pokemonInstanceId", "speciesId", "level", "baseStats", "ivs", "geneticBonuses",
-    "types", "moveLoadout", "abilityId",
+    "types", "moveLoadout", "abilityId", ...(requireShiny ? ["shiny"] : []),
   ], label);
+  if (requireShiny && typeof value.shiny !== "boolean") {
+    throw new Error(`Solo Hunt checkpoint ${label} must pin original owned Shiny`);
+  }
   assertNonEmptyString(value, "pokemonInstanceId", label);
   assertNonEmptyString(value, "speciesId", label);
   assertNonNegativeSafeInteger(value, "level", label);
@@ -614,13 +618,234 @@ function assertCombatContext(value: unknown, label: string): void {
   }
 }
 
-function assertCurrentEncounter(value: unknown, forwardV3: boolean): void {
+function assertOriginCombatEvent(
+  event: Record<string, unknown>,
+  label: string,
+  participants: ReadonlySet<string>,
+  sideIds: ReadonlySet<string>,
+): void {
+  const baseKeys = ["kind", "sequence", "combatTimeMs"];
+  const stringFields: string[] = [];
+  const numberFields: string[] = [];
+  let allowed: readonly string[];
+  switch (event.kind) {
+    case "BattleStarted":
+      allowed = ["battleId"];
+      stringFields.push("battleId");
+      break;
+    case "MoveUsed":
+      allowed = ["actorId", "moveId", "targetIds"];
+      stringFields.push("actorId", "moveId");
+      assertStringArray(event.targetIds, `${label}.targetIds`);
+      for (const target of event.targetIds as string[]) {
+        if (!participants.has(target)) throw new Error(`Solo Hunt checkpoint ${label} has unknown Move target`);
+      }
+      break;
+    case "MoveMissed":
+    case "MoveImmune":
+    case "CriticalHit":
+      allowed = ["actorId", "moveId", "targetId"];
+      stringFields.push("actorId", "moveId", "targetId");
+      break;
+    case "DamageApplied":
+      allowed = ["source", "actorId", "moveId", "targetId", "amount", "resultingHp"];
+      if (event.source !== "move" && event.source !== "effect") {
+        throw new Error(`Solo Hunt checkpoint ${label} has invalid damage source`);
+      }
+      stringFields.push("targetId");
+      if (event.actorId !== undefined) stringFields.push("actorId");
+      if (event.moveId !== undefined) stringFields.push("moveId");
+      numberFields.push("amount", "resultingHp");
+      break;
+    case "CombatantKO":
+      allowed = ["combatantId"];
+      stringFields.push("combatantId");
+      break;
+    case "CombatantActivated":
+      allowed = ["combatantId", "sideId"];
+      stringFields.push("combatantId", "sideId");
+      break;
+    case "BattleEnded": {
+      allowed = ["outcome"];
+      assertRecord(event.outcome, `${label}.outcome`);
+      if (event.outcome.kind === "win") {
+        assertAllowedKeys(event.outcome, ["kind", "winnerSideId"], `${label}.outcome`);
+        assertNonEmptyString(event.outcome, "winnerSideId", `${label}.outcome`);
+        if (!sideIds.has(event.outcome.winnerSideId as string)) {
+          throw new Error(`Solo Hunt checkpoint ${label} has unknown winner side`);
+        }
+      } else if (event.outcome.kind === "draw") {
+        assertAllowedKeys(event.outcome, ["kind"], `${label}.outcome`);
+      } else {
+        throw new Error(`Solo Hunt checkpoint ${label} has invalid outcome`);
+      }
+      break;
+    }
+    case "EffectApplied":
+    case "EffectUpdated":
+      allowed = ["effectId", "targetId", "stacks"];
+      stringFields.push("effectId", "targetId");
+      if (event.stacks !== undefined) numberFields.push("stacks");
+      break;
+    case "EffectRemoved":
+      allowed = ["effectId", "targetId"];
+      stringFields.push("effectId", "targetId");
+      break;
+    case "EffectTicked":
+      allowed = ["effectId", "targetId", "consequence", "amount", "resultingHp"];
+      stringFields.push("effectId", "targetId");
+      if (event.consequence !== "damage" && event.consequence !== "healing") {
+        throw new Error(`Solo Hunt checkpoint ${label} has invalid tick consequence`);
+      }
+      numberFields.push("amount", "resultingHp");
+      break;
+    case "HealingApplied":
+      allowed = ["targetId", "amount", "resultingHp"];
+      stringFields.push("targetId");
+      numberFields.push("amount", "resultingHp");
+      break;
+    case "StatStageChanged":
+      allowed = ["targetId", "stat", "requestedDelta", "appliedDelta", "resultingStage"];
+      stringFields.push("targetId");
+      if (!["atk", "def", "spa", "spd", "spe"].includes(String(event.stat))) {
+        throw new Error(`Solo Hunt checkpoint ${label} has invalid stat`);
+      }
+      numberFields.push("requestedDelta", "appliedDelta", "resultingStage");
+      break;
+    default:
+      throw new Error(`Solo Hunt checkpoint ${label} has unknown CombatEvent kind`);
+  }
+  assertAllowedKeys(event, [...baseKeys, ...allowed], label);
+  for (const key of stringFields) assertNonEmptyString(event, key, label);
+  for (const key of numberFields) {
+    if (!Number.isSafeInteger(event[key])) {
+      throw new Error(`Solo Hunt checkpoint ${label} has invalid ${key}`);
+    }
+  }
+  for (const key of ["actorId", "targetId", "combatantId"] as const) {
+    if (event[key] !== undefined && !participants.has(event[key] as string)) {
+      throw new Error(`Solo Hunt checkpoint ${label} refers to unknown ${key}`);
+    }
+  }
+  if (event.sideId !== undefined && !sideIds.has(event.sideId as string)) {
+    throw new Error(`Solo Hunt checkpoint ${label} refers to unknown sideId`);
+  }
+}
+
+function assertBattleOrigin(value: unknown, label: string): void {
+  assertRecord(value, label);
+  assertAllowedKeys(value, [
+    "battleId", "sourceVersions", "individualizationSnapshot",
+    "sides", "participants", "initialEvents",
+  ], label);
+  assertNonEmptyString(value, "battleId", label);
+  assertRecord(value.sourceVersions, `${label}.sourceVersions`);
+  assertAllowedKeys(
+    value.sourceVersions, ["gameDataVersion", "rulesVersion", "combatEventSchemaVersion"],
+    `${label}.sourceVersions`,
+  );
+  for (const key of ["gameDataVersion", "rulesVersion", "combatEventSchemaVersion"] as const) {
+    assertNonEmptyString(value.sourceVersions, key, `${label}.sourceVersions`);
+  }
+  assertIndividualizationSnapshot(value.individualizationSnapshot, `${label}.individualizationSnapshot`);
+  assertRecordArray(value.sides, `${label}.sides`);
+  assertRecordArray(value.participants, `${label}.participants`);
+  assertRecordArray(value.initialEvents, `${label}.initialEvents`);
+  if (value.sides.length !== 2 || value.participants.length === 0 || value.initialEvents.length === 0) {
+    throw new Error(`Solo Hunt checkpoint ${label} has incomplete Battle origin`);
+  }
+  const sideIds = new Set<string>();
+  const sideByCombatant = new Map<string, string>();
+  for (const [index, side] of value.sides.entries()) {
+    const sideLabel = `${label}.sides[${index}]`;
+    assertAllowedKeys(side, ["sideId", "combatantIds", "activeCombatantIds"], sideLabel);
+    assertNonEmptyString(side, "sideId", sideLabel);
+    if (sideIds.has(side.sideId as string)) {
+      throw new Error(`Solo Hunt checkpoint ${label} has duplicate origin side`);
+    }
+    sideIds.add(side.sideId as string);
+    assertStringArray(side.combatantIds, `${sideLabel}.combatantIds`);
+    assertStringArray(side.activeCombatantIds, `${sideLabel}.activeCombatantIds`);
+    if ((side.activeCombatantIds as string[]).some((id) => !(side.combatantIds as string[]).includes(id))) {
+      throw new Error(`Solo Hunt checkpoint ${sideLabel} has an unpinned initial active`);
+    }
+    for (const combatantId of side.combatantIds as string[]) {
+      if (sideByCombatant.has(combatantId)) {
+        throw new Error(`Solo Hunt checkpoint ${label} has duplicate origin Combatant`);
+      }
+      sideByCombatant.set(combatantId, side.sideId as string);
+    }
+  }
+  const seen = new Set<string>();
+  for (const [index, participant] of value.participants.entries()) {
+    const participantLabel = `${label}.participants[${index}]`;
+    const owned = participant.kind === "owned";
+    if (!owned && participant.kind !== "wild") {
+      throw new Error(`Solo Hunt checkpoint ${participantLabel} has unknown participant kind`);
+    }
+    assertAllowedKeys(participant, owned
+      ? ["kind", "combatantId", "sideId", "pokemonInstanceId", "speciesId", "level", "shiny", "currentHp", "maxHp"]
+      : ["kind", "combatantId", "sideId", "speciesId", "level", "shiny", "state"], participantLabel);
+    for (const key of ["combatantId", "sideId", "speciesId"] as const) {
+      assertNonEmptyString(participant, key, participantLabel);
+    }
+    assertNonNegativeSafeInteger(participant, "level", participantLabel);
+    if (participant.shiny !== true && participant.shiny !== false) {
+      throw new Error(`Solo Hunt checkpoint ${participantLabel}.shiny is not pinned`);
+    }
+    if (seen.has(participant.combatantId as string)) {
+      throw new Error(`Solo Hunt checkpoint ${label} has duplicate origin participant`);
+    }
+    seen.add(participant.combatantId as string);
+    if (sideByCombatant.get(participant.combatantId as string) !== participant.sideId) {
+      throw new Error(`Solo Hunt checkpoint ${participantLabel} has mismatched side binding`);
+    }
+    if (owned) {
+      assertNonEmptyString(participant, "pokemonInstanceId", participantLabel);
+      for (const key of ["currentHp", "maxHp"] as const) {
+        assertNonNegativeSafeInteger(participant, key, participantLabel);
+      }
+      if ((participant.maxHp as number) < 1 || (participant.currentHp as number) > (participant.maxHp as number)) {
+        throw new Error(`Solo Hunt checkpoint ${participantLabel} has invalid original HP`);
+      }
+    } else if (participant.state !== "conscious" && participant.state !== "ko") {
+      throw new Error(`Solo Hunt checkpoint ${participantLabel} has invalid public wild status`);
+    }
+  }
+  if (seen.size !== sideByCombatant.size) {
+    throw new Error(`Solo Hunt checkpoint ${label} has incomplete participant bindings`);
+  }
+  const first = value.initialEvents[0]!;
+  if (first.kind !== "BattleStarted" || first.battleId !== value.battleId
+    || first.sequence !== 1 || first.combatTimeMs !== 0) {
+    throw new Error(`Solo Hunt checkpoint ${label} lacks original BattleStarted`);
+  }
+  for (const [index, event] of value.initialEvents.entries()) {
+    if (event.sequence !== index + 1 || event.combatTimeMs !== 0) {
+      throw new Error(`Solo Hunt checkpoint ${label} has non-contiguous time-zero events`);
+    }
+    assertOriginCombatEvent(event, `${label}.initialEvents[${index}]`, seen, sideIds);
+    if (index !== 0 && event.kind === "BattleStarted") {
+      throw new Error(`Solo Hunt checkpoint ${label} repeats BattleStarted`);
+    }
+  }
+}
+
+function assertCurrentEncounter(
+  value: unknown,
+  managementFirst: boolean,
+  requirePresentationOrigin: boolean,
+): void {
   assertRecord(value, "currentEncounter");
   assertAllowedKeys(value, [
     "encounterId", "encounterOrdinal", "pendingSelectionIdentity", "selection", "battle",
     "battleStartedAtHuntTimeMs", "playerSideId", "opponentSideId", "policy",
     "participantPokemonInstanceIds", "participantActivations", "battleStimuli", "battleOutcome", "individualizationSnapshot",
+    ...(requirePresentationOrigin ? ["battleOrigin"] : []),
   ], "currentEncounter");
+  if (requirePresentationOrigin) {
+    assertBattleOrigin(value.battleOrigin, "currentEncounter.battleOrigin");
+  }
   for (const key of [
     "encounterId",
     "pendingSelectionIdentity",
@@ -636,7 +861,7 @@ function assertCurrentEncounter(value: unknown, forwardV3: boolean): void {
   assertAllowedKeys(value.battle, [
     "battleId", "context", "combatTimeMs", "eventSequence", "status", "sides", "combatants",
     "replacementPendingSideIds", "effects", "nextEffectApplicationSequence",
-    ...(forwardV3 ? ["koInterventionSideId", "koInterventionPending"] : []),
+    ...(managementFirst ? ["koInterventionSideId", "koInterventionPending"] : []),
   ], "currentEncounter.battle");
   assertNonEmptyString(value.battle, "battleId", "currentEncounter.battle");
   assertCombatContext(value.battle.context, "currentEncounter.battle.context");
@@ -652,7 +877,7 @@ function assertCurrentEncounter(value: unknown, forwardV3: boolean): void {
     assertBattleSide(side, `currentEncounter.battle.sides[${index}]`);
   }
   assertStringArray(value.battle.replacementPendingSideIds, "currentEncounter.battle.replacementPendingSideIds");
-  if (forwardV3) {
+  if (managementFirst) {
     if (
       value.battle.koInterventionSideId !== undefined
       && value.battle.koInterventionSideId !== null
@@ -673,7 +898,7 @@ function assertCurrentEncounter(value: unknown, forwardV3: boolean): void {
   }
   assertRecord(value.battle.combatants, "currentEncounter.battle.combatants");
   for (const [key, combatant] of Object.entries(value.battle.combatants)) {
-    assertBattleCombatant(combatant, `currentEncounter.battle.combatants.${key}`, forwardV3);
+    assertBattleCombatant(combatant, `currentEncounter.battle.combatants.${key}`, managementFirst);
   }
   assertRecord(value.battle.effects, "currentEncounter.battle.effects");
   for (const [key, effect] of Object.entries(value.battle.effects)) {
@@ -688,7 +913,7 @@ function assertCurrentEncounter(value: unknown, forwardV3: boolean): void {
   }
   assertRecordArray(value.battleStimuli, "currentEncounter.battleStimuli");
   for (const [index, stimulus] of value.battleStimuli.entries()) {
-    assertCombatStimulus(stimulus, `currentEncounter.battleStimuli[${index}]`, forwardV3);
+    assertCombatStimulus(stimulus, `currentEncounter.battleStimuli[${index}]`, managementFirst);
   }
   if (value.battleOutcome !== undefined) {
     assertRecord(value.battleOutcome, "currentEncounter.battleOutcome");
@@ -879,13 +1104,19 @@ function assertCompletedEncounter(value: unknown, label: string, forwardV3: bool
   assertIndividualizationLinkage(value, label);
 }
 
-function assertCompletedEncounterProvenance(value: unknown, label: string, forwardV3: boolean): void {
+function assertCompletedEncounterProvenance(
+  value: unknown,
+  label: string,
+  managementFirst: boolean,
+  requirePresentationOrigin: boolean,
+): void {
   assertRecord(value, label);
   assertAllowedKeys(value, [
     "encounterId", "encounterOrdinal", "consumedPendingEncounterSelection", "participantActivations", "battleStimuli",
     "battleStartedAtHuntTimeMs", "completedAtHuntTimeMs", "terminalBattleTimeMs", "terminalEventSequence",
-    "individualizationSnapshot",
+    "individualizationSnapshot", ...(requirePresentationOrigin ? ["battleOrigin"] : []),
   ], label);
+  if (requirePresentationOrigin) assertBattleOrigin(value.battleOrigin, `${label}.battleOrigin`);
   assertNonEmptyString(value, "encounterId", label);
   for (const key of [
     "encounterOrdinal",
@@ -903,7 +1134,7 @@ function assertCompletedEncounterProvenance(value: unknown, label: string, forwa
   }
   assertRecordArray(value.battleStimuli, `${label}.battleStimuli`);
   for (const [index, stimulus] of value.battleStimuli.entries()) {
-    assertCombatStimulus(stimulus, `${label}.battleStimuli[${index}]`, forwardV3);
+    assertCombatStimulus(stimulus, `${label}.battleStimuli[${index}]`, managementFirst);
   }
   if (value.individualizationSnapshot !== undefined) {
     assertIndividualizationSnapshot(value.individualizationSnapshot, `${label}.individualizationSnapshot`);
@@ -1228,9 +1459,13 @@ function assertDecodedRuntimeState(
   schemaVersion:
     | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1
     | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2
-    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
 ): asserts value is SoloHuntRuntimeState {
   if (!isRecord(value)) throw new Error("Solo Hunt checkpoint state must be an object");
+  const managementFirst = schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+    || schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4;
+  const requirePresentationOrigin = schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4;
   const allowedKeys = [
     "huntRunIdentity", "playerId", "zoneId", "huntDefinitionId", "contentVersion", "contentHash",
     "gameDataVersion", "rulesVersion", "interBattleGapMs", "pinnedTeam", "logicalTimeMs", "nextEncounterOrdinal",
@@ -1238,7 +1473,7 @@ function assertDecodedRuntimeState(
     "interBattle", "pendingEncounterSelection", "completedEncounters", "completedEncounterProvenance",
     "pendingCaptureDecision", "status", "terminalReason",
     ...(schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1 ? ["appliedHealingEvents"] : []),
-    ...(schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+    ...(managementFirst
       ? ["automationPolicies", "appliedAutomationEvents"]
       : []),
   ];
@@ -1273,20 +1508,21 @@ function assertDecodedRuntimeState(
     throw new Error("Solo Hunt checkpoint completed Encounter evidence/provenance length mismatch");
   }
   for (const [index, member] of value.pinnedTeam.entries()) {
-    assertTeamMember(member, `pinnedTeam[${index}]`);
+    assertTeamMember(member, `pinnedTeam[${index}]`, requirePresentationOrigin);
   }
   for (const [index, evidence] of value.completedEncounters.entries()) {
     assertCompletedEncounter(
       evidence,
       `completedEncounters[${index}]`,
-      schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+      managementFirst,
     );
   }
   for (const [index, provenance] of value.completedEncounterProvenance.entries()) {
     assertCompletedEncounterProvenance(
       provenance,
       `completedEncounterProvenance[${index}]`,
-      schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+      managementFirst,
+      requirePresentationOrigin,
     );
   }
   if (schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1) {
@@ -1313,10 +1549,11 @@ function assertDecodedRuntimeState(
       if (time > (value.logicalTimeMs as number)) {
         throw new Error("Solo Hunt checkpoint applied healing occurs after checkpoint logical time");
       }
-      const boundary = (value.completedEncounters as Array<Record<string, unknown>>).find((entry) =>
-        entry.encounterId === event.afterEncounterId && entry.encounterOrdinal === encounterOrdinal);
+      const boundary = (value.completedEncounters as Array<Record<string, unknown>>)[encounterOrdinal - 1];
       if (
         !boundary
+        || boundary.encounterId !== event.afterEncounterId
+        || boundary.encounterOrdinal !== encounterOrdinal
         || (boundary.completedAtHuntTimeMs as number) > time
         || time > (boundary.completedAtHuntTimeMs as number) + (value.interBattleGapMs as number)
       ) {
@@ -1343,12 +1580,12 @@ function assertDecodedRuntimeState(
       previousSequence = sequence;
     }
   }
-  if (schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+  if (managementFirst) {
     if ((value.appliedHealingEvents as unknown[]).length !== 0) {
-      throw new Error("Solo Hunt checkpoint v3 cannot contain legacy manual healing provenance");
+      throw new Error("Management-first Solo Hunt checkpoint cannot contain legacy manual healing provenance");
     }
     if (!Array.isArray(value.appliedAutomationEvents)) {
-      throw new Error("Solo Hunt checkpoint v3 state is missing appliedAutomationEvents");
+      throw new Error("Management-first Solo Hunt checkpoint state is missing appliedAutomationEvents");
     }
     assertRecordArray(value.appliedAutomationEvents, "appliedAutomationEvents");
     const pinned = new Set(
@@ -1391,13 +1628,13 @@ function assertDecodedRuntimeState(
       previousTime = time;
     }
     if (value.automationPolicies === undefined) {
-      throw new Error("Solo Hunt checkpoint v3 state is missing automation policy authority");
+      throw new Error("Management-first Solo Hunt checkpoint state is missing automation policy authority");
     }
     try {
       assertHuntAutomationPolicyAuthoritySnapshot(value.automationPolicies);
     } catch (cause) {
       throw new Error(
-        `Solo Hunt checkpoint v3 automation policy authority is invalid: ${cause instanceof Error ? cause.message : "unknown error"}`,
+        `Management-first Solo Hunt checkpoint automation policy authority is invalid: ${cause instanceof Error ? cause.message : "unknown error"}`,
         { cause },
       );
     }
@@ -1422,12 +1659,12 @@ function assertDecodedRuntimeState(
     throw new Error("Solo Hunt checkpoint state must contain exactly one runtime phase");
   }
   if (hasCurrentEncounter) {
-    assertCurrentEncounter(value.currentEncounter, schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3);
+    assertCurrentEncounter(value.currentEncounter, managementFirst, requirePresentationOrigin);
   } else {
     assertInterBattle(
       value.interBattle,
       value.interBattleGapMs as number,
-      schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+      managementFirst,
     );
   }
   if (value.status !== "active" && value.status !== "terminal") {
@@ -1492,11 +1729,27 @@ export function encodeSoloHuntCheckpointV3(state: SoloHuntRuntimeState): Uint8Ar
     appliedHealingEvents: state.appliedHealingEvents ?? [],
     appliedAutomationEvents: state.appliedAutomationEvents ?? [],
   };
-  const payload = {
+  return new TextEncoder().encode(JSON.stringify({
     schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
     state: canonicalize(normalized),
+  }));
+}
+
+export function encodeSoloHuntCheckpointV4(state: SoloHuntRuntimeState): Uint8Array {
+  if (state.automationPolicies === undefined) {
+    throw new Error("Solo Hunt checkpoint v4 requires automation policy authority");
+  }
+  assertHuntAutomationPolicyAuthoritySnapshot(state.automationPolicies);
+  const normalized: SoloHuntRuntimeState = {
+    ...state,
+    appliedHealingEvents: state.appliedHealingEvents ?? [],
+    appliedAutomationEvents: state.appliedAutomationEvents ?? [],
   };
-  return new TextEncoder().encode(JSON.stringify(payload));
+  assertDecodedRuntimeState(normalized, SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4);
+  return new TextEncoder().encode(JSON.stringify({
+    schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4,
+    state: canonicalize(normalized),
+  }));
 }
 
 export type SoloHuntCheckpointDecodeResult =
@@ -1587,6 +1840,31 @@ export function decodeSoloHuntCheckpointV3(bytes: Uint8Array): SoloHuntCheckpoin
   }
 }
 
+export function decodeSoloHuntCheckpointV4(bytes: Uint8Array): SoloHuntCheckpointDecodeResult {
+  try {
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
+      return { accepted: false, reason: "Solo Hunt checkpoint bytes are required" };
+    }
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const parsed = JSON.parse(text) as unknown;
+    if (!isRecord(parsed) || parsed.schemaVersion !== SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4) {
+      return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
+    }
+    assertAllowedKeys(parsed, ["schemaVersion", "state"], "payload");
+    const state = decanonicalize(parsed.state);
+    assertDecodedRuntimeState(state, SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4);
+    if (!sameBytes(bytes, encodeSoloHuntCheckpointV4(state))) {
+      return { accepted: false, reason: "Solo Hunt checkpoint bytes are not canonical" };
+    }
+    return { accepted: true, state };
+  } catch (error) {
+    return {
+      accepted: false,
+      reason: error instanceof Error ? error.message : "Malformed Solo Hunt checkpoint",
+    };
+  }
+}
+
 export function decodeSoloHuntCheckpoint(bytes: Uint8Array): SoloHuntCheckpointDecodeResult {
   try {
     if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
@@ -1598,6 +1876,7 @@ export function decodeSoloHuntCheckpoint(bytes: Uint8Array): SoloHuntCheckpointD
     if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V1) return decodeSoloHuntCheckpointV1(bytes);
     if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2) return decodeSoloHuntCheckpointV2(bytes);
     if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) return decodeSoloHuntCheckpointV3(bytes);
+    if (parsed.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V4) return decodeSoloHuntCheckpointV4(bytes);
     return { accepted: false, reason: "Unsupported Solo Hunt checkpoint schema" };
   } catch (error) {
     return {

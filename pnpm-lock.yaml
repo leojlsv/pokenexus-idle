@@ -41,6 +41,9 @@ importers:
       '@pokenexus/game-data':
         specifier: workspace:*
         version: link:../../packages/game-data
+      '@pokenexus/game-protocol':
+        specifier: workspace:*
+        version: link:../../packages/game-protocol
       '@simplewebauthn/server':
         specifier: 14.0.2
         version: 14.0.2

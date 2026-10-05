@@ -1,8 +1,10 @@
 import type { CombatEvent, CombatEventSchemaVersion } from "@pokenexus/game-core";
 
 export const COMBAT_PRESENTATION_SCHEMA_VERSION_V1 = "pokenexus.combat-presentation.v1" as const;
+export const COMBAT_PRESENTATION_SCHEMA_VERSION_V2 = "pokenexus.combat-presentation.v2" as const;
 
 export type CombatPresentationSchemaVersionV1 = typeof COMBAT_PRESENTATION_SCHEMA_VERSION_V1;
+export type CombatPresentationSchemaVersionV2 = typeof COMBAT_PRESENTATION_SCHEMA_VERSION_V2;
 
 export type CombatPresentationBootstrapParticipantSourceV1 =
   | {
@@ -150,6 +152,13 @@ export type CombatPresentationEventV1 =
       readonly resultingStage: number;
     });
 
+export type CombatPresentationEventV2 = CombatPresentationEventV1
+  | (CombatPresentationEventBaseV1 & {
+      readonly kind: "CombatantRevived";
+      readonly combatantId: string;
+      readonly hpChange: CombatPresentationHpChangeV1;
+    });
+
 export interface CombatPresentationBootstrapInputV1 {
   readonly battleId: string;
   readonly combatEventSchemaVersion: CombatEventSchemaVersion;
@@ -216,6 +225,47 @@ export interface CombatPresentationBootstrapResultV1 {
 export interface CombatPresentationContinuationResultV1 {
   readonly envelope: CombatPresentationContinuationEnvelopeV1;
   readonly continuationContext: CombatPresentationContinuationContextV1;
+}
+
+export interface CombatPresentationBootstrapEnvelopeV2 {
+  readonly kind: "bootstrap";
+  readonly schemaVersion: CombatPresentationSchemaVersionV2;
+  readonly sourceCombatEventSchemaVersion: string;
+  readonly battleId: string;
+  readonly initialSides: ReadonlyArray<CombatPresentationSideV1>;
+  readonly initialParticipants: ReadonlyArray<CombatPresentationParticipantV1>;
+  readonly events: ReadonlyArray<CombatPresentationEventV2>;
+}
+
+export interface CombatPresentationContinuationEnvelopeV2 {
+  readonly kind: "continuation";
+  readonly schemaVersion: CombatPresentationSchemaVersionV2;
+  readonly sourceCombatEventSchemaVersion: string;
+  readonly battleId: string;
+  readonly events: ReadonlyArray<CombatPresentationEventV2>;
+}
+
+export type CombatPresentationEnvelopeV2 =
+  | CombatPresentationBootstrapEnvelopeV2
+  | CombatPresentationContinuationEnvelopeV2;
+
+export interface CombatPresentationContinuationContextV2 {
+  readonly schemaVersion: CombatPresentationSchemaVersionV2;
+  readonly battleId: string;
+  readonly sourceCombatEventSchemaVersion: string;
+  readonly participantBindings: ReadonlyArray<CombatPresentationParticipantBindingV1>;
+  readonly lastSequence: number;
+  readonly lastCombatTimeMs: number;
+}
+
+export interface CombatPresentationBootstrapResultV2 {
+  readonly envelope: CombatPresentationBootstrapEnvelopeV2;
+  readonly continuationContext: CombatPresentationContinuationContextV2;
+}
+
+export interface CombatPresentationContinuationResultV2 {
+  readonly envelope: CombatPresentationContinuationEnvelopeV2;
+  readonly continuationContext: CombatPresentationContinuationContextV2;
 }
 
 function assertNonEmptyString(value: string, label: string): void {
@@ -511,6 +561,65 @@ function projectEventBatch(
   return { events: projected, lastSequence, lastCombatTimeMs };
 }
 
+function projectEventV2(
+  event: CombatEvent,
+  battleId: string,
+  bindings: ReadonlyMap<string, CombatPresentationParticipantBindingV1>,
+  sideIds: ReadonlySet<string>,
+): CombatPresentationEventV2 {
+  if (event.kind !== "CombatantRevived") {
+    return projectEvent(event, battleId, bindings, sideIds);
+  }
+  const binding = requireBinding(bindings, event.combatantId);
+  return {
+    kind: "CombatantRevived",
+    sequence: event.sequence,
+    combatTimeMs: event.combatTimeMs,
+    combatantId: event.combatantId,
+    hpChange: projectHpChange(
+      bindings,
+      event.combatantId,
+      event.amount,
+      event.resultingHp,
+      binding.kind === "owned",
+    ),
+  };
+}
+
+function projectEventBatchV2(
+  events: ReadonlyArray<CombatEvent>,
+  battleId: string,
+  bindings: ReadonlyMap<string, CombatPresentationParticipantBindingV1>,
+  sideIds: ReadonlySet<string>,
+  previousSequence: number,
+  previousCombatTimeMs: number,
+  allowBattleStarted: boolean,
+): {
+  readonly events: ReadonlyArray<CombatPresentationEventV2>;
+  readonly lastSequence: number;
+  readonly lastCombatTimeMs: number;
+} {
+  let lastSequence = previousSequence;
+  let lastCombatTimeMs = previousCombatTimeMs;
+  const projected = events.map((event) => {
+    assertSafeInteger(event.sequence, "CombatEvent.sequence", 1);
+    assertSafeInteger(event.combatTimeMs, "CombatEvent.combatTimeMs");
+    if (event.sequence !== lastSequence + 1) {
+      throw new Error("CombatEvent.sequence must be contiguous across presentation batches");
+    }
+    if (event.combatTimeMs < lastCombatTimeMs) {
+      throw new Error("CombatEvent.combatTimeMs must be monotonic across presentation batches");
+    }
+    if (!allowBattleStarted && event.kind === "BattleStarted") {
+      throw new Error("BattleStarted is valid only in the one-time presentation bootstrap");
+    }
+    lastSequence = event.sequence;
+    lastCombatTimeMs = event.combatTimeMs;
+    return projectEventV2(event, battleId, bindings, sideIds);
+  });
+  return { events: projected, lastSequence, lastCombatTimeMs };
+}
+
 export function projectCombatPresentationBootstrapV1(
   input: CombatPresentationBootstrapInputV1,
 ): CombatPresentationBootstrapResultV1 {
@@ -592,6 +701,98 @@ export function projectCombatPresentationContinuationV1(
     envelope: {
       kind: "continuation",
       schemaVersion: COMBAT_PRESENTATION_SCHEMA_VERSION_V1,
+      sourceCombatEventSchemaVersion: context.sourceCombatEventSchemaVersion,
+      battleId: context.battleId,
+      events: batch.events,
+    },
+    continuationContext,
+  };
+}
+
+export function projectCombatPresentationBootstrapV2(
+  input: CombatPresentationBootstrapInputV1,
+): CombatPresentationBootstrapResultV2 {
+  assertNonEmptyString(input.battleId, "battleId");
+  const sourceCombatEventSchemaVersion = String(input.combatEventSchemaVersion);
+  assertNonEmptyString(sourceCombatEventSchemaVersion, "combatEventSchemaVersion");
+  if (input.events.length === 0 || input.events[0]?.kind !== "BattleStarted") {
+    throw new Error("presentation bootstrap must begin with BattleStarted");
+  }
+  const origin = input.events[0];
+  if (origin.sequence !== 1 || origin.combatTimeMs !== 0 || origin.battleId !== input.battleId) {
+    throw new Error("presentation bootstrap BattleStarted must be the sequence-1 time-0 battle origin");
+  }
+  const bootstrapById = new Map<string, CombatPresentationBootstrapParticipantSourceV1>();
+  const bindings: CombatPresentationParticipantBindingV1[] = [];
+  const initialParticipants = input.participants.map((source) => {
+    if (bootstrapById.has(source.combatantId)) {
+      throw new Error(`duplicate presentation combatantId: ${source.combatantId}`);
+    }
+    bootstrapById.set(source.combatantId, source);
+    bindings.push({ kind: source.kind, combatantId: source.combatantId, sideId: source.sideId });
+    return projectBootstrapParticipant(source);
+  });
+  const initialSides = projectInitialSides(input.sides, bootstrapById);
+  const bindingMap = bindingsMap(bindings);
+  const sideIds = new Set(initialSides.map(({ sideId }) => sideId));
+  const batch = projectEventBatchV2(input.events, input.battleId, bindingMap, sideIds, 0, 0, true);
+  const continuationContext: CombatPresentationContinuationContextV2 = {
+    schemaVersion: COMBAT_PRESENTATION_SCHEMA_VERSION_V2,
+    battleId: input.battleId,
+    sourceCombatEventSchemaVersion,
+    participantBindings: bindings,
+    lastSequence: batch.lastSequence,
+    lastCombatTimeMs: batch.lastCombatTimeMs,
+  };
+  return {
+    envelope: {
+      kind: "bootstrap",
+      schemaVersion: COMBAT_PRESENTATION_SCHEMA_VERSION_V2,
+      sourceCombatEventSchemaVersion,
+      battleId: input.battleId,
+      initialSides,
+      initialParticipants,
+      events: batch.events,
+    },
+    continuationContext,
+  };
+}
+
+export function projectCombatPresentationContinuationV2(
+  input: {
+    readonly context: CombatPresentationContinuationContextV2;
+    readonly events: ReadonlyArray<CombatEvent>;
+  },
+): CombatPresentationContinuationResultV2 {
+  const { context } = input;
+  if (context.schemaVersion !== COMBAT_PRESENTATION_SCHEMA_VERSION_V2) {
+    throw new Error("unsupported combat presentation continuation schemaVersion");
+  }
+  assertNonEmptyString(context.battleId, "battleId");
+  assertNonEmptyString(context.sourceCombatEventSchemaVersion, "sourceCombatEventSchemaVersion");
+  assertSafeInteger(context.lastSequence, "lastSequence", 1);
+  assertSafeInteger(context.lastCombatTimeMs, "lastCombatTimeMs");
+  const bindingMap = bindingsMap(context.participantBindings);
+  const sideIds = new Set(context.participantBindings.map(({ sideId }) => sideId));
+  const batch = projectEventBatchV2(
+    input.events,
+    context.battleId,
+    bindingMap,
+    sideIds,
+    context.lastSequence,
+    context.lastCombatTimeMs,
+    false,
+  );
+  const continuationContext: CombatPresentationContinuationContextV2 = {
+    ...context,
+    participantBindings: context.participantBindings.map((binding) => ({ ...binding })),
+    lastSequence: batch.lastSequence,
+    lastCombatTimeMs: batch.lastCombatTimeMs,
+  };
+  return {
+    envelope: {
+      kind: "continuation",
+      schemaVersion: COMBAT_PRESENTATION_SCHEMA_VERSION_V2,
       sourceCombatEventSchemaVersion: context.sourceCombatEventSchemaVersion,
       battleId: context.battleId,
       events: batch.events,

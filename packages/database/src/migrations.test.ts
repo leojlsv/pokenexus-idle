@@ -164,7 +164,8 @@ describe("discoverMigrations", () => {
 
   it("publishes TASK-110 automatic Potion/Revive exactly-once item-use provenance", async () => {
     const migrations = await discoverMigrations();
-    expect(migrations.at(-1)?.fileName).toBe("0013_hunt_automation_item_uses.sql");
+    expect(migrations.find(({ fileName }) => fileName === "0013_hunt_automation_item_uses.sql")?.fileName)
+      .toBe("0013_hunt_automation_item_uses.sql");
     const sql = await readFile(
       join(canonicalMigrationsDirectory, "0013_hunt_automation_item_uses.sql"),
       "utf8",
@@ -174,5 +175,23 @@ describe("discoverMigrations", () => {
     expect(sql).toContain("automation_family text NOT NULL CHECK (automation_family IN ('potion', 'revive'))");
     expect(sql).toContain("inventory_row_version_before bigint NOT NULL");
     expect(sql).toContain("inventory_row_version_after bigint NOT NULL");
+  });
+
+  it("publishes TASK-103 presentation authority as an additive, non-enabling migration", async () => {
+    const migrations = await discoverMigrations();
+    expect(migrations.at(-1)?.fileName).toBe("0014_hunt_presentation_feed.sql");
+    const sql = await readFile(join(canonicalMigrationsDirectory, "0014_hunt_presentation_feed.sql"), "utf8");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_presentation_streams");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_presentation_battles");
+    expect(sql).toContain("CREATE TABLE pokenexus.hunt_presentation_events");
+    expect(sql).toContain("PRIMARY KEY (hunt_id, event_index)");
+    expect(sql).toContain("UNIQUE (hunt_id, battle_id, sequence)");
+    expect(sql).toContain("public_header_digest bytea NOT NULL");
+    expect(sql).toContain("private_source_bytes bytea NOT NULL");
+    expect(sql).toContain("presentation_terminal_recorded_at timestamptz");
+    expect(sql).toContain("'pokenexus.combat-presentation.v1'");
+    expect(sql).toContain("'pokenexus.combat-presentation.v2'");
+    expect(sql).not.toContain("'pokenexus.combat-presentation.v3'");
+    expect(sql).not.toMatch(/CREATE\s+(?:OR REPLACE\s+)?(?:FUNCTION|TRIGGER|VIEW)\b/iu);
   });
 });
