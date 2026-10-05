@@ -6,6 +6,10 @@ import {
   GENETIC_COMBAT_RULES_VERSION_V1,
   GENETIC_COMBAT_RULES_VERSION_V2,
   initializeBattle,
+  MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
+  MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
+  NO_SAVED_AUTO_POTION_POLICY,
+  NO_SAVED_AUTO_REVIVE_POLICY,
   resolveCombatStimulus,
   type BattleInitInput,
   type AbilityId,
@@ -24,8 +28,10 @@ import {
   advanceSoloHuntSegmentedToCutoff,
   decodeSoloHuntCheckpointV1,
   decodeSoloHuntCheckpointV2,
+  decodeSoloHuntCheckpointV3,
   encodeSoloHuntCheckpointV1,
   encodeSoloHuntCheckpointV2,
+  encodeSoloHuntCheckpointV3,
 } from "./solo-hunt-checkpoint";
 import {
   createFreshSoloHuntCadence,
@@ -33,7 +39,9 @@ import {
   pruneSoloHuntEndedOpponentCadence,
   advanceSoloHuntInterBattleCadence,
   advanceSoloHuntToEncounterBoundaryOrCutoff,
+  advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff,
   advanceSoloHuntToCutoff,
+  applySoloHuntPostBattleAutoRevive,
   applySoloHuntExplicitHealing,
   createSoloHuntRuntime,
   replayValidateSoloHuntCompletedCaptureSource,
@@ -1210,7 +1218,7 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
       policyRng: createRngState(123),
       combatDeterministicState: { rng: createRngState(999) },
     });
-    expect(created.accepted).toBe(true);
+    expect(created.accepted, created.accepted ? undefined : created.reason).toBe(true);
     if (!created.accepted) return;
 
     const bounded = advanceSoloHuntToEncounterBoundaryOrCutoff(created.state, inputs, 10_000);
@@ -1220,7 +1228,14 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(bounded.state.completedEncounters).toHaveLength(1);
     expect(bounded.state.currentEncounter).toBeUndefined();
     expect(bounded.state.interBattle).toBeDefined();
+    expect(bounded.state.interBattle?.activePokemonInstanceId).toBeUndefined();
     expect(bounded.state.logicalTimeMs).toBeLessThan(10_000);
+    const historicalRoundTrip = decodeSoloHuntCheckpointV2(encodeSoloHuntCheckpointV2(bounded.state));
+    expect(historicalRoundTrip.accepted).toBe(true);
+    if (!historicalRoundTrip.accepted) return;
+    expect(historicalRoundTrip.state.interBattle?.activePokemonInstanceId).toBeUndefined();
+    expect(historicalRoundTrip.state.logicalTimeMs).toBe(bounded.state.logicalTimeMs);
+    expect(historicalRoundTrip.state.completedEncounters).toEqual(bounded.state.completedEncounters);
 
     const resumed = advanceSoloHuntToCutoff(bounded.state, inputs, 10_000);
     const direct = advanceSoloHuntToCutoff(created.state, inputs, 10_000);
@@ -1295,7 +1310,7 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     const restoredPendingCapture = decoded.state.pendingCaptureDecision;
     expect(restoredEvidence).toBeDefined();
     expect(restoredPendingCapture).toBeDefined();
-    if (!restoredEvidence || !restoredPendingCapture) return;
+    if (!restoredEvidence || !restoredPendingCapture || restoredEvidence.completionKind !== "defeat") return;
     const restoredReward = replayValidateSoloHuntRewardSource(
       decoded.state,
       inputs,
@@ -1466,6 +1481,8 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(advanced.accepted).toBe(true);
     if (!advanced.accepted) return;
     const evidence = advanced.state.completedEncounters[0]!;
+    expect(evidence.completionKind).toBe("defeat");
+    if (evidence.completionKind !== "defeat") return;
 
     const validated = replayValidateSoloHuntRewardSource(
       advanced.state,
@@ -2516,5 +2533,259 @@ describe("TASK-035 integrated Solo Hunt runtime", () => {
     expect(drawn.state.terminalReason).toBe("draw");
     expect(drawn.state.completedEncounters).toEqual([]);
     expect(drawn.state.pendingEncounterSelection).toEqual(drawPending);
+  });
+
+  it("D-F16 preserves a sealed draw while post-Battle Revive consumes the pending selection as resolved_non_win", () => {
+    const managementInputs = geneticRuntimeInputs(MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1);
+    const drawContext: ResolvedCombatContext = {
+      ...managementInputs.context,
+      combatEventSchemaVersion: MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
+      moveRules: {
+        ...managementInputs.context.moveRules,
+        enemy: { ...managementInputs.context.moveRules.enemy, targetScope: "allActive", power: 1000 },
+      },
+    };
+    const baseInputs = {
+      ...managementInputs,
+      context: drawContext,
+    };
+    const inputs = {
+      ...baseInputs,
+      opponentTemplates: [{
+        ...baseInputs.opponentTemplates[0],
+        baseStats: { hp: 10, atk: 200, def: 10, spa: 10, spd: 10, spe: 200 },
+      }],
+      automationPolicies: {
+        capture: { policyVersion: null, rowVersion: "0", enabled: false },
+        potion: NO_SAVED_AUTO_POTION_POLICY,
+        revive: NO_SAVED_AUTO_REVIVE_POLICY,
+      },
+    } as const;
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:post-battle-revive",
+      inputs,
+      policyRng: createRngState(3),
+      combatDeterministicState: { rng: createRngState(4) },
+    });
+    expect(created.accepted, created.accepted ? undefined : created.reason).toBe(true);
+    if (!created.accepted) return;
+    const pending = created.state.pendingEncounterSelection;
+    expect(pending).toBeDefined();
+
+    let state = created.state;
+    for (let step = 0; step < 16; step += 1) {
+      const advanced = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+        state,
+        inputs,
+        10,
+        { skipInitialAutomationBoundary: true },
+      );
+      expect(advanced.accepted).toBe(true);
+      if (!advanced.accepted) return;
+      state = advanced.state;
+      if (state.currentEncounter?.battle.status === "ended") break;
+    }
+    const sealed = state.currentEncounter;
+    expect(sealed?.battle.status).toBe("ended");
+    expect(sealed?.battleOutcome).toEqual({ kind: "draw" });
+    expect(state.status).toBe("active");
+    expect(state.pendingEncounterSelection).toEqual(pending);
+    if (!sealed) return;
+    const sealedBattle = sealed.battle;
+    const sealedStimuli = [...sealed.battleStimuli];
+    const activation = sealed.participantActivations.at(-1);
+    expect(activation).toBeDefined();
+    if (!activation) return;
+    const combatant = sealed.battle.combatants[activation.combatantId];
+    expect(combatant?.currentHp).toBe(0);
+    if (!combatant) return;
+
+    const revived = applySoloHuntPostBattleAutoRevive(state, inputs, {
+      provenanceId: "automation:post-battle-revive:1",
+      targetPokemonInstanceId: activation.pokemonInstanceId,
+      restoredHp: Math.max(1, Math.floor(combatant.maxHp / 2)),
+    });
+    expect(revived.accepted, revived.accepted ? undefined : revived.reason).toBe(true);
+    if (!revived.accepted) return;
+    expect(sealed.battle).toEqual(sealedBattle);
+    expect(sealed.battleStimuli).toEqual(sealedStimuli);
+    expect(revived.state.currentEncounter).toBeUndefined();
+    expect(revived.state.pendingEncounterSelection).toBeUndefined();
+    expect(revived.state.pendingCaptureDecision).toBeUndefined();
+    expect(revived.state.completedEncounters).toHaveLength(1);
+    expect(revived.state.completedEncounters[0]).toMatchObject({
+      encounterId: sealed.encounterId,
+      completionKind: "resolved_non_win",
+    });
+    expect("rewardSourceIdentity" in revived.state.completedEncounters[0]!).toBe(false);
+    expect("rewardEnvelope" in revived.state.completedEncounters[0]!).toBe(false);
+    expect(revived.state.appliedAutomationEvents?.at(-1)).toMatchObject({
+      kind: "revive",
+      provenanceId: "automation:post-battle-revive:1",
+      afterEncounterId: sealed.encounterId,
+      resultingHp: revived.resultingHp,
+    });
+    const targetKey = cadenceParticipantKey({
+      kind: "pokemonInstance",
+      identity: activation.pokemonInstanceId,
+    });
+    expect(revived.state.interBattle?.cadence.hpByParticipant[targetKey]).toBe(revived.resultingHp);
+
+    const bytes = encodeSoloHuntCheckpointV3(revived.state);
+    expect(decodeSoloHuntCheckpointV3(bytes)).toEqual({ accepted: true, state: revived.state });
+    expect(replayValidateSoloHuntRewardSource(
+      revived.state,
+      inputs,
+      "reward:forbidden-after-draw",
+    )).toMatchObject({ accepted: false });
+    expect(replayValidateSoloHuntCompletedCaptureSource(
+      revived.state,
+      inputs,
+      sealed.encounterId,
+    )).toMatchObject({
+      accepted: false,
+      reason: expect.stringMatching(/resolved_non_win/i),
+    });
+  });
+
+  it("settles a same-time forward Battle action at cutoff before exposing its new KO automation boundary", () => {
+    const managementInputs = geneticRuntimeInputs(MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1);
+    const lethalContext: ResolvedCombatContext = {
+      ...managementInputs.context,
+      combatEventSchemaVersion: MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
+      moveRules: {
+        ...managementInputs.context.moveRules,
+        enemy: { ...managementInputs.context.moveRules.enemy, power: 1000 },
+      },
+    };
+    const baseInputs = {
+      ...managementInputs,
+      context: lethalContext,
+    };
+    const inputs = {
+      ...baseInputs,
+      opponentTemplates: [{
+        ...baseInputs.opponentTemplates[0],
+        baseStats: { hp: 10, atk: 200, def: 10, spa: 10, spd: 10, spe: 200 },
+      }],
+      automationPolicies: {
+        capture: { policyVersion: null, rowVersion: "0", enabled: false },
+        potion: NO_SAVED_AUTO_POTION_POLICY,
+        revive: NO_SAVED_AUTO_REVIVE_POLICY,
+      },
+    } as const;
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:retreat-exact-cutoff",
+      inputs,
+      policyRng: createRngState(81),
+      combatDeterministicState: { rng: createRngState(82) },
+    });
+    expect(created.accepted, created.accepted ? undefined : created.reason).toBe(true);
+    if (!created.accepted) return;
+
+    const cutoff = created.state.logicalTimeMs;
+    const advanced = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+      created.state,
+      inputs,
+      cutoff,
+      { skipInitialAutomationBoundary: true },
+    );
+    expect(advanced.accepted, advanced.accepted ? undefined : advanced.reason).toBe(true);
+    if (!advanced.accepted) return;
+    expect(advanced.stopReason).toBe("automationBoundary");
+    expect(advanced.state.logicalTimeMs).toBe(cutoff);
+    expect(advanced.state.currentEncounter?.battle.status).toBe("active");
+    expect(advanced.state.currentEncounter?.battle.koInterventionPending).toMatchObject({
+      sideId: advanced.state.currentEncounter?.playerSideId,
+      combatantId: expect.any(String),
+    });
+    expect(advanced.events.some((event) =>
+      event.kind === "combat"
+      && event.huntTimeMs === cutoff
+      && event.event.kind === "MoveUsed"
+    )).toBe(true);
+  });
+
+  it("stops a forward Hunt after settled inter-Battle effects before initializing Encounter N+1", () => {
+    const managementInputs = geneticRuntimeInputs(MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1);
+    const inputs = {
+      ...managementInputs,
+      context: {
+        ...managementInputs.context,
+        combatEventSchemaVersion: MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
+      },
+      automationPolicies: {
+        capture: { policyVersion: null, rowVersion: "0", enabled: false },
+        potion: NO_SAVED_AUTO_POTION_POLICY,
+        revive: NO_SAVED_AUTO_REVIVE_POLICY,
+      },
+    } as const;
+    const created = createSoloHuntRuntime({
+      huntRunIdentity: "hunt-run:activity-gate",
+      inputs,
+      policyRng: createRngState(71),
+      combatDeterministicState: { rng: createRngState(72) },
+    });
+    expect(created.accepted, created.accepted ? undefined : created.reason).toBe(true);
+    if (!created.accepted) return;
+
+    let state = created.state;
+    let encounterBoundaryReached = false;
+    for (let step = 0; step < 32; step += 1) {
+      const advanced = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+        state,
+        inputs,
+        60_000,
+        { skipInitialAutomationBoundary: true },
+      );
+      expect(advanced.accepted).toBe(true);
+      if (!advanced.accepted) return;
+      state = advanced.state;
+      if (advanced.stopReason === "encounterBoundary") {
+        encounterBoundaryReached = true;
+        break;
+      }
+    }
+    expect(encounterBoundaryReached).toBe(true);
+    expect(state.completedEncounters).toHaveLength(1);
+    expect(state.currentEncounter).toBeUndefined();
+
+    let activityBoundaryReached = false;
+    for (let step = 0; step < 32; step += 1) {
+      const advanced = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+        state,
+        inputs,
+        60_000,
+        {
+          skipInitialAutomationBoundary: true,
+          stopBeforeNextEncounter: true,
+        },
+      );
+      expect(advanced.accepted).toBe(true);
+      if (!advanced.accepted) return;
+      state = advanced.state;
+      if (advanced.stopReason === "activityBoundary") {
+        activityBoundaryReached = true;
+        break;
+      }
+    }
+    expect(activityBoundaryReached).toBe(true);
+    expect(state.interBattle?.remainingGapMs).toBe(0);
+    expect(state.interBattle?.activePokemonInstanceId).toBe(inputs.team[0]!.pokemonInstanceId);
+    expect(state.currentEncounter).toBeUndefined();
+    expect(state.completedEncounters).toHaveLength(1);
+
+    const released = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+      state,
+      inputs,
+      60_000,
+      {
+        skipInitialAutomationBoundary: true,
+        stopBeforeNextEncounter: false,
+      },
+    );
+    expect(released.accepted).toBe(true);
+    if (!released.accepted) return;
+    expect(released.state.currentEncounter?.encounterOrdinal).toBe(2);
   });
 });

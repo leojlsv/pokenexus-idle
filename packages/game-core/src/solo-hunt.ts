@@ -35,9 +35,19 @@ import type {
 import { battleEffectKey, cadenceParticipantKey } from "./types";
 import { compareInitiative, compareUtf8Bytes, drawUniformInteger } from "./combat-math";
 import { createCadenceCarry, initializeBattle, resolveCombatStimulus } from "./battle";
-import { advanceCadence, evaluateInstantHpHealing } from "./effects";
+import {
+  advanceCadence,
+  applyCadenceExternalHpHeal,
+  applyCadenceRevive,
+  evaluateInstantHpHealing,
+} from "./effects";
 import { evaluateBattleLifecycle } from "./lifecycle";
 import { deriveStats, deriveStatsForRulesVersion, validateBattleCombatantInit } from "./validation";
+import { isManagementFirstCombatContext } from "./management-first-combat-rules";
+import {
+  assertHuntAutomationPolicyAuthoritySnapshot,
+  type HuntAutomationPolicyAuthoritySnapshot,
+} from "./hunt-automation-policy";
 import { validateRngState } from "./rng";
 import { ownGet, safeRecordFromEntries, safeRecordWith } from "./record-utils";
 import {
@@ -50,7 +60,7 @@ import {
   type EncounterIndividualizationSnapshot,
   type GeneticProfile,
 } from "./encounter-individualization";
-import { isGeneticCombatRulesVersion } from "./genetic-combat-rules";
+import { usesGeneticCombatSemantics } from "./genetic-combat-rules";
 
 const SOLO_HUNT_STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
 
@@ -133,6 +143,7 @@ export interface SoloHuntEncounterBattleInitInput {
   readonly context: ResolvedCombatContext;
   readonly deterministicState: DeterministicState;
   readonly individualizationSnapshot?: EncounterIndividualizationSnapshot;
+  readonly preferredActivePokemonInstanceId?: PokemonInstanceId;
 }
 
 export type SoloHuntEncounterBattleInitResult =
@@ -215,6 +226,7 @@ export interface SoloHuntRuntimeInputs {
   readonly encounterOptions: ReadonlyArray<SoloHuntEncounterOption>;
   readonly opponentTemplates: ReadonlyArray<SoloHuntOpponentTemplate>;
   readonly interBattleGapMs: number;
+  readonly automationPolicies?: HuntAutomationPolicyAuthoritySnapshot;
   /**
    * Server-only runtime authority. secretKey is never copied into SoloHuntRuntimeState.
    * Presence is required by an explicitly supported Genetic combat-rules release.
@@ -242,8 +254,7 @@ export interface SoloHuntPendingEncounterSelection {
   readonly derivationAuthorityKeyId?: string;
 }
 
-export interface SoloHuntCompletedEncounterEvidence {
-  readonly rewardSourceIdentity: string;
+interface SoloHuntCompletedEncounterEvidenceBase {
   readonly huntRunIdentity: string;
   readonly encounterId: EncounterId;
   readonly encounterOrdinal: number;
@@ -251,9 +262,7 @@ export interface SoloHuntCompletedEncounterEvidence {
   readonly encounterDefinitionId: EncounterDefinitionId;
   readonly speciesId: SpeciesId;
   readonly level: number;
-  readonly completionKind: "defeat";
   readonly participantPokemonInstanceIds: ReadonlyArray<PokemonInstanceId>;
-  readonly rewardEnvelope: unknown;
   readonly contentVersion: string;
   readonly contentHash: string;
   readonly gameDataVersion: GameDataVersion;
@@ -265,6 +274,17 @@ export interface SoloHuntCompletedEncounterEvidence {
   readonly derivationAuthorityVersion?: string;
   readonly derivationAuthorityKeyId?: string;
 }
+
+export type SoloHuntCompletedEncounterEvidence = SoloHuntCompletedEncounterEvidenceBase & (
+  | {
+      readonly completionKind: "defeat";
+      readonly rewardSourceIdentity: string;
+      readonly rewardEnvelope: unknown;
+    }
+  | {
+      readonly completionKind: "resolved_non_win";
+    }
+);
 
 export type SoloHuntSelectionStreamOrigin =
   | {
@@ -337,6 +357,7 @@ export interface SoloHuntInterBattleRuntime {
   readonly cadence: CadenceCarryState;
   readonly policy: SoloHuntMovePolicyState;
   readonly remainingGapMs: number;
+  readonly activePokemonInstanceId?: PokemonInstanceId;
 }
 
 export interface SoloHuntAppliedHealingEvent {
@@ -349,6 +370,30 @@ export interface SoloHuntAppliedHealingEvent {
   readonly magnitude: EffectMagnitude;
   readonly healedHp: number;
 }
+
+export type SoloHuntAppliedAutomationEvent =
+  | {
+      readonly kind: "potion";
+      readonly provenanceId: string;
+      readonly afterEncounterId: EncounterId;
+      readonly afterEncounterOrdinal: number;
+      readonly appliedAtHuntTimeMs: number;
+      readonly targetPokemonInstanceId: PokemonInstanceId;
+      readonly magnitude: EffectMagnitude;
+      readonly appliedHp: number;
+      readonly resultingHp: number;
+    }
+  | {
+      readonly kind: "revive";
+      readonly provenanceId: string;
+      readonly afterEncounterId: EncounterId;
+      readonly afterEncounterOrdinal: number;
+      readonly appliedAtHuntTimeMs: number;
+      readonly targetPokemonInstanceId: PokemonInstanceId;
+      readonly restoredHp: number;
+      readonly appliedHp: number;
+      readonly resultingHp: number;
+    };
 
 export type SoloHuntTerminalReason = "noLivingTeam" | "opponentVictory" | "draw";
 
@@ -375,6 +420,8 @@ export interface SoloHuntRuntimeState {
   readonly completedEncounters: ReadonlyArray<SoloHuntCompletedEncounterEvidence>;
   readonly completedEncounterProvenance: ReadonlyArray<SoloHuntCompletedEncounterProvenance>;
   readonly appliedHealingEvents?: ReadonlyArray<SoloHuntAppliedHealingEvent>;
+  readonly appliedAutomationEvents?: ReadonlyArray<SoloHuntAppliedAutomationEvent>;
+  readonly automationPolicies?: HuntAutomationPolicyAuthoritySnapshot;
   readonly pendingCaptureDecision?: SoloHuntPendingCaptureDecision;
   readonly status: "active" | "terminal";
   readonly terminalReason?: SoloHuntTerminalReason;
@@ -442,6 +489,25 @@ export type AdvanceSoloHuntToEncounterBoundaryResult =
       readonly accepted: true;
       readonly state: SoloHuntRuntimeState;
       readonly stopReason: "cutoff" | "encounterBoundary" | SoloHuntTerminalReason;
+      readonly events: ReadonlyArray<SoloHuntSimulationEvent>;
+    }
+  | {
+      readonly accepted: false;
+      readonly reason: string;
+      readonly state: SoloHuntRuntimeState;
+    readonly events: readonly [];
+  };
+
+export type AdvanceSoloHuntToAutomationBoundaryResult =
+  | {
+      readonly accepted: true;
+      readonly state: SoloHuntRuntimeState;
+      readonly stopReason:
+        | "cutoff"
+        | "automationBoundary"
+        | "encounterBoundary"
+        | "activityBoundary"
+        | SoloHuntTerminalReason;
       readonly events: ReadonlyArray<SoloHuntSimulationEvent>;
     }
   | {
@@ -519,7 +585,7 @@ export function validateSoloHuntOpponentCatalog(
   }
 
   const seenKeys = new Set<string>();
-  const geneticRuntime = isGeneticCombatRulesVersion(context.rulesVersion);
+  const geneticRuntime = usesGeneticCombatSemantics(context.rulesVersion);
   const zeroStats: StatBlock<number> = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
   for (const template of templates) {
     const key = opponentTemplateKey(template.encounterDefinitionId, template.level);
@@ -667,7 +733,7 @@ export function initializeSoloHuntEncounterBattle(
   ) {
     return reject(`Solo Hunt opponent template does not match selected encounter/context: ${templateKey}`);
   }
-  const geneticRuntime = isGeneticCombatRulesVersion(input.context.rulesVersion);
+  const geneticRuntime = usesGeneticCombatSemantics(input.context.rulesVersion);
   const individual = input.individualizationSnapshot;
   if (geneticRuntime) {
     if (
@@ -698,10 +764,16 @@ export function initializeSoloHuntEncounterBattle(
     return reject("Solo Hunt continuing player cadence/policy keys must exactly match the pinned Team");
   }
 
-  const activeMember = input.team.find((member) => {
-    const key = cadenceParticipantKey({ kind: "pokemonInstance", identity: member.pokemonInstanceId });
-    return (ownGet(input.cadence.hpByParticipant, key) ?? 0) > 0;
-  });
+  const activeMember = input.preferredActivePokemonInstanceId
+    ? input.team.find((member) => {
+        if (member.pokemonInstanceId !== input.preferredActivePokemonInstanceId) return false;
+        const key = cadenceParticipantKey({ kind: "pokemonInstance", identity: member.pokemonInstanceId });
+        return (ownGet(input.cadence.hpByParticipant, key) ?? 0) > 0;
+      })
+    : input.team.find((member) => {
+        const key = cadenceParticipantKey({ kind: "pokemonInstance", identity: member.pokemonInstanceId });
+        return (ownGet(input.cadence.hpByParticipant, key) ?? 0) > 0;
+      });
   if (!activeMember) return reject("Solo Hunt has no living pinned Team member for the next Battle");
 
   const opponentIvs = individual?.ivs ?? template.ivs;
@@ -726,6 +798,9 @@ export function initializeSoloHuntEncounterBattle(
     moveCooldownRemainingMs: safeRecordFromEntries(
       template.moveLoadout.map((moveId) => [moveId, 0] as const),
     ),
+    ...(isManagementFirstCombatContext(input.context)
+      ? { autoPotionCooldownRemainingMs: 0 }
+      : {}),
   };
   const cadence: CadenceCarryState = {
     effects: [...input.cadence.effects],
@@ -823,6 +898,9 @@ export function initializeSoloHuntEncounterBattle(
     deterministicState: input.deterministicState,
     cadenceBindings,
     cadenceCarry: cadence,
+    ...(isManagementFirstCombatContext(input.context)
+      ? { koInterventionSideId: SOLO_HUNT_PLAYER_SIDE_ID }
+      : {}),
   });
   if (!battle.accepted) return reject(battle.reason);
   return {
@@ -946,6 +1024,17 @@ function nextCadenceEffectBoundaryMs(cadence: CadenceCarryState): number | undef
     effect.remainingDurationMs,
     ...(effect.remainingToNextTickMs === undefined ? [] : [effect.remainingToNextTickMs]),
   ]).filter((value) => Number.isSafeInteger(value) && value > 0);
+  return boundaries.length > 0 ? Math.min(...boundaries) : undefined;
+}
+
+function nextCadenceAutomationBoundaryMs(cadence: CadenceCarryState): number | undefined {
+  const boundaries = [
+    ...(nextCadenceEffectBoundaryMs(cadence) === undefined ? [] : [nextCadenceEffectBoundaryMs(cadence)!]),
+    ...Object.values(cadence.readinessByParticipant)
+      .map(({ autoPotionCooldownRemainingMs }) => autoPotionCooldownRemainingMs)
+      .filter((value): value is number =>
+        typeof value === "number" && Number.isSafeInteger(value) && value > 0),
+  ];
   return boundaries.length > 0 ? Math.min(...boundaries) : undefined;
 }
 
@@ -1170,6 +1259,15 @@ function validateRuntimeInputs(inputs: SoloHuntRuntimeInputs): string | undefine
   if (!Number.isSafeInteger(inputs.interBattleGapMs) || inputs.interBattleGapMs < 0) {
     return "interBattleGapMs must be a non-negative safe integer";
   }
+  if (inputs.automationPolicies !== undefined) {
+    try {
+      assertHuntAutomationPolicyAuthoritySnapshot(inputs.automationPolicies);
+    } catch (cause) {
+      return cause instanceof Error
+        ? `Solo Hunt automation policy authority is invalid: ${cause.message}`
+        : "Solo Hunt automation policy authority is invalid";
+    }
+  }
   const geneticRuntime = usesGeneticIndividualization(inputs);
   const authority = inputs.individualizationAuthority;
   if (geneticRuntime) {
@@ -1336,7 +1434,7 @@ function pendingSelectionIdentity(
 }
 
 function usesGeneticIndividualization(inputs: Pick<SoloHuntRuntimeInputs, "context" | "individualizationAuthority">): boolean {
-  return isGeneticCombatRulesVersion(inputs.context.rulesVersion);
+  return usesGeneticCombatSemantics(inputs.context.rulesVersion);
 }
 
 function isValidCompatibleProfiles(
@@ -1711,21 +1809,39 @@ function validateCurrentEncounterBattleCheckpoint(
   if (!structurallyEqual(lifecycle.outcome, encounter.battleOutcome)) {
     return "Solo Hunt current Battle outcome does not match Combat Engine lifecycle";
   }
+  const forwardPostBattleReviveBoundary =
+    state.status === "active"
+    && state.automationPolicies !== undefined
+    && battle.status === "ended"
+    && encounter.battleOutcome?.kind === "draw";
+  const forwardNoLivingAfterSealedLoss =
+    state.status === "terminal"
+    && state.automationPolicies !== undefined
+    && state.terminalReason === "noLivingTeam"
+    && battle.status === "ended"
+    && encounter.battleOutcome?.kind === "win"
+    && encounter.battleOutcome.winnerSideId === encounter.opponentSideId;
   if (
-    (state.status === "active" && battle.status !== "active")
+    (state.status === "active" && battle.status !== "active" && !forwardPostBattleReviveBoundary)
     || (state.status === "terminal"
       && (!encounter.battleOutcome
         || battle.status !== "ended"
-        || (state.terminalReason !== "draw" && state.terminalReason !== "opponentVictory")))
+        || (
+          state.terminalReason !== "draw"
+          && state.terminalReason !== "opponentVictory"
+          && !forwardNoLivingAfterSealedLoss
+        )))
   ) {
     return "Solo Hunt runtime status does not match current Battle lifecycle";
   }
   if (state.status === "terminal" && encounter.battleOutcome) {
-    const expectedReason = encounter.battleOutcome.kind === "draw"
-      ? "draw"
-      : encounter.battleOutcome.winnerSideId === encounter.opponentSideId
-        ? "opponentVictory"
-        : undefined;
+    const expectedReason = forwardNoLivingAfterSealedLoss
+      ? "noLivingTeam"
+      : encounter.battleOutcome.kind === "draw"
+        ? "draw"
+        : encounter.battleOutcome.winnerSideId === encounter.opponentSideId
+          ? "opponentVictory"
+          : undefined;
     if (!expectedReason || state.terminalReason !== expectedReason) {
       return "Solo Hunt terminal reason does not match current Battle outcome";
     }
@@ -1873,11 +1989,9 @@ function validateCompletedEncounterEvidence(
     if (
       evidence.encounterOrdinal !== expectedOrdinal
       || evidence.encounterId !== soloHuntEncounterId(state.huntRunIdentity, expectedOrdinal)
-      || evidence.rewardSourceIdentity !== rewardSourceIdentity(state.huntRunIdentity, expectedOrdinal)
       || provenance.encounterOrdinal !== expectedOrdinal
       || provenance.encounterId !== evidence.encounterId
       || evidence.huntRunIdentity !== state.huntRunIdentity
-      || evidence.completionKind !== "defeat"
       || evidence.pendingSelectionIdentity !== pending.pendingSelectionIdentity
       || evidence.individualizationSnapshotIdentity !== expectedSnapshotIdentity
       || evidence.individualizationSnapshotCommitment !== expectedSnapshotCommitment
@@ -1899,10 +2013,21 @@ function validateCompletedEncounterEvidence(
       || evidence.encounterDefinitionId !== selection.encounterDefinitionId
       || evidence.speciesId !== selection.speciesId
       || evidence.level !== selection.level
-      || !structurallyEqual(evidence.rewardEnvelope, selection.rewardEnvelope)
       || !sameOrderedStrings(evidence.participantPokemonInstanceIds, provenanceParticipants)
     ) {
       return "Solo Hunt completed Encounter evidence is inconsistent or forged";
+    }
+    if (
+      evidence.completionKind === "defeat"
+      && (
+        evidence.rewardSourceIdentity !== rewardSourceIdentity(state.huntRunIdentity, expectedOrdinal)
+        || !structurallyEqual(evidence.rewardEnvelope, selection.rewardEnvelope)
+      )
+    ) {
+      return "Solo Hunt completed Encounter reward source evidence is inconsistent or forged";
+    }
+    if (evidence.completionKind !== "defeat" && evidence.completionKind !== "resolved_non_win") {
+      return "Solo Hunt completed Encounter disposition is invalid";
     }
     previousCompletionTimeMs = evidence.completedAtHuntTimeMs;
   }
@@ -2058,6 +2183,14 @@ function replaySoloHuntEncounterStimuli(
       continue;
     }
 
+    if (stimulus.kind === "externalHpHeal" || stimulus.kind === "koInterventionDecision") {
+      const resolved = resolveCombatStimulus(battle, stimulus, replayDeterministicState);
+      if (!resolved.accepted) return { accepted: false, reason: resolved.reason };
+      battle = resolved.state;
+      replayDeterministicState = resolved.deterministicState;
+      continue;
+    }
+
     return { accepted: false, reason: "Solo Hunt replay encountered an unsupported combat stimulus" };
   }
 
@@ -2074,6 +2207,10 @@ function replaySoloHuntEncounterStimuli(
 
 function healingEvents(state: SoloHuntRuntimeState): ReadonlyArray<SoloHuntAppliedHealingEvent> {
   return state.appliedHealingEvents ?? [];
+}
+
+function automationEvents(state: SoloHuntRuntimeState): ReadonlyArray<SoloHuntAppliedAutomationEvent> {
+  return state.appliedAutomationEvents ?? [];
 }
 
 function healingMagnitudeError(magnitude: EffectMagnitude): string | undefined {
@@ -2094,6 +2231,9 @@ function validateAppliedHealingEvents(
   state: SoloHuntRuntimeState,
   inputs: SoloHuntRuntimeInputs,
 ): string | undefined {
+  if (state.automationPolicies !== undefined && healingEvents(state).length > 0) {
+    return "forward Solo Hunt does not accept legacy manual healing provenance";
+  }
   const pinned = new Set(inputs.team.map(({ pokemonInstanceId }) => pokemonInstanceId));
   let previousTime = -1;
   let previousEncounterOrdinal = 0;
@@ -2149,6 +2289,176 @@ function validateAppliedHealingEvents(
     previousSequence = sequence;
   }
   return undefined;
+}
+
+function validateAppliedAutomationEvents(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+): string | undefined {
+  const events = automationEvents(state);
+  if (events.length === 0) return undefined;
+  if (state.automationPolicies === undefined) {
+    return "historical Solo Hunt cannot contain forward automation provenance";
+  }
+  const pinned = new Set(inputs.team.map(({ pokemonInstanceId }) => pokemonInstanceId));
+  const seen = new Set<string>();
+  let priorOrdinal = 0;
+  let priorTime = -1;
+  for (const event of events) {
+    if (
+      typeof event.provenanceId !== "string"
+      || event.provenanceId.length === 0
+      || seen.has(event.provenanceId)
+      || !Number.isSafeInteger(event.afterEncounterOrdinal)
+      || event.afterEncounterOrdinal < 1
+      || !Number.isSafeInteger(event.appliedAtHuntTimeMs)
+      || event.appliedAtHuntTimeMs < 0
+      || !pinned.has(event.targetPokemonInstanceId)
+      || !Number.isSafeInteger(event.appliedHp)
+      || event.appliedHp <= 0
+      || !Number.isSafeInteger(event.resultingHp)
+      || event.resultingHp <= 0
+    ) {
+      return "Solo Hunt automation event is invalid";
+    }
+    const boundary = state.completedEncounters.find(
+      ({ encounterId, encounterOrdinal }) =>
+        encounterId === event.afterEncounterId && encounterOrdinal === event.afterEncounterOrdinal,
+    );
+    if (
+      !boundary
+      || event.appliedAtHuntTimeMs < boundary.completedAtHuntTimeMs
+      || event.appliedAtHuntTimeMs > boundary.completedAtHuntTimeMs + inputs.interBattleGapMs
+    ) {
+      return "Solo Hunt automation event is not bound to its exact inter-Battle Encounter boundary";
+    }
+    if (
+      event.afterEncounterOrdinal < priorOrdinal
+      || (event.afterEncounterOrdinal === priorOrdinal && event.appliedAtHuntTimeMs < priorTime)
+    ) {
+      return "Solo Hunt automation events are not in deterministic boundary order";
+    }
+    if (event.kind === "potion") {
+      if (healingMagnitudeError(event.magnitude)) return "Solo Hunt automation Potion magnitude is invalid";
+    } else if (
+      event.kind !== "revive"
+      || !Number.isSafeInteger(event.restoredHp)
+      || event.restoredHp <= 0
+      || event.appliedHp !== event.restoredHp
+      || event.resultingHp !== event.restoredHp
+    ) {
+      return "Solo Hunt automation Revive provenance is invalid";
+    }
+    seen.add(event.provenanceId);
+    priorOrdinal = event.afterEncounterOrdinal;
+    priorTime = event.appliedAtHuntTimeMs;
+  }
+  return undefined;
+}
+
+type ReplayInterBattleAutomationResult =
+  | {
+      readonly accepted: true;
+      readonly cadence: CadenceCarryState;
+      readonly deterministicState: DeterministicState;
+      readonly noLivingPlayer: boolean;
+      readonly nextAutomationIndex: number;
+    }
+  | { readonly accepted: false; readonly reason: string };
+
+function replayInterBattleWithAutomation(
+  cadence: CadenceCarryState,
+  context: ResolvedCombatContext,
+  deterministicState: DeterministicState,
+  fromHuntTimeMs: number,
+  toHuntTimeMs: number,
+  afterEncounterId: EncounterId,
+  afterEncounterOrdinal: number,
+  events: ReadonlyArray<SoloHuntAppliedAutomationEvent>,
+  startAutomationIndex: number,
+): ReplayInterBattleAutomationResult {
+  let currentCadence = cadence;
+  let currentDeterministicState = deterministicState;
+  let currentTimeMs = fromHuntTimeMs;
+  let index = startAutomationIndex;
+
+  while (index < events.length) {
+    const event = events[index]!;
+    if (event.afterEncounterOrdinal > afterEncounterOrdinal) break;
+    if (
+      event.afterEncounterOrdinal !== afterEncounterOrdinal
+      || event.afterEncounterId !== afterEncounterId
+      || event.appliedAtHuntTimeMs > toHuntTimeMs
+    ) {
+      if (event.afterEncounterOrdinal === afterEncounterOrdinal && event.appliedAtHuntTimeMs > toHuntTimeMs) break;
+      return { accepted: false, reason: "Solo Hunt automation event is bound to the wrong replay boundary" };
+    }
+    if (event.appliedAtHuntTimeMs < currentTimeMs) {
+      return { accepted: false, reason: "Solo Hunt automation event falls before its replay boundary" };
+    }
+    const elapsedMs = event.appliedAtHuntTimeMs - currentTimeMs;
+    const advanced = advanceSoloHuntInterBattleCadence(
+      currentCadence,
+      context,
+      currentDeterministicState,
+      elapsedMs,
+    );
+    if (!advanced.accepted || advanced.elapsedMs !== elapsedMs) {
+      return { accepted: false, reason: advanced.accepted ? "Solo Hunt automation replay missed its boundary" : advanced.reason };
+    }
+    if (advanced.noLivingPlayer && event.kind !== "revive") {
+      return { accepted: false, reason: "Solo Hunt Potion automation occurs after the Team became unable to continue" };
+    }
+    currentCadence = advanced.cadence;
+    currentDeterministicState = advanced.deterministicState;
+    currentTimeMs = event.appliedAtHuntTimeMs;
+    const participant = {
+      kind: "pokemonInstance" as const,
+      identity: event.targetPokemonInstanceId,
+    };
+    if (event.kind === "potion") {
+      const applied = applyCadenceExternalHpHeal(currentCadence, participant, event.magnitude);
+      if (
+        !applied.accepted
+        || applied.amount !== event.appliedHp
+        || applied.resultingHp !== event.resultingHp
+      ) {
+        return { accepted: false, reason: "Solo Hunt automated Potion does not replay exactly" };
+      }
+      currentCadence = applied.cadence;
+    } else {
+      const applied = applyCadenceRevive(currentCadence, participant, event.restoredHp);
+      if (!applied.accepted || applied.resultingHp !== event.resultingHp) {
+        return { accepted: false, reason: "Solo Hunt automated Revive does not replay exactly" };
+      }
+      currentCadence = applied.cadence;
+    }
+    index += 1;
+  }
+
+  const remainingMs = toHuntTimeMs - currentTimeMs;
+  if (!Number.isSafeInteger(remainingMs) || remainingMs < 0) {
+    return { accepted: false, reason: "Solo Hunt automation replay interval is invalid" };
+  }
+  const advanced = advanceSoloHuntInterBattleCadence(
+    currentCadence,
+    context,
+    currentDeterministicState,
+    remainingMs,
+  );
+  if (!advanced.accepted || advanced.elapsedMs !== remainingMs) {
+    return {
+      accepted: false,
+      reason: advanced.accepted ? "Solo Hunt automation replay did not reach its boundary" : advanced.reason,
+    };
+  }
+  return {
+    accepted: true,
+    cadence: advanced.cadence,
+    deterministicState: advanced.deterministicState,
+    noLivingPlayer: advanced.noLivingPlayer,
+    nextAutomationIndex: index,
+  };
 }
 
 type ReplayInterBattleHealingResult =
@@ -2278,7 +2588,9 @@ function validateReplayableHuntHistory(
   let deterministicState = state.combatDeterministicOrigin;
   let huntTimeMs = 0;
   const appliedHealingEvents = healingEvents(state);
+  const appliedAutomationEvents = automationEvents(state);
   let healingIndex = 0;
+  let automationIndex = 0;
 
   for (let index = 0; index < state.completedEncounterProvenance.length; index += 1) {
     const provenance = state.completedEncounterProvenance[index]!;
@@ -2307,12 +2619,17 @@ function validateReplayableHuntHistory(
     );
     if (!replay.accepted) return replay.reason;
     const lifecycle = evaluateBattleLifecycle(replay.battle);
+    if (replay.battle.status !== "ended") {
+      return "Solo Hunt completed Encounter stimulus history does not replay to Battle end";
+    }
     if (
-      replay.battle.status !== "ended"
-      || lifecycle.outcome?.kind !== "win"
-      || lifecycle.outcome.winnerSideId !== replay.playerSideId
+      evidence.completionKind === "defeat"
+      && (lifecycle.outcome?.kind !== "win" || lifecycle.outcome.winnerSideId !== replay.playerSideId)
     ) {
-      return "Solo Hunt completed Encounter stimulus history does not replay to player victory";
+      return "Solo Hunt completed winning Encounter stimulus history does not replay to player victory";
+    }
+    if (evidence.completionKind === "resolved_non_win" && lifecycle.outcome?.kind !== "draw") {
+      return "Solo Hunt resolved_non_win Encounter stimulus history does not replay to sealed draw";
     }
     if (
       provenance.terminalBattleTimeMs !== replay.battle.combatTimeMs
@@ -2344,50 +2661,97 @@ function validateReplayableHuntHistory(
       ) {
         return "Solo Hunt inter-Battle checkpoint time does not match replayed completion boundary";
       }
-      const advanced = replayInterBattleWithHealing(
+      if (state.automationPolicies !== undefined) {
+        const advanced = replayInterBattleWithAutomation(
+          pruned.cadence,
+          inputs.context,
+          deterministicState,
+          huntTimeMs,
+          state.logicalTimeMs,
+          evidence.encounterId,
+          evidence.encounterOrdinal,
+          appliedAutomationEvents,
+          automationIndex,
+        );
+        if (
+          !advanced.accepted
+          || !structurallyEqual(advanced.cadence, state.interBattle.cadence)
+          || !structurallyEqual(pruned.policy, state.interBattle.policy)
+          || !structurallyEqual(advanced.deterministicState, state.combatDeterministicState)
+          || (state.status === "active" && advanced.noLivingPlayer)
+          || (state.status === "terminal"
+            && (state.terminalReason !== "noLivingTeam" || !advanced.noLivingPlayer))
+          || advanced.nextAutomationIndex !== appliedAutomationEvents.length
+        ) {
+          return "Solo Hunt inter-Battle automation checkpoint does not replay exactly";
+        }
+      } else {
+        const advanced = replayInterBattleWithHealing(
+          pruned.cadence,
+          inputs.context,
+          deterministicState,
+          huntTimeMs,
+          state.logicalTimeMs,
+          evidence.encounterId,
+          evidence.encounterOrdinal,
+          appliedHealingEvents,
+          healingIndex,
+        );
+        if (
+          !advanced.accepted
+          || !structurallyEqual(advanced.cadence, state.interBattle.cadence)
+          || !structurallyEqual(pruned.policy, state.interBattle.policy)
+          || !structurallyEqual(advanced.deterministicState, state.combatDeterministicState)
+          || (state.status === "active" && advanced.noLivingPlayer)
+          || (state.status === "terminal"
+            && (state.terminalReason !== "noLivingTeam" || !advanced.noLivingPlayer))
+          || advanced.nextHealingIndex !== appliedHealingEvents.length
+        ) {
+          return "Solo Hunt inter-Battle checkpoint does not replay exactly";
+        }
+      }
+      return undefined;
+    }
+
+    if (state.automationPolicies !== undefined) {
+      const gap = replayInterBattleWithAutomation(
         pruned.cadence,
         inputs.context,
         deterministicState,
         huntTimeMs,
-        state.logicalTimeMs,
+        huntTimeMs + inputs.interBattleGapMs,
+        evidence.encounterId,
+        evidence.encounterOrdinal,
+        appliedAutomationEvents,
+        automationIndex,
+      );
+      if (!gap.accepted || gap.noLivingPlayer) {
+        return "Solo Hunt completed Encounter cannot replay automated cadence into the next Battle";
+      }
+      cadence = gap.cadence;
+      policy = pruned.policy;
+      deterministicState = gap.deterministicState;
+      automationIndex = gap.nextAutomationIndex;
+    } else {
+      const gap = replayInterBattleWithHealing(
+        pruned.cadence,
+        inputs.context,
+        deterministicState,
+        huntTimeMs,
+        huntTimeMs + inputs.interBattleGapMs,
         evidence.encounterId,
         evidence.encounterOrdinal,
         appliedHealingEvents,
         healingIndex,
       );
-      if (
-        !advanced.accepted
-        || !structurallyEqual(advanced.cadence, state.interBattle.cadence)
-        || !structurallyEqual(pruned.policy, state.interBattle.policy)
-        || !structurallyEqual(advanced.deterministicState, state.combatDeterministicState)
-        || (state.status === "active" && advanced.noLivingPlayer)
-        || (state.status === "terminal"
-          && (state.terminalReason !== "noLivingTeam" || !advanced.noLivingPlayer))
-        || advanced.nextHealingIndex !== appliedHealingEvents.length
-      ) {
-        return "Solo Hunt inter-Battle checkpoint does not replay exactly";
+      if (!gap.accepted || gap.noLivingPlayer) {
+        return "Solo Hunt completed Encounter cannot replay into the next Battle cadence";
       }
-      return undefined;
+      cadence = gap.cadence;
+      policy = pruned.policy;
+      deterministicState = gap.deterministicState;
+      healingIndex = gap.nextHealingIndex;
     }
-
-    const gap = replayInterBattleWithHealing(
-      pruned.cadence,
-      inputs.context,
-      deterministicState,
-      huntTimeMs,
-      huntTimeMs + inputs.interBattleGapMs,
-      evidence.encounterId,
-      evidence.encounterOrdinal,
-      appliedHealingEvents,
-      healingIndex,
-    );
-    if (!gap.accepted || gap.noLivingPlayer) {
-      return "Solo Hunt completed Encounter cannot replay into the next Battle cadence";
-    }
-    cadence = gap.cadence;
-    policy = pruned.policy;
-    deterministicState = gap.deterministicState;
-    healingIndex = gap.nextHealingIndex;
     huntTimeMs += inputs.interBattleGapMs;
   }
 
@@ -2396,6 +2760,9 @@ function validateReplayableHuntHistory(
   }
   if (healingIndex !== appliedHealingEvents.length) {
     return "Solo Hunt explicit healing history extends beyond the replayed current boundary";
+  }
+  if (automationIndex !== appliedAutomationEvents.length) {
+    return "Solo Hunt automation history extends beyond the replayed current boundary";
   }
   const encounter = state.currentEncounter;
   const pending = state.pendingEncounterSelection;
@@ -2438,6 +2805,7 @@ function validateReplayableHuntHistory(
 function validateRuntimeState(
   state: SoloHuntRuntimeState,
   inputs: SoloHuntRuntimeInputs,
+  options: { readonly allowPendingInterBattleAutomation?: boolean } = {},
 ): string | undefined {
   if (!Number.isSafeInteger(state.logicalTimeMs) || state.logicalTimeMs < 0) {
     return "Solo Hunt logical time must be a non-negative safe integer";
@@ -2521,7 +2889,11 @@ function validateRuntimeState(
       0,
     );
     if (!cadenceValidation.accepted) return cadenceValidation.reason;
-    if (state.status === "active" && cadenceValidation.noLivingPlayer) {
+    if (
+      state.status === "active"
+      && cadenceValidation.noLivingPlayer
+      && options.allowPendingInterBattleAutomation !== true
+    ) {
       return "active Solo Hunt inter-Battle phase has no living pinned Team member";
     }
     if (state.status === "terminal" && state.terminalReason !== "noLivingTeam") {
@@ -2533,12 +2905,15 @@ function validateRuntimeState(
   if (evidenceError) return evidenceError;
   const healingError = validateAppliedHealingEvents(state, inputs);
   if (healingError) return healingError;
+  const automationError = validateAppliedAutomationEvents(state, inputs);
+  if (automationError) return automationError;
   if (state.pendingCaptureDecision) {
     const backing = state.completedEncounters.find(
       (evidence) => evidence.encounterId === state.pendingCaptureDecision!.encounterId,
     );
     if (
       !backing
+      || backing.completionKind !== "defeat"
       || !structurallyEqual(
         state.pendingCaptureDecision,
         captureDecisionFromEvidence(backing),
@@ -2557,7 +2932,7 @@ export type ReplayValidatedSoloHuntRewardSourceResult =
       readonly accepted: true;
       readonly source: {
         readonly subjectPlayerId: PlayerId;
-        readonly evidence: SoloHuntCompletedEncounterEvidence;
+        readonly evidence: Extract<SoloHuntCompletedEncounterEvidence, { readonly completionKind: "defeat" }>;
         readonly pinnedTeam: ReadonlyArray<SoloHuntTeamMemberSnapshot>;
       };
     }
@@ -2579,7 +2954,9 @@ export function replayValidateSoloHuntRewardSource(
   const stateError = validateRuntimeState(state, inputs);
   if (stateError) return { accepted: false, reason: stateError };
   const matches = state.completedEncounters.filter(
-    (evidence) => evidence.rewardSourceIdentity === rewardSourceIdentityToResolve,
+    (evidence): evidence is Extract<SoloHuntCompletedEncounterEvidence, { readonly completionKind: "defeat" }> =>
+      evidence.completionKind === "defeat"
+      && evidence.rewardSourceIdentity === rewardSourceIdentityToResolve,
   );
   if (matches.length !== 1) {
     return {
@@ -2632,6 +3009,12 @@ export function replayValidateSoloHuntCompletedCaptureSource(
     };
   }
   const evidence = state.completedEncounters[evidenceIndex]!;
+  if (evidence.completionKind !== "defeat") {
+    return {
+      accepted: false,
+      reason: "Solo Hunt resolved_non_win Encounter cannot become a capture source",
+    };
+  }
   const provenance = state.completedEncounterProvenance[evidenceIndex];
   const snapshot = provenance?.individualizationSnapshot;
   if (!snapshot) {
@@ -2825,6 +3208,7 @@ function buildCurrentEncounter(
   context: ResolvedCombatContext,
   deterministicState: DeterministicState,
   individualizationAuthority?: EncounterIndividualizationAuthority,
+  preferredActivePokemonInstanceId?: PokemonInstanceId,
 ): {
   readonly accepted: true;
   readonly encounter: SoloHuntCurrentEncounterRuntime;
@@ -2858,6 +3242,7 @@ function buildCurrentEncounter(
     context,
     deterministicState,
     individualizationSnapshot,
+    preferredActivePokemonInstanceId,
   });
   if (!initialized.accepted) return { accepted: false, reason: initialized.reason };
   const encounterId = soloHuntEncounterId(huntRunIdentity, encounterOrdinal);
@@ -2971,6 +3356,13 @@ export function createSoloHuntRuntime(
       pendingEncounterSelection: pending,
       completedEncounters: [],
       completedEncounterProvenance: [],
+      ...(input.inputs.automationPolicies
+        ? {
+            automationPolicies: input.inputs.automationPolicies,
+            appliedHealingEvents: [],
+            appliedAutomationEvents: [],
+          }
+        : {}),
       status: "active",
     },
     events: built.events,
@@ -3072,10 +3464,482 @@ export function applySoloHuntExplicitHealing(
     : { accepted: true, state: next, event };
 }
 
+export type ApplySoloHuntAutomationItemResult =
+  | {
+      readonly accepted: true;
+      readonly state: SoloHuntRuntimeState;
+      readonly appliedHp: number;
+      readonly resultingHp: number;
+      readonly targetPokemonInstanceId: PokemonInstanceId;
+      readonly targetCombatantId: CombatantId | null;
+    }
+  | { readonly accepted: false; readonly reason: string };
+
+function activePlayerCombatant(
+  encounter: SoloHuntCurrentEncounterRuntime,
+): BattleCombatantState | undefined {
+  const side = encounter.battle.sides.find(({ sideId }) => sideId === encounter.playerSideId);
+  if (!side || side.activeCombatantIds.length !== 1) return undefined;
+  return ownGet(encounter.battle.combatants, side.activeCombatantIds[0]!);
+}
+
+function pokemonInstanceIdForCombatant(combatant: BattleCombatantState): PokemonInstanceId | null {
+  return combatant.cadenceParticipant?.kind === "pokemonInstance"
+    ? combatant.cadenceParticipant.identity
+    : null;
+}
+
+function stateWithBattleAutomationStimulus(
+  state: SoloHuntRuntimeState,
+  encounter: SoloHuntCurrentEncounterRuntime,
+  stimulus: CombatStimulus,
+  result: Extract<ReturnType<typeof resolveCombatStimulus>, { readonly accepted: true }>,
+): SoloHuntRuntimeState {
+  const outcome = battleOutcomeFromEvents(result.events);
+  return {
+    ...state,
+    currentEncounter: {
+      ...encounter,
+      battle: result.state,
+      battleStimuli: [...encounter.battleStimuli, stimulus],
+      ...(outcome ? { battleOutcome: outcome } : {}),
+    },
+    combatDeterministicState: result.deterministicState,
+  };
+}
+
+export function applySoloHuntBattleAutoPotion(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  input: {
+    readonly provenanceId: string;
+    readonly targetPokemonInstanceId: PokemonInstanceId;
+    readonly magnitude: EffectMagnitude;
+  },
+): ApplySoloHuntAutomationItemResult {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs);
+  if (stateError) return { accepted: false, reason: stateError };
+  if (state.automationPolicies === undefined) {
+    return { accepted: false, reason: "automated Potion requires forward Hunt authority" };
+  }
+  const encounter = state.currentEncounter;
+  if (!encounter || encounter.battle.status !== "active" || encounter.battle.koInterventionPending) {
+    return { accepted: false, reason: "automated Potion requires an active stable Battle boundary" };
+  }
+  const active = activePlayerCombatant(encounter);
+  if (!active || pokemonInstanceIdForCombatant(active) !== input.targetPokemonInstanceId) {
+    return { accepted: false, reason: "automated Potion target is not the active Player Pokemon" };
+  }
+  const stimulus: CombatStimulus = {
+    kind: "externalHpHeal",
+    targetId: active.combatantId,
+    actionOwnerId: active.combatantId,
+    magnitude: input.magnitude,
+    provenanceId: input.provenanceId,
+  };
+  const applied = resolveCombatStimulus(encounter.battle, stimulus, state.combatDeterministicState);
+  if (!applied.accepted) return { accepted: false, reason: applied.reason };
+  const event = applied.events.find(
+    (candidate): candidate is Extract<CombatEvent, { readonly kind: "HealingApplied" }> =>
+      candidate.kind === "HealingApplied" && candidate.targetId === active.combatantId,
+  );
+  if (!event || event.amount <= 0) {
+    return { accepted: false, reason: "automated Potion did not produce exact healing provenance" };
+  }
+  const next = stateWithBattleAutomationStimulus(state, encounter, stimulus, applied);
+  const nextError = validateRuntimeState(next, inputs);
+  if (nextError) return { accepted: false, reason: nextError };
+  return {
+    accepted: true,
+    state: next,
+    appliedHp: event.amount,
+    resultingHp: event.resultingHp,
+    targetPokemonInstanceId: input.targetPokemonInstanceId,
+    targetCombatantId: active.combatantId,
+  };
+}
+
+export function applySoloHuntBattleAutoRevive(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  input: {
+    readonly provenanceId: string;
+    readonly targetPokemonInstanceId: PokemonInstanceId;
+    readonly reviveFraction: { readonly numerator: number; readonly denominator: number };
+  },
+): ApplySoloHuntAutomationItemResult {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs);
+  if (stateError) return { accepted: false, reason: stateError };
+  if (state.automationPolicies === undefined) {
+    return { accepted: false, reason: "automated Revive requires forward Hunt authority" };
+  }
+  const encounter = state.currentEncounter;
+  const pending = encounter?.battle.koInterventionPending;
+  if (!encounter || encounter.battle.status !== "active" || !pending || pending.sideId !== encounter.playerSideId) {
+    return { accepted: false, reason: "automated Revive requires the Player KO intervention boundary" };
+  }
+  const combatant = ownGet(encounter.battle.combatants, pending.combatantId);
+  if (!combatant || pokemonInstanceIdForCombatant(combatant) !== input.targetPokemonInstanceId) {
+    return { accepted: false, reason: "automated Revive target does not match pending active Pokemon" };
+  }
+  const stimulus: CombatStimulus = {
+    kind: "koInterventionDecision",
+    sideId: pending.sideId,
+    combatantId: pending.combatantId,
+    decision: "revive",
+    reviveFraction: input.reviveFraction,
+    provenanceId: input.provenanceId,
+  };
+  const applied = resolveCombatStimulus(encounter.battle, stimulus, state.combatDeterministicState);
+  if (!applied.accepted) return { accepted: false, reason: applied.reason };
+  const event = applied.events.find(
+    (candidate): candidate is Extract<CombatEvent, { readonly kind: "CombatantRevived" }> =>
+      candidate.kind === "CombatantRevived" && candidate.combatantId === pending.combatantId,
+  );
+  if (!event || event.amount <= 0) {
+    return { accepted: false, reason: "automated Revive did not produce exact revive provenance" };
+  }
+  const next = stateWithBattleAutomationStimulus(state, encounter, stimulus, applied);
+  const nextError = validateRuntimeState(next, inputs);
+  if (nextError) return { accepted: false, reason: nextError };
+  return {
+    accepted: true,
+    state: next,
+    appliedHp: event.amount,
+    resultingHp: event.resultingHp,
+    targetPokemonInstanceId: input.targetPokemonInstanceId,
+    targetCombatantId: pending.combatantId,
+  };
+}
+
+export function declineSoloHuntBattleAutoRevive(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+): { readonly accepted: true; readonly state: SoloHuntRuntimeState } | { readonly accepted: false; readonly reason: string } {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs);
+  if (stateError) return { accepted: false, reason: stateError };
+  const encounter = state.currentEncounter;
+  const pending = encounter?.battle.koInterventionPending;
+  if (!encounter || encounter.battle.status !== "active" || !pending || pending.sideId !== encounter.playerSideId) {
+    return { accepted: false, reason: "automated Revive decline requires the Player KO intervention boundary" };
+  }
+  const stimulus: CombatStimulus = {
+    kind: "koInterventionDecision",
+    sideId: pending.sideId,
+    combatantId: pending.combatantId,
+    decision: "decline",
+  };
+  const declined = resolveCombatStimulus(encounter.battle, stimulus, state.combatDeterministicState);
+  if (!declined.accepted) return { accepted: false, reason: declined.reason };
+  let next = stateWithBattleAutomationStimulus(state, encounter, stimulus, declined);
+  if (
+    next.currentEncounter?.battle.status === "ended"
+    && next.currentEncounter.battleOutcome?.kind === "win"
+    && next.currentEncounter.battleOutcome.winnerSideId === next.currentEncounter.opponentSideId
+  ) {
+    next = terminalizeSoloHunt(next, "noLivingTeam");
+  }
+  const nextError = validateRuntimeState(next, inputs);
+  return nextError ? { accepted: false, reason: nextError } : { accepted: true, state: next };
+}
+
+function applySoloHuntInterBattleAutomation(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  input:
+    | {
+        readonly kind: "potion";
+        readonly provenanceId: string;
+        readonly targetPokemonInstanceId: PokemonInstanceId;
+        readonly magnitude: EffectMagnitude;
+      }
+    | {
+        readonly kind: "revive";
+        readonly provenanceId: string;
+        readonly targetPokemonInstanceId: PokemonInstanceId;
+        readonly restoredHp: number;
+      },
+): ApplySoloHuntAutomationItemResult {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs, { allowPendingInterBattleAutomation: true });
+  if (stateError) return { accepted: false, reason: stateError };
+  if (state.automationPolicies === undefined || state.status !== "active" || !state.interBattle) {
+    return { accepted: false, reason: "inter-Battle automation requires an active forward cadence boundary" };
+  }
+  if (automationEvents(state).some(({ provenanceId }) => provenanceId === input.provenanceId)) {
+    return { accepted: false, reason: "Solo Hunt automation provenance was already applied" };
+  }
+  const afterEncounter = state.completedEncounters.at(-1);
+  if (!afterEncounter || afterEncounter.completedAtHuntTimeMs > state.logicalTimeMs) {
+    return { accepted: false, reason: "inter-Battle automation lacks its completed Encounter boundary" };
+  }
+  const participant = { kind: "pokemonInstance" as const, identity: input.targetPokemonInstanceId };
+  let nextCadence: CadenceCarryState;
+  let event: SoloHuntAppliedAutomationEvent;
+  let appliedHp: number;
+  let resultingHp: number;
+  if (input.kind === "potion") {
+    const applied = applyCadenceExternalHpHeal(state.interBattle.cadence, participant, input.magnitude);
+    if (!applied.accepted) return { accepted: false, reason: applied.reason };
+    nextCadence = applied.cadence;
+    appliedHp = applied.amount;
+    resultingHp = applied.resultingHp;
+    event = {
+      kind: "potion",
+      provenanceId: input.provenanceId,
+      afterEncounterId: afterEncounter.encounterId,
+      afterEncounterOrdinal: afterEncounter.encounterOrdinal,
+      appliedAtHuntTimeMs: state.logicalTimeMs,
+      targetPokemonInstanceId: input.targetPokemonInstanceId,
+      magnitude: input.magnitude,
+      appliedHp,
+      resultingHp,
+    };
+  } else {
+    const applied = applyCadenceRevive(state.interBattle.cadence, participant, input.restoredHp);
+    if (!applied.accepted) return { accepted: false, reason: applied.reason };
+    nextCadence = applied.cadence;
+    appliedHp = applied.resultingHp;
+    resultingHp = applied.resultingHp;
+    event = {
+      kind: "revive",
+      provenanceId: input.provenanceId,
+      afterEncounterId: afterEncounter.encounterId,
+      afterEncounterOrdinal: afterEncounter.encounterOrdinal,
+      appliedAtHuntTimeMs: state.logicalTimeMs,
+      targetPokemonInstanceId: input.targetPokemonInstanceId,
+      restoredHp: input.restoredHp,
+      appliedHp,
+      resultingHp,
+    };
+  }
+  const next: SoloHuntRuntimeState = {
+    ...state,
+    interBattle: { ...state.interBattle, cadence: nextCadence },
+    appliedAutomationEvents: [...automationEvents(state), event],
+  };
+  const nextError = validateRuntimeState(next, inputs);
+  if (nextError) return { accepted: false, reason: nextError };
+  return {
+    accepted: true,
+    state: next,
+    appliedHp,
+    resultingHp,
+    targetPokemonInstanceId: input.targetPokemonInstanceId,
+    targetCombatantId: null,
+  };
+}
+
+export function applySoloHuntInterBattleAutoPotion(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  input: {
+    readonly provenanceId: string;
+    readonly targetPokemonInstanceId: PokemonInstanceId;
+    readonly magnitude: EffectMagnitude;
+  },
+): ApplySoloHuntAutomationItemResult {
+  if (state.interBattle?.activePokemonInstanceId !== input.targetPokemonInstanceId) {
+    return { accepted: false, reason: "automated inter-Battle Potion target is not the current active Pokemon" };
+  }
+  return applySoloHuntInterBattleAutomation(state, inputs, { kind: "potion", ...input });
+}
+
+export function applySoloHuntInterBattleAutoRevive(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  input: {
+    readonly provenanceId: string;
+    readonly targetPokemonInstanceId: PokemonInstanceId;
+    readonly restoredHp: number;
+  },
+): ApplySoloHuntAutomationItemResult {
+  if (state.interBattle?.activePokemonInstanceId !== input.targetPokemonInstanceId) {
+    return { accepted: false, reason: "automated inter-Battle Revive target is not the current active Pokemon" };
+  }
+  return applySoloHuntInterBattleAutomation(state, inputs, { kind: "revive", ...input });
+}
+
+export function applySoloHuntPostBattleAutoRevive(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  input: {
+    readonly provenanceId: string;
+    readonly targetPokemonInstanceId: PokemonInstanceId;
+    readonly restoredHp: number;
+  },
+): ApplySoloHuntAutomationItemResult {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs);
+  if (stateError) return { accepted: false, reason: stateError };
+  if (state.automationPolicies === undefined || state.status !== "active") {
+    return { accepted: false, reason: "post-Battle Revive requires active forward Hunt authority" };
+  }
+  const encounter = state.currentEncounter;
+  if (!encounter || encounter.battle.status !== "ended" || encounter.battleOutcome?.kind !== "draw") {
+    return { accepted: false, reason: "post-Battle Revive requires a sealed draw" };
+  }
+  const pending = state.pendingEncounterSelection;
+  if (!pending || pending.pendingSelectionIdentity !== encounter.pendingSelectionIdentity) {
+    return { accepted: false, reason: "post-Battle Revive lacks its exact PendingEncounterSelection" };
+  }
+  const activation = encounter.participantActivations.at(-1);
+  if (!activation || activation.pokemonInstanceId !== input.targetPokemonInstanceId) {
+    return { accepted: false, reason: "post-Battle Revive target is not the last active Player Pokemon" };
+  }
+  const combatant = ownGet(encounter.battle.combatants, activation.combatantId);
+  if (
+    !combatant
+    || pokemonInstanceIdForCombatant(combatant) !== input.targetPokemonInstanceId
+    || combatant.currentHp !== 0
+  ) {
+    return { accepted: false, reason: "post-Battle Revive target is not the sealed KO combatant" };
+  }
+  const pruned = pruneSoloHuntEndedOpponentCadence(encounter.battle, encounter.policy, inputs.team);
+  if (!pruned.accepted) return { accepted: false, reason: pruned.reason };
+  const revived = applyCadenceRevive(
+    pruned.cadence,
+    { kind: "pokemonInstance", identity: input.targetPokemonInstanceId },
+    input.restoredHp,
+  );
+  if (!revived.accepted) return { accepted: false, reason: revived.reason };
+  const evidence = completeResolvedNonWinEvidence(state, encounter);
+  const provenance = completeEncounterProvenance(state, encounter, pending);
+  const automationEvent: SoloHuntAppliedAutomationEvent = {
+    kind: "revive",
+    provenanceId: input.provenanceId,
+    afterEncounterId: encounter.encounterId,
+    afterEncounterOrdinal: encounter.encounterOrdinal,
+    appliedAtHuntTimeMs: state.logicalTimeMs,
+    targetPokemonInstanceId: input.targetPokemonInstanceId,
+    restoredHp: input.restoredHp,
+    appliedHp: revived.resultingHp,
+    resultingHp: revived.resultingHp,
+  };
+  const next: SoloHuntRuntimeState = {
+    ...state,
+    currentEncounter: undefined,
+    pendingEncounterSelection: undefined,
+    completedEncounters: [...state.completedEncounters, evidence],
+    completedEncounterProvenance: [...state.completedEncounterProvenance, provenance],
+    appliedAutomationEvents: [...automationEvents(state), automationEvent],
+    interBattle: {
+      cadence: revived.cadence,
+      policy: pruned.policy,
+      remainingGapMs: inputs.interBattleGapMs,
+      activePokemonInstanceId: input.targetPokemonInstanceId,
+    },
+  };
+  const nextError = validateRuntimeState(next, inputs);
+  if (nextError) return { accepted: false, reason: nextError };
+  return {
+    accepted: true,
+    state: next,
+    appliedHp: revived.resultingHp,
+    resultingHp: revived.resultingHp,
+    targetPokemonInstanceId: input.targetPokemonInstanceId,
+    targetCombatantId: activation.combatantId,
+  };
+}
+
+export function declineSoloHuntPostBattleAutoRevive(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  targetPokemonInstanceId: PokemonInstanceId,
+): { readonly accepted: true; readonly state: SoloHuntRuntimeState } | { readonly accepted: false; readonly reason: string } {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs);
+  if (stateError) return { accepted: false, reason: stateError };
+  const encounter = state.currentEncounter;
+  const activation = encounter?.participantActivations.at(-1);
+  if (
+    state.automationPolicies === undefined
+    || state.status !== "active"
+    || !encounter
+    || encounter.battle.status !== "ended"
+    || encounter.battleOutcome?.kind !== "draw"
+    || !state.pendingEncounterSelection
+    || state.pendingEncounterSelection.pendingSelectionIdentity !== encounter.pendingSelectionIdentity
+    || !activation
+    || activation.pokemonInstanceId !== targetPokemonInstanceId
+  ) {
+    return { accepted: false, reason: "post-Battle Revive decline requires the exact sealed draw target" };
+  }
+  const combatant = ownGet(encounter.battle.combatants, activation.combatantId);
+  if (!combatant || combatant.currentHp !== 0) {
+    return { accepted: false, reason: "post-Battle Revive decline target is not KO" };
+  }
+  const next = terminalizeSoloHunt(state, "noLivingTeam");
+  const nextError = validateRuntimeState(next, inputs);
+  return nextError ? { accepted: false, reason: nextError } : { accepted: true, state: next };
+}
+
+export function declineSoloHuntInterBattleAutoRevive(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  targetPokemonInstanceId: PokemonInstanceId,
+): { readonly accepted: true; readonly state: SoloHuntRuntimeState } | { readonly accepted: false; readonly reason: string } {
+  const bindingError = validateRuntimeBinding(state, inputs);
+  if (bindingError) return { accepted: false, reason: bindingError };
+  const stateError = validateRuntimeState(state, inputs, { allowPendingInterBattleAutomation: true });
+  if (stateError) return { accepted: false, reason: stateError };
+  const between = state.interBattle;
+  if (
+    state.automationPolicies === undefined
+    || state.status !== "active"
+    || !between
+    || between.activePokemonInstanceId !== targetPokemonInstanceId
+  ) {
+    return { accepted: false, reason: "automated inter-Battle Revive decline requires the current active Pokemon" };
+  }
+  const targetKey = cadenceParticipantKey({
+    kind: "pokemonInstance",
+    identity: targetPokemonInstanceId,
+  });
+  if ((ownGet(between.cadence.hpByParticipant, targetKey) ?? -1) !== 0) {
+    return { accepted: false, reason: "automated inter-Battle Revive decline requires a KO active Pokemon" };
+  }
+  const replacement = state.pinnedTeam.find((member) => {
+    if (member.pokemonInstanceId === targetPokemonInstanceId) return false;
+    const key = cadenceParticipantKey({
+      kind: "pokemonInstance",
+      identity: member.pokemonInstanceId,
+    });
+    return (ownGet(between.cadence.hpByParticipant, key) ?? 0) > 0;
+  });
+  if (!replacement) {
+    const terminal = terminalizeSoloHunt(state, "noLivingTeam");
+    const nextError = validateRuntimeState(terminal, inputs, { allowPendingInterBattleAutomation: true });
+    return nextError
+      ? { accepted: false, reason: nextError }
+      : { accepted: true, state: terminal };
+  }
+  const next: SoloHuntRuntimeState = {
+    ...state,
+    interBattle: {
+      ...between,
+      activePokemonInstanceId: replacement.pokemonInstanceId,
+    },
+  };
+  const nextError = validateRuntimeState(next, inputs);
+  return nextError
+    ? { accepted: false, reason: nextError }
+    : { accepted: true, state: next };
+}
+
 function completeEncounterEvidence(
   state: SoloHuntRuntimeState,
   encounter: SoloHuntCurrentEncounterRuntime,
-): SoloHuntCompletedEncounterEvidence {
+): Extract<SoloHuntCompletedEncounterEvidence, { readonly completionKind: "defeat" }> {
   const individual = encounter.individualizationSnapshot;
   return {
     rewardSourceIdentity: rewardSourceIdentity(state.huntRunIdentity, encounter.encounterOrdinal),
@@ -3089,6 +3953,38 @@ function completeEncounterEvidence(
     completionKind: "defeat",
     participantPokemonInstanceIds: encounter.participantPokemonInstanceIds,
     rewardEnvelope: encounter.selection.rewardEnvelope,
+    contentVersion: state.contentVersion,
+    contentHash: state.contentHash,
+    gameDataVersion: state.gameDataVersion,
+    rulesVersion: state.rulesVersion,
+    completedAtHuntTimeMs: state.logicalTimeMs,
+    ...(individual
+      ? {
+          individualizationSnapshotIdentity: individual.individualizationSnapshotIdentity,
+          individualizationSnapshotCommitment: individual.individualizationSnapshotCommitment,
+          individualizationRulesVersion: individual.individualizationRulesVersion,
+          derivationAuthorityVersion: individual.derivationAuthorityVersion,
+          derivationAuthorityKeyId: individual.derivationAuthorityKeyId,
+        }
+      : {}),
+  };
+}
+
+function completeResolvedNonWinEvidence(
+  state: SoloHuntRuntimeState,
+  encounter: SoloHuntCurrentEncounterRuntime,
+): Extract<SoloHuntCompletedEncounterEvidence, { readonly completionKind: "resolved_non_win" }> {
+  const individual = encounter.individualizationSnapshot;
+  return {
+    huntRunIdentity: state.huntRunIdentity,
+    encounterId: encounter.encounterId,
+    encounterOrdinal: encounter.encounterOrdinal,
+    pendingSelectionIdentity: encounter.pendingSelectionIdentity,
+    encounterDefinitionId: encounter.selection.encounterDefinitionId,
+    speciesId: encounter.selection.speciesId,
+    level: encounter.selection.level,
+    completionKind: "resolved_non_win",
+    participantPokemonInstanceIds: encounter.participantPokemonInstanceIds,
     contentVersion: state.contentVersion,
     contentHash: state.contentHash,
     gameDataVersion: state.gameDataVersion,
@@ -3128,7 +4024,7 @@ function completeEncounterProvenance(
 }
 
 function captureDecisionFromEvidence(
-  evidence: SoloHuntCompletedEncounterEvidence,
+  evidence: Extract<SoloHuntCompletedEncounterEvidence, { readonly completionKind: "defeat" }>,
 ): SoloHuntPendingCaptureDecision {
   return {
     encounterId: evidence.encounterId,
@@ -3163,10 +4059,15 @@ function advanceSoloHuntInternal(
   state: SoloHuntRuntimeState,
   inputs: SoloHuntRuntimeInputs,
   cutoffMs: number,
-  stopAfterEncounterCompletion: boolean,
-): AdvanceSoloHuntToEncounterBoundaryResult {
+  options: {
+    readonly stopAfterEncounterCompletion: boolean;
+    readonly stopAtAutomationBoundary: boolean;
+    readonly skipInitialAutomationBoundary: boolean;
+    readonly stopBeforeNextEncounter: boolean;
+  },
+): AdvanceSoloHuntToAutomationBoundaryResult {
   const originalState = state;
-  const reject = (reason: string): AdvanceSoloHuntResult => ({
+  const reject = (reason: string): AdvanceSoloHuntToAutomationBoundaryResult => ({
     accepted: false,
     reason,
     state: originalState,
@@ -3185,6 +4086,7 @@ function advanceSoloHuntInternal(
   }
 
   let currentState = state;
+  let skipCurrentAutomationBoundary = options.skipInitialAutomationBoundary;
   const events: SoloHuntSimulationEvent[] = [];
 
   while (true) {
@@ -3199,6 +4101,18 @@ function advanceSoloHuntInternal(
       const battleLogicalTimeMs = encounter.battleStartedAtHuntTimeMs + encounter.battle.combatTimeMs;
       if (battleLogicalTimeMs !== currentState.logicalTimeMs) {
         return reject("Solo Hunt logical time does not match current Battle time");
+      }
+
+      if (
+        options.stopAtAutomationBoundary
+        && currentState.automationPolicies !== undefined
+        && encounter.battle.status === "active"
+        && encounter.battle.replacementPendingSideIds.length === 0
+      ) {
+        if (!skipCurrentAutomationBoundary) {
+          return { accepted: true, state: currentState, stopReason: "automationBoundary", events };
+        }
+        skipCurrentAutomationBoundary = false;
       }
 
       if (encounter.battle.replacementPendingSideIds.length > 0) {
@@ -3250,6 +4164,17 @@ function advanceSoloHuntInternal(
       if (encounter.battle.status === "ended") {
         const outcome = encounter.battleOutcome;
         if (!outcome) return reject("ended Solo Hunt Battle is missing BattleEnded outcome");
+        const playerVictory = outcome.kind === "win" && outcome.winnerSideId === encounter.playerSideId;
+        if (
+          options.stopAtAutomationBoundary
+          && currentState.automationPolicies !== undefined
+          && !playerVictory
+        ) {
+          if (!skipCurrentAutomationBoundary) {
+            return { accepted: true, state: currentState, stopReason: "automationBoundary", events };
+          }
+          skipCurrentAutomationBoundary = false;
+        }
         if (outcome.kind === "draw") {
           currentState = terminalizeSoloHunt(currentState, "draw");
           events.push({
@@ -3284,6 +4209,13 @@ function advanceSoloHuntInternal(
           inputs.team,
         );
         if (!pruned.accepted) return reject(pruned.reason);
+        const activePlayer = activePlayerCombatant(encounter);
+        const activePokemonInstanceId = activePlayer
+          ? pokemonInstanceIdForCombatant(activePlayer)
+          : null;
+        if (currentState.automationPolicies !== undefined && activePokemonInstanceId === null) {
+          return reject("forward Solo Hunt ended Battle is missing its active Pokemon identity");
+        }
         events.push({
           kind: "encounterCompleted",
           huntTimeMs: currentState.logicalTimeMs,
@@ -3305,9 +4237,12 @@ function advanceSoloHuntInternal(
             cadence: pruned.cadence,
             policy: pruned.policy,
             remainingGapMs: inputs.interBattleGapMs,
+            ...(currentState.automationPolicies !== undefined && activePokemonInstanceId
+              ? { activePokemonInstanceId }
+              : {}),
           },
         };
-        if (stopAfterEncounterCompletion) {
+        if (options.stopAfterEncounterCompletion) {
           return {
             accepted: true,
             state: currentState,
@@ -3318,7 +4253,10 @@ function advanceSoloHuntInternal(
         continue;
       }
 
-      if (currentState.logicalTimeMs === cutoffMs) {
+      if (
+        currentState.logicalTimeMs === cutoffMs
+        && !(options.stopAtAutomationBoundary && currentState.automationPolicies !== undefined)
+      ) {
         return { accepted: true, state: currentState, stopReason: "cutoff", events };
       }
 
@@ -3345,6 +4283,10 @@ function advanceSoloHuntInternal(
           combatDeterministicState: resolved.deterministicState,
         };
         continue;
+      }
+
+      if (currentState.logicalTimeMs === cutoffMs) {
+        return { accepted: true, state: currentState, stopReason: "cutoff", events };
       }
 
       const cutoffBattleTimeMs = cutoffMs - encounter.battleStartedAtHuntTimeMs;
@@ -3382,13 +4324,26 @@ function advanceSoloHuntInternal(
     }
 
     if (currentState.interBattle) {
+      if (options.stopAtAutomationBoundary && currentState.automationPolicies !== undefined) {
+        if (!skipCurrentAutomationBoundary) {
+          return { accepted: true, state: currentState, stopReason: "automationBoundary", events };
+        }
+        skipCurrentAutomationBoundary = false;
+      }
       if (currentState.logicalTimeMs === cutoffMs) {
         return { accepted: true, state: currentState, stopReason: "cutoff", events };
       }
       const between = currentState.interBattle;
       if (between.remainingGapMs > 0) {
         const availableMs = cutoffMs - currentState.logicalTimeMs;
-        const requestedMs = Math.min(between.remainingGapMs, availableMs);
+        const automationBoundaryMs = options.stopAtAutomationBoundary && currentState.automationPolicies !== undefined
+          ? nextCadenceAutomationBoundaryMs(between.cadence)
+          : undefined;
+        const requestedMs = Math.min(
+          between.remainingGapMs,
+          availableMs,
+          automationBoundaryMs ?? Number.POSITIVE_INFINITY,
+        );
         if (requestedMs <= 0) {
           return { accepted: true, state: currentState, stopReason: "cutoff", events };
         }
@@ -3414,9 +4369,15 @@ function advanceSoloHuntInternal(
             cadence: advanced.cadence,
             policy: between.policy,
             remainingGapMs,
+            ...(currentState.automationPolicies !== undefined && between.activePokemonInstanceId
+              ? { activePokemonInstanceId: between.activePokemonInstanceId }
+              : {}),
           },
         };
         if (advanced.noLivingPlayer) {
+          if (options.stopAtAutomationBoundary && currentState.automationPolicies !== undefined) {
+            return { accepted: true, state: currentState, stopReason: "automationBoundary", events };
+          }
           currentState = terminalizeSoloHunt(currentState, "noLivingTeam");
           events.push({
             kind: "huntTerminal",
@@ -3434,6 +4395,13 @@ function advanceSoloHuntInternal(
       if (currentState.logicalTimeMs === cutoffMs) {
         return { accepted: true, state: currentState, stopReason: "cutoff", events };
       }
+      if (
+        options.stopBeforeNextEncounter
+        && currentState.automationPolicies !== undefined
+        && between.remainingGapMs === 0
+      ) {
+        return { accepted: true, state: currentState, stopReason: "activityBoundary", events };
+      }
       const selected = selectPendingEncounter(inputs, currentState.policyRng);
       if (!selected.accepted) return reject(selected.reason);
       const ordinal = currentState.nextEncounterOrdinal;
@@ -3450,6 +4418,7 @@ function advanceSoloHuntInternal(
         inputs.context,
         currentState.combatDeterministicState,
         inputs.individualizationAuthority,
+        between.activePokemonInstanceId,
       );
       if (!built.accepted) return reject(built.reason);
       events.push(...built.events);
@@ -3474,7 +4443,12 @@ export function advanceSoloHuntToCutoff(
   inputs: SoloHuntRuntimeInputs,
   cutoffMs: number,
 ): AdvanceSoloHuntResult {
-  const result = advanceSoloHuntInternal(state, inputs, cutoffMs, false);
+  const result = advanceSoloHuntInternal(state, inputs, cutoffMs, {
+    stopAfterEncounterCompletion: false,
+    stopAtAutomationBoundary: false,
+    skipInitialAutomationBoundary: false,
+    stopBeforeNextEncounter: false,
+  });
   if (result.accepted && result.stopReason === "encounterBoundary") {
     throw new Error("Solo Hunt cutoff advancement unexpectedly stopped at Encounter boundary");
   }
@@ -3486,7 +4460,29 @@ export function advanceSoloHuntToEncounterBoundaryOrCutoff(
   inputs: SoloHuntRuntimeInputs,
   cutoffMs: number,
 ): AdvanceSoloHuntToEncounterBoundaryResult {
-  return advanceSoloHuntInternal(state, inputs, cutoffMs, true);
+  return advanceSoloHuntInternal(state, inputs, cutoffMs, {
+    stopAfterEncounterCompletion: true,
+    stopAtAutomationBoundary: false,
+    skipInitialAutomationBoundary: false,
+    stopBeforeNextEncounter: false,
+  }) as AdvanceSoloHuntToEncounterBoundaryResult;
+}
+
+export function advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+  state: SoloHuntRuntimeState,
+  inputs: SoloHuntRuntimeInputs,
+  cutoffMs: number,
+  options: {
+    readonly skipInitialAutomationBoundary?: boolean;
+    readonly stopBeforeNextEncounter?: boolean;
+  } = {},
+): AdvanceSoloHuntToAutomationBoundaryResult {
+  return advanceSoloHuntInternal(state, inputs, cutoffMs, {
+    stopAfterEncounterCompletion: true,
+    stopAtAutomationBoundary: true,
+    skipInitialAutomationBoundary: options.skipInitialAutomationBoundary === true,
+    stopBeforeNextEncounter: options.stopBeforeNextEncounter === true,
+  });
 }
 
 export interface SoloHuntMovePolicyState {
@@ -3586,6 +4582,9 @@ export function createFreshSoloHuntCadence(
         moveCooldownRemainingMs: safeRecordFromEntries(
           member.moveLoadout.map((moveId) => [moveId, 0] as const),
         ),
+        ...(context && isManagementFirstCombatContext(context)
+          ? { autoPotionCooldownRemainingMs: 0 }
+          : {}),
       },
     ]);
     actionLockEntries.push([participantKey, 0]);
@@ -3711,6 +4710,13 @@ function nextPolicyBoundaryMs(state: BattleState): number | undefined {
       if (Number.isSafeInteger(readyAtMs) && readyAtMs > currentTimeMs) {
         candidates.push(readyAtMs);
       }
+    }
+    if (
+      actor.autoPotionReadyAtMs !== undefined
+      && Number.isSafeInteger(actor.autoPotionReadyAtMs)
+      && actor.autoPotionReadyAtMs > currentTimeMs
+    ) {
+      candidates.push(actor.autoPotionReadyAtMs);
     }
   }
 

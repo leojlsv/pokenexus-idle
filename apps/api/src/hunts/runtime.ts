@@ -5,16 +5,18 @@ import {
   PLAYER_PROGRESSION_RULE_ID,
   POKEMON_PROGRESSION_RULE_ID,
   allocateGeneticBudget,
+  assertHuntAutomationPolicyAuthoritySnapshot,
   deriveLevelAvailableMoves,
   deriveMaxHpForRulesVersion,
   geneticBudgetForScore,
-  isGeneticCombatRulesVersion,
+  usesGeneticCombatSemantics,
   replayValidateSoloHuntCompletedCaptureSource,
   selectBootstrapMoveLoadout,
   type CaptureBallRuleV1,
   type EffectMagnitude,
   type EncounterIndividualizationAuthority,
   type GeneticProfile,
+  type HuntAutomationPolicyAuthoritySnapshot,
   type ResolvedCombatContext,
   type SoloHuntEncounterOption,
   type SoloHuntOpponentTemplate,
@@ -65,6 +67,7 @@ import { assertStrictSoloHuntStartTeamAdmission } from "./start-admission";
 
 export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1 = "hunt-runtime-inputs-v1" as const;
 export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2 = "hunt-runtime-inputs-v2" as const;
+export const HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3 = "hunt-runtime-inputs-v3" as const;
 const INDIVIDUALIZATION_KEY_ID_DOMAIN = "pokenexus-individualization-authority-key-id-v1";
 const CAPTURE_BALL_POWERS = new Set<CaptureBallRuleV1["powerQuarterUnits"]>([4, 5, 6, 8, 9]);
 const GENETIC_PROFILE_SET = new Set<string>(GENETIC_PROFILES);
@@ -105,6 +108,14 @@ export type HuntItemRuleV1 =
             readonly numerator: number;
             readonly denominator: number;
           };
+    }
+  | {
+      readonly useKind: "revive-hp";
+      readonly magnitude: {
+        readonly kind: "max-hp-fraction";
+        readonly numerator: number;
+        readonly denominator: number;
+      };
     };
 
 export interface HuntItemRuleRelease {
@@ -184,7 +195,8 @@ export interface CreateHuntRuntimeAuthorityPortOptions {
 interface PersistedRuntimeEnvelope {
   readonly schemaVersion:
     | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
-    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2;
+    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2
+    | typeof HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3;
   readonly inputs: Omit<SoloHuntRuntimeInputs, "individualizationAuthority">;
   readonly individualizationRequired: boolean;
 }
@@ -336,6 +348,21 @@ function parseItemRule(value: unknown, label: string): HuntItemRuleV1 {
   if (useKind === "none" || useKind === "capture-attempt") {
     exactKeys(rule, ["useKind"], [], label);
     return { useKind };
+  }
+  if (useKind === "revive-hp") {
+    exactKeys(rule, ["useKind", "magnitude"], [], label);
+    const magnitude = record(rule.magnitude, `${label}.magnitude`);
+    exactKeys(magnitude, ["kind", "numerator", "denominator"], [], `${label}.magnitude`);
+    if (magnitude.kind !== "max-hp-fraction") {
+      throw new TypeError(`${label}.magnitude.kind must be max-hp-fraction for revive-hp`);
+    }
+    const numerator = positiveInteger(magnitude.numerator, `${label}.magnitude.numerator`);
+    const denominator = positiveInteger(magnitude.denominator, `${label}.magnitude.denominator`);
+    const accepted = (numerator === 1 && denominator === 4)
+      || (numerator === 1 && denominator === 2)
+      || (numerator === 1 && denominator === 1);
+    if (!accepted) throw new TypeError(`${label} revive-hp fraction must be exactly 25%, 50% or 100%`);
+    return { useKind, magnitude: { kind: "max-hp-fraction", numerator, denominator } };
   }
   if (useKind !== "heal-hp") throw new TypeError(`${label}.useKind is unsupported`);
   exactKeys(rule, ["useKind", "magnitude"], [], label);
@@ -833,6 +860,25 @@ function bindInitialHp(
   };
 }
 
+function bindAutomationPolicies(
+  built: BuiltHuntRuntimeAuthority,
+  automationPolicies: HuntAutomationPolicyAuthoritySnapshot,
+): BuiltHuntRuntimeAuthority {
+  if (built.inputs.initialHpByPokemonInstanceId === undefined) {
+    throw unavailable("persistent vitality authority must be bound before Hunt automation policy authority");
+  }
+  const normalized = assertHuntAutomationPolicyAuthoritySnapshot(automationPolicies);
+  const inputs: SoloHuntRuntimeInputs = {
+    ...built.inputs,
+    automationPolicies: normalized,
+  };
+  return {
+    ...built,
+    inputs,
+    persistedInputs: serializeHuntRuntimeInputsForPersistence(inputs) as unknown as Record<string, unknown>,
+  };
+}
+
 function buildEncounterAuthority(input: {
   readonly huntDefinitionId: string;
   readonly gameData: PublishedHuntGameDataAuthority;
@@ -920,9 +966,11 @@ export function serializeHuntRuntimeInputsForPersistence(
 ): PersistedRuntimeEnvelope {
   const { individualizationAuthority: _secret, ...withoutSecret } = inputs;
   return {
-    schemaVersion: inputs.initialHpByPokemonInstanceId === undefined
-      ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
-      : HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2,
+    schemaVersion: inputs.automationPolicies !== undefined
+      ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3
+      : inputs.initialHpByPokemonInstanceId === undefined
+        ? HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
+        : HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2,
     inputs: withoutSecret,
     individualizationRequired: inputs.individualizationAuthority !== undefined,
   };
@@ -939,6 +987,7 @@ export function parsePersistedHuntRuntimeEnvelope(
       (
         schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1
         && schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2
+        && schemaVersion !== HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3
       )
       || typeof envelope.individualizationRequired !== "boolean"
     ) {
@@ -959,7 +1008,7 @@ export function parsePersistedHuntRuntimeEnvelope(
     ];
     if (schemaVersion === HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V1) {
       exactKeys(inputs, requiredKeys, [], "runtimeInputsJson.inputs");
-    } else {
+    } else if (schemaVersion === HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V2) {
       exactKeys(
         inputs,
         [...requiredKeys, "initialHpByPokemonInstanceId"],
@@ -967,6 +1016,15 @@ export function parsePersistedHuntRuntimeEnvelope(
         "runtimeInputsJson.inputs",
       );
       validatePersistedInitialHpAuthority(inputs);
+    } else {
+      exactKeys(
+        inputs,
+        [...requiredKeys, "initialHpByPokemonInstanceId", "automationPolicies"],
+        [],
+        "runtimeInputsJson.inputs",
+      );
+      validatePersistedInitialHpAuthority(inputs);
+      assertHuntAutomationPolicyAuthoritySnapshot(inputs.automationPolicies);
     }
     const context = record(inputs.context, "runtimeInputsJson.inputs.context");
     if (
@@ -1097,7 +1155,7 @@ export function createHuntRuntimeAuthorityPort(
           }
         : selector;
       ensureMoveContextForSelector(moveContext, effectiveSelector);
-      if (!isGeneticCombatRulesVersion(moveContext.pair.rulesVersion)) {
+      if (!usesGeneticCombatSemantics(moveContext.pair.rulesVersion)) {
         throw unavailable("new Hunt runtime requires the accepted Genetic combat rules authority");
       }
       assertStrictSoloHuntStartTeamAdmission(team, moveContext);
@@ -1174,6 +1232,10 @@ export function createHuntRuntimeAuthorityPort(
       return bindInitialHp(built, initialHpByPokemonInstanceId);
     },
 
+    bindStartAutomationPolicies(built, automationPolicies) {
+      return bindAutomationPolicies(built, automationPolicies);
+    },
+
     async deriveCurrentTeamMaxHp(team) {
       const moveContext = await currentMoveContext();
       const release = await exactPublishedForMoveContext(moveContext);
@@ -1190,7 +1252,7 @@ export function createHuntRuntimeAuthorityPort(
       ) {
         throw unavailable("persisted Hunt content authority is unavailable");
       }
-      const geneticRuntime = isGeneticCombatRulesVersion(authorityRecord.rulesVersion);
+      const geneticRuntime = usesGeneticCombatSemantics(authorityRecord.rulesVersion);
       if (envelope.individualizationRequired !== geneticRuntime) {
         throw unavailable("persisted Hunt individualization mode does not match its frozen rulesVersion");
       }
@@ -1254,6 +1316,19 @@ export function createHuntRuntimeAuthorityPort(
       if (!release || release.itemRuleVersion !== input.itemRuleVersion) return null;
       const rule = release.rulesByItemId.get(input.itemId);
       return rule ? { itemRuleVersion: release.itemRuleVersion, ...rule } : null;
+    },
+
+    async currentItemRuleAuthority() {
+      const moveContext = await currentMoveContext();
+      const release = await itemRules.require({
+        gameDataVersion: moveContext.pair.gameDataVersion,
+        rulesVersion: moveContext.pair.rulesVersion,
+      });
+      return {
+        itemRuleVersion: release.itemRuleVersion,
+        gameDataVersion: release.gameDataVersion,
+        rulesVersion: release.rulesVersion,
+      };
     },
 
     async validatePolicyReferences(input) {
@@ -1421,7 +1496,9 @@ export function createHuntApplicationFromEnvironment(env: HuntRuntimeEnvironment
         const evidence = input.state.completedEncounters.find(
           ({ encounterId }) => encounterId === input.boundary.encounterId,
         );
-        if (!evidence) throw new Error("Reward boundary lacks completed Encounter evidence");
+        if (!evidence || evidence.completionKind !== "defeat") {
+          throw new Error("Reward boundary lacks winning completed Encounter evidence");
+        }
         const result = await rewardService.resolveAndApply({
           transaction: input.transaction,
           huntState: input.state,

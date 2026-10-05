@@ -40,12 +40,24 @@ class FakeHuntApplication {
     return this.record("getState", [account]);
   }
 
+  getActivity(account: string, targetHuntId: string, afterEncounterOrdinal: number | null, limit: number) {
+    return this.record("getActivity", [account, targetHuntId, afterEncounterOrdinal, limit]);
+  }
+
   getCaptureBalls(account: string) {
     return this.record("getCaptureBalls", [account]);
   }
 
   getAutoCapturePolicy(account: string) {
     return this.record("getAutoCapturePolicy", [account]);
+  }
+
+  getAutoPotionPolicy(account: string) {
+    return this.record("getAutoPotionPolicy", [account]);
+  }
+
+  getAutoRevivePolicy(account: string) {
+    return this.record("getAutoRevivePolicy", [account]);
   }
 
   start(account: string, key: string, body: unknown) {
@@ -78,6 +90,14 @@ class FakeHuntApplication {
 
   replaceAutoCapturePolicy(account: string, key: string, body: unknown) {
     return this.record("replaceAutoCapturePolicy", [account, key, body]);
+  }
+
+  replaceAutoPotionPolicy(account: string, key: string, body: unknown) {
+    return this.record("replaceAutoPotionPolicy", [account, key, body]);
+  }
+
+  replaceAutoRevivePolicy(account: string, key: string, body: unknown) {
+    return this.record("replaceAutoRevivePolicy", [account, key, body]);
   }
 }
 
@@ -126,18 +146,55 @@ describe("SPEC-015 Hunt HTTP routes", () => {
       "/player/hunts/state",
       "/player/hunts/capture-balls",
       "/player/hunts/auto-capture-policy",
+      "/player/hunts/auto-potion-policy",
+      "/player/hunts/auto-revive-policy",
     ]) {
       const response = await app.request(path, {}, {} as ApiBindings);
       expect(response.status).toBe(200);
       await expect(response.json()).resolves.toEqual({ ok: true });
     }
 
-    expect(guards).toEqual({ read: 3, command: 0 });
+    expect(guards).toEqual({ read: 5, command: 0 });
     expect(hunt.calls).toEqual([
       { name: "getState", args: [playerId] },
       { name: "getCaptureBalls", args: [playerId] },
       { name: "getAutoCapturePolicy", args: [playerId] },
+      { name: "getAutoPotionPolicy", args: [playerId] },
+      { name: "getAutoRevivePolicy", args: [playerId] },
     ]);
+  });
+
+  it("bounds Hunt activity reads to 64 and parses the ordinal seek cursor canonically", async () => {
+    const { app, hunt, guards } = createTestApp();
+    const first = await app.request(
+      `/player/hunts/${huntId}/activity?limit=64&cursor=7`,
+      {},
+      {} as ApiBindings,
+    );
+    expect(first.status).toBe(200);
+    expect(hunt.calls).toEqual([
+      { name: "getActivity", args: [playerId, huntId, 7, 64] },
+    ]);
+    expect(guards).toEqual({ read: 1, command: 0 });
+
+    for (const query of [
+      "limit=0",
+      "limit=65",
+      "limit=01",
+      "cursor=0",
+      "cursor=01",
+      "cursor=9007199254740992",
+      "limit=2&limit=3",
+      "cursor=1&cursor=2",
+    ]) {
+      const response = await app.request(
+        `/player/hunts/${huntId}/activity?${query}`,
+        {},
+        {} as ApiBindings,
+      );
+      expect(response.status).toBe(400);
+    }
+    expect(hunt.calls).toHaveLength(1);
   });
 
   it("parses start and forwards only authenticated scope plus canonical command identity", async () => {
@@ -392,6 +449,37 @@ describe("SPEC-015 Hunt HTTP routes", () => {
       name: "replaceAutoCapturePolicy",
       args: [playerId, idempotencyKey, validBody],
     }]);
+  });
+
+  it("routes Auto-Potion and Auto-Revive policy replacements through command auth", async () => {
+    const { app, hunt, guards } = createTestApp();
+    const potion = {
+      expectedRowVersion: "0",
+      enabled: true,
+      thresholdPercent: 50,
+      orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "1" }],
+    };
+    const revive = {
+      expectedRowVersion: "0",
+      enabled: false,
+      orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "0" }],
+    };
+    const potionResponse = await app.request(
+      "/player/hunts/auto-potion-policy",
+      { method: "PUT", headers: commandHeaders(), body: JSON.stringify(potion) },
+      {} as ApiBindings,
+    );
+    const reviveResponse = await app.request(
+      "/player/hunts/auto-revive-policy",
+      { method: "PUT", headers: commandHeaders(), body: JSON.stringify(revive) },
+      {} as ApiBindings,
+    );
+    expect([potionResponse.status, reviveResponse.status]).toEqual([200, 200]);
+    expect(guards).toEqual({ read: 0, command: 2 });
+    expect(hunt.calls).toEqual([
+      { name: "replaceAutoPotionPolicy", args: [playerId, idempotencyKey, potion] },
+      { name: "replaceAutoRevivePolicy", args: [playerId, idempotencyKey, revive] },
+    ]);
   });
 
   it("short-circuits read and command auth failures before application work", async () => {

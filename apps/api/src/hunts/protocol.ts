@@ -1,3 +1,10 @@
+import {
+  AUTO_POTION_TRIGGER_PERCENTAGES,
+  NO_SAVED_AUTO_POTION_POLICY,
+  NO_SAVED_AUTO_REVIVE_POLICY,
+  assertHuntAutomationPolicyAuthoritySnapshot,
+} from "@pokenexus/game-core";
+
 export const HUNT_MUTATION_BODY_MAX_BYTES = 16 * 1024;
 export const AUTO_CAPTURE_LOSS_WARNING_V1 = "auto_capture_irreversible_loss_v1" as const;
 export const ITEM_QUANTITY_MAX = 9_223_372_036_854_775_807n;
@@ -9,7 +16,7 @@ const encoder = new TextEncoder();
 
 export class HuntProtocolError extends Error {
   constructor(
-    readonly code: "invalid_request" | "auto_capture_policy_invalid",
+    readonly code: "invalid_request" | "auto_capture_policy_invalid" | "automation_policy_invalid",
     message: string,
   ) {
     super(message);
@@ -68,6 +75,25 @@ export interface AutoCapturePolicyReplaceRequest {
   readonly lossWarningAcknowledgement?: typeof AUTO_CAPTURE_LOSS_WARNING_V1 | string;
   readonly balls: readonly AutoCaptureBallRequest[];
   readonly rules: readonly AutoCaptureRuleRequest[];
+}
+
+export interface AutomationOrderedItemRequest {
+  readonly itemId: string;
+  readonly autoUseEnabled: boolean;
+  readonly minimumReserve: string;
+}
+
+export interface AutoPotionPolicyReplaceRequest {
+  readonly expectedRowVersion: string;
+  readonly enabled: boolean;
+  readonly thresholdPercent: (typeof AUTO_POTION_TRIGGER_PERCENTAGES)[number];
+  readonly orderedItems: readonly AutomationOrderedItemRequest[];
+}
+
+export interface AutoRevivePolicyReplaceRequest {
+  readonly expectedRowVersion: string;
+  readonly enabled: boolean;
+  readonly orderedItems: readonly AutomationOrderedItemRequest[];
 }
 
 export function isCanonicalUuid(value: string): boolean {
@@ -294,6 +320,88 @@ export function parseAutoCapturePolicyReplaceBody(text: string): AutoCapturePoli
   };
   if (acknowledgement !== undefined) result.lossWarningAcknowledgement = acknowledgement;
   return result;
+}
+
+function parseAutomationOrderedItems(value: unknown): readonly AutomationOrderedItemRequest[] {
+  if (!Array.isArray(value) || value.length > 64) {
+    throw new HuntProtocolError("invalid_request", "orderedItems must be an array with at most 64 entries");
+  }
+  return value.map((entry, index) => {
+    assertRecord(entry, `orderedItems[${index}]`);
+    assertExactKeys(
+      entry,
+      ["itemId", "autoUseEnabled", "minimumReserve"],
+      [],
+      `orderedItems[${index}]`,
+    );
+    return {
+      itemId: assertOpaqueId(entry.itemId, `orderedItems[${index}].itemId`),
+      autoUseEnabled: assertBoolean(entry.autoUseEnabled, `orderedItems[${index}].autoUseEnabled`),
+      minimumReserve: assertDecimal(
+        entry.minimumReserve,
+        ITEM_QUANTITY_MAX,
+        `orderedItems[${index}].minimumReserve`,
+      ),
+    };
+  });
+}
+
+function assertAutomationPolicySemantics(value: unknown): void {
+  try {
+    assertHuntAutomationPolicyAuthoritySnapshot(value);
+  } catch (cause) {
+    throw new HuntProtocolError(
+      "automation_policy_invalid",
+      cause instanceof Error ? cause.message : "automation policy is invalid",
+    );
+  }
+}
+
+export function parseAutoPotionPolicyReplaceBody(text: string): AutoPotionPolicyReplaceRequest {
+  const value = parseJsonMutationBodyText(text);
+  assertExactKeys(value, ["expectedRowVersion", "enabled", "thresholdPercent", "orderedItems"]);
+  const expectedRowVersion = assertDecimal(value.expectedRowVersion, ROW_VERSION_MAX, "expectedRowVersion");
+  const enabled = assertBoolean(value.enabled, "enabled");
+  if (typeof value.thresholdPercent !== "number" || !Number.isSafeInteger(value.thresholdPercent)) {
+    throw new HuntProtocolError("invalid_request", "thresholdPercent must be an integer");
+  }
+  const orderedItems = parseAutomationOrderedItems(value.orderedItems);
+  assertAutomationPolicySemantics({
+    capture: { policyVersion: null, rowVersion: "0", enabled: false },
+    potion: {
+      policyVersion: "candidate",
+      rowVersion: "1",
+      enabled,
+      thresholdPercent: value.thresholdPercent,
+      orderedItems,
+    },
+    revive: NO_SAVED_AUTO_REVIVE_POLICY,
+  });
+  return {
+    expectedRowVersion,
+    enabled,
+    thresholdPercent: value.thresholdPercent as AutoPotionPolicyReplaceRequest["thresholdPercent"],
+    orderedItems,
+  };
+}
+
+export function parseAutoRevivePolicyReplaceBody(text: string): AutoRevivePolicyReplaceRequest {
+  const value = parseJsonMutationBodyText(text);
+  assertExactKeys(value, ["expectedRowVersion", "enabled", "orderedItems"]);
+  const expectedRowVersion = assertDecimal(value.expectedRowVersion, ROW_VERSION_MAX, "expectedRowVersion");
+  const enabled = assertBoolean(value.enabled, "enabled");
+  const orderedItems = parseAutomationOrderedItems(value.orderedItems);
+  assertAutomationPolicySemantics({
+    capture: { policyVersion: null, rowVersion: "0", enabled: false },
+    potion: NO_SAVED_AUTO_POTION_POLICY,
+    revive: {
+      policyVersion: "candidate",
+      rowVersion: "1",
+      enabled,
+      orderedItems,
+    },
+  });
+  return { expectedRowVersion, enabled, orderedItems };
 }
 
 export function validateAutoCapturePolicyRelationships(policy: AutoCapturePolicyReplaceRequest): string | null {

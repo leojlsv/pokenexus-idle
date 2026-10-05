@@ -7,6 +7,8 @@ import {
   HuntProtocolError,
   isCanonicalUuid,
   parseAutoCapturePolicyReplaceBody,
+  parseAutoPotionPolicyReplaceBody,
+  parseAutoRevivePolicyReplaceBody,
   parseEmptyMutationBodyText,
   parseHuntItemUseBody,
   parseManualCaptureBody,
@@ -30,7 +32,7 @@ function invalidRequest(c: ApiContext): Response {
 }
 
 function protocolFailure(c: ApiContext, error: HuntProtocolError): Response {
-  if (error.code === "auto_capture_policy_invalid") {
+  if (error.code === "auto_capture_policy_invalid" || error.code === "automation_policy_invalid") {
     return c.json({ error: error.code }, 422);
   }
   return invalidRequest(c);
@@ -102,6 +104,35 @@ function canonicalHuntId(c: ApiContext): string | null {
   return value !== undefined && isCanonicalUuid(value) ? value : null;
 }
 
+function singleQueryValue(c: ApiContext, name: string): string | null | undefined {
+  const values = new URL(c.req.url).searchParams.getAll(name);
+  if (values.length > 1) return null;
+  return values[0];
+}
+
+function huntActivityPageInput(
+  c: ApiContext,
+): { readonly limit: number; readonly afterEncounterOrdinal: number | null } | null {
+  const rawLimit = singleQueryValue(c, "limit");
+  const rawCursor = singleQueryValue(c, "cursor");
+  if (rawLimit === null || rawCursor === null) return null;
+  const limit = rawLimit === undefined ? 64 : Number(rawLimit);
+  if (
+    !Number.isSafeInteger(limit)
+    || limit < 1
+    || limit > 64
+    || (rawLimit !== undefined && String(limit) !== rawLimit)
+  ) {
+    return null;
+  }
+  if (rawCursor === undefined) return { limit, afterEncounterOrdinal: null };
+  if (!/^[1-9][0-9]*$/u.test(rawCursor)) return null;
+  const afterEncounterOrdinal = Number(rawCursor);
+  return Number.isSafeInteger(afterEncounterOrdinal)
+    ? { limit, afterEncounterOrdinal }
+    : null;
+}
+
 function applicationResponse(c: ApiContext, result: HuntHttpResult): Response {
   const body = JSON.stringify(result.body);
   if (body === undefined) throw new Error("Hunt HTTP application returned a non-JSON response body");
@@ -142,6 +173,41 @@ export function registerHuntRoutes(app: ApiApp, options: RegisterHuntRoutesOptio
     const playerId = await requirePlayerId(c, options, principal);
     if (playerId instanceof Response) return playerId;
     return applicationResponse(c, await options.huntFor(c).getAutoCapturePolicy(playerId));
+  });
+
+  app.get("/player/hunts/auto-potion-policy", async (c) => {
+    const principal = await options.security.requireSession(c);
+    if (principal instanceof Response) return principal;
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return playerId;
+    return applicationResponse(c, await options.huntFor(c).getAutoPotionPolicy(playerId));
+  });
+
+  app.get("/player/hunts/auto-revive-policy", async (c) => {
+    const principal = await options.security.requireSession(c);
+    if (principal instanceof Response) return principal;
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return playerId;
+    return applicationResponse(c, await options.huntFor(c).getAutoRevivePolicy(playerId));
+  });
+
+  app.get("/player/hunts/:huntId/activity", async (c) => {
+    const principal = await options.security.requireSession(c);
+    if (principal instanceof Response) return principal;
+    const huntId = canonicalHuntId(c);
+    const page = huntActivityPageInput(c);
+    if (huntId === null || page === null) return invalidRequest(c);
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return playerId;
+    return applicationResponse(
+      c,
+      await options.huntFor(c).getActivity(
+        playerId,
+        huntId,
+        page.afterEncounterOrdinal,
+        page.limit,
+      ),
+    );
   });
 
   app.post("/player/hunts/start", async (c) => {
@@ -260,6 +326,36 @@ export function registerHuntRoutes(app: ApiApp, options: RegisterHuntRoutesOptio
     return applicationResponse(
       c,
       await options.huntFor(c).replaceAutoCapturePolicy(playerId, idempotencyKey, input),
+    );
+  });
+
+  app.put("/player/hunts/auto-potion-policy", async (c) => {
+    const principal = await options.security.requireCommandSession(c);
+    if (principal instanceof Response) return principal;
+    const idempotencyKey = canonicalIdempotencyKey(c);
+    if (idempotencyKey === null) return invalidRequest(c);
+    const input = await parseMutation(c, parseAutoPotionPolicyReplaceBody);
+    if (input instanceof Response) return input;
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return playerId;
+    return applicationResponse(
+      c,
+      await options.huntFor(c).replaceAutoPotionPolicy(playerId, idempotencyKey, input),
+    );
+  });
+
+  app.put("/player/hunts/auto-revive-policy", async (c) => {
+    const principal = await options.security.requireCommandSession(c);
+    if (principal instanceof Response) return principal;
+    const idempotencyKey = canonicalIdempotencyKey(c);
+    if (idempotencyKey === null) return invalidRequest(c);
+    const input = await parseMutation(c, parseAutoRevivePolicyReplaceBody);
+    if (input instanceof Response) return input;
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return playerId;
+    return applicationResponse(
+      c,
+      await options.huntFor(c).replaceAutoRevivePolicy(playerId, idempotencyKey, input),
     );
   });
 }

@@ -195,6 +195,9 @@ describe("TASK-020 SPEC-005 migration", () => {
       "0008_hunt_checkpoint_claim.sql",
       "0009_authoritative_hunt_api.sql",
       "0010_persistent_pokemon_vitality_pokecenter.sql",
+      "0011_first_prealpha_player_bootstrap.sql",
+      "0012_hunt_potion_revive_policies.sql",
+      "0013_hunt_automation_item_uses.sql",
     ]);
 
     const before = await withClient(async (client) => {

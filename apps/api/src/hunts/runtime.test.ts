@@ -13,6 +13,7 @@ import {
   createPublishedHuntGameDataLoader,
   assertPublishedHuntPveManifest,
   deriveEncounterIndividualizationAuthorityKeyId,
+  HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3,
   normalizeHealingItemMagnitude,
   parsePersistedHuntRuntimeEnvelope,
   parseCaptureBallAuthorityReleases,
@@ -21,6 +22,10 @@ import {
   parseHuntItemRuleReleases,
   serializeHuntRuntimeInputsForPersistence,
 } from "./runtime";
+import {
+  NO_SAVED_AUTO_POTION_POLICY,
+  NO_SAVED_AUTO_REVIVE_POLICY,
+} from "@pokenexus/game-core";
 
 const V2 = "game-data-core-kanto-johto-v2";
 const V3 = "game-data-core-kanto-johto-v3";
@@ -109,6 +114,51 @@ describe("Hunt runtime release authorities", () => {
     }))).toThrow(HuntAuthorityUnavailableError);
   });
 
+  it("TASK-110 persists three-family Start policy authority only in runtime-inputs v3", () => {
+    const inputs = {
+      playerId: "player:test",
+      zoneId: "zone:test",
+      huntDefinitionId: "hunt:test",
+      contentVersion: "content:test",
+      contentHash: "sha256:content-test",
+      context: { gameDataVersion: "game-data:test", rulesVersion: "rules:test" },
+      team: [{ pokemonInstanceId: "pokemon:test" }],
+      encounterOptions: [],
+      opponentTemplates: [],
+      interBattleGapMs: 0,
+      initialHpByPokemonInstanceId: { "pokemon:test": 17 },
+    } as unknown as SoloHuntRuntimeInputs;
+    const policies = {
+      capture: { policyVersion: "policy:capture", rowVersion: "3", enabled: true },
+      potion: NO_SAVED_AUTO_POTION_POLICY,
+      revive: NO_SAVED_AUTO_REVIVE_POLICY,
+    } as const;
+    const persisted = serializeHuntRuntimeInputsForPersistence({ ...inputs, automationPolicies: policies });
+    expect(persisted.schemaVersion).toBe(HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3);
+    expect(persisted.inputs.automationPolicies).toEqual(policies);
+
+    const recordFor = (runtimeInputsJson: Record<string, unknown>) => ({
+      huntId: "hunt-instance:test",
+      playerId: "player:test",
+      gameDataVersion: "game-data:test",
+      rulesVersion: "rules:test",
+      runtimeInputsJson,
+      individualizationAuthorityVersion: null,
+      individualizationAuthorityKeyId: null,
+    });
+    expect(parsePersistedHuntRuntimeEnvelope(recordFor(
+      persisted as unknown as Record<string, unknown>,
+    )).inputs.automationPolicies).toEqual(policies);
+
+    expect(() => parsePersistedHuntRuntimeEnvelope(recordFor({
+      ...persisted as unknown as Record<string, unknown>,
+      inputs: {
+        ...persisted.inputs,
+        automationPolicies: undefined,
+      },
+    }))).toThrow(HuntAuthorityUnavailableError);
+  });
+
   it("resolves current and retained Ball releases with exact premium metadata", async () => {
     const releases = parseCaptureBallAuthorityReleases(JSON.stringify([
       {
@@ -192,6 +242,13 @@ describe("Hunt runtime release authorities", () => {
               magnitude: { kind: "max-hp-fraction", numerator: 1, denominator: 2 },
             },
           },
+          {
+            itemId: "item:revive",
+            rule: {
+              useKind: "revive-hp",
+              magnitude: { kind: "max-hp-fraction", numerator: 1, denominator: 4 },
+            },
+          },
         ],
       },
     ]));
@@ -215,6 +272,10 @@ describe("Hunt runtime release authorities", () => {
       numerator: 1,
       denominator: 2,
     });
+    expect(release.rulesByItemId.get("item:revive")).toEqual({
+      useKind: "revive-hp",
+      magnitude: { kind: "max-hp-fraction", numerator: 1, denominator: 4 },
+    });
     await expect(resolver.require({ gameDataVersion: V2, rulesVersion: "combat-rules-genetics-v1" }))
       .rejects.toBeInstanceOf(HuntAuthorityUnavailableError);
   });
@@ -234,6 +295,23 @@ describe("Hunt runtime release authorities", () => {
             },
           },
         ],
+      },
+    ]))).toThrow(HuntAuthorityUnavailableError);
+  });
+
+  it("accepts only the 25/50/100 revive tiers", () => {
+    expect(() => parseHuntItemRuleReleases(JSON.stringify([
+      {
+        itemRuleVersion: "items-v1",
+        gameDataVersion: V3,
+        rulesVersion: "combat-rules-genetics-v1",
+        items: [{
+          itemId: "item:revive",
+          rule: {
+            useKind: "revive-hp",
+            magnitude: { kind: "max-hp-fraction", numerator: 3, denominator: 4 },
+          },
+        }],
       },
     ]))).toThrow(HuntAuthorityUnavailableError);
   });

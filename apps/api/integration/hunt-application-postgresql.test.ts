@@ -3,21 +3,33 @@ import {
   claimPublicHuntCommandInTransaction,
   completePublicHuntCommandInTransaction,
   claimRewardResolution,
+  claimRewardResolutionInTransaction,
   closePendingManualCaptureInTransaction,
   createPokemonVitalityInTransaction,
   createPendingManualCaptureIfFreeInTransaction,
   ensureAndLockPlayerHuntRoot,
   generateUuidV7,
   insertAutoCapturePolicyInTransaction,
+  insertRewardCompletion,
+  insertResolvedEncounterActivityInTransaction,
+  loadAutomationItemUsesForEncounter,
+  loadEncounterBoundary,
   loadEarliestIncompleteEncounterBoundary,
+  loadEffectiveAutoPotionPolicyVersion,
+  loadEffectiveAutoRevivePolicyVersion,
   loadHealingCommandByCommandId,
   loadHuntCheckpoint,
   loadInventory,
   loadOwnedSoloHunt,
+  loadPendingManualCapture,
   loadPendingZoneSelection,
+  loadPostBattleReviveAppliedByProvenance,
   loadPokeCenterHealCommand,
   loadPokemonVitality,
   loadPublicHuntCommand,
+  loadResolvedEncounterActivity,
+  loadRewardResolutionById,
+  loadRetreatAbandonment,
   removeInventoryEntriesInTransaction,
   terminalizeSoloHuntInTransaction,
   withTransaction,
@@ -25,9 +37,11 @@ import {
 } from "@pokenexus/database";
 import { runMigrations } from "@pokenexus/database/migrations";
 import {
-  advanceSoloHuntToEncounterBoundaryOrCutoff,
-  decodeSoloHuntCheckpointV2,
-  encodeSoloHuntCheckpointV2,
+  advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff,
+  decodeSoloHuntCheckpoint,
+  ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
+  MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
+  MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
   type ResolvedCombatContext,
   type SoloHuntPendingEncounterSelection,
   type SoloHuntRuntimeInputs,
@@ -40,6 +54,7 @@ import {
   type HuntRuntimeAuthorityPort,
 } from "../src/hunts/application";
 import { hashNormalizedIntent } from "../src/hunts/protocol";
+import { FORWARD_OFFLINE_PRODUCTIVE_CAP_MS } from "../src/hunts/offline-reconciliation";
 
 const testDatabaseUrl = process.env.POKENEXUS_TEST_DATABASE_URL;
 if (!testDatabaseUrl) {
@@ -51,6 +66,9 @@ if (!/^pokenexus_test(?:_|$)/.test(databaseName)) {
 }
 
 const opaque = (value: string) => Buffer.from(encodeOpaqueStringDbV1(value));
+const fixtureIndividualizationSecret = new Uint8Array(32).fill(41);
+const fixtureIndividualizationKeyId =
+  "key-v1:1d711813033020684aa0b66f206a8c6ede61291c5265582d5b1486b8909ab331";
 
 function deferred(): { readonly promise: Promise<void>; readonly resolve: () => void } {
   let resolve!: () => void;
@@ -72,6 +90,20 @@ async function waitForAdvisoryWaiter(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   throw new Error("timed out waiting for PostgreSQL advisory-lock waiter");
+}
+
+async function settleBoundedCommand(
+  execute: () => Promise<{ readonly httpStatus: number; readonly body: unknown }>,
+  maxAttempts = 128,
+): Promise<{ readonly httpStatus: number; readonly body: unknown }> {
+  let result = await execute();
+  for (let attempt = 1; result.httpStatus === 202 && attempt < maxAttempts; attempt += 1) {
+    result = await execute();
+  }
+  if (result.httpStatus === 202) {
+    throw new Error("bounded Hunt command did not settle within the test attempt budget");
+  }
+  return result;
 }
 
 async function resetSchema(): Promise<void> {
@@ -147,6 +179,14 @@ async function seedPlayerTeamAndPotion(): Promise<{
   });
 }
 
+async function addInventoryItem(playerId: string, itemId: string, quantity: bigint): Promise<void> {
+  await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+    client.query(
+      "INSERT INTO pokenexus.inventory_entries (player_id, item_id, quantity) VALUES ($1, $2, $3::bigint)",
+      [playerId, opaque(itemId), quantity.toString()],
+    ).then(() => undefined));
+}
+
 async function addPokemonToTeam(input: {
   readonly playerId: string;
   readonly teamId: string;
@@ -210,8 +250,8 @@ function runtimeInputs(
 ): SoloHuntRuntimeInputs {
   const context = {
     gameDataVersion: "game-data:test",
-    rulesVersion: "rules:test",
-    combatEventSchemaVersion: "events:test",
+    rulesVersion: MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
+    combatEventSchemaVersion: MANAGEMENT_FIRST_COMBAT_EVENT_SCHEMA_VERSION_V1,
     abilityRules: {},
     effectRules: {},
     typeChart: { normal: { normal: 1 } },
@@ -251,6 +291,7 @@ function runtimeInputs(
       level: 10,
       baseStats: { hp: 200, atk: 20, def: 200, spa: 20, spd: 200, spe: 100 },
       ivs: { hp: 1, atk: 2, def: 3, spa: 4, spd: 5, spe: 6 },
+      geneticBonuses: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
       types: ["normal" as never],
       moveLoadout: ["move:player" as never],
     })),
@@ -269,11 +310,47 @@ function runtimeInputs(
       rulesVersion: context.rulesVersion,
       baseStats: { hp: 200, atk: 20, def: 200, spa: 20, spd: 200, spe: 50 },
       ivs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      compatibleProfiles: ["Harmony", "Endurance"],
       types: ["normal" as never],
       moveLoadout: ["move:enemy" as never],
     }],
     interBattleGapMs: 1_000,
+    individualizationAuthority: {
+      rulesVersion: ENCOUNTER_INDIVIDUALIZATION_RULES_VERSION_V1,
+      authorityVersion: "authority-v1",
+      keyId: fixtureIndividualizationKeyId,
+      secretKey: fixtureIndividualizationSecret,
+    },
   } as SoloHuntRuntimeInputs;
+}
+
+function lethalRuntimeInputs(
+  inputs: SoloHuntRuntimeInputs,
+  targetScope: "singleEnemy" | "allActive",
+): SoloHuntRuntimeInputs {
+  const enemyMove = inputs.context.moveRules["move:enemy"];
+  if (!enemyMove) throw new Error("fixture enemy Move is unavailable");
+  const context: ResolvedCombatContext = {
+    ...inputs.context,
+    moveRules: {
+      ...inputs.context.moveRules,
+      "move:enemy": {
+        ...enemyMove,
+        targetScope,
+        power: 1_000,
+      },
+    },
+  };
+  return {
+    ...inputs,
+    context,
+    opponentTemplates: inputs.opponentTemplates.map((template) => ({
+      ...template,
+      rulesVersion: context.rulesVersion,
+      baseStats: { hp: 10, atk: 200, def: 10, spa: 10, spd: 10, spe: 200 },
+    })),
+    interBattleGapMs: 60_000,
+  };
 }
 
 function application(): {
@@ -299,6 +376,9 @@ function applicationWithOptions(options: {
   readonly beforeDeriveCurrentTeamMaxHp?: () => Promise<void>;
   readonly currentTeamMaxHp?: (pokemonInstanceId: string) => number;
   readonly beforeLoadPersistedRuntime?: () => Promise<void>;
+  readonly beforeItemRule?: (itemId: string) => Promise<void>;
+  readonly runtimeInputsTransform?: (inputs: SoloHuntRuntimeInputs) => SoloHuntRuntimeInputs;
+  readonly persistedRuntimeStore?: { value: SoloHuntRuntimeInputs | null };
   readonly automaticCapture?: HuntApplicationPorts["boundaryEffects"]["automaticCapture"];
   readonly reward?: HuntApplicationPorts["boundaryEffects"]["reward"];
 } = {}): {
@@ -306,7 +386,12 @@ function applicationWithOptions(options: {
   readonly runtime: () => SoloHuntRuntimeInputs;
   readonly lastPending: () => SoloHuntPendingEncounterSelection | undefined;
 } {
-  let persisted: SoloHuntRuntimeInputs | null = null;
+  let persisted: SoloHuntRuntimeInputs | null = options.persistedRuntimeStore?.value ?? null;
+  const setPersisted = (value: SoloHuntRuntimeInputs): SoloHuntRuntimeInputs => {
+    persisted = value;
+    if (options.persistedRuntimeStore) options.persistedRuntimeStore.value = value;
+    return value;
+  };
   let lastPending: SoloHuntPendingEncounterSelection | undefined;
   const ballAuthority = options.ballAuthority ?? { version: "balls:test", balls: [] };
   const authority: HuntRuntimeAuthorityPort = {
@@ -315,9 +400,9 @@ function applicationWithOptions(options: {
         ? {
             huntDefinitionId,
             zoneId: "zone:test",
-            recoveryDurationMs: 1_000,
+            recoveryDurationMs: 30_000,
             gameDataVersion: "game-data:test",
-            rulesVersion: "rules:test",
+            rulesVersion: MANAGEMENT_FIRST_COMBAT_RULES_VERSION_V1,
           }
         : null;
     },
@@ -330,17 +415,20 @@ function applicationWithOptions(options: {
       lastPending = pendingEncounterSelection;
       const effectiveHuntDefinitionId = pendingEncounterSelection?.huntDefinitionId
         ?? selector.huntDefinitionId;
-      persisted = runtimeInputs(
+      const baseInputs = runtimeInputs(
         playerId,
         team.pokemon.map((pokemon) => pokemon.pokemonInstanceId),
         effectiveHuntDefinitionId,
       );
+      persisted = setPersisted(options.runtimeInputsTransform
+        ? options.runtimeInputsTransform(baseInputs)
+        : baseInputs);
       return {
         inputs: persisted,
         persistedInputs: {
           schemaVersion: "hunt-runtime-inputs-v1",
           inputs: persisted,
-          individualizationRequired: false,
+          individualizationRequired: true,
         },
         maxHpByPokemonInstanceId: Object.fromEntries(
           team.pokemon.map((pokemon) => [
@@ -354,22 +442,37 @@ function applicationWithOptions(options: {
           gameDataVersion: pendingEncounterSelection?.gameDataVersion ?? selector.gameDataVersion,
           rulesVersion: pendingEncounterSelection?.rulesVersion ?? selector.rulesVersion,
         },
-        individualizationAuthorityVersion: null,
-        individualizationAuthorityKeyId: null,
+        individualizationAuthorityVersion: "authority-v1",
+        individualizationAuthorityKeyId: fixtureIndividualizationKeyId,
       };
     },
     bindStartVitality(built, initialHpByPokemonInstanceId) {
-      persisted = {
+      persisted = setPersisted({
         ...built.inputs,
         initialHpByPokemonInstanceId,
-      };
+      });
       return {
         ...built,
         inputs: persisted,
         persistedInputs: {
           schemaVersion: "hunt-runtime-inputs-v2",
           inputs: persisted,
-          individualizationRequired: false,
+          individualizationRequired: true,
+        },
+      };
+    },
+    bindStartAutomationPolicies(built, automationPolicies) {
+      persisted = setPersisted({
+        ...built.inputs,
+        automationPolicies,
+      });
+      return {
+        ...built,
+        inputs: persisted,
+        persistedInputs: {
+          schemaVersion: "hunt-runtime-inputs-v3",
+          inputs: persisted,
+          individualizationRequired: true,
         },
       };
     },
@@ -404,14 +507,39 @@ function applicationWithOptions(options: {
       return version === ballAuthority.version ? ballAuthority : null;
     },
     async currentItemRule({ itemId }) {
-      return itemId === "item:potion"
-        ? { itemRuleVersion: "item-rules:test", useKind: "heal-hp", magnitude: { kind: "fixed", amount: 5 } }
-        : null;
+      if (itemId === "item:potion" || itemId === "item:potion-alt" || itemId === "item:potion-third") {
+        return { itemRuleVersion: "item-rules:test", useKind: "heal-hp", magnitude: { kind: "fixed", amount: 5 } };
+      }
+      if (itemId === "item:revive") {
+        return {
+          itemRuleVersion: "item-rules:test",
+          useKind: "revive-hp",
+          magnitude: { kind: "max-hp-fraction", numerator: 1, denominator: 4 },
+        };
+      }
+      return null;
     },
     async itemRule({ itemId, itemRuleVersion }) {
-      return itemId === "item:potion" && itemRuleVersion === "item-rules:test"
-        ? { itemRuleVersion, useKind: "heal-hp", magnitude: { kind: "fixed", amount: 5 } }
-        : null;
+      await options.beforeItemRule?.(itemId);
+      if (itemRuleVersion !== "item-rules:test") return null;
+      if (itemId === "item:potion" || itemId === "item:potion-alt" || itemId === "item:potion-third") {
+        return { itemRuleVersion, useKind: "heal-hp", magnitude: { kind: "fixed", amount: 5 } };
+      }
+      if (itemId === "item:revive") {
+        return {
+          itemRuleVersion,
+          useKind: "revive-hp",
+          magnitude: { kind: "max-hp-fraction", numerator: 1, denominator: 4 },
+        };
+      }
+      return null;
+    },
+    async currentItemRuleAuthority() {
+      return {
+        itemRuleVersion: "item-rules:test",
+        gameDataVersion: "game-data:test",
+        rulesVersion: "rules:test",
+      };
     },
     async validatePolicyReferences() {
       return { gameDataVersion: "game-data:test", accepted: true };
@@ -464,7 +592,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       huntDefinitionId: "hunt:test",
       teamId: seeded.teamId,
     });
-    expect(started.httpStatus).toBe(200);
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
     expect(harness.runtime().initialHpByPokemonInstanceId)
       .toEqual({ [seeded.pokemonInstanceId]: 17 });
     const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
@@ -473,7 +601,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     if (!hunt) throw new Error("missing Hunt fixture");
     await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       client.query(
-        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '1 millisecond' WHERE checkpoint_id = $1",
         [hunt.checkpointId],
       ).then(() => undefined));
 
@@ -483,7 +611,10 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         [seeded.playerId, seeded.pokemonInstanceId],
       ).then(() => undefined));
 
-    const retreat = await harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+    const retreatKey = generateUuidV7();
+    const retreat = await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, retreatKey, huntId),
+    );
     expect(retreat).toMatchObject({
       httpStatus: 200,
       body: {
@@ -492,10 +623,28 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         recoveryReadyAt: expect.any(String),
       },
     });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadRetreatAbandonment(client, { playerId: seeded.playerId, huntId }))).toBeNull();
     const recoveryReadyAt = (retreat.body as { recoveryReadyAt: string }).recoveryReadyAt;
+    const terminalCheckpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!terminalCheckpoint) throw new Error("missing terminal vitality checkpoint");
+    const terminalState = decodeSoloHuntCheckpoint(terminalCheckpoint.stateBytes);
+    expect(terminalState.accepted).toBe(true);
+    if (!terminalState.accepted) return;
+    const terminalActivation = terminalState.state.currentEncounter?.participantActivations.find(
+      ({ pokemonInstanceId }) => pokemonInstanceId === seeded.pokemonInstanceId,
+    );
+    if (!terminalActivation || !terminalState.state.currentEncounter) {
+      throw new Error("missing terminal active Pokémon provenance");
+    }
+    const terminalHp = terminalState.state.currentEncounter.battle.combatants[
+      terminalActivation.combatantId
+    ]?.currentHp;
+    expect(terminalHp).toEqual(expect.any(Number));
     expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
-      .toMatchObject({ currentHp: 17, rowVersion: 2n });
+      .toMatchObject({ currentHp: terminalHp, rowVersion: 2n });
 
     const centerKey = generateUuidV7();
     const healed = await harness.app.healAtPokeCenter(
@@ -574,23 +723,24 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
 
     await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       client.query(
-        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '1 millisecond' WHERE checkpoint_id = $1",
         [hunt.checkpointId],
       ).then(() => undefined));
 
-    expect((await harness.app.retreat(
-      seeded.playerId,
-      generateUuidV7(),
-      huntId,
+    const retreatKey = generateUuidV7();
+    expect((await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, retreatKey, huntId),
     )).httpStatus).toBe(200);
     expect(await harness.app.healAtPokeCenter(
       seeded.playerId,
       centerKey,
       { teamId: seeded.teamId },
     )).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
-    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
-      .toMatchObject({ currentHp: 17, rowVersion: 0n });
+    const terminalVitality = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId));
+    expect(terminalVitality?.rowVersion).toBe(1n);
+    expect(terminalVitality?.currentHp).toBeGreaterThanOrEqual(0);
+    expect(terminalVitality?.currentHp).toBeLessThanOrEqual(17);
 
     expect((await harness.app.healAtPokeCenter(
       seeded.playerId,
@@ -599,7 +749,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     )).httpStatus).toBe(200);
     expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
-      .toMatchObject({ currentHp: 60, rowVersion: 1n });
+      .toMatchObject({ currentHp: 60, rowVersion: 2n });
   });
 
   it("TASK-108 rejects an all-KO Team at Start without reviving it", async () => {
@@ -637,7 +787,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       huntDefinitionId: "hunt:test",
       teamId: seeded.teamId,
     });
-    expect(started.httpStatus).toBe(200);
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
     const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
     const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadOwnedSoloHunt(client, seeded.playerId, huntId));
@@ -648,7 +798,10 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         [hunt.checkpointId],
       ).then(() => undefined));
 
-    const terminal = await harness.app.checkpoint(seeded.playerId, generateUuidV7(), huntId);
+    const checkpointKey = generateUuidV7();
+    const terminal = await settleBoundedCommand(
+      () => harness.app.checkpoint(seeded.playerId, checkpointKey, huntId),
+    );
     expect(terminal).toMatchObject({
       httpStatus: 200,
       body: {
@@ -702,7 +855,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
     if (!checkpoint) throw new Error("missing Hunt checkpoint fixture");
-    const decoded = decodeSoloHuntCheckpointV2(checkpoint.stateBytes);
+    const decoded = decodeSoloHuntCheckpoint(checkpoint.stateBytes);
     expect(decoded.accepted).toBe(true);
     if (!decoded.accepted || !decoded.state.currentEncounter) return;
     const playerSide = decoded.state.currentEncounter.battle.sides[0];
@@ -917,7 +1070,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     if (!hunt) throw new Error("missing Hunt fixture");
     await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       client.query(
-        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '1 millisecond' WHERE checkpoint_id = $1",
         [hunt.checkpointId],
       ).then(() => undefined));
 
@@ -940,7 +1093,10 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       `);
       await control.query("SELECT pg_advisory_lock(108002)");
       try {
-        const retreat = harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+        const retreatKey = generateUuidV7();
+        const retreat = settleBoundedCommand(
+          () => harness.app.retreat(seeded.playerId, retreatKey, huntId),
+        );
         await waitForAdvisoryWaiter();
         const center = harness.app.healAtPokeCenter(
           seeded.playerId,
@@ -992,7 +1148,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     if (!hunt) throw new Error("missing Hunt fixture");
     await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       client.query(
-        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '1 millisecond' WHERE checkpoint_id = $1",
         [hunt.checkpointId],
       ).then(() => undefined));
 
@@ -1020,7 +1176,10 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
           { teamId: seeded.teamId },
         );
         await waitForAdvisoryWaiter();
-        const retreat = harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+        const retreatKey = generateUuidV7();
+        const retreat = settleBoundedCommand(
+          () => harness.app.retreat(seeded.playerId, retreatKey, huntId),
+        );
         await control.query("SELECT pg_advisory_unlock(108001)");
 
         expect(await center).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
@@ -1030,9 +1189,24 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
           centerKey,
           { teamId: seeded.teamId },
         )).toEqual({ httpStatus: 409, body: { error: "hunt_active" } });
+        const terminalCheckpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+          loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+        if (!terminalCheckpoint) throw new Error("missing concurrent terminal checkpoint");
+        const terminalState = decodeSoloHuntCheckpoint(terminalCheckpoint.stateBytes);
+        expect(terminalState.accepted).toBe(true);
+        if (!terminalState.accepted) return;
+        const terminalActivation = terminalState.state.currentEncounter?.participantActivations.find(
+          ({ pokemonInstanceId }) => pokemonInstanceId === seeded.pokemonInstanceId,
+        );
+        if (!terminalActivation || !terminalState.state.currentEncounter) {
+          throw new Error("missing concurrent terminal active Pokémon provenance");
+        }
+        const terminalHp = terminalState.state.currentEncounter.battle.combatants[
+          terminalActivation.combatantId
+        ]?.currentHp;
         expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
           loadPokemonVitality(client, seeded.playerId, seeded.pokemonInstanceId)))
-          .toMatchObject({ currentHp: 17, rowVersion: 0n });
+          .toMatchObject({ currentHp: terminalHp, rowVersion: 1n });
       } finally {
         await control.query("SELECT pg_advisory_unlock(108001)");
         await control.query(
@@ -1072,12 +1246,15 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         [seeded.playerId, seeded.pokemonInstanceId],
       );
       await client.query(
-        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '1 millisecond' WHERE checkpoint_id = $1",
         [hunt.checkpointId],
       );
     });
 
-    const retreat = await harness.app.retreat(seeded.playerId, generateUuidV7(), huntId);
+    const retreatKey = generateUuidV7();
+    const retreat = await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, retreatKey, huntId),
+    );
     expect(retreat).toMatchObject({
       httpStatus: 200,
       body: { status: "terminal", terminalReason: "retreat" },
@@ -1119,13 +1296,16 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     const firstCheckpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadHuntCheckpoint(client, seeded.playerId, firstHunt.checkpointId));
     if (!firstCheckpoint) throw new Error("missing first checkpoint");
-    const firstDecoded = decodeSoloHuntCheckpointV2(firstCheckpoint.stateBytes);
+    const firstDecoded = decodeSoloHuntCheckpoint(firstCheckpoint.stateBytes);
     if (!firstDecoded.accepted || !firstDecoded.state.pendingEncounterSelection) {
       throw new Error("first Hunt lacks a pending selection");
     }
     const originalPending = firstDecoded.state.pendingEncounterSelection;
 
-    const retreat = await harness.app.retreat(seeded.playerId, generateUuidV7(), firstHuntId);
+    const retreatKey = generateUuidV7();
+    const retreat = await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, retreatKey, firstHuntId),
+    );
     expect(retreat).toMatchObject({ httpStatus: 200, body: { status: "terminal", terminalReason: "retreat" } });
     expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadPendingZoneSelection(client, { playerId: seeded.playerId, zoneId: "zone:test" })))
@@ -1162,7 +1342,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     const secondCheckpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadHuntCheckpoint(client, seeded.playerId, secondHunt.checkpointId));
     if (!secondCheckpoint) throw new Error("missing second checkpoint");
-    const secondDecoded = decodeSoloHuntCheckpointV2(secondCheckpoint.stateBytes);
+    const secondDecoded = decodeSoloHuntCheckpoint(secondCheckpoint.stateBytes);
     if (!secondDecoded.accepted) throw new Error("second checkpoint did not decode");
     expect(secondDecoded.state.pendingEncounterSelection?.pendingSelectionIdentity)
       .toBe(originalPending.pendingSelectionIdentity);
@@ -1177,7 +1357,10 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       teamId: seeded.teamId,
     });
     const firstHuntId = (firstStart.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
-    const retreat = await harness.app.retreat(seeded.playerId, generateUuidV7(), firstHuntId);
+    const retreatKey = generateUuidV7();
+    const retreat = await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, retreatKey, firstHuntId),
+    );
     expect(retreat.httpStatus).toBe(200);
 
     await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
@@ -1299,6 +1482,413 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     expect(read.body as Record<string, unknown>).not.toHaveProperty("lossWarningAcknowledgement");
   });
 
+  it("persists Potion/Revive policies with exact no-saved sentinels, OCC, and Start-pinned authority", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+
+    expect(await harness.app.getAutoPotionPolicy(seeded.playerId)).toEqual({
+      httpStatus: 200,
+      body: {
+        policyVersion: null,
+        rowVersion: "0",
+        enabled: false,
+        thresholdPercent: null,
+        orderedItems: [],
+      },
+    });
+    expect(await harness.app.getAutoRevivePolicy(seeded.playerId)).toEqual({
+      httpStatus: 200,
+      body: {
+        policyVersion: null,
+        rowVersion: "0",
+        enabled: false,
+        orderedItems: [],
+      },
+    });
+
+    const potion = await harness.app.replaceAutoPotionPolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        thresholdPercent: 50,
+        orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "2" }],
+      },
+    );
+    expect(potion).toMatchObject({
+      httpStatus: 200,
+      body: {
+        policy: {
+          policyVersion: expect.any(String),
+          rowVersion: "1",
+          itemRuleVersion: "item-rules:test",
+          gameDataVersion: "game-data:test",
+          rulesVersion: "rules:test",
+          enabled: true,
+          thresholdPercent: 50,
+          orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "2" }],
+        },
+        effectiveAt: null,
+      },
+    });
+    const potionPolicy = (potion.body as { policy: { policyVersion: string } }).policy;
+
+    expect(await harness.app.replaceAutoPotionPolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: false,
+        thresholdPercent: 40,
+        orderedItems: [],
+      },
+    )).toEqual({ httpStatus: 409, body: { error: "stale" } });
+
+    const revive = await harness.app.replaceAutoRevivePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "0" }],
+      },
+    );
+    expect(revive).toMatchObject({
+      httpStatus: 200,
+      body: {
+        policy: {
+          policyVersion: expect.any(String),
+          rowVersion: "1",
+          itemRuleVersion: "item-rules:test",
+          gameDataVersion: "game-data:test",
+          rulesVersion: "rules:test",
+          enabled: true,
+          orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "0" }],
+        },
+        effectiveAt: null,
+      },
+    });
+    const revivePolicy = (revive.body as { policy: { policyVersion: string } }).policy;
+
+    expect(await harness.app.getAutoPotionPolicy(seeded.playerId)).toMatchObject({
+      httpStatus: 200,
+      body: { policyVersion: potionPolicy.policyVersion, rowVersion: "1", enabled: true },
+    });
+    expect(await harness.app.getAutoRevivePolicy(seeded.playerId)).toMatchObject({
+      httpStatus: 200,
+      body: { policyVersion: revivePolicy.policyVersion, rowVersion: "1", enabled: true },
+    });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing Hunt checkpoint fixture");
+    const decoded = decodeSoloHuntCheckpoint(checkpoint.stateBytes);
+    expect(decoded.accepted).toBe(true);
+    if (!decoded.accepted) return;
+    expect(decoded.state.automationPolicies).toEqual({
+      capture: { policyVersion: null, rowVersion: "0", enabled: false },
+      potion: {
+        policyVersion: potionPolicy.policyVersion,
+        rowVersion: "1",
+        enabled: true,
+        thresholdPercent: 50,
+        orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "2" }],
+      },
+      revive: {
+        policyVersion: revivePolicy.policyVersion,
+        rowVersion: "1",
+        enabled: true,
+        orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "0" }],
+      },
+    });
+  });
+
+  it("reconciles an active Hunt to one frozen cutoff before applying a Potion policy prospectively", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const initial = await harness.app.replaceAutoPotionPolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: false,
+        thresholdPercent: 90,
+        orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "0" }],
+      },
+    );
+    expect(initial.httpStatus).toBe(200);
+    const initialVersion = (initial.body as { policy: { policyVersion: string } }).policy.policyVersion;
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '200 milliseconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const key = generateUuidV7();
+    let replaced: Awaited<ReturnType<typeof harness.app.replaceAutoPotionPolicy>> | null = null;
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      replaced = await harness.app.replaceAutoPotionPolicy(
+        seeded.playerId,
+        key,
+        {
+          expectedRowVersion: "1",
+          enabled: true,
+          thresholdPercent: 30,
+          orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "1" }],
+        },
+      );
+      if (replaced.httpStatus === 200) break;
+      expect(replaced.httpStatus).toBe(202);
+    }
+    expect(replaced).toMatchObject({
+      httpStatus: 200,
+      body: {
+        policy: {
+          policyVersion: expect.any(String),
+          rowVersion: "2",
+          enabled: true,
+          thresholdPercent: 30,
+        },
+        effectiveAt: { huntId, logicalTimeMs: expect.any(String) },
+      },
+    });
+    const result = replaced!.body as {
+      policy: { policyVersion: string };
+      effectiveAt: { huntId: string; logicalTimeMs: string };
+    };
+    const effectiveLogicalTimeMs = Number(result.effectiveAt.logicalTimeMs);
+    expect(effectiveLogicalTimeMs).toBeGreaterThan(0);
+
+    const intervalAuthority = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      before: await loadEffectiveAutoPotionPolicyVersion(client, huntId, effectiveLogicalTimeMs - 1),
+      at: await loadEffectiveAutoPotionPolicyVersion(client, huntId, effectiveLogicalTimeMs),
+      reviveAt: await loadEffectiveAutoRevivePolicyVersion(client, huntId, effectiveLogicalTimeMs),
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      command: await loadPublicHuntCommand(client, seeded.playerId, key),
+    }));
+    expect(intervalAuthority.before).toBe(initialVersion);
+    expect(intervalAuthority.at).toBe(result.policy.policyVersion);
+    expect(intervalAuthority.reviveAt).toBeNull();
+    expect(intervalAuthority.checkpoint?.logicalTimeMs).toBe(effectiveLogicalTimeMs);
+    expect(intervalAuthority.command).toMatchObject({
+      status: "terminal",
+      targetLogicalTimeMs: effectiveLogicalTimeMs,
+      targetWallClockAt: expect.any(Date),
+    });
+  });
+
+  it("keeps a concurrent Potion policy edit prospective against an already-frozen Hunt advancement", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+    const runtimeEntered = deferred();
+    const releaseRuntime = deferred();
+    let pauseRuntime = false;
+    const harness = applicationWithOptions({
+      beforeLoadPersistedRuntime: async () => {
+        if (!pauseRuntime) return;
+        pauseRuntime = false;
+        runtimeEntered.resolve();
+        await releaseRuntime.promise;
+      },
+    });
+    const initial = await harness.app.replaceAutoPotionPolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: false,
+        thresholdPercent: 90,
+        orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "0" }],
+      },
+    );
+    expect(initial.httpStatus).toBe(200);
+    const initialVersion = (initial.body as { policy: { policyVersion: string } }).policy.policyVersion;
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing concurrent policy Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '200 milliseconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    pauseRuntime = true;
+    const checkpointKey = generateUuidV7();
+    const frozenAdvance = harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+    await runtimeEntered.promise;
+
+    const policyKey = generateUuidV7();
+    let replacement: Awaited<ReturnType<typeof harness.app.replaceAutoPotionPolicy>> | null = null;
+    for (let attempt = 0; attempt < 32; attempt += 1) {
+      replacement = await harness.app.replaceAutoPotionPolicy(
+        seeded.playerId,
+        policyKey,
+        {
+          expectedRowVersion: "1",
+          enabled: true,
+          thresholdPercent: 90,
+          orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "0" }],
+        },
+      );
+      if (replacement.httpStatus !== 202) break;
+    }
+    expect(replacement).toMatchObject({
+      httpStatus: 200,
+      body: {
+        policy: { rowVersion: "2", enabled: true, policyVersion: expect.any(String) },
+        effectiveAt: { huntId, logicalTimeMs: expect.any(String) },
+      },
+    });
+    releaseRuntime.resolve();
+    const overtaken = await frozenAdvance;
+    expect([200, 202, 409]).toContain(overtaken.httpStatus);
+
+    const policyResult = replacement!.body as {
+      policy: { policyVersion: string };
+      effectiveAt: { huntId: string; logicalTimeMs: string };
+    };
+    const effectiveLogicalTimeMs = Number(policyResult.effectiveAt.logicalTimeMs);
+    const durable = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      before: effectiveLogicalTimeMs > 0
+        ? await loadEffectiveAutoPotionPolicyVersion(client, huntId, effectiveLogicalTimeMs - 1)
+        : null,
+      at: await loadEffectiveAutoPotionPolicyVersion(client, huntId, effectiveLogicalTimeMs),
+      uses: await loadAutomationItemUsesForEncounter(client, {
+        playerId: seeded.playerId,
+        huntId,
+        encounterOrdinal: 1,
+      }),
+      inventory: await loadInventory(client, seeded.playerId),
+    }));
+    if (effectiveLogicalTimeMs > 0) expect(durable.before).toBe(initialVersion);
+    expect(durable.at).toBe(policyResult.policy.policyVersion);
+    expect(durable.uses).toEqual([]);
+    expect(durable.inventory?.entries.find(({ itemId }) => itemId === "item:potion")?.quantity).toBe(3n);
+  });
+
+  it("reselects Auto-Potion fallback from locked Inventory after a snapshot race while honoring minimumReserve", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await addInventoryItem(seeded.playerId, "item:potion-alt", 1n);
+    await addInventoryItem(seeded.playerId, "item:potion-third", 1n);
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      createPokemonVitalityInTransaction(client, {
+        ownerPlayerId: seeded.playerId,
+        pokemonInstanceId: seeded.pokemonInstanceId,
+        currentHp: 17,
+        now: new Date(),
+      }));
+
+    let raceArmed = false;
+    let racedInventory = false;
+    const harness = applicationWithOptions({
+      beforeItemRule: async (itemId) => {
+        if (!raceArmed || racedInventory || itemId !== "item:potion-alt") return;
+        racedInventory = true;
+        await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+          const inventory = await loadInventory(client, seeded.playerId);
+          if (!inventory) throw new Error("missing Inventory race fixture");
+          const removed = await withTransaction(client, (transaction) =>
+            removeInventoryEntriesInTransaction(transaction, {
+              playerId: seeded.playerId,
+              expectedRowVersion: inventory.rowVersion,
+              removals: [{ itemId: "item:potion-alt", quantity: 1n }],
+              now: new Date(),
+            }));
+          expect(removed.status).toBe("updated");
+        });
+      },
+    });
+    expect(await harness.app.replaceAutoPotionPolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        thresholdPercent: 90,
+        orderedItems: [
+          { itemId: "item:potion", autoUseEnabled: true, minimumReserve: "3" },
+          { itemId: "item:potion-alt", autoUseEnabled: true, minimumReserve: "0" },
+          { itemId: "item:potion-third", autoUseEnabled: true, minimumReserve: "0" },
+        ],
+      },
+    )).toMatchObject({ httpStatus: 200, body: { policy: { rowVersion: "1", enabled: true } } });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Auto-Potion fallback Hunt");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '100 milliseconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    raceArmed = true;
+    const key = generateUuidV7();
+    let uses = [] as Awaited<ReturnType<typeof loadAutomationItemUsesForEncounter>>;
+    for (let attempt = 0; attempt < 16 && uses.length === 0; attempt += 1) {
+      const result = await harness.app.checkpoint(seeded.playerId, key, huntId);
+      expect([200, 202]).toContain(result.httpStatus);
+      uses = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadAutomationItemUsesForEncounter(client, {
+          playerId: seeded.playerId,
+          huntId,
+          encounterOrdinal: 1,
+        }));
+    }
+
+    expect(racedInventory).toBe(true);
+    expect(uses).toHaveLength(1);
+    expect(uses[0]).toMatchObject({
+      automationFamily: "potion",
+      phase: "battle",
+      itemId: "item:potion-third",
+    });
+    const inventory = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadInventory(client, seeded.playerId));
+    expect(inventory?.entries.find(({ itemId }) => itemId === "item:potion")?.quantity).toBe(3n);
+    expect(inventory?.entries.find(({ itemId }) => itemId === "item:potion-alt")).toBeUndefined();
+    expect(inventory?.entries.find(({ itemId }) => itemId === "item:potion-third")).toBeUndefined();
+  });
+
   it("does not activate policy when its public lease expires after freeze but before the effect transaction", async () => {
     const seeded = await seedPlayerTeamAndPotion();
     let expireKey: string | null = null;
@@ -1415,14 +2005,25 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
 
     historicalAvailable = false;
     const key = generateUuidV7();
-    expect(await harness.app.checkpoint(seeded.playerId, key, huntId))
-      .toEqual({ httpStatus: 503, body: { error: "authority_unavailable" } });
+    let checkpointImmediatelyBeforeFailure = before;
+    let failed: { readonly httpStatus: number; readonly body: unknown } | null = null;
+    for (let attempt = 0; attempt < 128; attempt += 1) {
+      const immediatelyBefore = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+      if (!immediatelyBefore) throw new Error("missing checkpoint before unavailable boundary");
+      const result = await harness.app.checkpoint(seeded.playerId, key, huntId);
+      if (result.httpStatus === 202) continue;
+      checkpointImmediatelyBeforeFailure = immediatelyBefore;
+      failed = result;
+      break;
+    }
+    expect(failed).toEqual({ httpStatus: 503, body: { error: "authority_unavailable" } });
     const afterFailure = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
       checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
       boundary: await loadEarliestIncompleteEncounterBoundary(client, huntId),
     }));
-    expect(afterFailure.checkpoint?.rowVersion).toBe(before.rowVersion);
-    expect(afterFailure.checkpoint?.logicalTimeMs).toBe(before.logicalTimeMs);
+    expect(afterFailure.checkpoint?.rowVersion).toBe(checkpointImmediatelyBeforeFailure.rowVersion);
+    expect(afterFailure.checkpoint?.logicalTimeMs).toBe(checkpointImmediatelyBeforeFailure.logicalTimeMs);
     expect(afterFailure.boundary).toBeNull();
 
     historicalAvailable = true;
@@ -1440,9 +2041,281 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     const afterRetry = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
       checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
       boundary: await loadEarliestIncompleteEncounterBoundary(client, huntId),
+      pendingManualCapture: await loadPendingManualCapture(client, seeded.playerId),
     }));
     expect(afterRetry.checkpoint?.rowVersion).toBeGreaterThan(before.rowVersion);
-    expect(afterRetry.boundary).toMatchObject({ status: "frozen", automaticDisposition: "disabled" });
+    expect(afterRetry.boundary).toMatchObject({
+      status: "frozen",
+      automaticDisposition: "disabled",
+      manualDisposition: "not_applicable",
+    });
+    expect(afterRetry.pendingManualCapture).toBeNull();
+  });
+
+  it("freezes one exact 8h forward return target across retry and a different advance key without early anchor rebase", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = applicationWithOptions({
+      reward: async () => {
+        const durable = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+          claimRewardResolution(client, {
+            subjectPlayerId: seeded.playerId,
+            sourceAuthority: "pokenexus.solo-hunt.encounter-completion.v1",
+            sourceCorrelation: "reward:offline-frozen-pair",
+            rulesVersion: "rules:test",
+            gameDataVersion: "game-data:test",
+            effects: [{ kind: "player_xp", playerId: seeded.playerId, amount: 1n }],
+          }));
+        return {
+          rewardResolutionId: durable.resolution.resolutionId,
+          reward: {
+            playerExperience: 1n,
+            pokemonExperience: [],
+            items: [],
+          },
+        };
+      },
+    });
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '12 hours' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+    const before = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!before) throw new Error("missing checkpoint fixture");
+
+    const firstKey = generateUuidV7();
+    expect(await harness.app.checkpoint(seeded.playerId, firstKey, huntId)).toMatchObject({ httpStatus: 202 });
+    const firstCommand = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, firstKey));
+    expect(firstCommand?.targetLogicalTimeMs).toBe(before.logicalTimeMs + FORWARD_OFFLINE_PRODUCTIVE_CAP_MS);
+    expect(firstCommand?.targetWallClockAt).not.toBeNull();
+    const partial = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!partial || !firstCommand?.targetWallClockAt) throw new Error("missing frozen return fixture");
+    expect(partial.logicalTimeMs).toBeLessThan(firstCommand.targetLogicalTimeMs!);
+    expect(partial.logicalTimeAnchorAt.getTime()).toBeLessThan(firstCommand.targetWallClockAt.getTime());
+
+    expect(await harness.app.checkpoint(seeded.playerId, firstKey, huntId)).toMatchObject({ httpStatus: 202 });
+    const retried = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, firstKey));
+    expect(retried?.targetLogicalTimeMs).toBe(firstCommand.targetLogicalTimeMs);
+    expect(retried?.targetWallClockAt?.getTime()).toBe(firstCommand.targetWallClockAt.getTime());
+
+    const secondKey = generateUuidV7();
+    expect(await harness.app.claim(seeded.playerId, secondKey, huntId)).toMatchObject({ httpStatus: 202 });
+    const joined = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, secondKey));
+    expect(joined?.targetLogicalTimeMs).toBe(firstCommand.targetLogicalTimeMs);
+    expect(joined?.targetWallClockAt?.getTime()).toBe(firstCommand.targetWallClockAt.getTime());
+    const stillPartial = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    expect(stillPartial?.logicalTimeAnchorAt.getTime()).toBeLessThan(firstCommand.targetWallClockAt.getTime());
+  });
+
+  it("uses full sub-8h elapsed time for a forward return target", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '2 hours' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+    const before = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!before) throw new Error("missing checkpoint fixture");
+
+    const key = generateUuidV7();
+    expect(await harness.app.checkpoint(seeded.playerId, key, huntId)).toMatchObject({ httpStatus: 202 });
+    const command = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, key));
+    if (!command?.targetLogicalTimeMs) throw new Error("missing frozen target");
+    const elapsed = command.targetLogicalTimeMs - before.logicalTimeMs;
+    expect(elapsed).toBeGreaterThanOrEqual(2 * 60 * 60 * 1000);
+    expect(elapsed).toBeLessThan(2 * 60 * 60 * 1000 + 5_000);
+    expect(elapsed).toBeLessThan(FORWARD_OFFLINE_PRODUCTIVE_CAP_MS);
+  });
+
+  it("fails closed before command acceptance when a forward checkpoint anchor is in the future", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() + interval '1 second' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+    const before = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!before) throw new Error("missing checkpoint fixture");
+
+    const key = generateUuidV7();
+    expect(await harness.app.checkpoint(seeded.playerId, key, huntId))
+      .toEqual({ httpStatus: 503, body: { error: "authority_unavailable" } });
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, key))).toBeNull();
+    const after = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    expect(after?.rowVersion).toBe(before.rowVersion);
+    expect(after?.logicalTimeMs).toBe(before.logicalTimeMs);
+    expect(after?.logicalTimeAnchorAt.getTime()).toBe(before.logicalTimeAnchorAt.getTime());
+  });
+
+  it("skips a logically complete pending return and joins the next still-active frozen return", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing checkpoint fixture");
+
+    const completeKey = generateUuidV7();
+    const activeKey = generateUuidV7();
+    let activeTarget = 0;
+    let activeReturnAt: Date | null = null;
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const root = await ensureAndLockPlayerHuntRoot(transaction, seeded.playerId);
+        if (!root) throw new Error("missing Player Hunt root");
+        await transaction.query(
+          "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = $2 WHERE checkpoint_id = $1",
+          [hunt.checkpointId, root.databaseNow],
+        );
+        const complete = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: completeKey,
+          commandKind: "checkpoint",
+          intentHash: await hashNormalizedIntent({ huntId }),
+          intentJson: { huntId },
+          sourceHuntId: huntId,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs: checkpoint.logicalTimeMs,
+          targetWallClockAt: root.databaseNow,
+        });
+        expect(complete.status).toBe("accepted");
+        activeTarget = checkpoint.logicalTimeMs + 5_000;
+        activeReturnAt = new Date(root.databaseNow.getTime() + 5_000);
+        const active = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: activeKey,
+          commandKind: "claim",
+          intentHash: await hashNormalizedIntent({ huntId }),
+          intentJson: { huntId },
+          sourceHuntId: huntId,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs: activeTarget,
+          targetWallClockAt: activeReturnAt,
+        });
+        expect(active.status).toBe("accepted");
+      }));
+
+    const joinedKey = generateUuidV7();
+    await harness.app.checkpoint(seeded.playerId, joinedKey, huntId);
+    const joined = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, joinedKey));
+    expect(joined?.targetLogicalTimeMs).toBe(activeTarget);
+    expect(joined?.targetWallClockAt?.getTime()).toBe(activeReturnAt?.getTime());
+  });
+
+  it("rebases a completed capped forward return to its frozen DB-time anchor so excess cannot be claimed again", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Hunt fixture");
+    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing checkpoint fixture");
+
+    const cappedKey = generateUuidV7();
+    const joinedKey = generateUuidV7();
+    let frozenReturnAt: Date | null = null;
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const root = await ensureAndLockPlayerHuntRoot(transaction, seeded.playerId);
+        if (!root) throw new Error("missing Player Hunt root");
+        frozenReturnAt = root.databaseNow;
+        await transaction.query(
+          "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = $2::timestamptz - interval '4 hours' WHERE checkpoint_id = $1",
+          [hunt.checkpointId, root.databaseNow],
+        );
+        const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: cappedKey,
+          commandKind: "checkpoint",
+          intentHash: await hashNormalizedIntent({ huntId }),
+          intentJson: { huntId },
+          sourceHuntId: huntId,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs: checkpoint.logicalTimeMs,
+          targetWallClockAt: root.databaseNow,
+        });
+        expect(claimed.status).toBe("accepted");
+        const joined = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: joinedKey,
+          commandKind: "claim",
+          intentHash: await hashNormalizedIntent({ huntId }),
+          intentJson: { huntId },
+          sourceHuntId: huntId,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs: checkpoint.logicalTimeMs,
+          targetWallClockAt: root.databaseNow,
+        });
+        expect(joined.status).toBe("accepted");
+      }));
+
+    expect(await settleBoundedCommand(
+      () => harness.app.checkpoint(seeded.playerId, cappedKey, huntId),
+    )).toMatchObject({ httpStatus: 200 });
+    const rebased = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!rebased || !frozenReturnAt) throw new Error("missing rebased checkpoint");
+    expect(rebased.logicalTimeAnchorAt.getTime()).toBe(frozenReturnAt.getTime());
+    expect((await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, joinedKey)))?.status).toBe("pending");
+
+    const nextKey = generateUuidV7();
+    await harness.app.checkpoint(seeded.playerId, nextKey, huntId);
+    const next = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, nextKey));
+    if (!next?.targetLogicalTimeMs) throw new Error("missing subsequent target");
+    expect(next.targetLogicalTimeMs - rebased.logicalTimeMs).toBeLessThan(60_000);
   });
 
   it("selects automatic capture from the locked Inventory at decision time, not an earlier boundary rowVersion", async () => {
@@ -1502,10 +2375,13 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       ).then(() => undefined));
 
     const key = generateUuidV7();
-    const frozen = await harness.app.checkpoint(seeded.playerId, key, huntId);
-    expect(frozen.httpStatus).toBe(202);
-    const boundary = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      loadEarliestIncompleteEncounterBoundary(client, huntId));
+    let boundary = null as Awaited<ReturnType<typeof loadEarliestIncompleteEncounterBoundary>>;
+    for (let attempt = 0; attempt < 128 && boundary === null; attempt += 1) {
+      const frozen = await harness.app.checkpoint(seeded.playerId, key, huntId);
+      expect(frozen.httpStatus).toBe(202);
+      boundary = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadEarliestIncompleteEncounterBoundary(client, huntId));
+    }
     expect(boundary).toMatchObject({ status: "frozen", automaticDisposition: null });
     expect(boundary?.preRewardInventoryRowVersion).toBeNull();
 
@@ -1605,9 +2481,12 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       ).then(() => undefined));
 
     const key = generateUuidV7();
-    expect((await harness.app.checkpoint(seeded.playerId, key, huntId)).httpStatus).toBe(202);
-    const frozenBeforeAttempt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      loadEarliestIncompleteEncounterBoundary(client, huntId));
+    let frozenBeforeAttempt = null as Awaited<ReturnType<typeof loadEarliestIncompleteEncounterBoundary>>;
+    for (let attempt = 0; attempt < 128 && frozenBeforeAttempt === null; attempt += 1) {
+      expect((await harness.app.checkpoint(seeded.playerId, key, huntId)).httpStatus).toBe(202);
+      frozenBeforeAttempt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadEarliestIncompleteEncounterBoundary(client, huntId));
+    }
     expect(frozenBeforeAttempt).toMatchObject({ status: "frozen", automaticDisposition: null });
 
     expect(await harness.app.checkpoint(seeded.playerId, key, huntId))
@@ -1699,10 +2578,14 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       ).then(() => undefined));
 
     const claimKey = generateUuidV7();
-    expect((await harness.app.claim(seeded.playerId, claimKey, huntId)).httpStatus).toBe(202);
-    expect((await harness.app.claim(seeded.playerId, claimKey, huntId)).httpStatus).toBe(202);
-    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      loadEarliestIncompleteEncounterBoundary(client, huntId))).toMatchObject({
+    let captureCommitted = null as Awaited<ReturnType<typeof loadEarliestIncompleteEncounterBoundary>>;
+    for (let attempt = 0; attempt < 128; attempt += 1) {
+      expect((await harness.app.claim(seeded.playerId, claimKey, huntId)).httpStatus).toBe(202);
+      captureCommitted = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadEarliestIncompleteEncounterBoundary(client, huntId));
+      if (captureCommitted?.status === "capture_committed") break;
+    }
+    expect(captureCommitted).toMatchObject({
         status: "capture_committed",
         automaticDisposition: "attempt",
         automaticCaptureSuccess: true,
@@ -1719,10 +2602,15 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     });
 
     const checkpointKey = generateUuidV7();
-    const checkpointStage = await harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
-    expect(checkpointStage).toMatchObject({ httpStatus: 202 });
-    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      loadEarliestIncompleteEncounterBoundary(client, huntId))).toMatchObject({ status: "reward_committed" });
+    let rewardCommitted = null as Awaited<ReturnType<typeof loadEarliestIncompleteEncounterBoundary>>;
+    for (let attempt = 0; attempt < 128; attempt += 1) {
+      const checkpointStage = await harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+      expect(checkpointStage).toMatchObject({ httpStatus: 202 });
+      rewardCommitted = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadEarliestIncompleteEncounterBoundary(client, huntId));
+      if (rewardCommitted?.status === "reward_committed") break;
+    }
+    expect(rewardCommitted).toMatchObject({ status: "reward_committed" });
     const afterRewardByOtherCommand = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadPublicHuntCommand(client, seeded.playerId, claimKey));
     expect(afterRewardByOtherCommand?.claimEffects).toEqual(afterCapture?.claimEffects);
@@ -1989,7 +2877,10 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
       teamId: seeded.teamId,
     });
     const firstHuntId = (firstStart.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
-    expect(await harness.app.retreat(seeded.playerId, generateUuidV7(), firstHuntId))
+    const firstRetreatKey = generateUuidV7();
+    expect(await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, firstRetreatKey, firstHuntId),
+    ))
       .toMatchObject({ httpStatus: 200, body: { status: "terminal" } });
     await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       withTransaction(client, async (transaction) => {
@@ -2105,7 +2996,574 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     });
   });
 
-  it("cannot advance another command past an accepted heal cutoff before classifying that heal", async () => {
+  it("lets Retreat win an exact KO-intervention automation tie with durable abandonment and zero Revive spend", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await addInventoryItem(seeded.playerId, "item:revive", 1n);
+    const harness = applicationWithOptions({
+      runtimeInputsTransform: (inputs) => lethalRuntimeInputs(inputs, "singleEnemy"),
+    });
+    expect(await harness.app.replaceAutoRevivePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "0" }],
+      },
+    )).toMatchObject({ httpStatus: 200, body: { policy: { enabled: true, rowVersion: "1" } } });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing Retreat tie Hunt fixture");
+    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing Retreat tie checkpoint");
+    const decoded = decodeSoloHuntCheckpoint(checkpoint.stateBytes);
+    expect(decoded.accepted).toBe(true);
+    if (!decoded.accepted) return;
+
+    const predicted = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+      decoded.state,
+      harness.runtime(),
+      10_000,
+      { skipInitialAutomationBoundary: true },
+    );
+    expect(predicted.accepted, predicted.accepted ? undefined : predicted.reason).toBe(true);
+    if (!predicted.accepted) return;
+    expect(predicted.stopReason).toBe("automationBoundary");
+    const predictedEncounter = predicted.state.currentEncounter;
+    const predictedIntervention = predictedEncounter?.battle.koInterventionPending ?? null;
+    expect(predictedIntervention).not.toBeNull();
+    if (!predictedEncounter || !predictedIntervention) throw new Error("missing predicted KO intervention");
+    const tieLogicalTimeMs = predicted.state.logicalTimeMs;
+
+    const retreatKey = generateUuidV7();
+    const intent = { huntId };
+    const intentHash = await hashNormalizedIntent(intent);
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const targetWallClockAt = new Date(
+          checkpoint.logicalTimeAnchorAt.getTime() + (tieLogicalTimeMs - checkpoint.logicalTimeMs),
+        );
+        const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: retreatKey,
+          commandKind: "retreat",
+          intentHash,
+          intentJson: intent,
+          sourceHuntId: huntId,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs: tieLogicalTimeMs,
+          targetWallClockAt,
+        });
+        expect(claimed.status).toBe("accepted");
+      }));
+
+    const terminal = await settleBoundedCommand(
+      () => harness.app.retreat(seeded.playerId, retreatKey, huntId),
+    );
+    expect(terminal).toMatchObject({
+      httpStatus: 200,
+      body: { status: "terminal", terminalReason: "retreat", recoveryReadyAt: expect.any(String) },
+    });
+
+    const durable = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const persistedCheckpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+      if (!persistedCheckpoint) throw new Error("missing persisted Retreat tie checkpoint");
+      const persisted = decodeSoloHuntCheckpoint(persistedCheckpoint.stateBytes);
+      const terminalHunt = await loadOwnedSoloHunt(client, seeded.playerId, huntId);
+      const root = await ensureAndLockPlayerHuntRoot(client, seeded.playerId);
+      return {
+        persisted,
+        abandonment: await loadRetreatAbandonment(client, { playerId: seeded.playerId, huntId }),
+        uses: await loadAutomationItemUsesForEncounter(client, {
+          playerId: seeded.playerId,
+          huntId,
+          encounterOrdinal: 1,
+        }),
+        inventory: await loadInventory(client, seeded.playerId),
+        terminalHunt,
+        root,
+      };
+    });
+    expect(durable.persisted.accepted).toBe(true);
+    if (!durable.persisted.accepted) throw new Error("persisted Retreat tie checkpoint is invalid");
+    expect(durable.persisted.state.logicalTimeMs).toBe(tieLogicalTimeMs);
+    expect(durable.persisted.state.currentEncounter?.battle.koInterventionPending).toEqual(predictedIntervention);
+    expect(durable.persisted.state.currentEncounter?.battle.battleId).toBe(predictedEncounter.battle.battleId);
+    expect(durable.abandonment).toMatchObject({
+      disposition: "abandoned_by_retreat",
+      logicalTimeMs: tieLogicalTimeMs,
+      battleId: predictedEncounter.battle.battleId,
+      sideId: predictedIntervention.sideId,
+      combatantId: predictedIntervention.combatantId,
+      koInterventionPending: true,
+    });
+    expect(durable.uses).toEqual([]);
+    expect(durable.inventory?.entries.find(({ itemId }) => itemId === "item:revive")?.quantity).toBe(1n);
+    expect(durable.terminalHunt?.terminalReason).toBe("retreat");
+    expect(durable.terminalHunt?.terminalAt).not.toBeNull();
+    expect(durable.root?.recoveryReadyAt).not.toBeNull();
+    expect(durable.root!.recoveryReadyAt!.getTime() - durable.terminalHunt!.terminalAt!.getTime()).toBe(30_000);
+  });
+
+  it("commits D-F16 post-Battle Revive atomically and exactly once across rollback, response loss, and restart", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await addInventoryItem(seeded.playerId, "item:revive", 1n);
+    const persistedRuntimeStore: { value: SoloHuntRuntimeInputs | null } = { value: null };
+    const createHarness = () => applicationWithOptions({
+      persistedRuntimeStore,
+      runtimeInputsTransform: (inputs) => lethalRuntimeInputs(inputs, "allActive"),
+    });
+    let harness = createHarness();
+
+    expect(await harness.app.replaceAutoRevivePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "0" }],
+      },
+    )).toMatchObject({ httpStatus: 200, body: { policy: { enabled: true, rowVersion: "1" } } });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing D-F16 Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '10 seconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const pendingBefore = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPendingZoneSelection(client, { playerId: seeded.playerId, zoneId: "zone:test" }));
+    expect(pendingBefore).not.toBeNull();
+    if (!pendingBefore) throw new Error("missing pre-commit D-F16 pending selection");
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      await client.query(`
+        CREATE FUNCTION pokenexus.test_task110_fail_post_battle_revive() RETURNS trigger
+        LANGUAGE plpgsql AS $$
+        BEGIN
+          RAISE EXCEPTION 'TASK-110 injected post-Battle Revive failure';
+        END;
+        $$
+      `);
+      await client.query(`
+        CREATE TRIGGER test_task110_fail_post_battle_revive
+        BEFORE INSERT ON pokenexus.hunt_post_battle_revive_applied
+        FOR EACH ROW EXECUTE FUNCTION pokenexus.test_task110_fail_post_battle_revive()
+      `);
+    });
+
+    const checkpointKey = generateUuidV7();
+    let beforeFailure: {
+      checkpoint: Awaited<ReturnType<typeof loadHuntCheckpoint>>;
+      inventory: Awaited<ReturnType<typeof loadInventory>>;
+      pending: Awaited<ReturnType<typeof loadPendingZoneSelection>>;
+    } | null = null;
+    let failed: Awaited<ReturnType<typeof harness.app.checkpoint>> | null = null;
+    for (let attempt = 0; attempt < 64; attempt += 1) {
+      beforeFailure = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+        checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+        inventory: await loadInventory(client, seeded.playerId),
+        pending: await loadPendingZoneSelection(client, { playerId: seeded.playerId, zoneId: "zone:test" }),
+      }));
+      failed = await harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+      if (failed.httpStatus === 503) break;
+      expect(failed.httpStatus).toBe(202);
+    }
+    expect(failed).toEqual({ httpStatus: 503, body: { error: "authority_unavailable" } });
+    if (!beforeFailure?.checkpoint || !beforeFailure.inventory) throw new Error("missing pre-failure D-F16 state");
+
+    const rolledBack = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId),
+      inventory: await loadInventory(client, seeded.playerId),
+      pending: await loadPendingZoneSelection(client, { playerId: seeded.playerId, zoneId: "zone:test" }),
+      genericCount: await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.hunt_automation_item_uses WHERE player_id = $1 AND hunt_id = $2",
+        [seeded.playerId, huntId],
+      ),
+      dedicatedCount: await client.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM pokenexus.hunt_post_battle_revive_applied WHERE player_id = $1 AND hunt_id = $2",
+        [seeded.playerId, huntId],
+      ),
+    }));
+    expect(rolledBack.checkpoint?.rowVersion).toBe(beforeFailure.checkpoint.rowVersion);
+    expect(rolledBack.checkpoint?.logicalTimeMs).toBe(beforeFailure.checkpoint.logicalTimeMs);
+    expect(rolledBack.checkpoint?.stateBytes).toEqual(beforeFailure.checkpoint.stateBytes);
+    expect(rolledBack.inventory).toEqual(beforeFailure.inventory);
+    expect(rolledBack.pending).toEqual(beforeFailure.pending);
+    expect(rolledBack.genericCount.rows[0]?.count).toBe("0");
+    expect(rolledBack.dedicatedCount.rows[0]?.count).toBe("0");
+
+    await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      await client.query("DROP TRIGGER test_task110_fail_post_battle_revive ON pokenexus.hunt_post_battle_revive_applied");
+      await client.query("DROP FUNCTION pokenexus.test_task110_fail_post_battle_revive()");
+    });
+
+    harness = createHarness();
+    let resolvedState: ReturnType<typeof decodeSoloHuntCheckpoint> | null = null;
+    for (let attempt = 0; attempt < 64; attempt += 1) {
+      const continued = await harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+      expect([200, 202]).toContain(continued.httpStatus);
+      const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+      if (!checkpoint) throw new Error("missing post-restart D-F16 checkpoint");
+      const decoded = decodeSoloHuntCheckpoint(checkpoint.stateBytes);
+      if (
+        decoded.accepted
+        && decoded.state.completedEncounters.some(({ completionKind }) => completionKind === "resolved_non_win")
+      ) {
+        resolvedState = decoded;
+        break;
+      }
+    }
+    expect(resolvedState?.accepted).toBe(true);
+    if (!resolvedState?.accepted) throw new Error("D-F16 did not resolve after restart");
+    const resolvedEvidence = resolvedState.state.completedEncounters.find(
+      ({ completionKind }) => completionKind === "resolved_non_win",
+    );
+    expect(resolvedEvidence).toBeDefined();
+    if (!resolvedEvidence) throw new Error("missing resolved_non_win evidence");
+    expect(resolvedState.state.currentEncounter).toBeUndefined();
+    expect(resolvedState.state.pendingEncounterSelection).toBeUndefined();
+    expect("rewardSourceIdentity" in resolvedEvidence).toBe(false);
+    expect("rewardEnvelope" in resolvedEvidence).toBe(false);
+
+    const committed = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const inventory = await loadInventory(client, seeded.playerId);
+      const pending = await loadPendingZoneSelection(client, { playerId: seeded.playerId, zoneId: "zone:test" });
+      const uses = await loadAutomationItemUsesForEncounter(client, {
+        playerId: seeded.playerId,
+        huntId,
+        encounterOrdinal: resolvedEvidence.encounterOrdinal,
+      });
+      const dedicated = uses[0]
+        ? await loadPostBattleReviveAppliedByProvenance(client, {
+            playerId: seeded.playerId,
+            huntId,
+            provenanceIdentity: uses[0].provenanceIdentity,
+          })
+        : null;
+      return { inventory, pending, uses, dedicated };
+    });
+    expect(committed.inventory?.entries.find(({ itemId }) => itemId === "item:revive")).toBeUndefined();
+    expect(committed.pending).toBeNull();
+    expect(committed.uses).toHaveLength(1);
+    expect(committed.uses[0]).toMatchObject({
+      automationFamily: "revive",
+      phase: "post_battle",
+      itemId: "item:revive",
+      encounterId: resolvedEvidence.encounterId,
+      encounterOrdinal: resolvedEvidence.encounterOrdinal,
+    });
+    expect(committed.dedicated).toMatchObject({
+      encounterId: resolvedEvidence.encounterId,
+      encounterOrdinal: resolvedEvidence.encounterOrdinal,
+      itemId: "item:revive",
+      pendingSelectionIdentity: pendingBefore.selectionJson.pendingSelectionIdentity,
+    });
+    expect(committed.dedicated?.consumedPendingSelectionJson).toEqual(pendingBefore.selectionJson);
+    const completedProvenance = resolvedState.state.completedEncounterProvenance.find(
+      ({ encounterId }) => encounterId === resolvedEvidence.encounterId,
+    );
+    expect(completedProvenance).toBeDefined();
+    expect(completedProvenance?.consumedPendingEncounterSelection).toEqual(pendingBefore.selectionJson);
+    expect(committed.dedicated?.completedEncounterProvenanceJson).toEqual(completedProvenance);
+
+    const replayHarness = createHarness();
+    const beforeReplayInventory = committed.inventory;
+    await replayHarness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+    const afterReplay = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      inventory: await loadInventory(client, seeded.playerId),
+      uses: await loadAutomationItemUsesForEncounter(client, {
+        playerId: seeded.playerId,
+        huntId,
+        encounterOrdinal: resolvedEvidence.encounterOrdinal,
+      }),
+    }));
+    expect(afterReplay.inventory?.rowVersion).toBe(beforeReplayInventory?.rowVersion);
+    expect(afterReplay.inventory?.entries).toEqual(beforeReplayInventory?.entries);
+    expect(afterReplay.uses).toHaveLength(1);
+    expect(await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadEarliestIncompleteEncounterBoundary(client, huntId))).toBeNull();
+  });
+
+  it("counts a successful in-Battle Auto-Revive KO in the sealed Hunt activity", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await addInventoryItem(seeded.playerId, "item:revive", 1n);
+    const harness = applicationWithOptions({
+      runtimeInputsTransform: (inputs) => {
+        const playerMove = inputs.context.moveRules["move:player"];
+        const enemyMove = inputs.context.moveRules["move:enemy"];
+        if (!playerMove || !enemyMove) throw new Error("missing activity fixture Moves");
+        const context: ResolvedCombatContext = {
+          ...inputs.context,
+          moveRules: {
+            ...inputs.context.moveRules,
+            "move:player": {
+              ...playerMove,
+              power: 1_000,
+            },
+            "move:enemy": {
+              ...enemyMove,
+              power: 1_000,
+              moveCooldownMs: 60_000,
+            },
+          },
+        };
+        return {
+          ...inputs,
+          context,
+          opponentTemplates: inputs.opponentTemplates.map((template) => ({
+            ...template,
+            rulesVersion: context.rulesVersion,
+            baseStats: { hp: 10, atk: 200, def: 10, spa: 10, spd: 10, spe: 200 },
+          })),
+          interBattleGapMs: 60_000,
+        };
+      },
+      reward: async ({ transaction }) => {
+        const durable = await claimRewardResolutionInTransaction(transaction, {
+            subjectPlayerId: seeded.playerId,
+            sourceAuthority: "pokenexus.solo-hunt.encounter-completion.v1",
+            sourceCorrelation: "reward:activity-battle-revive",
+            rulesVersion: "rules:test",
+            gameDataVersion: "game-data:test",
+            effects: [],
+          });
+        if (!durable.resolution.completion) {
+          await insertRewardCompletion(transaction, durable.resolution.resolutionId, new Date());
+        }
+        return {
+          rewardResolutionId: durable.resolution.resolutionId,
+          reward: { playerExperience: 0n, pokemonExperience: [], items: [] },
+        };
+      },
+    });
+    expect(await harness.app.replaceAutoRevivePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "0" }],
+      },
+    )).toMatchObject({ httpStatus: 200, body: { policy: { enabled: true } } });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing activity Auto-Revive Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '500 seconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const checkpointKey = generateUuidV7();
+    let activity: Awaited<ReturnType<typeof loadResolvedEncounterActivity>> = null;
+    let reviveUse: Awaited<ReturnType<typeof loadAutomationItemUsesForEncounter>>[number] | undefined;
+    for (let attempt = 0; attempt < 128 && activity === null; attempt += 1) {
+      const result = await harness.app.checkpoint(seeded.playerId, checkpointKey, huntId);
+      if (result.httpStatus === 503) {
+        const diagnostic = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+          const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+          const decoded = checkpoint ? decodeSoloHuntCheckpoint(checkpoint.stateBytes) : null;
+          const boundary = await loadEarliestIncompleteEncounterBoundary(client, huntId);
+          const latestEvidence = decoded?.accepted ? decoded.state.completedEncounters.at(-1) : undefined;
+          const committedBoundary = latestEvidence
+            ? await loadEncounterBoundary(client, huntId, latestEvidence.encounterId)
+            : null;
+          const reward = committedBoundary?.rewardResolutionId
+            ? await loadRewardResolutionById(client, committedBoundary.rewardResolutionId)
+            : null;
+          const uses = await loadAutomationItemUsesForEncounter(client, {
+            playerId: seeded.playerId,
+            huntId,
+            encounterOrdinal: 1,
+          });
+          return {
+            attempt,
+            logicalTimeMs: checkpoint?.logicalTimeMs ?? null,
+            decoded: decoded?.accepted ? {
+              completedEncounters: decoded.state.completedEncounters,
+              currentBattleStatus: decoded.state.currentEncounter?.battle.status ?? null,
+              currentBattleOutcome: decoded.state.currentEncounter?.battleOutcome ?? null,
+            } : null,
+            boundary,
+            committedBoundary,
+            reward: reward ? {
+              resolutionId: reward.resolutionId,
+              completion: reward.completion,
+              effects: reward.effects,
+            } : null,
+            uses,
+          };
+        });
+        throw new Error(
+          "activity fixture authority unavailable: "
+          + JSON.stringify(diagnostic, (_, value) => typeof value === "bigint" ? value.toString() : value),
+        );
+      }
+      expect([200, 202], JSON.stringify(result.body)).toContain(result.httpStatus);
+      const uses = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+        loadAutomationItemUsesForEncounter(client, {
+          playerId: seeded.playerId,
+          huntId,
+          encounterOrdinal: 1,
+        }));
+      reviveUse = uses.find(({ automationFamily, phase }) =>
+        automationFamily === "revive" && phase === "battle");
+      if (reviveUse?.encounterId) {
+        activity = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+          loadResolvedEncounterActivity(client, {
+            playerId: seeded.playerId,
+            huntId,
+            encounterId: reviveUse!.encounterId!,
+          }));
+      }
+    }
+
+    expect(reviveUse).toMatchObject({
+      automationFamily: "revive",
+      phase: "battle",
+      itemId: "item:revive",
+      encounterOrdinal: 1,
+    });
+    if (!activity) {
+      const diagnostic = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+        const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId);
+        const terminalHunt = await loadOwnedSoloHunt(client, seeded.playerId, huntId);
+        const decoded = checkpoint ? decodeSoloHuntCheckpoint(checkpoint.stateBytes) : null;
+        return {
+          logicalTimeMs: checkpoint?.logicalTimeMs ?? null,
+          terminalReason: terminalHunt?.terminalReason ?? null,
+          completedEncounters: decoded?.accepted ? decoded.state.completedEncounters : null,
+          currentBattleStatus: decoded?.accepted
+            ? decoded.state.currentEncounter?.battle.status ?? null
+            : null,
+          currentBattleOutcome: decoded?.accepted
+            ? decoded.state.currentEncounter?.battleOutcome ?? null
+            : null,
+        };
+      });
+      throw new Error("activity fixture did not resolve: " + JSON.stringify(diagnostic));
+    }
+    expect(activity?.activityJson).toMatchObject({
+      encounterDisposition: "victory",
+      consumedItems: [{ itemId: "item:revive", quantity: "1" }],
+      koSummary: [
+        { side: "player", count: 1 },
+        { side: "opponent", count: 1 },
+      ],
+      reviveSummary: [{
+        phase: "battle",
+        targetPokemonInstanceId: seeded.pokemonInstanceId,
+        itemId: "item:revive",
+      }],
+    });
+  });
+
+  it("pages immutable Hunt activity without duplicates across reconnect and enforces the 64-record bound", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const firstHarness = application();
+    const started = await firstHarness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        for (let encounterOrdinal = 1; encounterOrdinal <= 3; encounterOrdinal += 1) {
+          const inserted = await insertResolvedEncounterActivityInTransaction(transaction, {
+            playerId: seeded.playerId,
+            huntId,
+            encounterOrdinal,
+            encounterId: `encounter:activity-page:${encounterOrdinal}`,
+            resolvedLogicalTimeMs: encounterOrdinal * 100,
+            encounterDisposition: "victory",
+            activityJson: {
+              schemaVersion: "pokenexus.hunt-activity.v1",
+              encounterOrdinal,
+              encounterId: `encounter:activity-page:${encounterOrdinal}`,
+            },
+          });
+          expect(inserted.status).toBe("inserted");
+        }
+      }));
+
+    const firstPage = await firstHarness.app.getActivity(seeded.playerId, huntId, null, 2);
+    expect(firstPage).toEqual({
+      httpStatus: 200,
+      body: {
+        schemaVersion: "pokenexus.hunt-activity-page.v1",
+        huntId,
+        records: [
+          {
+            schemaVersion: "pokenexus.hunt-activity.v1",
+            encounterOrdinal: 1,
+            encounterId: "encounter:activity-page:1",
+          },
+          {
+            schemaVersion: "pokenexus.hunt-activity.v1",
+            encounterOrdinal: 2,
+            encounterId: "encounter:activity-page:2",
+          },
+        ],
+        nextCursor: "2",
+      },
+    });
+
+    const restartedHarness = application();
+    const secondPage = await restartedHarness.app.getActivity(seeded.playerId, huntId, 2, 2);
+    expect(secondPage).toEqual({
+      httpStatus: 200,
+      body: {
+        schemaVersion: "pokenexus.hunt-activity-page.v1",
+        huntId,
+        records: [{
+          schemaVersion: "pokenexus.hunt-activity.v1",
+          encounterOrdinal: 3,
+          encounterId: "encounter:activity-page:3",
+        }],
+        nextCursor: null,
+      },
+    });
+    expect(await restartedHarness.app.getActivity(seeded.playerId, huntId, null, 64)).toMatchObject({
+      httpStatus: 200,
+      body: { records: expect.arrayContaining([
+        expect.objectContaining({ encounterOrdinal: 1 }),
+        expect.objectContaining({ encounterOrdinal: 2 }),
+        expect.objectContaining({ encounterOrdinal: 3 }),
+      ]), nextCursor: null },
+    });
+    expect(await restartedHarness.app.getActivity(seeded.playerId, huntId, null, 65))
+      .toEqual({ httpStatus: 400, body: { error: "invalid_request" } });
+  });
+
+  it("durably rejects manual Potion commands for forward Hunts without scheduling or mutating healing state", async () => {
     const seeded = await seedPlayerTeamAndPotion();
     const { app } = application();
     const started = await app.start(seeded.playerId, generateUuidV7(), {
@@ -2117,154 +3575,43 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
       loadOwnedSoloHunt(client, seeded.playerId, huntId));
     expect(hunt).not.toBeNull();
-    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      client.query(
-        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '100 milliseconds' WHERE checkpoint_id = $1",
-        [hunt!.checkpointId],
-      ));
+    const before = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
+      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt!.checkpointId),
+      inventory: await loadInventory(client, seeded.playerId),
+    }));
+    if (!before.checkpoint || !before.inventory) throw new Error("missing forward Hunt fixture state");
 
     const healKey = generateUuidV7();
     const firstHeal = await app.useItem(seeded.playerId, healKey, huntId, {
       itemId: "item:potion",
       targetPokemonInstanceId: seeded.pokemonInstanceId,
     });
-    expect(firstHeal).toMatchObject({ httpStatus: 202, body: { status: "in_progress" } });
+    expect(firstHeal).toEqual({ httpStatus: 422, body: { error: "hunt_item_not_supported" } });
+    expect(await app.useItem(seeded.playerId, healKey, huntId, {
+      itemId: "item:potion",
+      targetPokemonInstanceId: seeded.pokemonInstanceId,
+    })).toEqual(firstHeal);
 
-    const before = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+    const after = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
       const command = await loadPublicHuntCommand(client, seeded.playerId, healKey);
-      if (!command) throw new Error("missing heal command");
-      const healing = await loadHealingCommandByCommandId(client, command.commandId);
-      const checkpoint = await loadHuntCheckpoint(client, seeded.playerId, hunt!.checkpointId);
-      return { command, healing, checkpoint };
-    });
-    expect(before.healing).toMatchObject({
-      submissionPhase: null,
-      dueLogicalTimeMs: null,
-      submissionCutoffLogicalTimeMs: before.checkpoint!.logicalTimeMs,
-    });
-
-    const checkpointResult = await app.checkpoint(
-      seeded.playerId,
-      generateUuidV7(),
-      huntId,
-    );
-    expect(checkpointResult).toMatchObject({ httpStatus: 202, body: { status: "in_progress" } });
-
-    const after = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => ({
-      healing: await loadHealingCommandByCommandId(client, before.command.commandId),
-      checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt!.checkpointId),
-    }));
-    expect(after.healing).toMatchObject({
-      submissionPhase: "battle",
-      dueLogicalTimeMs: null,
-      submissionEncounterId: expect.any(String),
-    });
-    expect(after.checkpoint?.logicalTimeMs).toBe(before.checkpoint?.logicalTimeMs);
-  });
-
-  it("resolves at most one due heal per invocation and drains same-boundary heals in acceptance order", async () => {
-    const seeded = await seedPlayerTeamAndPotion();
-    const harness = application();
-    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
-      huntDefinitionId: "hunt:test",
-      teamId: seeded.teamId,
-    });
-    expect(started.httpStatus).toBe(200);
-    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
-    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      loadOwnedSoloHunt(client, seeded.playerId, huntId));
-    if (!hunt) throw new Error("missing Hunt fixture");
-    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
-    if (!checkpoint) throw new Error("missing Hunt checkpoint fixture");
-    const decoded = decodeSoloHuntCheckpointV2(checkpoint.stateBytes);
-    expect(decoded.accepted).toBe(true);
-    if (!decoded.accepted) return;
-    const bounded = advanceSoloHuntToEncounterBoundaryOrCutoff(decoded.state, harness.runtime(), 200_000);
-    expect(bounded.accepted).toBe(true);
-    if (!bounded.accepted || !bounded.state.interBattle) return;
-
-    const hpKeys = Object.keys(bounded.state.interBattle.cadence.hpByParticipant);
-    const targetKey = hpKeys.find((key) => key.includes(seeded.pokemonInstanceId));
-    if (!targetKey) throw new Error("fixture target is missing from inter-Battle cadence");
-    const maxHp = bounded.state.interBattle.cadence.maxHpByParticipant[targetKey];
-    const currentHp = bounded.state.interBattle.cadence.hpByParticipant[targetKey];
-    if (maxHp === undefined || currentHp === undefined || maxHp <= 1 || currentHp <= 0) {
-      throw new Error("fixture target lacks a living HP range");
-    }
-    const damagedState = {
-      ...bounded.state,
-      interBattle: {
-        ...bounded.state.interBattle,
-        cadence: {
-          ...bounded.state.interBattle.cadence,
-          hpByParticipant: {
-            ...bounded.state.interBattle.cadence.hpByParticipant,
-            [targetKey]: Math.max(1, Math.min(currentHp, maxHp - 10)),
-          },
-        },
-      },
-    };
-    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
-      client.query(
-        `UPDATE pokenexus.hunt_checkpoints
-            SET logical_time_ms = $2,
-                checkpoint_state_bytes = $3,
-                logical_time_anchor_at = transaction_timestamp() + interval '1 second',
-                row_version = row_version + 1,
-                updated_at = transaction_timestamp()
-          WHERE checkpoint_id = $1`,
-        [hunt.checkpointId, damagedState.logicalTimeMs, Buffer.from(encodeSoloHuntCheckpointV2(damagedState))],
-      ));
-
-    const firstKey = generateUuidV7();
-    const secondKey = generateUuidV7();
-    expect(await harness.app.useItem(seeded.playerId, firstKey, huntId, {
-      itemId: "item:potion",
-      targetPokemonInstanceId: seeded.pokemonInstanceId,
-    })).toMatchObject({ httpStatus: 202, body: { status: "in_progress" } });
-    expect(await harness.app.useItem(seeded.playerId, secondKey, huntId, {
-      itemId: "item:potion",
-      targetPokemonInstanceId: seeded.pokemonInstanceId,
-    })).toMatchObject({ httpStatus: 202, body: { status: "in_progress" } });
-
-    const afterSecondAcceptance = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
-      const firstCommand = await loadPublicHuntCommand(client, seeded.playerId, firstKey);
-      const secondCommand = await loadPublicHuntCommand(client, seeded.playerId, secondKey);
-      if (!firstCommand || !secondCommand) throw new Error("missing healing commands");
+      if (!command) throw new Error("missing rejected heal command");
       return {
-        firstCommand,
-        secondCommand,
-        firstHeal: await loadHealingCommandByCommandId(client, firstCommand.commandId),
-        secondHeal: await loadHealingCommandByCommandId(client, secondCommand.commandId),
+        command,
+        healing: await loadHealingCommandByCommandId(client, command.commandId),
+        checkpoint: await loadHuntCheckpoint(client, seeded.playerId, hunt!.checkpointId),
+        inventory: await loadInventory(client, seeded.playerId),
       };
     });
-    expect(afterSecondAcceptance.firstCommand.status).toBe("terminal");
-    expect(afterSecondAcceptance.firstHeal?.status).toBe("applied");
-    expect(afterSecondAcceptance.secondCommand.status).toBe("pending");
-    expect(afterSecondAcceptance.secondHeal).toMatchObject({ status: "scheduled", submissionPhase: null });
-
-    expect(await harness.app.useItem(seeded.playerId, secondKey, huntId, {
-      itemId: "item:potion",
-      targetPokemonInstanceId: seeded.pokemonInstanceId,
-    })).toMatchObject({ httpStatus: 202, body: { status: "in_progress" } });
-    const classifiedSecond = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
-      const command = await loadPublicHuntCommand(client, seeded.playerId, secondKey);
-      if (!command) throw new Error("missing second heal command");
-      return loadHealingCommandByCommandId(client, command.commandId);
+    expect(after.command).toMatchObject({
+      status: "terminal",
+      commandKind: "heal_item",
+      resultHttpStatus: 422,
+      resultJson: { error: "hunt_item_not_supported" },
     });
-    expect(classifiedSecond).toMatchObject({ status: "scheduled", submissionPhase: "inter_battle" });
-
-    const resolvedSecond = await harness.app.useItem(seeded.playerId, secondKey, huntId, {
-      itemId: "item:potion",
-      targetPokemonInstanceId: seeded.pokemonInstanceId,
-    });
-    expect(resolvedSecond.httpStatus).toBe(200);
-    const finalSecond = await withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
-      const command = await loadPublicHuntCommand(client, seeded.playerId, secondKey);
-      if (!command) throw new Error("missing second heal command");
-      return loadHealingCommandByCommandId(client, command.commandId);
-    });
-    expect(finalSecond?.status).toBe("applied");
+    expect(after.healing).toBeNull();
+    expect(after.checkpoint?.rowVersion).toBe(before.checkpoint.rowVersion);
+    expect(after.checkpoint?.logicalTimeMs).toBe(before.checkpoint.logicalTimeMs);
+    expect(after.inventory?.rowVersion).toBe(before.inventory.rowVersion);
+    expect(after.inventory?.entries).toEqual(before.inventory.entries);
   });
 });

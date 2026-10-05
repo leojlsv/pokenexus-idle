@@ -16,14 +16,30 @@ import {
   healPokemonVitalitiesToMaxInTransaction,
   initializeAndReconcilePokemonVitalitiesInTransaction,
   insertAutoCapturePolicyInTransaction,
+  insertAutoPotionPolicyInTransaction,
+  insertAutoRevivePolicyInTransaction,
+  insertInitialAutoPotionPolicyIntervalInTransaction,
+  insertInitialAutoRevivePolicyIntervalInTransaction,
   insertInitialPolicyIntervalInTransaction,
+  insertAutomationItemUseInTransaction,
+  insertPostBattleReviveAppliedInTransaction,
+  insertResolvedEncounterActivityInTransaction,
+  insertRetreatAbandonmentInTransaction,
   loadAndLockOwnedTeamSnapshot,
   loadAutoCapturePolicyByVersion,
+  loadAutoPotionPolicyByVersion,
+  loadAutoRevivePolicyByVersion,
+  loadAutomationItemUsesForEncounter,
   loadCurrentAutoCapturePolicy,
+  loadCurrentAutoPotionPolicy,
+  loadCurrentAutoRevivePolicy,
   loadEarliestHealingAdvanceBlocker,
   loadEarliestIncompleteEncounterBoundary,
   loadEarliestDueHealingCommand,
+  loadEffectiveAutoPotionPolicyVersion,
+  loadEffectiveAutoRevivePolicyVersion,
   loadEffectivePolicyVersion,
+  loadPendingHuntAdvanceCommands,
   loadEncounterBoundary,
   loadHuntCheckpoint,
   loadHealingCommandByCommandId,
@@ -34,10 +50,15 @@ import {
   loadPendingZoneSelection,
   loadPlayerHuntRoot,
   loadPokeCenterHealCommand,
+  loadPostBattleReviveAppliedByProvenance,
   loadPublicHuntCommand,
+  loadResolvedEncounterActivity,
+  loadResolvedEncounterActivityPage,
+  loadRewardResolutionById,
   markEncounterBoundaryStageInTransaction,
   markHealingCommandsDueForEncounterInTransaction,
   persistOwnedHuntCheckpointInTransaction,
+  rebaseOwnedHuntCheckpointAnchorInTransaction,
   recordEncounterAutomaticCaptureResultInTransaction,
   replacePokemonVitalitiesCurrentHpInTransaction,
   saveHuntInputAuthorityInTransaction,
@@ -53,6 +74,9 @@ import {
   withPgClient,
   withTransaction,
   type HuntAutoCapturePolicyRecord,
+  type HuntAutoPotionPolicyRecord,
+  type HuntAutoRevivePolicyRecord,
+  type HuntAutomationItemUseRecord,
   type HuntEncounterBoundaryRecord,
   type HuntInputAuthorityRecord,
   type HuntHealingCommandRecord,
@@ -66,22 +90,39 @@ import {
 } from "@pokenexus/database";
 import {
   applyCaptureBallPowerBp,
+  advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff,
   advanceSoloHuntToEncounterBoundaryOrCutoff,
+  applySoloHuntBattleAutoPotion,
+  applySoloHuntBattleAutoRevive,
   applySoloHuntExplicitHealing,
+  applySoloHuntInterBattleAutoPotion,
+  applySoloHuntInterBattleAutoRevive,
+  applySoloHuntPostBattleAutoRevive,
   allocateGeneticBudget,
+  assertHuntAutomationPolicyAuthoritySnapshot,
   baseCaptureChanceBp,
   cadenceParticipantKey,
   createRngState,
   createSoloHuntRuntime,
   decodeSoloHuntCheckpoint,
+  declineSoloHuntBattleAutoRevive,
+  declineSoloHuntInterBattleAutoRevive,
+  declineSoloHuntPostBattleAutoRevive,
+  encodeSoloHuntCheckpointV3,
   encodeSoloHuntCheckpointV2,
+  NO_SAVED_AUTO_POTION_POLICY,
+  NO_SAVED_AUTO_REVIVE_POLICY,
+  SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
   SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
   geneticBudgetForScore,
   geneticCaptureChanceBp,
+  isAutoPotionEligible,
   replayValidateSoloHuntCompletedCaptureSource,
+  selectEligibleAutomationItem,
   type CaptureBallRuleV1,
   type DeterministicRngState,
   type GeneticProfile,
+  type HuntAutomationPolicyAuthoritySnapshot,
   type EffectMagnitude,
   type SoloHuntCompletedEncounterEvidence,
   type SoloHuntRuntimeInputs,
@@ -93,12 +134,18 @@ import {
   hashNormalizedIntent,
   validateAutoCapturePolicyRelationships,
   type AutoCapturePolicyReplaceRequest,
+  type AutoPotionPolicyReplaceRequest,
+  type AutoRevivePolicyReplaceRequest,
   type HuntItemUseRequest,
   type ManualCaptureRequest,
   type StartHuntRequest,
   type PokeCenterHealRequest,
 } from "./protocol";
 import { noLivingHuntDisposition, publicRetreatTerminalReason } from "./terminal-disposition";
+import { captureBoundaryOpeningDecision } from "./capture-product-policy";
+import { deriveFrozenProductiveTarget } from "./offline-reconciliation";
+
+const FORWARD_SOLO_HUNT_RECOVERY_DURATION_MS = 30_000;
 
 export interface HuntHttpResult {
   readonly httpStatus: number;
@@ -161,6 +208,10 @@ export interface HuntRuntimeAuthorityPort {
     built: BuiltHuntRuntimeAuthority,
     initialHpByPokemonInstanceId: Readonly<Record<string, number>>,
   ): BuiltHuntRuntimeAuthority;
+  bindStartAutomationPolicies(
+    built: BuiltHuntRuntimeAuthority,
+    automationPolicies: HuntAutomationPolicyAuthoritySnapshot,
+  ): BuiltHuntRuntimeAuthority;
   deriveCurrentTeamMaxHp(
     team: OwnedTeamSnapshot,
   ): Promise<Readonly<Record<string, number>>>;
@@ -179,7 +230,7 @@ export interface HuntRuntimeAuthorityPort {
     readonly rulesVersion: string;
   }): Promise<{
     readonly itemRuleVersion: string;
-    readonly useKind: "none" | "capture-attempt" | "heal-hp";
+    readonly useKind: "none" | "capture-attempt" | "heal-hp" | "revive-hp";
     readonly magnitude?: {
       readonly kind: "fixed" | "max-hp-fraction";
       readonly amount?: number;
@@ -194,7 +245,7 @@ export interface HuntRuntimeAuthorityPort {
     readonly rulesVersion: string;
   }): Promise<{
     readonly itemRuleVersion: string;
-    readonly useKind: "none" | "capture-attempt" | "heal-hp";
+    readonly useKind: "none" | "capture-attempt" | "heal-hp" | "revive-hp";
     readonly magnitude?: {
       readonly kind: "fixed" | "max-hp-fraction";
       readonly amount?: number;
@@ -202,6 +253,11 @@ export interface HuntRuntimeAuthorityPort {
       readonly denominator?: number;
     };
   } | null>;
+  currentItemRuleAuthority?(): Promise<{
+    readonly itemRuleVersion: string;
+    readonly gameDataVersion: string;
+    readonly rulesVersion: string;
+  }>;
   validatePolicyReferences(input: {
     readonly speciesIds: readonly string[];
     readonly zoneIds: readonly string[];
@@ -285,8 +341,16 @@ export interface HuntApplicationPorts {
 
 export interface HuntHttpApplication {
   getState(playerId: string): Promise<HuntHttpResult>;
+  getActivity(
+    playerId: string,
+    huntId: string,
+    afterEncounterOrdinal: number | null,
+    limit: number,
+  ): Promise<HuntHttpResult>;
   getCaptureBalls(playerId: string): Promise<HuntHttpResult>;
   getAutoCapturePolicy(playerId: string): Promise<HuntHttpResult>;
+  getAutoPotionPolicy(playerId: string): Promise<HuntHttpResult>;
+  getAutoRevivePolicy(playerId: string): Promise<HuntHttpResult>;
   start(playerId: string, idempotencyKey: string, body: StartHuntRequest): Promise<HuntHttpResult>;
   healAtPokeCenter(
     playerId: string,
@@ -312,6 +376,16 @@ export interface HuntHttpApplication {
     playerId: string,
     idempotencyKey: string,
     body: AutoCapturePolicyReplaceRequest,
+  ): Promise<HuntHttpResult>;
+  replaceAutoPotionPolicy(
+    playerId: string,
+    idempotencyKey: string,
+    body: AutoPotionPolicyReplaceRequest,
+  ): Promise<HuntHttpResult>;
+  replaceAutoRevivePolicy(
+    playerId: string,
+    idempotencyKey: string,
+    body: AutoRevivePolicyReplaceRequest,
   ): Promise<HuntHttpResult>;
 }
 
@@ -574,6 +648,24 @@ function decodeCheckpointState(bytes: Uint8Array): SoloHuntRuntimeState {
   return decoded.state;
 }
 
+function encodeCheckpointState(state: SoloHuntRuntimeState): {
+  readonly schemaVersion:
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2
+    | typeof SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3;
+  readonly stateBytes: Uint8Array;
+} {
+  if (state.automationPolicies !== undefined) {
+    return {
+      schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3,
+      stateBytes: encodeSoloHuntCheckpointV3(state),
+    };
+  }
+  return {
+    schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+    stateBytes: encodeSoloHuntCheckpointV2(state),
+  };
+}
+
 function geneticBonusesForOwnedPokemon(record: OwnedPokemonRecord) {
   const budget = geneticBudgetForScore(record.individualization.geneticScore);
   return allocateGeneticBudget(
@@ -646,10 +738,43 @@ function currentOwnedHpByPokemonInstanceId(
 function huntUsesPersistentVitality(authority: HuntInputAuthorityRecord): boolean {
   const schemaVersion = authority.runtimeInputsJson.schemaVersion;
   if (schemaVersion === "hunt-runtime-inputs-v1") return false;
-  if (schemaVersion === "hunt-runtime-inputs-v2") return true;
+  if (schemaVersion === "hunt-runtime-inputs-v2" || schemaVersion === "hunt-runtime-inputs-v3") return true;
   throw new HuntAuthorityUnavailableError(
     "persisted Hunt runtime authority has unsupported vitality semantics",
   );
+}
+
+function startAutomationPolicyAuthority(
+  capturePolicy: HuntAutoCapturePolicyRecord | null,
+  potionPolicy: HuntAutoPotionPolicyRecord | null,
+  revivePolicy: HuntAutoRevivePolicyRecord | null,
+): HuntAutomationPolicyAuthoritySnapshot {
+  return assertHuntAutomationPolicyAuthoritySnapshot({
+    capture: capturePolicy === null
+      ? { policyVersion: null, rowVersion: "0", enabled: false }
+      : {
+          policyVersion: capturePolicy.policyVersion,
+          rowVersion: capturePolicy.rowVersion.toString(),
+          enabled: capturePolicy.enabled,
+        },
+    potion: potionPolicy === null
+      ? NO_SAVED_AUTO_POTION_POLICY
+      : {
+          policyVersion: potionPolicy.policyVersion,
+          rowVersion: potionPolicy.rowVersion.toString(),
+          enabled: potionPolicy.enabled,
+          thresholdPercent: potionPolicy.thresholdPercent,
+          orderedItems: potionPolicy.policyJson.orderedItems,
+        },
+    revive: revivePolicy === null
+      ? NO_SAVED_AUTO_REVIVE_POLICY
+      : {
+          policyVersion: revivePolicy.policyVersion,
+          rowVersion: revivePolicy.rowVersion.toString(),
+          enabled: revivePolicy.enabled,
+          orderedItems: revivePolicy.policyJson.orderedItems,
+        },
+  });
 }
 
 async function writeBackTerminalVitalityIfRequired(
@@ -671,6 +796,193 @@ async function writeBackTerminalVitalityIfRequired(
     currentHpByPokemonInstanceId: currentOwnedHpByPokemonInstanceId(input.state),
     now: input.now,
   });
+}
+
+function terminalizationTiming(
+  hunt: SoloHuntRecord,
+  state: SoloHuntRuntimeState,
+): { readonly recoveryDurationMs: number; readonly terminalAt?: Date | "database_clock" } {
+  if (state.automationPolicies === undefined) {
+    return { recoveryDurationMs: hunt.recoveryDurationMs };
+  }
+  if (hunt.recoveryDurationMs !== FORWARD_SOLO_HUNT_RECOVERY_DURATION_MS) {
+    throw new Error("Forward Solo Hunt recovery authority must be exactly 30 seconds");
+  }
+  return {
+    recoveryDurationMs: FORWARD_SOLO_HUNT_RECOVERY_DURATION_MS,
+    terminalAt: "database_clock",
+  };
+}
+
+function aggregateConsumedItems(
+  boundary: HuntEncounterBoundaryRecord | null,
+  automationUses: readonly HuntAutomationItemUseRecord[],
+): readonly { readonly itemId: string; readonly quantity: string }[] {
+  const quantities = new Map<string, bigint>();
+  if (boundary?.automaticDisposition === "attempt" && boundary.selectedItemId) {
+    quantities.set(boundary.selectedItemId, 1n);
+  }
+  for (const use of automationUses) {
+    quantities.set(use.itemId, (quantities.get(use.itemId) ?? 0n) + 1n);
+  }
+  return [...quantities.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([itemId, quantity]) => ({ itemId, quantity: quantity.toString() }));
+}
+
+async function sealLatestResolvedEncounterActivityInTransaction(
+  transaction: TransactionClient,
+  input: {
+    readonly playerId: string;
+    readonly hunt: SoloHuntRecord;
+    readonly state: SoloHuntRuntimeState;
+    readonly verifyExisting?: boolean;
+  },
+): Promise<void> {
+  if (input.state.automationPolicies === undefined) return;
+  const evidence = input.state.completedEncounters.at(-1);
+  const provenance = input.state.completedEncounterProvenance.at(-1);
+  if (!evidence || !provenance || evidence.encounterId !== provenance.encounterId) return;
+
+  const existing = await loadResolvedEncounterActivity(transaction, {
+    playerId: input.playerId,
+    huntId: input.hunt.huntId,
+    encounterId: evidence.encounterId,
+  });
+  if (existing && input.verifyExisting !== true) return;
+
+  const automationUses = await loadAutomationItemUsesForEncounter(transaction, {
+    playerId: input.playerId,
+    huntId: input.hunt.huntId,
+    encounterOrdinal: evidence.encounterOrdinal,
+  });
+  const reviveUses = automationUses.filter(({ automationFamily }) => automationFamily === "revive");
+  const battleReviveCount = reviveUses.filter(({ phase }) => phase === "battle").length;
+  const forcedReplacementCount = provenance.participantActivations.filter(
+    ({ activationKind }) => activationKind === "forcedReplacement",
+  ).length;
+
+  let boundary: HuntEncounterBoundaryRecord | null = null;
+  let playerXp = "0";
+  let pokemonXp: Array<{ pokemonInstanceId: string; amount: string }> = [];
+  let itemDrops: Array<{ itemId: string; quantity: string }> = [];
+  let captureDisposition: Record<string, unknown>;
+  let battleOutcome: "win" | "draw";
+
+  if (evidence.completionKind === "resolved_non_win") {
+    battleOutcome = "draw";
+    captureDisposition = { kind: "not_applicable" };
+    const postBattle = reviveUses.filter(({ phase }) => phase === "post_battle");
+    if (postBattle.length !== 1) {
+      throw new HuntAuthorityUnavailableError(
+        "resolved non-win activity requires exactly one post-Battle Revive debit",
+      );
+    }
+    const fact = await loadPostBattleReviveAppliedByProvenance(transaction, {
+      playerId: input.playerId,
+      huntId: input.hunt.huntId,
+      provenanceIdentity: postBattle[0]!.provenanceIdentity,
+    });
+    if (
+      !fact
+      || fact.encounterId !== evidence.encounterId
+      || fact.encounterOrdinal !== evidence.encounterOrdinal
+    ) {
+      throw new HuntAuthorityUnavailableError(
+        "resolved non-win activity lacks matching PostBattleReviveApplied provenance",
+      );
+    }
+  } else {
+    battleOutcome = "win";
+    boundary = await loadEncounterBoundary(transaction, input.hunt.huntId, evidence.encounterId, true);
+    if (!boundary || boundary.status !== "committed" || boundary.rewardResolutionId === null) {
+      throw new HuntAuthorityUnavailableError("victory activity requires a committed Encounter boundary");
+    }
+    const reward = await loadRewardResolutionById(transaction, boundary.rewardResolutionId, true);
+    if (!reward?.completion) {
+      throw new HuntAuthorityUnavailableError("victory activity requires a completed Reward Resolution");
+    }
+    for (const effect of reward.effects) {
+      if (effect.kind === "player_xp") playerXp = effect.amount.toString();
+      else if (effect.kind === "pokemon_xp") {
+        pokemonXp.push({
+          pokemonInstanceId: effect.pokemonInstanceId,
+          amount: effect.amount.toString(),
+        });
+      } else {
+        itemDrops.push({ itemId: effect.itemId, quantity: effect.quantity.toString() });
+      }
+    }
+    pokemonXp = pokemonXp.sort((a, b) => a.pokemonInstanceId.localeCompare(b.pokemonInstanceId));
+    itemDrops = itemDrops.sort((a, b) => a.itemId.localeCompare(b.itemId));
+    if (boundary.automaticDisposition === "attempt") {
+      if (boundary.selectedItemId === null || boundary.automaticCaptureSuccess === null) {
+        throw new HuntAuthorityUnavailableError("activity capture attempt lacks committed outcome");
+      }
+      captureDisposition = {
+        kind: "attempt",
+        itemId: boundary.selectedItemId,
+        success: boundary.automaticCaptureSuccess,
+        shiny: boundary.automaticCaptureShiny === true,
+      };
+    } else if (boundary.automaticDisposition === "no_eligible_ball") {
+      captureDisposition = { kind: "no_eligible_ball" };
+    } else if (boundary.automaticDisposition === "disabled") {
+      captureDisposition = { kind: "disabled" };
+    } else {
+      throw new HuntAuthorityUnavailableError("activity capture disposition is not committed");
+    }
+  }
+
+  const activityJson: Record<string, unknown> = {
+    schemaVersion: "pokenexus.hunt-activity.v1",
+    encounterOrdinal: evidence.encounterOrdinal,
+    encounterId: evidence.encounterId,
+    resolvedAtHuntTimeMs: input.state.logicalTimeMs,
+    battleResolved: {
+      outcome: battleOutcome,
+      terminalBattleTimeMs: provenance.terminalBattleTimeMs,
+      terminalEventSequence: provenance.terminalEventSequence,
+    },
+    encounterDisposition:
+      evidence.completionKind === "resolved_non_win" ? "resolved_non_win" : "victory",
+    captureDisposition,
+    playerXp,
+    pokemonXp,
+    itemDrops,
+    consumedItems: aggregateConsumedItems(boundary, automationUses),
+    koSummary: [
+      {
+        side: "player",
+        count:
+          forcedReplacementCount
+          + battleReviveCount
+          + (evidence.completionKind === "resolved_non_win" ? 1 : 0),
+      },
+      { side: "opponent", count: 1 },
+    ],
+    reviveSummary: reviveUses.map((use) => ({
+      phase: use.phase,
+      targetPokemonInstanceId: use.targetPokemonInstanceId,
+      itemId: use.itemId,
+      appliedHp: use.appliedHp,
+      resultingHp: use.resultingHp,
+      logicalTimeMs: use.logicalTimeMs,
+    })),
+  };
+  const sealed = await insertResolvedEncounterActivityInTransaction(transaction, {
+    playerId: input.playerId,
+    huntId: input.hunt.huntId,
+    encounterOrdinal: evidence.encounterOrdinal,
+    encounterId: evidence.encounterId,
+    resolvedLogicalTimeMs: input.state.logicalTimeMs,
+    encounterDisposition:
+      evidence.completionKind === "resolved_non_win" ? "resolved_non_win" : "victory",
+    activityJson,
+  });
+  if (existing && sealed.status !== "existing") {
+    throw new Error("Existing Hunt activity unexpectedly reinserted");
+  }
 }
 
 function publicCurrentEncounter(
@@ -705,6 +1017,229 @@ function policyJson(policy: HuntAutoCapturePolicyRecord | null) {
     ...policy.policyJson,
   };
 }
+
+function autoPotionPolicyJson(policy: HuntAutoPotionPolicyRecord | null) {
+  if (!policy) return NO_SAVED_AUTO_POTION_POLICY;
+  return {
+    policyVersion: policy.policyVersion,
+    rowVersion: policy.rowVersion.toString(),
+    itemRuleVersion: policy.itemRuleVersion,
+    gameDataVersion: policy.gameDataVersion,
+    rulesVersion: policy.rulesVersion,
+    enabled: policy.enabled,
+    thresholdPercent: policy.thresholdPercent,
+    orderedItems: policy.policyJson.orderedItems,
+  };
+}
+
+function autoRevivePolicyJson(policy: HuntAutoRevivePolicyRecord | null) {
+  if (!policy) return NO_SAVED_AUTO_REVIVE_POLICY;
+  return {
+    policyVersion: policy.policyVersion,
+    rowVersion: policy.rowVersion.toString(),
+    itemRuleVersion: policy.itemRuleVersion,
+    gameDataVersion: policy.gameDataVersion,
+    rulesVersion: policy.rulesVersion,
+    enabled: policy.enabled,
+    orderedItems: policy.policyJson.orderedItems,
+  };
+}
+
+function executionPotionPolicy(
+  policy: HuntAutoPotionPolicyRecord | null,
+): HuntAutomationPolicyAuthoritySnapshot["potion"] {
+  if (!policy) return NO_SAVED_AUTO_POTION_POLICY;
+  return assertHuntAutomationPolicyAuthoritySnapshot({
+    capture: { policyVersion: null, rowVersion: "0", enabled: false },
+    potion: {
+      policyVersion: policy.policyVersion,
+      rowVersion: policy.rowVersion.toString(),
+      enabled: policy.enabled,
+      thresholdPercent: policy.thresholdPercent,
+      orderedItems: policy.policyJson.orderedItems,
+    },
+    revive: NO_SAVED_AUTO_REVIVE_POLICY,
+  }).potion;
+}
+
+function executionRevivePolicy(
+  policy: HuntAutoRevivePolicyRecord | null,
+): HuntAutomationPolicyAuthoritySnapshot["revive"] {
+  if (!policy) return NO_SAVED_AUTO_REVIVE_POLICY;
+  return assertHuntAutomationPolicyAuthoritySnapshot({
+    capture: { policyVersion: null, rowVersion: "0", enabled: false },
+    potion: NO_SAVED_AUTO_POTION_POLICY,
+    revive: {
+      policyVersion: policy.policyVersion,
+      rowVersion: policy.rowVersion.toString(),
+      enabled: policy.enabled,
+      orderedItems: policy.policyJson.orderedItems,
+    },
+  }).revive;
+}
+
+function inventoryQuantities(
+  inventory: NonNullable<Awaited<ReturnType<typeof loadInventory>>>,
+): ReadonlyMap<string, bigint> {
+  return new Map(inventory.entries.map(({ itemId, quantity }) => [itemId, quantity] as const));
+}
+
+type ResolvedAutomationItemRule = NonNullable<
+  Awaited<ReturnType<HuntRuntimeAuthorityPort["itemRule"]>>
+>;
+
+function potionMagnitudeFromRule(rule: ResolvedAutomationItemRule): EffectMagnitude | null {
+  if (rule.useKind !== "heal-hp" || !rule.magnitude) return null;
+  if (
+    rule.magnitude.kind === "fixed"
+    && Number.isSafeInteger(rule.magnitude.amount)
+    && (rule.magnitude.amount ?? 0) > 0
+  ) {
+    return { kind: "integer", amount: rule.magnitude.amount! };
+  }
+  if (
+    rule.magnitude.kind === "max-hp-fraction"
+    && Number.isSafeInteger(rule.magnitude.numerator)
+    && (rule.magnitude.numerator ?? 0) > 0
+    && Number.isSafeInteger(rule.magnitude.denominator)
+    && (rule.magnitude.denominator ?? 0) > 0
+  ) {
+    return {
+      kind: "maxHpFraction",
+      numerator: rule.magnitude.numerator!,
+      denominator: rule.magnitude.denominator!,
+    };
+  }
+  return null;
+}
+
+function reviveFractionFromRule(
+  rule: ResolvedAutomationItemRule,
+): { readonly numerator: number; readonly denominator: number } | null {
+  if (rule.useKind !== "revive-hp" || rule.magnitude?.kind !== "max-hp-fraction") return null;
+  const numerator = rule.magnitude.numerator;
+  const denominator = rule.magnitude.denominator;
+  if (
+    !Number.isSafeInteger(numerator)
+    || !Number.isSafeInteger(denominator)
+    || !(
+      (numerator === 1 && denominator === 4)
+      || (numerator === 1 && denominator === 2)
+      || (numerator === 1 && denominator === 1)
+    )
+  ) {
+    return null;
+  }
+  return { numerator: numerator!, denominator: denominator! };
+}
+
+function restoredHpForFraction(
+  maxHp: number,
+  fraction: { readonly numerator: number; readonly denominator: number },
+): number {
+  if (!Number.isSafeInteger(maxHp) || maxHp < 1) throw new Error("Revive target max HP is invalid");
+  const requested = (BigInt(maxHp) * BigInt(fraction.numerator)) / BigInt(fraction.denominator);
+  return Number(requested < 1n ? 1n : requested > BigInt(maxHp) ? BigInt(maxHp) : requested);
+}
+
+function automationProvenanceIdentity(
+  huntId: string,
+  state: SoloHuntRuntimeState,
+  phase: "battle" | "inter_battle" | "post_battle",
+  family: "potion" | "revive",
+  targetPokemonInstanceId: string,
+): string {
+  const encounter = state.currentEncounter;
+  if (encounter && phase !== "inter_battle") {
+    return JSON.stringify([
+      "huntAutomationItemUseV1",
+      huntId,
+      phase,
+      encounter.encounterId,
+      encounter.battle.combatTimeMs,
+      encounter.battle.eventSequence,
+      family,
+      targetPokemonInstanceId,
+    ]);
+  }
+  const afterEncounter = state.completedEncounters.at(-1);
+  if (!state.interBattle || !afterEncounter) {
+    throw new Error("inter-Battle automation provenance lacks an Encounter boundary");
+  }
+  return JSON.stringify([
+    "huntAutomationItemUseV1",
+    huntId,
+    "inter_battle",
+    afterEncounter.encounterId,
+    state.logicalTimeMs,
+    state.interBattle.remainingGapMs,
+    family,
+    targetPokemonInstanceId,
+  ]);
+}
+
+function shouldSuppressInitialPotionAfterRevive(state: SoloHuntRuntimeState): boolean {
+  const encounter = state.currentEncounter;
+  if (encounter) {
+    const last = encounter.battleStimuli.at(-1);
+    return last?.kind === "koInterventionDecision"
+      && last.decision === "revive"
+      && encounter.battle.combatTimeMs + encounter.battleStartedAtHuntTimeMs === state.logicalTimeMs;
+  }
+  const last = state.appliedAutomationEvents?.at(-1);
+  return last?.kind === "revive" && last.appliedAtHuntTimeMs === state.logicalTimeMs;
+}
+
+interface AutomationExecutionSnapshot {
+  readonly inventoryRowVersion: bigint;
+  readonly inventoryQuantityByItemId: ReadonlyMap<string, bigint>;
+  readonly potionRecord: HuntAutoPotionPolicyRecord | null;
+  readonly potion: HuntAutomationPolicyAuthoritySnapshot["potion"];
+  readonly reviveRecord: HuntAutoRevivePolicyRecord | null;
+  readonly revive: HuntAutomationPolicyAuthoritySnapshot["revive"];
+}
+
+interface AutomationPersistenceGuard {
+  readonly logicalTimeMs: number;
+  readonly inventoryRowVersion: bigint;
+  readonly potionPolicyVersion: string | null;
+  readonly revivePolicyVersion: string | null;
+}
+
+interface AutomationSpendCandidate {
+  readonly family: "potion" | "revive";
+  readonly phase: "battle" | "inter_battle" | "post_battle";
+  readonly nextState: SoloHuntRuntimeState;
+  readonly provenanceIdentity: string;
+  readonly policyVersion: string;
+  readonly itemId: string;
+  readonly itemRuleVersion: string;
+  readonly gameDataVersion: string;
+  readonly rulesVersion: string;
+  readonly magnitudeJson: Record<string, unknown>;
+  readonly appliedHp: number;
+  readonly resultingHp: number;
+  readonly targetPokemonInstanceId: string;
+  readonly targetCombatantId: string | null;
+  readonly encounterId: string | null;
+  readonly encounterOrdinal: number | null;
+  readonly logicalTimeMs: number;
+  readonly postBattleRevive?: {
+    readonly huntRunIdentity: string;
+    readonly battleId: string;
+    readonly reviveFractionNumerator: 1;
+    readonly reviveFractionDenominator: 1 | 2 | 4;
+    readonly resultingReadinessJson: Record<string, unknown>;
+    readonly pendingSelectionIdentity: string;
+    readonly consumedPendingSelectionJson: Record<string, unknown>;
+    readonly completedEncounterProvenanceJson: Record<string, unknown>;
+  };
+}
+
+type AutomationBoundaryDecision =
+  | { readonly status: "continue"; readonly state: SoloHuntRuntimeState }
+  | { readonly status: "spend"; readonly candidate: AutomationSpendCandidate }
+  | { readonly status: "authority_unavailable" };
 
 type SavedAutoCapturePolicy = Pick<AutoCapturePolicyReplaceRequest, "enabled" | "balls" | "rules">;
 
@@ -925,6 +1460,62 @@ export class HuntApplication implements HuntHttpApplication {
     } catch {
       return error(503, "authority_unavailable");
     }
+  }
+
+  async getAutoPotionPolicy(playerId: string): Promise<HuntHttpResult> {
+    try {
+      return withPgClient({ connectionString: this.connectionString }, async (client) => {
+        const root = await loadPlayerHuntRoot(client, playerId);
+        const policy = root ? await loadCurrentAutoPotionPolicy(client, playerId) : null;
+        return ok(autoPotionPolicyJson(policy));
+      });
+    } catch {
+      return error(503, "authority_unavailable");
+    }
+  }
+
+  async getAutoRevivePolicy(playerId: string): Promise<HuntHttpResult> {
+    try {
+      return withPgClient({ connectionString: this.connectionString }, async (client) => {
+        const root = await loadPlayerHuntRoot(client, playerId);
+        const policy = root ? await loadCurrentAutoRevivePolicy(client, playerId) : null;
+        return ok(autoRevivePolicyJson(policy));
+      });
+    } catch {
+      return error(503, "authority_unavailable");
+    }
+  }
+
+  async getActivity(
+    playerId: string,
+    huntId: string,
+    afterEncounterOrdinal: number | null,
+    limit: number,
+  ): Promise<HuntHttpResult> {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 64) return error(400, "invalid_request");
+    if (
+      afterEncounterOrdinal !== null
+      && (!Number.isSafeInteger(afterEncounterOrdinal) || afterEncounterOrdinal < 1)
+    ) {
+      return error(400, "invalid_request");
+    }
+    return withPgClient({ connectionString: this.connectionString }, async (client) => {
+      const hunt = await loadOwnedSoloHunt(client, playerId, huntId);
+      if (!hunt) return error(404, "not_found");
+      const page = await loadResolvedEncounterActivityPage(client, {
+        playerId,
+        huntId,
+        afterEncounterOrdinal,
+        limit,
+      });
+      const last = page.records.at(-1);
+      return ok({
+        schemaVersion: "pokenexus.hunt-activity-page.v1",
+        huntId,
+        records: page.records.map(({ activityJson }) => activityJson),
+        nextCursor: page.hasMore && last ? last.encounterOrdinal.toString() : null,
+      });
+    });
   }
 
   async getState(playerId: string): Promise<HuntHttpResult> {
@@ -1158,6 +1749,18 @@ export class HuntApplication implements HuntHttpApplication {
               vitality.map((entry) => [entry.pokemonInstanceId, entry.currentHp]),
             ),
           );
+          const [currentPolicy, currentPotionPolicy, currentRevivePolicy] = await Promise.all([
+            loadCurrentAutoCapturePolicy(transaction, playerId),
+            loadCurrentAutoPotionPolicy(transaction, playerId),
+            loadCurrentAutoRevivePolicy(transaction, playerId),
+          ]);
+          built = this.ports.authority.bindStartAutomationPolicies(
+            built,
+            startAutomationPolicyAuthority(currentPolicy, currentPotionPolicy, currentRevivePolicy),
+          );
+          if (built.selector.recoveryDurationMs !== FORWARD_SOLO_HUNT_RECOVERY_DURATION_MS) {
+            return error(503, "authority_unavailable");
+          }
           const huntRunIdentity = `hunt-run:${crypto.randomUUID()}`;
           const created = createSoloHuntRuntime({
             huntRunIdentity,
@@ -1173,24 +1776,24 @@ export class HuntApplication implements HuntHttpApplication {
             );
             return result;
           }
+          const initialCheckpoint = encodeCheckpointState(created.state);
           const checkpoint = await createHuntCheckpoint(transaction, {
             subjectPlayerId: playerId,
             huntRunIdentity,
-            schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+            schemaVersion: initialCheckpoint.schemaVersion,
             gameDataVersion: built.inputs.context.gameDataVersion,
             rulesVersion: built.inputs.context.rulesVersion,
             logicalTimeMs: created.state.logicalTimeMs,
             logicalTimeAnchorAt: root.databaseNow,
-            stateBytes: encodeSoloHuntCheckpointV2(created.state),
+            stateBytes: initialCheckpoint.stateBytes,
             now: root.databaseNow,
           });
-          const currentPolicy = await loadCurrentAutoCapturePolicy(transaction, playerId);
           const hunt = await createSoloHuntInTransaction(transaction, {
             playerId,
             checkpointId: checkpoint.checkpointId,
             huntDefinitionId: built.selector.huntDefinitionId,
             zoneId: built.selector.zoneId,
-            recoveryDurationMs: built.selector.recoveryDurationMs,
+            recoveryDurationMs: FORWARD_SOLO_HUNT_RECOVERY_DURATION_MS,
             initialPolicyVersion: currentPolicy?.policyVersion ?? null,
             startedAt: root.databaseNow,
           });
@@ -1198,6 +1801,16 @@ export class HuntApplication implements HuntHttpApplication {
             transaction,
             hunt.huntId,
             currentPolicy?.policyVersion ?? null,
+          );
+          await insertInitialAutoPotionPolicyIntervalInTransaction(
+            transaction,
+            hunt.huntId,
+            currentPotionPolicy?.policyVersion ?? null,
+          );
+          await insertInitialAutoRevivePolicyIntervalInTransaction(
+            transaction,
+            hunt.huntId,
+            currentRevivePolicy?.policyVersion ?? null,
           );
           await saveHuntInputAuthorityInTransaction(transaction, {
             huntId: hunt.huntId,
@@ -1554,6 +2167,28 @@ export class HuntApplication implements HuntHttpApplication {
         const inputAuthority = await loadHuntInputAuthority(transaction, playerId, hunt.huntId);
         if (!checkpoint || !inputAuthority) return error(503, "authority_unavailable");
         const state = decodeCheckpointState(checkpoint.stateBytes);
+        if (state.automationPolicies !== undefined) {
+          const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+            playerId,
+            idempotencyKey,
+            commandKind: "heal_item",
+            intentHash,
+            intentJson: intent as unknown as Record<string, unknown>,
+            sourceHuntId: huntId,
+            advancementHuntId: huntId,
+          });
+          if (claimed.status === "conflict") return error(409, "correlation_conflict");
+          const replay = commandReplayResult(claimed.command);
+          if (replay) return replay;
+          const result = error(422, "hunt_item_not_supported");
+          await completePublicHuntCommandInTransaction(
+            transaction,
+            claimed.command.commandId,
+            result.httpStatus,
+            result.body,
+          );
+          return result;
+        }
         if (!state.pinnedTeam.some(({ pokemonInstanceId }) => pokemonInstanceId === body.targetPokemonInstanceId)) {
           const claimed = await claimPublicHuntCommandInTransaction(transaction, {
             playerId,
@@ -1682,6 +2317,350 @@ export class HuntApplication implements HuntHttpApplication {
     } catch {
       return error(503, "authority_unavailable");
     }
+  }
+
+  private async replaceItemAutomationPolicy(
+    playerId: string,
+    idempotencyKey: string,
+    input:
+      | { readonly family: "potion"; readonly body: AutoPotionPolicyReplaceRequest }
+      | { readonly family: "revive"; readonly body: AutoRevivePolicyReplaceRequest },
+  ): Promise<HuntHttpResult> {
+    const intent = { policyFamily: input.family, ...input.body };
+    const intentHash = await hashNormalizedIntent(intent);
+    const expected = BigInt(input.body.expectedRowVersion);
+    let freeze: HuntHttpResult;
+    try {
+      freeze = await withPgClient({ connectionString: this.connectionString }, (client) =>
+        withTransaction(client, async (transaction) => {
+          const root = await ensureAndLockPlayerHuntRoot(transaction, playerId);
+          if (!root) return error(404, "not_found");
+
+          const existing = await loadPublicHuntCommand(transaction, playerId, idempotencyKey);
+          if (existing) {
+            const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+              playerId,
+              idempotencyKey,
+              commandKind: "policy_replace",
+              intentHash,
+              intentJson: intent,
+              advancementHuntId: existing.advancementHuntId,
+            });
+            if (claimed.status === "conflict") return error(409, "correlation_conflict");
+            const replay = commandReplayResult(claimed.command);
+            return replay ?? ok({ commandId: claimed.command.commandId }, 102);
+          }
+
+          const currentRowVersion = input.family === "potion"
+            ? root.autoPotionPolicyRowVersion
+            : root.autoRevivePolicyRowVersion;
+          if (currentRowVersion !== expected) {
+            const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+              playerId,
+              idempotencyKey,
+              commandKind: "policy_replace",
+              intentHash,
+              intentJson: intent,
+            });
+            if (claimed.status === "conflict") return error(409, "correlation_conflict");
+            const result = error(409, "stale");
+            await completePublicHuntCommandInTransaction(
+              transaction,
+              claimed.command.commandId,
+              result.httpStatus,
+              result.body,
+            );
+            return result;
+          }
+
+          if (!this.ports.authority.currentItemRuleAuthority) {
+            return error(503, "authority_unavailable");
+          }
+          const itemAuthority = await this.ports.authority.currentItemRuleAuthority();
+          const exactRules = await Promise.all(input.body.orderedItems.map(({ itemId }) =>
+            this.ports.authority.itemRule({
+              itemId,
+              itemRuleVersion: itemAuthority.itemRuleVersion,
+              gameDataVersion: itemAuthority.gameDataVersion,
+              rulesVersion: itemAuthority.rulesVersion,
+            })));
+          const itemAuthorityAccepted = exactRules.every((rule) => {
+            if (!rule) return false;
+            if (input.family === "potion") return rule.useKind === "heal-hp";
+            if (rule.useKind !== "revive-hp" || rule.magnitude?.kind !== "max-hp-fraction") return false;
+            const numerator = rule.magnitude.numerator;
+            const denominator = rule.magnitude.denominator;
+            return (numerator === 1 && denominator === 4)
+              || (numerator === 1 && denominator === 2)
+              || (numerator === 1 && denominator === 1);
+          });
+          if (!itemAuthorityAccepted) {
+            const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+              playerId,
+              idempotencyKey,
+              commandKind: "policy_replace",
+              intentHash,
+              intentJson: intent,
+            });
+            if (claimed.status === "conflict") return error(409, "correlation_conflict");
+            const result = error(422, "automation_policy_invalid");
+            await completePublicHuntCommandInTransaction(
+              transaction,
+              claimed.command.commandId,
+              result.httpStatus,
+              result.body,
+            );
+            return result;
+          }
+
+          let advancementHuntId: string | null = null;
+          let targetLogicalTimeMs: number | null = null;
+          let targetWallClockAt: Date | null = null;
+          let serverContext: Record<string, unknown> = {
+            automationPolicyFamily: input.family,
+            itemRuleVersion: itemAuthority.itemRuleVersion,
+            gameDataVersion: itemAuthority.gameDataVersion,
+            rulesVersion: itemAuthority.rulesVersion,
+          };
+          if (root.activeHuntId) {
+            const active = await loadOwnedSoloHunt(transaction, playerId, root.activeHuntId, true);
+            if (active && !active.terminalAt) {
+              const checkpoint = await loadHuntCheckpoint(transaction, playerId, active.checkpointId);
+              if (!checkpoint) throw new HuntAuthorityUnavailableError("policy prelude checkpoint is unavailable");
+              advancementHuntId = active.huntId;
+              if (checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+                const pendingReturns = await loadPendingHuntAdvanceCommands(
+                  transaction,
+                  playerId,
+                  active.huntId,
+                  true,
+                );
+                let joined: HuntPublicCommandRecord | null = null;
+                for (const candidate of pendingReturns) {
+                  if (candidate.targetLogicalTimeMs === null || candidate.targetWallClockAt === null) {
+                    return error(503, "authority_unavailable");
+                  }
+                  if (candidate.targetLogicalTimeMs < checkpoint.logicalTimeMs) continue;
+                  if (candidate.targetLogicalTimeMs === checkpoint.logicalTimeMs) {
+                    if (checkpoint.logicalTimeAnchorAt.getTime() > candidate.targetWallClockAt.getTime()) {
+                      return error(503, "authority_unavailable");
+                    }
+                    if (checkpoint.logicalTimeAnchorAt.getTime() === candidate.targetWallClockAt.getTime()) continue;
+                    joined = candidate;
+                    break;
+                  }
+                  if (checkpoint.logicalTimeAnchorAt.getTime() >= candidate.targetWallClockAt.getTime()) {
+                    return error(503, "authority_unavailable");
+                  }
+                  joined = candidate;
+                  break;
+                }
+                if (joined) {
+                  targetLogicalTimeMs = joined.targetLogicalTimeMs;
+                  targetWallClockAt = joined.targetWallClockAt;
+                }
+              }
+              if (targetLogicalTimeMs === null || targetWallClockAt === null) {
+                const frozenTarget = deriveFrozenProductiveTarget({
+                  checkpointSchemaVersion: checkpoint.schemaVersion,
+                  checkpointLogicalTimeMs: checkpoint.logicalTimeMs,
+                  logicalTimeAnchorAt: checkpoint.logicalTimeAnchorAt,
+                  serverNow: root.databaseNow,
+                });
+                targetLogicalTimeMs = frozenTarget.targetLogicalTimeMs;
+                targetWallClockAt = frozenTarget.targetWallClockAt;
+              }
+              serverContext = {
+                ...serverContext,
+                preludeCheckpointId: checkpoint.checkpointId,
+                preludeCheckpointRowVersion: checkpoint.rowVersion.toString(),
+              };
+            }
+          }
+
+          const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+            playerId,
+            idempotencyKey,
+            commandKind: "policy_replace",
+            intentHash,
+            intentJson: intent,
+            advancementHuntId,
+            targetLogicalTimeMs,
+            targetWallClockAt,
+          });
+          if (claimed.status === "conflict") return error(409, "correlation_conflict");
+          await updatePublicHuntCommandServerContextInTransaction(
+            transaction,
+            claimed.command.commandId,
+            serverContext,
+          );
+          return ok({ commandId: claimed.command.commandId }, 102);
+        }));
+    } catch (cause) {
+      if (cause instanceof HuntAuthorityUnavailableError) return error(503, "authority_unavailable");
+      return error(503, "authority_unavailable");
+    }
+    if (freeze.httpStatus !== 102) return freeze;
+
+    const command = await withPgClient({ connectionString: this.connectionString }, (client) =>
+      loadPublicHuntCommand(client, playerId, idempotencyKey));
+    if (!command) return error(503, "authority_unavailable");
+    const prelude = await this.progressFrozenHuntPreludeOneStep(playerId, command);
+    if (prelude.status === "response") return prelude.result;
+
+    try {
+      return await withPgClient({ connectionString: this.connectionString }, (client) =>
+        withTransaction(client, async (transaction) => {
+          const root = await ensureAndLockPlayerHuntRoot(transaction, playerId);
+          if (!root) return error(404, "not_found");
+          const executable = await recheckExecutableCommandInTransaction(transaction, playerId, command);
+          if (executable.status === "response") return executable.result;
+          const current = executable.command;
+          const currentRowVersion = input.family === "potion"
+            ? root.autoPotionPolicyRowVersion
+            : root.autoRevivePolicyRowVersion;
+          if (currentRowVersion !== expected) {
+            const result = error(409, "stale");
+            await completePublicHuntCommandInTransaction(
+              transaction,
+              current.commandId,
+              result.httpStatus,
+              result.body,
+            );
+            return result;
+          }
+          const itemRuleVersion = typeof current.serverContext.itemRuleVersion === "string"
+            ? current.serverContext.itemRuleVersion
+            : null;
+          const gameDataVersion = typeof current.serverContext.gameDataVersion === "string"
+            ? current.serverContext.gameDataVersion
+            : null;
+          const rulesVersion = typeof current.serverContext.rulesVersion === "string"
+            ? current.serverContext.rulesVersion
+            : null;
+          if (!itemRuleVersion || !gameDataVersion || !rulesVersion) {
+            return error(503, "authority_unavailable");
+          }
+
+          let effectiveAt: { huntId: string; logicalTimeMs: string } | null = null;
+          if (current.advancementHuntId !== null && current.targetLogicalTimeMs !== null) {
+            const frozenHunt = await loadOwnedSoloHunt(
+              transaction,
+              playerId,
+              current.advancementHuntId,
+              true,
+            );
+            if (frozenHunt && !frozenHunt.terminalAt) {
+              let checkpoint = await loadHuntCheckpoint(transaction, playerId, frozenHunt.checkpointId);
+              if (!checkpoint) return error(503, "authority_unavailable");
+              if (checkpoint.logicalTimeMs > current.targetLogicalTimeMs) {
+                const result = error(409, "command_superseded");
+                await completePublicHuntCommandInTransaction(
+                  transaction,
+                  current.commandId,
+                  result.httpStatus,
+                  result.body,
+                );
+                return result;
+              }
+              if (checkpoint.logicalTimeMs < current.targetLogicalTimeMs) {
+                return inProgress(checkpoint.logicalTimeMs, current.targetLogicalTimeMs);
+              }
+              if (checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+                if (!current.targetWallClockAt) return error(503, "authority_unavailable");
+                const anchorMs = checkpoint.logicalTimeAnchorAt.getTime();
+                const frozenReturnMs = current.targetWallClockAt.getTime();
+                if (anchorMs > frozenReturnMs) return error(503, "authority_unavailable");
+                if (anchorMs < frozenReturnMs) {
+                  const rebased = await rebaseOwnedHuntCheckpointAnchorInTransaction(transaction, {
+                    playerId,
+                    checkpointId: checkpoint.checkpointId,
+                    expectedRowVersion: checkpoint.rowVersion,
+                    expectedLogicalTimeMs: checkpoint.logicalTimeMs,
+                    logicalTimeAnchorAt: current.targetWallClockAt,
+                  });
+                  if (rebased.status !== "updated") return error(503, "authority_unavailable");
+                  checkpoint = {
+                    ...checkpoint,
+                    logicalTimeAnchorAt: current.targetWallClockAt,
+                    rowVersion: rebased.rowVersion,
+                  };
+                }
+              }
+              effectiveAt = {
+                huntId: frozenHunt.huntId,
+                logicalTimeMs: checkpoint.logicalTimeMs.toString(),
+              };
+            }
+          }
+
+          const inserted = input.family === "potion"
+            ? await insertAutoPotionPolicyInTransaction(transaction, {
+                playerId,
+                expectedRowVersion: expected,
+                itemRuleVersion,
+                gameDataVersion,
+                rulesVersion,
+                enabled: input.body.enabled,
+                thresholdPercent: input.body.thresholdPercent,
+                policyJson: {
+                  enabled: input.body.enabled,
+                  thresholdPercent: input.body.thresholdPercent,
+                  orderedItems: input.body.orderedItems,
+                },
+                effectiveHuntId: effectiveAt?.huntId ?? null,
+                effectiveLogicalTimeMs: effectiveAt ? Number(effectiveAt.logicalTimeMs) : null,
+              })
+            : await insertAutoRevivePolicyInTransaction(transaction, {
+                playerId,
+                expectedRowVersion: expected,
+                itemRuleVersion,
+                gameDataVersion,
+                rulesVersion,
+                enabled: input.body.enabled,
+                policyJson: {
+                  enabled: input.body.enabled,
+                  orderedItems: input.body.orderedItems,
+                },
+                effectiveHuntId: effectiveAt?.huntId ?? null,
+                effectiveLogicalTimeMs: effectiveAt ? Number(effectiveAt.logicalTimeMs) : null,
+              });
+          if (inserted.status === "stale") {
+            const result = error(409, "stale");
+            await completePublicHuntCommandInTransaction(
+              transaction,
+              current.commandId,
+              result.httpStatus,
+              result.body,
+            );
+            return result;
+          }
+          const policy = input.family === "potion"
+            ? autoPotionPolicyJson(inserted.policy as HuntAutoPotionPolicyRecord)
+            : autoRevivePolicyJson(inserted.policy as HuntAutoRevivePolicyRecord);
+          const resultBody = { policy, effectiveAt };
+          await completePublicHuntCommandInTransaction(transaction, current.commandId, 200, resultBody);
+          return ok(resultBody);
+        }));
+    } catch {
+      return error(503, "authority_unavailable");
+    }
+  }
+
+  async replaceAutoPotionPolicy(
+    playerId: string,
+    idempotencyKey: string,
+    body: AutoPotionPolicyReplaceRequest,
+  ): Promise<HuntHttpResult> {
+    return this.replaceItemAutomationPolicy(playerId, idempotencyKey, { family: "potion", body });
+  }
+
+  async replaceAutoRevivePolicy(
+    playerId: string,
+    idempotencyKey: string,
+    body: AutoRevivePolicyReplaceRequest,
+  ): Promise<HuntHttpResult> {
+    return this.replaceItemAutomationPolicy(playerId, idempotencyKey, { family: "revive", body });
   }
 
   async replaceAutoCapturePolicy(
@@ -2089,13 +3068,14 @@ export class HuntApplication implements HuntHttpApplication {
         if (debit.status !== "updated") {
           throw new Error(`Due heal Inventory debit failed: ${debit.status}`);
         }
+        const healedCheckpoint = encodeCheckpointState(healed.state);
         const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
           playerId,
           checkpointId: hunt.checkpointId,
           expectedRowVersion: checkpoint.rowVersion,
-          schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+          schemaVersion: healedCheckpoint.schemaVersion,
           logicalTimeMs: healed.state.logicalTimeMs,
-          stateBytes: encodeSoloHuntCheckpointV2(healed.state),
+          stateBytes: healedCheckpoint.stateBytes,
         });
         if (persisted.status !== "updated") {
           throw new Error(`Due heal checkpoint persistence failed: ${persisted.status}`);
@@ -2416,11 +3396,16 @@ export class HuntApplication implements HuntHttpApplication {
           state,
           now: root.databaseNow,
         });
+        await sealLatestResolvedEncounterActivityInTransaction(transaction, {
+          playerId,
+          hunt: locked,
+          state,
+        });
         await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
           terminalReason,
-          recoveryDurationMs: hunt.recoveryDurationMs,
+          ...terminalizationTiming(locked, state),
         });
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         return null;
@@ -2527,7 +3512,9 @@ export class HuntApplication implements HuntHttpApplication {
       if (terminalized) return { status: "response", result: terminalized };
       return { status: "done" };
     }
-    if (state.logicalTimeMs === targetLogicalTimeMs) return { status: "done" };
+    if (state.logicalTimeMs === targetLogicalTimeMs && state.automationPolicies === undefined) {
+      return { status: "done" };
+    }
 
     const blocker = await withPgClient({ connectionString: this.connectionString }, (client) =>
       loadEarliestHealingAdvanceBlocker(client, { huntId, logicalTimeMs: targetLogicalTimeMs }));
@@ -2535,9 +3522,38 @@ export class HuntApplication implements HuntHttpApplication {
     const advanceTarget = blockerFence !== null && blockerFence > state.logicalTimeMs
       ? Math.min(targetLogicalTimeMs, blockerFence)
       : targetLogicalTimeMs;
-    const advanced = advanceSoloHuntToEncounterBoundaryOrCutoff(state, inputs, advanceTarget);
-    if (!advanced.accepted) throw new Error(advanced.reason);
-    state = advanced.state;
+    let stopReason: string;
+    let automationGuard: AutomationPersistenceGuard | undefined;
+    if (state.automationPolicies !== undefined) {
+      const stopBeforeNextEncounter = await this.shouldStopBeforeNextEncounter(
+        playerId,
+        snapshot.hunt.huntId,
+        state,
+      );
+      const automationProgress = await this.advanceForwardAutomationOneStep(
+        playerId,
+        snapshot.hunt,
+        snapshot.command,
+        snapshot.checkpoint.rowVersion,
+        state,
+        inputs,
+        advanceTarget,
+        targetLogicalTimeMs,
+        undefined,
+        stopBeforeNextEncounter,
+      );
+      if (automationProgress.status === "response") {
+        return { status: "response", result: automationProgress.result };
+      }
+      state = automationProgress.state;
+      stopReason = automationProgress.stopReason;
+      automationGuard = automationProgress.automationGuard;
+    } else {
+      const advanced = advanceSoloHuntToEncounterBoundaryOrCutoff(state, inputs, advanceTarget);
+      if (!advanced.accepted) throw new Error(advanced.reason);
+      state = advanced.state;
+      stopReason = advanced.stopReason;
+    }
     const persisted = await this.persistAdvancedStateAndMaybeBoundary(
       playerId,
       snapshot.hunt,
@@ -2545,10 +3561,16 @@ export class HuntApplication implements HuntHttpApplication {
       snapshot.checkpoint.rowVersion,
       state,
       inputs,
-      advanced.stopReason,
+      stopReason,
+      automationGuard,
     );
     if (persisted.httpStatus !== 204) return { status: "response", result: persisted };
-    if (advanced.stopReason === "encounterBoundary" || blockerFence === state.logicalTimeMs) {
+    if (
+      stopReason === "encounterBoundary"
+      || stopReason === "automationBoundary"
+      || stopReason === "activityBoundary"
+      || blockerFence === state.logicalTimeMs
+    ) {
       return { status: "response", result: inProgress(state.logicalTimeMs, targetLogicalTimeMs) };
     }
     if (state.status === "terminal") {
@@ -2564,6 +3586,559 @@ export class HuntApplication implements HuntHttpApplication {
     return state.logicalTimeMs === targetLogicalTimeMs
       ? { status: "done" }
       : { status: "response", result: inProgress(state.logicalTimeMs, targetLogicalTimeMs) };
+  }
+
+  private async loadAutomationExecutionSnapshot(
+    playerId: string,
+    huntId: string,
+    logicalTimeMs: number,
+  ): Promise<AutomationExecutionSnapshot | null> {
+    return withPgClient({ connectionString: this.connectionString }, async (client) => {
+      const [inventory, potionVersion, reviveVersion] = await Promise.all([
+        loadInventory(client, playerId),
+        loadEffectiveAutoPotionPolicyVersion(client, huntId, logicalTimeMs),
+        loadEffectiveAutoRevivePolicyVersion(client, huntId, logicalTimeMs),
+      ]);
+      if (!inventory) return null;
+      const [potionRecord, reviveRecord] = await Promise.all([
+        potionVersion ? loadAutoPotionPolicyByVersion(client, playerId, potionVersion) : Promise.resolve(null),
+        reviveVersion ? loadAutoRevivePolicyByVersion(client, playerId, reviveVersion) : Promise.resolve(null),
+      ]);
+      if ((potionVersion !== null && !potionRecord) || (reviveVersion !== null && !reviveRecord)) return null;
+      return {
+        inventoryRowVersion: inventory.rowVersion,
+        inventoryQuantityByItemId: inventoryQuantities(inventory),
+        potionRecord,
+        potion: executionPotionPolicy(potionRecord),
+        reviveRecord,
+        revive: executionRevivePolicy(reviveRecord),
+      };
+    });
+  }
+
+  private async shouldStopBeforeNextEncounter(
+    playerId: string,
+    huntId: string,
+    state: SoloHuntRuntimeState,
+  ): Promise<boolean> {
+    if (!state.interBattle || state.currentEncounter !== undefined) return false;
+    const evidence = state.completedEncounters.at(-1);
+    if (!evidence) return false;
+    return withPgClient({ connectionString: this.connectionString }, async (client) =>
+      (await loadResolvedEncounterActivity(client, {
+        playerId,
+        huntId,
+        encounterId: evidence.encounterId,
+      })) === null);
+  }
+
+  private async decideAutomationBoundary(
+    huntId: string,
+    state: SoloHuntRuntimeState,
+    inputs: SoloHuntRuntimeInputs,
+    snapshot: AutomationExecutionSnapshot,
+  ): Promise<AutomationBoundaryDecision> {
+    const encounter = state.currentEncounter;
+    let family: "potion" | "revive";
+    let phase: "battle" | "inter_battle" | "post_battle";
+    let targetPokemonInstanceId: string;
+    let targetCombatantId: string | null = null;
+    let currentHp: number;
+    let maxHp: number;
+    let potionReady = false;
+
+    if (encounter) {
+      if (encounter.battle.status === "ended") {
+        if (encounter.battleOutcome?.kind !== "draw") return { status: "continue", state };
+        const activation = encounter.participantActivations.at(-1);
+        const combatant = activation ? encounter.battle.combatants[activation.combatantId] : undefined;
+        const participant = combatant?.cadenceParticipant;
+        if (
+          !activation
+          || !combatant
+          || participant?.kind !== "pokemonInstance"
+          || participant.identity !== activation.pokemonInstanceId
+          || combatant.currentHp !== 0
+        ) {
+          return { status: "authority_unavailable" };
+        }
+        family = "revive";
+        phase = "post_battle";
+        targetPokemonInstanceId = participant.identity;
+        targetCombatantId = combatant.combatantId;
+        currentHp = combatant.currentHp;
+        maxHp = combatant.maxHp;
+      } else if (encounter.battle.koInterventionPending?.sideId === encounter.playerSideId) {
+        const pending = encounter.battle.koInterventionPending;
+        const combatant = encounter.battle.combatants[pending.combatantId];
+        const participant = combatant?.cadenceParticipant;
+        if (!combatant || participant?.kind !== "pokemonInstance" || combatant.currentHp !== 0) {
+          return { status: "authority_unavailable" };
+        }
+        family = "revive";
+        phase = "battle";
+        targetPokemonInstanceId = participant.identity;
+        targetCombatantId = combatant.combatantId;
+        currentHp = combatant.currentHp;
+        maxHp = combatant.maxHp;
+      } else {
+        const side = encounter.battle.sides.find(({ sideId }) => sideId === encounter.playerSideId);
+        const activeId = side?.activeCombatantIds[0];
+        const combatant = activeId ? encounter.battle.combatants[activeId] : undefined;
+        const participant = combatant?.cadenceParticipant;
+        if (!combatant || participant?.kind !== "pokemonInstance") return { status: "authority_unavailable" };
+        family = "potion";
+        phase = "battle";
+        targetPokemonInstanceId = participant.identity;
+        targetCombatantId = combatant.combatantId;
+        currentHp = combatant.currentHp;
+        maxHp = combatant.maxHp;
+        if (combatant.autoPotionReadyAtMs === undefined) {
+          return snapshot.potion.enabled ? { status: "authority_unavailable" } : { status: "continue", state };
+        }
+        potionReady = combatant.autoPotionReadyAtMs <= encounter.battle.combatTimeMs;
+      }
+    } else {
+      const between = state.interBattle;
+      const activePokemonInstanceId = between?.activePokemonInstanceId;
+      if (!between || !activePokemonInstanceId) return { status: "authority_unavailable" };
+      const key = cadenceParticipantKey({
+        kind: "pokemonInstance",
+        identity: activePokemonInstanceId,
+      });
+      const readiness = between.cadence.readinessByParticipant[key];
+      const hp = between.cadence.hpByParticipant[key];
+      const maximum = between.cadence.maxHpByParticipant[key];
+      if (!readiness || hp === undefined || maximum === undefined) return { status: "authority_unavailable" };
+      family = hp === 0 ? "revive" : "potion";
+      phase = "inter_battle";
+      targetPokemonInstanceId = activePokemonInstanceId;
+      currentHp = hp;
+      maxHp = maximum;
+      if (readiness.autoPotionCooldownRemainingMs === undefined) {
+        return snapshot.potion.enabled ? { status: "authority_unavailable" } : { status: "continue", state };
+      }
+      potionReady = readiness.autoPotionCooldownRemainingMs === 0;
+    }
+
+    const policy = family === "potion" ? snapshot.potion : snapshot.revive;
+    const record = family === "potion" ? snapshot.potionRecord : snapshot.reviveRecord;
+    const selectedItemId = policy.enabled
+      ? selectEligibleAutomationItem(policy.orderedItems, snapshot.inventoryQuantityByItemId)
+      : null;
+
+    if (family === "potion") {
+      const potionPolicy = snapshot.potion;
+      if (
+        !potionPolicy.enabled
+        || !record
+        || potionPolicy.thresholdPercent === null
+        || !potionReady
+        || !isAutoPotionEligible({
+          currentHp,
+          maxHp,
+          thresholdPercent: potionPolicy.thresholdPercent,
+        })
+        || !selectedItemId
+      ) {
+        return { status: "continue", state };
+      }
+    } else if (!policy.enabled || !record || !selectedItemId) {
+      const declined = phase === "post_battle"
+        ? declineSoloHuntPostBattleAutoRevive(
+            state,
+            inputs,
+            targetPokemonInstanceId as Parameters<typeof declineSoloHuntPostBattleAutoRevive>[2],
+          )
+        : phase === "battle"
+          ? declineSoloHuntBattleAutoRevive(state, inputs)
+          : declineSoloHuntInterBattleAutoRevive(
+            state,
+            inputs,
+            targetPokemonInstanceId as Parameters<typeof declineSoloHuntInterBattleAutoRevive>[2],
+          );
+      if (!declined.accepted) return { status: "authority_unavailable" };
+      return { status: "continue", state: declined.state };
+    }
+
+    if (!record || !selectedItemId) return { status: "authority_unavailable" };
+    const itemRule = await this.ports.authority.itemRule({
+      itemId: selectedItemId,
+      itemRuleVersion: record.itemRuleVersion,
+      gameDataVersion: record.gameDataVersion,
+      rulesVersion: record.rulesVersion,
+    });
+    if (!itemRule) return { status: "authority_unavailable" };
+
+    const provenanceIdentity = automationProvenanceIdentity(
+      huntId,
+      state,
+      phase,
+      family,
+      targetPokemonInstanceId,
+    );
+    let applied: ReturnType<typeof applySoloHuntBattleAutoPotion>;
+    let magnitudeJson: Record<string, unknown>;
+    if (family === "potion") {
+      const magnitude = potionMagnitudeFromRule(itemRule);
+      if (!magnitude) return { status: "authority_unavailable" };
+      magnitudeJson = { ...itemRule.magnitude! };
+      applied = encounter
+        ? applySoloHuntBattleAutoPotion(state, inputs, {
+            provenanceId: provenanceIdentity,
+            targetPokemonInstanceId:
+              targetPokemonInstanceId as Parameters<typeof applySoloHuntBattleAutoPotion>[2]["targetPokemonInstanceId"],
+            magnitude,
+          })
+        : applySoloHuntInterBattleAutoPotion(state, inputs, {
+            provenanceId: provenanceIdentity,
+            targetPokemonInstanceId:
+              targetPokemonInstanceId as Parameters<typeof applySoloHuntInterBattleAutoPotion>[2]["targetPokemonInstanceId"],
+            magnitude,
+          });
+    } else {
+      const fraction = reviveFractionFromRule(itemRule);
+      if (!fraction) return { status: "authority_unavailable" };
+      magnitudeJson = { kind: "max-hp-fraction", ...fraction };
+      applied = phase === "post_battle"
+        ? applySoloHuntPostBattleAutoRevive(state, inputs, {
+            provenanceId: provenanceIdentity,
+            targetPokemonInstanceId:
+              targetPokemonInstanceId as Parameters<typeof applySoloHuntPostBattleAutoRevive>[2]["targetPokemonInstanceId"],
+            restoredHp: restoredHpForFraction(maxHp, fraction),
+          })
+        : phase === "battle"
+          ? applySoloHuntBattleAutoRevive(state, inputs, {
+            provenanceId: provenanceIdentity,
+            targetPokemonInstanceId:
+              targetPokemonInstanceId as Parameters<typeof applySoloHuntBattleAutoRevive>[2]["targetPokemonInstanceId"],
+            reviveFraction: fraction,
+          })
+          : applySoloHuntInterBattleAutoRevive(state, inputs, {
+            provenanceId: provenanceIdentity,
+            targetPokemonInstanceId:
+              targetPokemonInstanceId as Parameters<typeof applySoloHuntInterBattleAutoRevive>[2]["targetPokemonInstanceId"],
+            restoredHp: restoredHpForFraction(maxHp, fraction),
+          });
+    }
+    if (!applied.accepted) return { status: "authority_unavailable" };
+
+    let postBattleRevive: AutomationSpendCandidate["postBattleRevive"];
+    if (phase === "post_battle") {
+      if (family !== "revive" || !encounter || !state.pendingEncounterSelection) {
+        return { status: "authority_unavailable" };
+      }
+      const fraction = reviveFractionFromRule(itemRule);
+      const completedProvenance = applied.state.completedEncounterProvenance.at(-1);
+      const targetKey = cadenceParticipantKey({
+        kind: "pokemonInstance",
+        identity:
+          targetPokemonInstanceId as Parameters<typeof applySoloHuntPostBattleAutoRevive>[2]["targetPokemonInstanceId"],
+      });
+      const readiness = applied.state.interBattle?.cadence.readinessByParticipant[targetKey];
+      if (
+        !fraction
+        || fraction.numerator !== 1
+        || (fraction.denominator !== 1 && fraction.denominator !== 2 && fraction.denominator !== 4)
+        || !completedProvenance
+        || completedProvenance.encounterId !== encounter.encounterId
+        || completedProvenance.consumedPendingEncounterSelection.pendingSelectionIdentity
+          !== state.pendingEncounterSelection.pendingSelectionIdentity
+        || !readiness
+      ) {
+        return { status: "authority_unavailable" };
+      }
+      postBattleRevive = {
+        huntRunIdentity: state.huntRunIdentity,
+        battleId: encounter.battle.battleId,
+        reviveFractionNumerator: 1,
+        reviveFractionDenominator: fraction.denominator,
+        resultingReadinessJson: readiness as unknown as Record<string, unknown>,
+        pendingSelectionIdentity: state.pendingEncounterSelection.pendingSelectionIdentity,
+        consumedPendingSelectionJson:
+          state.pendingEncounterSelection as unknown as Record<string, unknown>,
+        completedEncounterProvenanceJson:
+          completedProvenance as unknown as Record<string, unknown>,
+      };
+    }
+
+    return {
+      status: "spend",
+      candidate: {
+        family,
+        phase,
+        nextState: applied.state,
+        provenanceIdentity,
+        policyVersion: record.policyVersion,
+        itemId: selectedItemId,
+        itemRuleVersion: record.itemRuleVersion,
+        gameDataVersion: record.gameDataVersion,
+        rulesVersion: record.rulesVersion,
+        magnitudeJson,
+        appliedHp: applied.appliedHp,
+        resultingHp: applied.resultingHp,
+        targetPokemonInstanceId,
+        targetCombatantId,
+        encounterId: encounter?.encounterId ?? state.completedEncounters.at(-1)?.encounterId ?? null,
+        encounterOrdinal: encounter?.encounterOrdinal ?? state.completedEncounters.at(-1)?.encounterOrdinal ?? null,
+        logicalTimeMs: state.logicalTimeMs,
+        ...(postBattleRevive ? { postBattleRevive } : {}),
+      },
+    };
+  }
+
+  private async commitAutomationSpend(
+    playerId: string,
+    hunt: SoloHuntRecord,
+    command: HuntPublicCommandRecord,
+    expectedCheckpointRowVersion: bigint,
+    snapshot: AutomationExecutionSnapshot,
+    candidate: AutomationSpendCandidate,
+  ): Promise<"committed" | "retry" | "authority_unavailable"> {
+    try {
+      return await withPgClient({ connectionString: this.connectionString }, (client) =>
+        withTransaction(client, async (transaction) => {
+          const root = await ensureAndLockPlayerHuntRoot(transaction, playerId);
+          if (!root) return "authority_unavailable" as const;
+          if (root.activeHuntId !== hunt.huntId) return "retry" as const;
+          const activeHunt = await loadOwnedSoloHunt(transaction, playerId, hunt.huntId, true);
+          if (!activeHunt || activeHunt.terminalAt) return "retry" as const;
+          const executable = await recheckExecutableCommandInTransaction(transaction, playerId, command);
+          if (executable.status !== "pending") return "retry" as const;
+
+          const effectiveVersion = candidate.family === "potion"
+            ? await loadEffectiveAutoPotionPolicyVersion(transaction, hunt.huntId, candidate.logicalTimeMs)
+            : await loadEffectiveAutoRevivePolicyVersion(transaction, hunt.huntId, candidate.logicalTimeMs);
+          if (effectiveVersion !== candidate.policyVersion) return "retry" as const;
+
+          const inventory = await loadInventory(transaction, playerId, true);
+          if (!inventory) return "authority_unavailable" as const;
+          if (inventory.rowVersion !== snapshot.inventoryRowVersion) return "retry" as const;
+          const policyRecord = candidate.family === "potion"
+            ? await loadAutoPotionPolicyByVersion(transaction, playerId, candidate.policyVersion)
+            : await loadAutoRevivePolicyByVersion(transaction, playerId, candidate.policyVersion);
+          if (!policyRecord) return "authority_unavailable" as const;
+          const policy = candidate.family === "potion"
+            ? executionPotionPolicy(policyRecord as HuntAutoPotionPolicyRecord)
+            : executionRevivePolicy(policyRecord as HuntAutoRevivePolicyRecord);
+          const selected = selectEligibleAutomationItem(policy.orderedItems, inventoryQuantities(inventory));
+          if (!policy.enabled || selected !== candidate.itemId) return "retry" as const;
+
+          const encoded = encodeCheckpointState(candidate.nextState);
+          const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
+            playerId,
+            checkpointId: hunt.checkpointId,
+            expectedRowVersion: expectedCheckpointRowVersion,
+            schemaVersion: encoded.schemaVersion,
+            logicalTimeMs: candidate.nextState.logicalTimeMs,
+            stateBytes: encoded.stateBytes,
+          });
+          if (persisted.status !== "updated") return "retry" as const;
+          await syncPendingZoneSelectionInTransaction(transaction, playerId, candidate.nextState);
+
+          const debited = await removeInventoryEntriesInTransaction(transaction, {
+            playerId,
+            expectedRowVersion: inventory.rowVersion,
+            removals: [{ itemId: candidate.itemId, quantity: 1n }],
+            now: root.databaseNow,
+          });
+          if (debited.status !== "updated") {
+            throw new Error("locked Auto-Potion/Revive Inventory debit unexpectedly failed");
+          }
+          const provenance = await insertAutomationItemUseInTransaction(transaction, {
+            playerId,
+            huntId: hunt.huntId,
+            provenanceIdentity: candidate.provenanceIdentity,
+            automationFamily: candidate.family,
+            phase: candidate.phase,
+            encounterId: candidate.encounterId,
+            encounterOrdinal: candidate.encounterOrdinal,
+            targetPokemonInstanceId: candidate.targetPokemonInstanceId,
+            targetCombatantId: candidate.targetCombatantId,
+            logicalTimeMs: candidate.logicalTimeMs,
+            policyVersion: candidate.policyVersion,
+            itemId: candidate.itemId,
+            itemRuleVersion: candidate.itemRuleVersion,
+            gameDataVersion: candidate.gameDataVersion,
+            rulesVersion: candidate.rulesVersion,
+            magnitudeJson: candidate.magnitudeJson,
+            appliedHp: candidate.appliedHp,
+            resultingHp: candidate.resultingHp,
+            inventoryRowVersionBefore: inventory.rowVersion,
+            inventoryRowVersionAfter: debited.rowVersion,
+          });
+          if (provenance.status !== "inserted") {
+            throw new Error("Auto-Potion/Revive provenance identity was already committed");
+          }
+          if (candidate.postBattleRevive) {
+            if (
+              candidate.family !== "revive"
+              || candidate.phase !== "post_battle"
+              || candidate.encounterId === null
+              || candidate.encounterOrdinal === null
+              || candidate.targetCombatantId === null
+            ) {
+              throw new Error("Post-Battle Revive candidate lost its exact Encounter envelope");
+            }
+            const postBattle = await insertPostBattleReviveAppliedInTransaction(transaction, {
+              playerId,
+              huntId: hunt.huntId,
+              provenanceIdentity: candidate.provenanceIdentity,
+              debitCorrelationIdentity: candidate.provenanceIdentity,
+              huntRunIdentity: candidate.postBattleRevive.huntRunIdentity,
+              encounterId: candidate.encounterId,
+              encounterOrdinal: candidate.encounterOrdinal,
+              battleId: candidate.postBattleRevive.battleId,
+              targetPokemonInstanceId: candidate.targetPokemonInstanceId,
+              targetCombatantId: candidate.targetCombatantId,
+              logicalTimeMs: candidate.logicalTimeMs,
+              policyVersion: candidate.policyVersion,
+              itemId: candidate.itemId,
+              itemRuleVersion: candidate.itemRuleVersion,
+              gameDataVersion: candidate.gameDataVersion,
+              rulesVersion: candidate.rulesVersion,
+              reviveFractionNumerator: candidate.postBattleRevive.reviveFractionNumerator,
+              reviveFractionDenominator: candidate.postBattleRevive.reviveFractionDenominator,
+              appliedHp: candidate.appliedHp,
+              resultingHp: candidate.resultingHp,
+              resultingReadinessJson: candidate.postBattleRevive.resultingReadinessJson,
+              pendingSelectionIdentity: candidate.postBattleRevive.pendingSelectionIdentity,
+              consumedPendingSelectionJson: candidate.postBattleRevive.consumedPendingSelectionJson,
+              completedEncounterProvenanceJson:
+                candidate.postBattleRevive.completedEncounterProvenanceJson,
+              inventoryRowVersionBefore: inventory.rowVersion,
+              inventoryRowVersionAfter: debited.rowVersion,
+            });
+            if (postBattle.status !== "inserted") {
+              throw new Error("Post-Battle Revive provenance identity was already committed");
+            }
+          }
+          return "committed" as const;
+        }));
+    } catch {
+      return "authority_unavailable";
+    }
+  }
+
+  private async advanceForwardAutomationOneStep(
+    playerId: string,
+    hunt: SoloHuntRecord,
+    command: HuntPublicCommandRecord,
+    expectedCheckpointRowVersion: bigint,
+    state: SoloHuntRuntimeState,
+    inputs: SoloHuntRuntimeInputs,
+    advanceTargetLogicalTimeMs: number,
+    continuationTargetLogicalTimeMs: number,
+    retreatTieLogicalTimeMs?: number,
+    stopBeforeNextEncounter = false,
+  ): Promise<
+    | { readonly status: "response"; readonly result: HuntHttpResult }
+    | {
+        readonly status: "advanced";
+        readonly state: SoloHuntRuntimeState;
+        readonly stopReason: string;
+        readonly automationGuard?: AutomationPersistenceGuard;
+      }
+  > {
+    const initialState = state;
+    const advanced = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+      state,
+      inputs,
+      advanceTargetLogicalTimeMs,
+      {
+        skipInitialAutomationBoundary: shouldSuppressInitialPotionAfterRevive(state),
+        stopBeforeNextEncounter,
+      },
+    );
+    if (!advanced.accepted) throw new Error(advanced.reason);
+    state = advanced.state;
+    let stopReason = advanced.stopReason;
+    if (advanced.stopReason !== "automationBoundary") {
+      return { status: "advanced", state, stopReason };
+    }
+
+    if (
+      retreatTieLogicalTimeMs !== undefined
+      && state.logicalTimeMs === retreatTieLogicalTimeMs
+      && state !== initialState
+    ) {
+      return { status: "advanced", state, stopReason: "cutoff" };
+    }
+
+    const automationSnapshot = await this.loadAutomationExecutionSnapshot(
+      playerId,
+      hunt.huntId,
+      state.logicalTimeMs,
+    );
+    if (!automationSnapshot) {
+      return { status: "response", result: error(503, "authority_unavailable") };
+    }
+    const automationGuard: AutomationPersistenceGuard = {
+      logicalTimeMs: state.logicalTimeMs,
+      inventoryRowVersion: automationSnapshot.inventoryRowVersion,
+      potionPolicyVersion: automationSnapshot.potionRecord?.policyVersion ?? null,
+      revivePolicyVersion: automationSnapshot.reviveRecord?.policyVersion ?? null,
+    };
+    const boundaryState = state;
+    const decision = await this.decideAutomationBoundary(hunt.huntId, state, inputs, automationSnapshot);
+    if (decision.status === "authority_unavailable") {
+      return { status: "response", result: error(503, "authority_unavailable") };
+    }
+    if (decision.status === "spend") {
+      const committed = await this.commitAutomationSpend(
+        playerId,
+        hunt,
+        command,
+        expectedCheckpointRowVersion,
+        automationSnapshot,
+        decision.candidate,
+      );
+      if (committed === "authority_unavailable") {
+        return { status: "response", result: error(503, "authority_unavailable") };
+      }
+      return {
+        status: "response",
+        result: inProgress(
+          committed === "committed"
+            ? decision.candidate.nextState.logicalTimeMs
+            : state.logicalTimeMs,
+          continuationTargetLogicalTimeMs,
+        ),
+      };
+    }
+
+    state = decision.state;
+    if (state.status === "terminal") {
+      return {
+        status: "advanced",
+        state,
+        stopReason: state.terminalReason ?? "noLivingTeam",
+        automationGuard,
+      };
+    }
+    if (state !== boundaryState) {
+      return { status: "advanced", state, stopReason, automationGuard };
+    }
+
+    const resumeState = state;
+    const resumed = advanceSoloHuntToAutomationBoundaryOrEncounterBoundaryOrCutoff(
+      state,
+      inputs,
+      advanceTargetLogicalTimeMs,
+      { skipInitialAutomationBoundary: true, stopBeforeNextEncounter },
+    );
+    if (!resumed.accepted) throw new Error(resumed.reason);
+    state = resumed.state;
+    stopReason = resumed.stopReason;
+    if (
+      retreatTieLogicalTimeMs !== undefined
+      && stopReason === "automationBoundary"
+      && state.logicalTimeMs === retreatTieLogicalTimeMs
+      && state !== resumeState
+    ) {
+      stopReason = "cutoff";
+    }
+    return { status: "advanced", state, stopReason, automationGuard };
   }
 
   private async advanceMutation(
@@ -2600,6 +4175,10 @@ export class HuntApplication implements HuntHttpApplication {
           if (
             existing.command.targetLogicalTimeMs === null
             || existing.command.advancementHuntId !== huntId
+            || (
+              checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+              && existing.command.targetWallClockAt === null
+            )
           ) {
             return error(503, "authority_unavailable");
           }
@@ -2609,6 +4188,59 @@ export class HuntApplication implements HuntHttpApplication {
             checkpointId: checkpoint.checkpointId,
             huntId,
           }, 102);
+        }
+        if (checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3) {
+          const pendingReturns = await loadPendingHuntAdvanceCommands(
+            transaction,
+            playerId,
+            huntId,
+            true,
+          );
+          let pendingReturn: HuntPublicCommandRecord | null = null;
+          for (const candidate of pendingReturns) {
+            if (candidate.targetLogicalTimeMs === null || candidate.targetWallClockAt === null) {
+              return error(503, "authority_unavailable");
+            }
+            if (candidate.targetLogicalTimeMs < checkpoint.logicalTimeMs) continue;
+            if (candidate.targetLogicalTimeMs === checkpoint.logicalTimeMs) {
+              if (checkpoint.logicalTimeAnchorAt.getTime() > candidate.targetWallClockAt.getTime()) {
+                return error(503, "authority_unavailable");
+              }
+              if (checkpoint.logicalTimeAnchorAt.getTime() === candidate.targetWallClockAt.getTime()) continue;
+              pendingReturn = candidate;
+              break;
+            }
+            if (checkpoint.logicalTimeAnchorAt.getTime() >= candidate.targetWallClockAt.getTime()) {
+              return error(503, "authority_unavailable");
+            }
+            pendingReturn = candidate;
+            break;
+          }
+          if (pendingReturn) {
+            if (pendingReturn.targetLogicalTimeMs === null || pendingReturn.targetWallClockAt === null) {
+              return error(503, "authority_unavailable");
+            }
+            const joined = await claimPublicHuntCommandInTransaction(transaction, {
+              playerId,
+              idempotencyKey,
+              commandKind: kind,
+              intentHash,
+              intentJson: intent,
+              sourceHuntId: huntId,
+              advancementHuntId: huntId,
+              targetLogicalTimeMs: pendingReturn.targetLogicalTimeMs,
+              targetWallClockAt: pendingReturn.targetWallClockAt,
+            });
+            if (joined.status === "conflict") return error(409, "correlation_conflict");
+            const replay = commandReplayResult(joined.command);
+            if (replay) return replay;
+            return ok({
+              commandId: joined.command.commandId,
+              targetLogicalTimeMs: pendingReturn.targetLogicalTimeMs,
+              checkpointId: checkpoint.checkpointId,
+              huntId,
+            }, 102);
+          }
         }
         if (root.activeHuntId !== huntId || hunt.terminalAt) {
           const claimed = await claimPublicHuntCommandInTransaction(transaction, {
@@ -2632,6 +4264,17 @@ export class HuntApplication implements HuntHttpApplication {
           );
           return result;
         }
+        let frozenTarget: ReturnType<typeof deriveFrozenProductiveTarget>;
+        try {
+          frozenTarget = deriveFrozenProductiveTarget({
+            checkpointSchemaVersion: checkpoint.schemaVersion,
+            checkpointLogicalTimeMs: checkpoint.logicalTimeMs,
+            logicalTimeAnchorAt: checkpoint.logicalTimeAnchorAt,
+            serverNow: root.databaseNow,
+          });
+        } catch {
+          return error(503, "authority_unavailable");
+        }
         const claimed = await claimPublicHuntCommandInTransaction(transaction, {
           playerId,
           idempotencyKey,
@@ -2640,21 +4283,20 @@ export class HuntApplication implements HuntHttpApplication {
           intentJson: intent,
           sourceHuntId: huntId,
           advancementHuntId: huntId,
+          targetLogicalTimeMs: frozenTarget.targetLogicalTimeMs,
+          targetWallClockAt: frozenTarget.targetWallClockAt,
         });
         if (claimed.status === "conflict") return error(409, "correlation_conflict");
         const replay = commandReplayResult(claimed.command);
         if (replay) return replay;
-        const targetLogicalTimeMs = claimed.command.targetLogicalTimeMs ?? (
-          checkpoint.logicalTimeMs
-          + Math.max(0, Math.floor(root.databaseNow.getTime() - checkpoint.logicalTimeAnchorAt.getTime()))
-        );
-        if (claimed.command.targetLogicalTimeMs === null) {
-          await updatePublicHuntCommandTargetInTransaction(transaction, claimed.command.commandId, {
-            advancementHuntId: huntId,
-            targetLogicalTimeMs,
-            targetWallClockAt: root.databaseNow,
-          });
+        if (
+          checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          && claimed.command.targetLogicalTimeMs !== null
+          && claimed.command.targetWallClockAt === null
+        ) {
+          return error(503, "authority_unavailable");
         }
+        const targetLogicalTimeMs = claimed.command.targetLogicalTimeMs ?? frozenTarget.targetLogicalTimeMs;
         return ok({
           commandId: claimed.command.commandId,
           targetLogicalTimeMs,
@@ -2758,7 +4400,7 @@ export class HuntApplication implements HuntHttpApplication {
       }
     }
 
-    if (state.logicalTimeMs < frozen.targetLogicalTimeMs && state.status === "active") {
+    if (state.status === "active" && state.automationPolicies !== undefined) {
       const blocker = await withPgClient({ connectionString: this.connectionString }, (client) =>
         loadEarliestHealingAdvanceBlocker(
           client,
@@ -2768,11 +4410,56 @@ export class HuntApplication implements HuntHttpApplication {
       const advanceTarget = blockerFence !== null && blockerFence > state.logicalTimeMs
         ? Math.min(frozen.targetLogicalTimeMs, blockerFence)
         : frozen.targetLogicalTimeMs;
-      const advanced = advanceSoloHuntToEncounterBoundaryOrCutoff(
+      const stopBeforeNextEncounter = await this.shouldStopBeforeNextEncounter(
+        playerId,
+        snapshot.hunt.huntId,
+        state,
+      );
+      const automationProgress = await this.advanceForwardAutomationOneStep(
+        playerId,
+        snapshot.hunt,
+        snapshot.command,
+        snapshot.checkpoint.rowVersion,
         state,
         inputs,
         advanceTarget,
+        frozen.targetLogicalTimeMs,
+        terminalizeAfterCutoff ? frozen.targetLogicalTimeMs : undefined,
+        stopBeforeNextEncounter,
       );
+      if (automationProgress.status === "response") return automationProgress.result;
+      state = automationProgress.state;
+      const stopReason = automationProgress.stopReason;
+      const freezeResult = await this.persistAdvancedStateAndMaybeBoundary(
+        playerId,
+        snapshot.hunt,
+        snapshot.command,
+        snapshot.checkpoint.rowVersion,
+        state,
+        inputs,
+        stopReason,
+        automationProgress.automationGuard,
+      );
+      if (freezeResult.httpStatus !== 204) return freezeResult;
+      if (
+        stopReason === "encounterBoundary"
+        || stopReason === "automationBoundary"
+        || stopReason === "activityBoundary"
+      ) {
+        return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+      }
+      if (blockerFence === state.logicalTimeMs) return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+    } else if (state.logicalTimeMs < frozen.targetLogicalTimeMs && state.status === "active") {
+      const blocker = await withPgClient({ connectionString: this.connectionString }, (client) =>
+        loadEarliestHealingAdvanceBlocker(
+          client,
+          { huntId: snapshot.hunt.huntId, logicalTimeMs: frozen.targetLogicalTimeMs },
+        ));
+      const blockerFence = blocker ? healingAdvanceFenceLogicalTimeMs(blocker) : null;
+      const advanceTarget = blockerFence !== null && blockerFence > state.logicalTimeMs
+        ? Math.min(frozen.targetLogicalTimeMs, blockerFence)
+        : frozen.targetLogicalTimeMs;
+      const advanced = advanceSoloHuntToEncounterBoundaryOrCutoff(state, inputs, advanceTarget);
       if (!advanced.accepted) throw new Error(advanced.reason);
       state = advanced.state;
       const freezeResult = await this.persistAdvancedStateAndMaybeBoundary(
@@ -2821,21 +4508,52 @@ export class HuntApplication implements HuntHttpApplication {
     state: SoloHuntRuntimeState,
     inputs: SoloHuntRuntimeInputs,
     stopReason: string,
+    automationGuard?: AutomationPersistenceGuard,
   ): Promise<HuntHttpResult> {
     try {
       return await withPgClient({ connectionString: this.connectionString }, (client) =>
         withTransaction(client, async (transaction) => {
         const root = await ensureAndLockPlayerHuntRoot(transaction, playerId);
         if (!root) return error(404, "not_found");
+        if (root.activeHuntId !== hunt.huntId) {
+          const current = await loadPublicHuntCommand(transaction, playerId, command.idempotencyKey);
+          return current ? commandReplayResult(current) ?? error(409, "hunt_not_active") : error(409, "hunt_not_active");
+        }
+        const activeHunt = await loadOwnedSoloHunt(transaction, playerId, hunt.huntId, true);
+        if (!activeHunt || activeHunt.terminalAt) {
+          const current = await loadPublicHuntCommand(transaction, playerId, command.idempotencyKey);
+          return current ? commandReplayResult(current) ?? error(409, "hunt_not_active") : error(409, "hunt_not_active");
+        }
         const executable = await recheckExecutableCommandInTransaction(transaction, playerId, command);
         if (executable.status === "response") return executable.result;
+        if (automationGuard) {
+          const inventory = await loadInventory(transaction, playerId, true);
+          if (!inventory) return error(503, "authority_unavailable");
+          const [potionPolicyVersion, revivePolicyVersion] = await Promise.all([
+            loadEffectiveAutoPotionPolicyVersion(transaction, hunt.huntId, automationGuard.logicalTimeMs),
+            loadEffectiveAutoRevivePolicyVersion(transaction, hunt.huntId, automationGuard.logicalTimeMs),
+          ]);
+          if (
+            inventory.rowVersion !== automationGuard.inventoryRowVersion
+            || potionPolicyVersion !== automationGuard.potionPolicyVersion
+            || revivePolicyVersion !== automationGuard.revivePolicyVersion
+          ) {
+            const currentCheckpoint = await loadHuntCheckpoint(transaction, playerId, hunt.checkpointId);
+            if (!currentCheckpoint) return error(404, "not_found");
+            return inProgress(
+              currentCheckpoint.logicalTimeMs,
+              executable.command.targetLogicalTimeMs ?? currentCheckpoint.logicalTimeMs,
+            );
+          }
+        }
+        const advancedCheckpoint = encodeCheckpointState(state);
         const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
           playerId,
           checkpointId: hunt.checkpointId,
           expectedRowVersion,
-          schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+          schemaVersion: advancedCheckpoint.schemaVersion,
           logicalTimeMs: state.logicalTimeMs,
-          stateBytes: encodeSoloHuntCheckpointV2(state),
+          stateBytes: advancedCheckpoint.stateBytes,
         });
         if (persisted.status === "stale") {
           const current = await loadPublicHuntCommand(transaction, playerId, command.idempotencyKey);
@@ -2853,6 +4571,14 @@ export class HuntApplication implements HuntHttpApplication {
         }
         if (persisted.status === "not_found") return error(404, "not_found");
         await syncPendingZoneSelectionInTransaction(transaction, playerId, state);
+        if (stopReason === "activityBoundary") {
+          await sealLatestResolvedEncounterActivityInTransaction(transaction, {
+            playerId,
+            hunt: activeHunt,
+            state,
+            verifyExisting: true,
+          });
+        }
         await supersedeOvertakenPublicHuntCommandsInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
@@ -2861,7 +4587,12 @@ export class HuntApplication implements HuntHttpApplication {
         if (stopReason !== "encounterBoundary") return ok({}, 204);
         const evidence = state.completedEncounters[state.completedEncounters.length - 1];
         const provenance = state.completedEncounterProvenance[state.completedEncounterProvenance.length - 1];
-        if (!evidence || !provenance || evidence.encounterOrdinal !== provenance.encounterOrdinal) {
+        if (
+          !evidence
+          || evidence.completionKind !== "defeat"
+          || !provenance
+          || evidence.encounterOrdinal !== provenance.encounterOrdinal
+        ) {
           throw new Error("Encounter boundary lacks matching replay provenance");
         }
         const historical = await this.ports.authority.loadHistoricalEncounter(evidence);
@@ -2873,13 +4604,14 @@ export class HuntApplication implements HuntHttpApplication {
           ? await loadAutoCapturePolicyByVersion(transaction, playerId, policyVersion)
           : null;
         const saved = asSavedPolicy(policy);
-        let automaticDisposition: HuntEncounterBoundaryRecord["automaticDisposition"] = null;
-        let captureRng: DeterministicRngState | null = null;
+        const opening = captureBoundaryOpeningDecision({
+          forwardAutomationOnly: state.automationPolicies !== undefined,
+          autoCaptureEnabled: saved?.enabled === true,
+        });
+        const automaticDisposition: HuntEncounterBoundaryRecord["automaticDisposition"] = opening.automaticDisposition;
+        const captureRng: DeterministicRngState | null = opening.needsCaptureRng ? randomRngState() : null;
         let manualDisposition: HuntEncounterBoundaryRecord["manualDisposition"] = "not_applicable";
-        if (saved?.enabled) {
-          captureRng = randomRngState();
-        } else {
-          automaticDisposition = "disabled";
+        if (opening.createLegacyManualFallback) {
           const manualCreated = await createPendingManualCaptureIfFreeInTransaction(transaction, {
             playerId,
             sourceHuntId: hunt.huntId,
@@ -3180,13 +4912,14 @@ export class HuntApplication implements HuntHttpApplication {
             const latest = decodeCheckpointState(checkpoint.stateBytes);
             if (latest.pendingCaptureDecision?.encounterId === boundary.encounterId) {
               const cleared = { ...latest, pendingCaptureDecision: undefined };
+              const clearedCheckpoint = encodeCheckpointState(cleared);
               const persisted = await persistOwnedHuntCheckpointInTransaction(transaction, {
                 playerId,
                 checkpointId: hunt.checkpointId,
                 expectedRowVersion: checkpoint.rowVersion,
-                schemaVersion: SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V2,
+                schemaVersion: clearedCheckpoint.schemaVersion,
                 logicalTimeMs: cleared.logicalTimeMs,
-                stateBytes: encodeSoloHuntCheckpointV2(cleared),
+                stateBytes: clearedCheckpoint.stateBytes,
               });
               if (persisted.status !== "updated") {
                 throw new Error("Boundary capture closure could not persist checkpoint cleanup");
@@ -3257,6 +4990,13 @@ export class HuntApplication implements HuntHttpApplication {
         if (!lockedHunt) return error(503, "authority_unavailable");
         const checkpoint = await loadHuntCheckpoint(transaction, playerId, lockedHunt.checkpointId);
         if (!checkpoint) return error(503, "authority_unavailable");
+        if (
+          checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          && current.targetLogicalTimeMs !== null
+          && current.targetWallClockAt === null
+        ) {
+          return error(503, "authority_unavailable");
+        }
         if (current.targetLogicalTimeMs !== null && checkpoint.logicalTimeMs > current.targetLogicalTimeMs) {
           const result = error(409, "command_superseded");
           const completed = await completePublicHuntCommandInTransaction(
@@ -3269,6 +5009,33 @@ export class HuntApplication implements HuntHttpApplication {
         }
         if (checkpoint.logicalTimeMs !== state.logicalTimeMs) {
           return error(503, "authority_unavailable");
+        }
+        if (
+          !lockedHunt.terminalAt
+          && checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          && current.targetLogicalTimeMs !== null
+          && checkpoint.logicalTimeMs === current.targetLogicalTimeMs
+          && current.targetWallClockAt !== null
+          && checkpoint.logicalTimeAnchorAt.getTime() > current.targetWallClockAt.getTime()
+        ) {
+          return error(503, "authority_unavailable");
+        }
+        if (
+          !lockedHunt.terminalAt
+          && checkpoint.schemaVersion === SOLO_HUNT_CHECKPOINT_SCHEMA_VERSION_V3
+          && current.targetLogicalTimeMs !== null
+          && checkpoint.logicalTimeMs === current.targetLogicalTimeMs
+          && current.targetWallClockAt !== null
+          && checkpoint.logicalTimeAnchorAt.getTime() < current.targetWallClockAt.getTime()
+        ) {
+          const rebased = await rebaseOwnedHuntCheckpointAnchorInTransaction(transaction, {
+            playerId,
+            checkpointId: checkpoint.checkpointId,
+            expectedRowVersion: checkpoint.rowVersion,
+            expectedLogicalTimeMs: checkpoint.logicalTimeMs,
+            logicalTimeAnchorAt: current.targetWallClockAt,
+          });
+          if (rebased.status !== "updated") return error(503, "authority_unavailable");
         }
         const latestState = lockedHunt.terminalAt
           ? await this.terminalStateForHunt(transaction, playerId, lockedHunt, ballAuthority)
@@ -3356,11 +5123,16 @@ export class HuntApplication implements HuntHttpApplication {
           state,
           now: root.databaseNow,
         });
+        await sealLatestResolvedEncounterActivityInTransaction(transaction, {
+          playerId,
+          hunt: lockedHunt,
+          state,
+        });
         const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
           terminalReason,
-          recoveryDurationMs: hunt.recoveryDurationMs,
+          ...terminalizationTiming(lockedHunt, state),
         });
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         let resultBody: unknown;
@@ -3428,11 +5200,34 @@ export class HuntApplication implements HuntHttpApplication {
           state,
           now: root.databaseNow,
         });
+        await sealLatestResolvedEncounterActivityInTransaction(transaction, {
+          playerId,
+          hunt: lockedHunt,
+          state,
+        });
+        const retreatIntervention = state.currentEncounter?.battle.koInterventionPending ?? null;
+        if (retreatIntervention && current.targetLogicalTimeMs === state.logicalTimeMs) {
+          const abandonment = await insertRetreatAbandonmentInTransaction(transaction, {
+            playerId,
+            huntId: hunt.huntId,
+            huntRunIdentity: state.huntRunIdentity,
+            logicalTimeMs: state.logicalTimeMs,
+            checkpointId: checkpoint.checkpointId,
+            checkpointRowVersion: checkpoint.rowVersion,
+            battleId: state.currentEncounter?.battle.battleId ?? null,
+            sideId: retreatIntervention.sideId,
+            combatantId: retreatIntervention.combatantId,
+            koInterventionPending: true,
+          });
+          if (abandonment.status !== "inserted") {
+            throw new Error("Retreat abandonment provenance was already committed before Hunt terminalization");
+          }
+        }
         const terminal = await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
           terminalReason: "retreat",
-          recoveryDurationMs: hunt.recoveryDurationMs,
+          ...terminalizationTiming(lockedHunt, state),
         });
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         const resultBody = {
@@ -3537,11 +5332,16 @@ export class HuntApplication implements HuntHttpApplication {
           state,
           now: root.databaseNow,
         });
+        await sealLatestResolvedEncounterActivityInTransaction(transaction, {
+          playerId,
+          hunt: lockedHunt,
+          state,
+        });
         await terminalizeSoloHuntInTransaction(transaction, {
           playerId,
           huntId: hunt.huntId,
           terminalReason,
-          recoveryDurationMs: hunt.recoveryDurationMs,
+          ...terminalizationTiming(lockedHunt, state),
         });
         await cancelScheduledHealingCommandsForHuntInTransaction(transaction, hunt.huntId);
         const stateResult = await this.stateFromClient(transaction, playerId, ballAuthority);
