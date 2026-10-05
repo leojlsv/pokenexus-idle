@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Review note: implementation candidate and independent backend QA/security review complete on 2026-10-05 with no unresolved P0/P1; one bounded performance P2 is explicitly accepted as non-blocking. Repository-history integration remains pending and separately gated from deploy/public enablement.
+- State: DONE
+- Review note: implementation, independent backend QA/security review and repository-history integration completed on 2026-10-05 with no unresolved P0/P1; one bounded performance P2 is explicitly accepted as non-blocking. Deploy/public enablement, production-pair activation and persistent migration remain separately gated.
 - Class: B — backend implementation of an accepted read-only contract
 - Owner: Lead Developer
 - Owner execution surface: ChatGPT prime (current Human-directed continuation; isolated TASK-118 worktree)
@@ -17,6 +17,7 @@
 - Related: TASK-039 / TASK-104
 - Branch: `feat/TASK-118-hunt-published-catalog-backend-adoption`
 - Worktree: `.worktrees/TASK-118-hunt-published-catalog-backend-adoption`
+- Human gate: current Human-directed `continue` authorized completion of the saved integration plan after the independent QA/security gate; feature commit `07771e9`, canonical-main merge `8c1eab0` and push to `origin/main` completed on 2026-10-05. Deploy/migration/public enablement remain separate.
 
 ## Objective
 
@@ -31,7 +32,7 @@ Adopt and implement the already-approved SPEC-018 authenticated read-only Zone/H
 
 ## Scope
 
-- Re-implement the SPEC-018 backend transport against canonical `main`, or deliberately adopt the preserved historical FE-owned TASK-039 source under the new backend ownership/review boundary; canonical `main` itself does not currently contain that transport.
+- Re-implement the SPEC-018 backend transport against canonical `main`, or deliberately adopt the preserved historical FE-owned TASK-039 source under the new backend ownership/review boundary. The accepted backend-owned implementation is now integrated into canonical `main`.
 - Authenticated self-scoped `GET /player/hunts/catalog-release`.
 - Authenticated same-origin immutable artifact reads for the exact SPEC-018 allowlist: manifest, `catalogs/zones.json`, `catalogs/hunts.json`.
 - Exact release/pin/hash/schema/size/count/referential-integrity validation and fail-closed behavior required by SPEC-018.
@@ -67,7 +68,7 @@ Adopt and implement the already-approved SPEC-018 authenticated read-only Zone/H
 - APPROVED SPEC-018.
 - TASK-104 backend ownership boundary.
 
-TASK-039 is the downstream consumer and remains fail-closed until this transport is available; it is not an implementation prerequisite for TASK-118.
+TASK-039 is the downstream consumer and was never an implementation prerequisite for TASK-118. TASK-118 now closes the source-side published Zone/Hunt catalog transport blocker; deployed route/origin availability and TASK-119 Encounter preview remain separate TASK-039 acceptance gates.
 
 ## Risks / irreversible actions
 
@@ -105,3 +106,11 @@ TASK-039 is the downstream consumer and remains fail-closed until this transport
 - Reviewer confirmed trusted-config origin containment, HTTPS except loopback HTTP, no URL credentials/query/hash, same-origin/root-path enforcement, redirect rejection, exact route allowlist before release resolution, self-scoped auth with no client Player ID, missing-Player 404, non-activity session reads, GET/no-CSRF correctness, `private, no-store`, generic bounded errors, byte/row ceilings, streaming size enforcement, canonical/hash/schema verification, independent production pair/bundle pinning, release-switch fail-closed behavior and Worker-safe runtime imports.
 - TASK-103 presentation remains unregistered; no mutation, migration, commit, merge, push, deploy or public enablement occurred during the audit.
 - The known repeated-verification performance P2 was explicitly classified as bounded/non-blocking and **not** a security/privacy defect.
+
+## Repository-history integration — 2026-10-05
+
+- Accepted feature snapshot committed as `07771e9` (`feat(api): adopt Hunt published catalog backend`) and pushed to `origin/feat/TASK-118-hunt-published-catalog-backend-adoption`.
+- Canonical `main` merged the accepted feature as `8c1eab0` (`merge: integrate TASK-118 Hunt published catalog backend`) and pushed that source integration to `origin/main`.
+- Merge-tree equivalence was exact: feature commit tree and merge commit tree both resolve to `38c482ee10be459ae88295a28a2526e48cc061ba`; no source delta was introduced by integration.
+- Post-acceptance committed-source API validation reran **250/250 PASS** across 30 files. Roadmap check and `git diff --check` remained PASS.
+- No deploy, persistent migration, production-pair activation, CDN/R2 provisioning or public CombatPresentation enablement was performed. Local immutable publication tests are not production deployment proof.
