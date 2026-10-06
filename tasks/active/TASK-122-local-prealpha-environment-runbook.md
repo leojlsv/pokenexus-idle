@@ -10,6 +10,11 @@
 - Reviewer execution surface: independent ChatGPT delegated reviewer
 - Auditor: independent security/integrity reviewer for the local-only auth/session boundary
 - Auditor execution surface: independent ChatGPT delegated reviewer
+- Independent review result: QA READY 0/0/0; security/integrity READY 0/0/0 after process-ownership and true concurrent-ALT corrections
+- Current implementation evidence: local PostgreSQL reset/migrate/identity seed PASS; 2-ALT Start/Status/concurrent-isolation Smoke/Stop PASS; 1-Player Start/Smoke/Stop PASS; zero app listeners remain after Stop; immutable v5 + local session/Player isolation + Hunt catalog transport PASS; genuine gameplay bootstrap intentionally BLOCKED by missing accepted Species→Genetic Profile pairs
+- Process-safety evidence: state v2 persists role + PID + creation time + executable + command line; Stop/Reset revalidates exact live identity plus TASK-122 worktree/role markers before `taskkill`, checks termination, preserves state on mismatch/failure and refuses legacy/malformed state. Adversarial stale-PID probe PASS: unrelated Node process preserved and state retained. Forced partial-start probe PASS: startup failed closed, owned children/state/listener cleaned.
+- Regression evidence: TASK-123 Worker redirect compatibility source integrated locally and live Workerd diagnostic returns accepted `game-data-core-kanto-johto-v5` / bundle `sha256:565cdd360c1b29dc3607696299244279a8d0c3f488d4544c41c62ed47592f782`
+- Harness evidence: TASK-041 local harness PASS on this snapshot — web 39/39, API 43/43, selected disposable PostgreSQL 9/9, web build and roadmap check PASS
 - Consultants: N/A — this task must consume existing accepted gameplay/data/auth contracts without redefining them
 - Consultant execution surface(s): N/A
 - Dependencies: TASK-016/017/025/038/039/041/100/103/109/110/111/118/119; existing APPROVED contracts only
@@ -54,21 +59,21 @@ test accounts/ALTs without enabling any public/production capability.
 
 ## Acceptance criteria
 
-- [ ] `Doctor` verifies Node/pnpm/Docker/ports/local authority inputs without mutating production state.
-- [ ] Local PostgreSQL starts on loopback under an owned project label and Reset recreates only that owned
+- [x] `Doctor` verifies Node/pnpm/Docker/ports/local authority inputs without mutating production state.
+- [x] Local PostgreSQL starts on loopback under an owned project label and Reset recreates only that owned
       local test database state.
-- [ ] Canonical migrations run successfully against the owned local database.
-- [ ] Immutable accepted game-data publication is served from loopback and verified by the real runtime.
-- [ ] Production API entry/config is unchanged; local-only auth/session wiring cannot be enabled through it.
-- [ ] One local test account can obtain a local fixture session and load the existing Player surfaces.
+- [x] Canonical migrations run successfully against the owned local database (14/14 from fresh Reset; repeat Start skips the same 14).
+- [x] Immutable accepted game-data publication is served from loopback and verified by the real Workerd runtime.
+- [x] Production API entry/config is unchanged; local-only auth/session wiring is isolated to `src/local-prealpha.ts`.
+- [x] One local test account can obtain a local fixture session and load the existing Player surfaces.
 - [ ] When canonical bootstrap authority is available, the real TASK-109 bootstrap creates exactly one
-      starter/Team/50-20-5 Inventory aggregate without a public bootstrap endpoint.
-- [ ] Two ALT fixtures remain owner-isolated under concurrent local API use.
-- [ ] Existing Cards-only Hunt management remains fail-closed where public CombatPresentation and
-      TASK-120/121 are unavailable.
-- [ ] Runbook documents Start/Status/Smoke/Stop, ALT URLs, reset semantics, diagnostics and all excluded gates.
-- [ ] TASK-041 harness and relevant package/workspace gates remain green.
-- [ ] Independent QA + security/integrity review find no unresolved P0/P1/P2 in TASK-122.
+      starter/Team/50-20-5 Inventory aggregate without a public bootstrap endpoint. **BLOCKED externally:** exact accepted Species→Genetic Profile pairs do not exist in current repository authority.
+- [x] Two ALT fixtures remain owner-isolated under concurrent local API use; smoke launches A/B self-scope profile reads concurrently and requires distinct persisted Player IDs.
+- [x] Excluded public surfaces remain fail-closed: authenticated local probe of the CombatPresentation GET
+      remains `404`; no TASK-120/121 local authority or compatibility path is added.
+- [x] Runbook documents Doctor/Reset/Start/Status/Smoke/Stop, ALT URLs, reset semantics, diagnostics and all excluded gates.
+- [x] TASK-041 harness and relevant package/workspace gates remain green.
+- [x] Independent QA + security/integrity review find no unresolved P0/P1/P2 in TASK-122.
 
 ## Required validation
 
