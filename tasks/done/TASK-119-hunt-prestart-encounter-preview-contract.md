@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Lifecycle note: exact protocol v1 explicitly approved by Human Owner 2026-10-06; implementation complete in the dedicated worktree and local validation green; independent implementation/security re-gates and repository-history integration are the remaining lifecycle steps
+- State: DONE
+- Lifecycle note: exact protocol v1 explicitly approved by Human Owner 2026-10-06; implementation validated, committed as `3ae9604` and merged into canonical `main` as `490b6de`; deploy/public enablement remain separate
 - Class: A — new public read authority/contract; Option 1 and exact v1 protocol approved 2026-10-06
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -17,7 +17,7 @@
 - Related: TASK-034 / TASK-039 / TASK-118
 - Branch: `spec/TASK-119-prestart-preview-contract`
 - Worktree: `.worktrees/TASK-119-prestart-preview-contract`
-- Repository/history: exact v1 implementation/history integration explicitly authorized by Human Owner on 2026-10-06; feature remains local until final re-gates close; deploy/public enablement remain separate and blocked
+- Repository/history: Human-authorized feature `3ae9604` merged into canonical `main` as `490b6de` on 2026-10-06; deploy/public enablement remain separate and blocked
 
 ## Objective
 

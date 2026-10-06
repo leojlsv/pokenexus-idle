@@ -6,6 +6,7 @@
 - Related ADRs: ADR-006
 - Related specs: SPEC-002, SPEC-011, SPEC-015, SPEC-018, SPEC-020, SPEC-021
 - Related tasks: TASK-034, TASK-039, TASK-118, TASK-119
+- Implementation: feature `3ae9604`, canonical-main merge `490b6de` on 2026-10-06; deploy/public enablement remain separate
 
 ## 1. Human decision already made
 
