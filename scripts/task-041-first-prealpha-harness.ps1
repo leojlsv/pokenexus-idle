@@ -1,5 +1,6 @@
 # TASK-041 local/disposable first-Pre-alpha evidence harness.
-# Cards-only; no public route enablement, shared database, migration or deploy.
+# Cards-only; no public route enablement, shared database, persistent/production migration or deploy.
+# Ephemeral test-schema migrations run only inside the owned disposable PostgreSQL database.
 [CmdletBinding()]
 param()
 
@@ -95,6 +96,7 @@ try {
       'TASK-103 public CombatPresentation GET enablement',
       'TASK-120 durable terminal/offline summary',
       'TASK-121 historical manual-capture compatibility',
+      'TASK-100 eligible-Moves / Move-editor authority',
       'Human first-Prealpha live acceptance'
     )
     note = 'Local timings are diagnostics only and are not a production SLA.'
