@@ -6,7 +6,7 @@
 - Class: B
 - Execution gate: READY for the local/disposable Cards-only evidence subset under APPROVED SPEC-020/021; final first-Prealpha acceptance remains externally gated
 - Owner: Software Developer (ChatGPT prime)
-- Reviewer: independent QA + integrity review required before final acceptance
+- Reviewer: independent QA + integrity review completed READY `0/0/0`; final Human first-Prealpha live acceptance remains separate
 - Specs: APPROVED SPEC-015/016/017/020/021
 - Dependencies: TASK-034-039/100/103/106-111
 - Branch: `feat/TASK-041-first-prealpha-harness`
@@ -52,13 +52,13 @@ Provide one reproducible first-Prealpha **Cards-only** local/disposable harness 
 
 The local harness is `scripts/task-041-first-prealpha-harness.ps1`. It intentionally composes existing production-path tests rather than introducing a second gameplay simulator. PostgreSQL execution uses `scripts/test-postgresql-docker.ps1`, including its disposable `pokenexus_test_*` database guard, loopback-only ephemeral port, tmpfs storage, owned-container label check and cleanup.
 
-Exact-current local run on 2026-10-06:
+Exact-current canonical-main run after merge `e7fa4d7` on 2026-10-06:
 
 - Cards-only web subset: **35/35 PASS across 5 files** (`hunt-foreground-handoff`, command store, Hunt API, Card renderer and App routing).
 - API offline/runtime/policy subset: **40/40 PASS across 4 files**.
 - Disposable PostgreSQL first-Prealpha subset: **9/9 PASS** from the real `hunt-application-postgresql` suite; 41 unrelated cases were not selected. The runner reported `POSTGRESQL_INTEGRATION_EXIT=0` and removed its owned ephemeral container.
 - Selected PostgreSQL scenarios cover exact 8h return freezing, sub-8h return, policy edit prospective ordering, automatic capture from locked Inventory, Retreat/Revive tie, D-F16 rollback/replay, in-Battle Auto-Revive activity and paged Activity reconnect/deduplication.
-- The harness emitted `pokenexus.task-041-local-harness.v1`. Diagnostic elapsed times for this one local run were approximately **1.49s web subset**, **5.56s web build**, **10.08s API dependency prebuild**, **1.81s API unit subset**, **22.90s disposable PostgreSQL subset** and **0.42s roadmap check**. These values are explicitly **not** production SLA evidence.
+- The harness emitted `pokenexus.task-041-local-harness.v1`. Diagnostic elapsed times for this one canonical-main run were approximately **1.37s web subset**, **4.37s web build**, **10.46s API dependency prebuild**, **1.67s API unit subset**, **20.00s disposable PostgreSQL subset** and **0.35s roadmap check**. These values are explicitly **not** production SLA evidence.
 - Roadmap check PASS at 122 tasks after lifecycle counts moved from ACTIVE 2 / PLANNED 47 to ACTIVE 3 / PLANNED 46. `git diff --check` PASS.
 - Independent QA/integrity review re-gate after evidence hardening returned **READY, P0/P1/P2 = 0/0/0**. The review confirmed that ephemeral test-schema migrations are confined to the owned disposable PostgreSQL database; no persistent/production migration occurs; `externalGatesNotSimulated` and this checklist both preserve TASK-100 eligible-Moves / Move-editor authority as unresolved; TASK-119/120/121 and TASK-103 public presentation remain external; no parallel gameplay simulator, deploy or public enablement was introduced; and TASK-041 correctly remains ACTIVE.
 
