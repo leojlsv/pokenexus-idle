@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Readiness note: frontend implementation explicitly authorized by the Human Owner's `continue` on 2026-10-06 after TASK-118 completion. Exact-current independent QA is READY `0/0/0`, delegated Class-B technical acceptance is ACCEPT `0/0/0`, and Human live UI validation was APPROVED on 2026-10-06. Repository-history authorization remains before DONE.
+- State: DONE
+- Review note: implementation, exact-current independent QA, delegated Class-B technical acceptance, Human live UI validation and Human-authorized repository-history integration completed on 2026-10-06. Feature commit `811b574`, canonical-main merge `b9d672e` and pushes to the feature branch / `origin/main` are complete. Deploy/public enablement remain separately gated.
 - Class: B ? implement the accepted read/management Inventory surface without gameplay/item-use authority
 - Owner: Frontend Developer
 - Owner execution surface: ChatGPT prime (current Human-directed continuation; isolated TASK-111 worktree)
@@ -48,7 +48,7 @@ Implement the required first-Pre-alpha `/inventory` management surface using aut
 - [x] Supported small widths are implemented with shrinkable grid/card primitives, long exact IDs/quantities wrap, and applicable shared controls retain the 44px accessibility baseline; independent responsive QA remains pending.
 - [x] Independent QA reports no unresolved P0/P1 and delegated Class-B technical acceptance is complete.
 - [x] Human live UI validation approves the Inventory surface.
-- [ ] Repository-history integration is separately authorized and completed.
+- [x] Repository-history integration is separately authorized and completed.
 
 ## Required validation
 
@@ -68,7 +68,7 @@ Implement the required first-Pre-alpha `/inventory` management surface using aut
 
 - Client caching must never become Inventory authority.
 - Adding item-use controls here would conflict with the accepted management-first contract and must escalate.
-- No deploy or public enablement is authorized by this task. Git-history integration remains separately gated until the implementation and independent QA are green.
+- No deploy or public enablement is authorized by this task. Repository-history integration is complete; deployment remains a separate gate.
 
 ## Readiness / execution gate
 
@@ -86,7 +86,7 @@ The execution gate is satisfied: explicit frontend implementation authorization 
 - Responsive CSS uses `minmax(0, 1fr)`, `min-width: 0` and wrapping for arbitrarily long canonical IDs/quantities; shared buttons retain the existing 44px minimum-target token.
 - Focused Inventory/App/API/responsive tests: **29/29 PASS**, including native `EventTarget`/`AbortController` coverage for reconnect/visibility refresh aborting an in-flight continuation through the exact helper wiring used by the React effect. Full web suite: **83/83 PASS** across 13 files. Web typecheck, lint and production Vite build PASS; roadmap 122 PASS; `git diff --check` PASS.
 - Dependencies were materialized only with `pnpm install --offline --frozen-lockfile` (`272` reused, `0` downloaded); package/lock versions were not changed.
-- No commit, merge, push, deploy or public enablement has been performed for TASK-111.
+- At implementation-candidate review time no commit, merge, push, deploy or public enablement had been performed. Repository-history integration was completed later under the Human Owner's explicit authorization; deploy/public enablement remain untouched.
 
 ## Human live UI validation — 2026-10-06
 
@@ -108,3 +108,13 @@ The execution gate is satisfied: explicit frontend implementation authorization 
 - Reviewer confirmed management/read-only authority, GET-only Inventory access, root-rowVersion pagination, explicit stale restart, exact decimal strings, known-ID presentation-only labels, 401/session-loss handling, no consume/grant/use or gameplay execution controls, no backend expansion and no local balance authority.
 - Reviewer also confirmed the responsive/accessibility implementation is technically coherent: route heading focus remains shell-owned, refresh does not refocus, controls are keyboard-native, shared 44px targets remain in force, and shrink/wrap rules cover long IDs/quantities across the intended 1/2/3-column bands.
 - This delegated acceptance explicitly **does not substitute for Human live visual/UI validation**. No repository-history or deployment action is authorized by it.
+
+## Repository-history integration — 2026-10-06
+
+- Human Owner explicitly replied **`autorizado`** after live UI approval, authorizing the remaining repository-history integration gate.
+- Accepted feature snapshot committed as `811b574` (`feat(web): add first pre-alpha inventory management UI`) and pushed to `origin/feat/TASK-111-first-prealpha-inventory-management-ui`.
+- Canonical `main` merged the accepted feature as `b9d672e` (`merge: integrate TASK-111 first pre-alpha inventory UI`) and pushed that source integration to `origin/main`.
+- Merge-tree equivalence is exact: feature commit and merge commit both resolve to tree `9ab4d3da7d359d77d6571d7e24881a83e58b40f8`; integration introduced no source delta.
+- Post-merge committed-source validation on canonical `main`: full web **83/83 PASS** across 13 files, web typecheck PASS, lint PASS, production Vite build PASS, roadmap **122** PASS and `git diff --check` PASS.
+- Canonical-main dependencies were materialized only with `pnpm install --offline --frozen-lockfile` (`272` reused, `0` downloaded); package/lock bytes remained unchanged.
+- No deploy, production activation or public enablement was performed.
