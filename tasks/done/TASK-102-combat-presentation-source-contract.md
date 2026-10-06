@@ -2,8 +2,8 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
-- Acceptance note: detailed SPEC-017 accepted by Human Owner on 2026-09-29; repository/history integration and DONE transition remain separately gated
+- State: DONE
+- Acceptance note: detailed SPEC-017 accepted by Human Owner on 2026-09-29; repository/history lifecycle completion was separately authorized by the Human Owner on 2026-10-06 while advancing already-authorized roadmap work. TASK-103 implementation/public enablement remains separately gated.
 - Class: A
 - Owner: PM / Architecture Coordinator (ChatGPT project coordination)
 - Owner execution surface: ChatGPT project coordination (explicit PM assignment)
@@ -15,8 +15,8 @@
 - Consultant execution surface(s): N/A
 - Spec: `docs/specs/SPEC-017-public-hunt-combat-presentation-feed.md`
 - Related: ADR-004; SPEC-002/011/013/015/016; TASK-028/035/037/038/039/097/101
-- Branch: `feat/TASK-039-solo-hunt-card-integration` (contract-only documentation prepared here; no TASK-102 code implementation or history action)
-- Worktree: `.worktrees/TASK-039-solo-hunt-card-integration` (accepted source snapshot retained as untracked local documentation pending authorized history integration)
+- Branch: `main` (contract/history completion recorded under the Human Owner's 2026-10-06 roadmap-integration authorization)
+- Worktree: `.worktrees/TASK-103-final-integration` (canonical integration surface; historical TASK-039 worktrees remain preserved)
 
 ## Objective
 
@@ -82,7 +82,7 @@ The final DRAFT reviewed by both independent roles was `SPEC-017` SHA-256 `754A4
 
 ## Risks / irreversible actions
 
-- Schema migration, legacy checkpoint re-interpretation, public security/privacy and historical-retention behavior remain governed by the accepted Class-A contract. Only forward-only additive migrations are eligible for later TASK-103 implementation; rollback/fail-closed behavior must be explicit. This contract acceptance does not authorize Git-history mutation, migration execution or public feed enablement.
+- Schema migration, legacy checkpoint re-interpretation, public security/privacy and historical-retention behavior remain governed by the accepted Class-A contract. Only forward-only additive migrations are eligible for later TASK-103 implementation; rollback/fail-closed behavior must be explicit. The 2026-10-06 authorization closes only TASK-102's repository-history/lifecycle gate; it does not authorize migration execution, deployment or public feed enablement.
 
 ## Expected files / boundaries
 
@@ -91,4 +91,4 @@ The final DRAFT reviewed by both independent roles was `SPEC-017` SHA-256 `754A4
 
 ## Completion
 
-Use `docs/agents/handoff-protocol.md`; SPEC-017 contract acceptance is not implementation sign-off, authorized Git-history completion or production enablement. Keep this task in ACCEPTANCE until repository/history integration is separately authorized and completed.
+Use `docs/agents/handoff-protocol.md`. SPEC-017 contract acceptance plus the separate 2026-10-06 repository-history authorization completes TASK-102. This DONE transition is contract/history completion only and is not TASK-103 implementation sign-off, migration execution or production enablement.

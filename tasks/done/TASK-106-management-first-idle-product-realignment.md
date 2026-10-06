@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: A
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
@@ -15,14 +15,14 @@
 - Spec: `docs/specs/SPEC-020-management-first-idle-product-realignment.md`
 - ADR: N/A
 - Branch: `main`
-- Worktree: `.worktrees/main-governance-integration`
-- Implementation branch/worktree: not authorized by this ACCEPTANCE record; downstream runtime remains separately scoped.
+- Worktree: `.worktrees/TASK-103-final-integration` for 2026-10-06 lifecycle/history completion; preserved governance/history worktrees remain untouched.
+- Implementation branch/worktree: N/A for TASK-106 completion; downstream runtime remains separately scoped and gated.
 
 ## Objective
 
 Reconcile PokeNexus product contracts and future development with the Human Owner's 2026-10-01 direction that the game is management-first Idle, PvE traversal is automatic, HUB is the only free-movement surface, healing Potions are automatic-only HP%-based PvE behavior, and Encounter rewards are not a post-Hunt grant phase.
 
-This coordination task does not authorize gameplay/runtime implementation, migration, deployment or Git-history operations. Those remain owned by separately scoped execution tasks/gates.
+This coordination task does not authorize gameplay/runtime implementation, migration, deployment or public enablement. Repository-history/lifecycle completion for this already-accepted Class-A package was separately authorized by the Human Owner on 2026-10-06; downstream execution remains owned by separately scoped tasks/gates.
 
 ## Context
 
@@ -48,7 +48,7 @@ Further product/gameplay development is paused until all relevant stages are ali
 - deleting/deprecating runtime routes before the replacement contract is accepted;
 - deploying or enabling public gameplay capability;
 - deciding unresolved product rules on behalf of the Human Owner;
-- Git commit/push/merge/history operations without separate authorization.
+- Git commit/push/merge/history operations without separate authorization. The Human Owner supplied that separate authorization for TASK-106 lifecycle/history completion on 2026-10-06; it does not carry into downstream runtime/deploy work.
 
 ## Acceptance criteria
 
@@ -191,7 +191,7 @@ READY gates for any new implementation slice: exact owner/reviewer/auditor assig
 
 - Reinterpreting an accepted contract without a formal Class-A amendment could create implementation drift; prohibited.
 - Removing or superseding already-persisted/public behavior requires compatibility/migration planning under the accepted contracts; that implementation work is not authorized in this task.
-- No irreversible runtime/database/Git action is authorized.
+- No irreversible runtime/database action or downstream Git/deploy action is authorized by TASK-106. The task's own accepted documentation/history completion is separately authorized on 2026-10-06.
 
 ## Expected files / boundaries
 
@@ -207,3 +207,5 @@ READY gates for any new implementation slice: exact owner/reviewer/auditor assig
 
 Use `docs/agents/handoff-protocol.md`.
 Do not create an implementation-summary/changelog file.
+
+Completion record: Human Class-A acceptance was already complete on 2026-10-02 with final semantic and architecture/replay QA READY 0/0/0. The Human Owner's 2026-10-06 instruction to advance already-authorized roadmap work with integration supplies the previously separate repository-history/lifecycle gate, so TASK-106 is DONE. Runtime, compatibility/migration, deployment and public-enablement work remains owned by downstream tasks.
