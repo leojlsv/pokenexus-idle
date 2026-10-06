@@ -2,20 +2,22 @@
 
 ## Metadata
 
-- State: DRAFT
-- Class: A — new public read authority/contract
+- State: ACCEPTANCE
+- Lifecycle note: exact protocol v1 explicitly approved by Human Owner 2026-10-06; implementation complete in the dedicated worktree and local validation green; independent implementation/security re-gates and repository-history integration are the remaining lifecycle steps
+- Class: A — new public read authority/contract; Option 1 and exact v1 protocol approved 2026-10-06
 - Owner: PM / Architecture Coordinator
 - Owner execution surface: ChatGPT project coordination
-- Reviewer: independent QA Reviewer
+- Reviewer: independent QA Reviewer — contract QA READY after bounded-input P2 correction; implementation QA found only a stale-lifecycle P2, corrected before history integration
 - Reviewer execution surface: independent contract reviewer
-- Auditor: Security/Privacy Reviewer
+- Auditor: Security/Privacy Reviewer — contract audit READY `0/0/0`; implementation audit found one stale-preview render-binding P2 and no P0/P1, corrected with exact Hunt+release gating and regression coverage
 - Auditor execution surface: independent disclosure/authority audit
 - Consultants: Game Systems Consultant as needed
 - Consultant execution surface(s): advisory only
-- Spec: DRAFT SPEC-024
+- Spec: APPROVED SPEC-024 v1
 - Related: TASK-034 / TASK-039 / TASK-118
-- Branch: not created
-- Worktree: not created
+- Branch: `spec/TASK-119-prestart-preview-contract`
+- Worktree: `.worktrees/TASK-119-prestart-preview-contract`
+- Repository/history: exact v1 implementation/history integration explicitly authorized by Human Owner on 2026-10-06; feature remains local until final re-gates close; deploy/public enablement remain separate and blocked
 
 ## Objective
 
@@ -26,19 +28,20 @@ Define the minimum authoritative, privacy-safe read contract needed for the firs
 - TASK-039 requires Team + possible Species + rewards before Start and intentionally fails closed without an authoritative preview.
 - SPEC-018 only authorizes manifest + Zone/Hunt artifacts; it does not authorize Encounter definitions.
 - Existing immutable game-data includes encounter definitions, but repository presence is not public API authority.
+- Human Owner selected **Option 1** on 2026-10-06: authenticated minimal server projection of possible Species + limited reward preview, carrying release identity, while Start continues to revalidate current authority. Raw Encounter publication and exact preview-release Start binding are not authorized by this decision.
 
-## Scope
+## Approved implementation scope
 
-- Decide the bounded public preview facts required before Start.
-- Define how those facts bind to the currently selected new-operation game-data release.
-- Define privacy limits so no per-Encounter RNG outcome, hidden HP, Genetics, Shiny roll, capture roll, server secret or Player-specific admission state leaks.
-- Define fail-closed behavior for missing/tampered/stale preview authority.
-- Define whether preview is an immutable artifact projection, a server-computed bounded projection, or another explicitly accepted read shape.
-- Define whether Start must bind to the exact preview release or whether preview is advisory and Start re-resolves current authority.
+- Implement only the Human-approved minimal authenticated server projection.
+- Deliver the bounded possible-Species/reward facts required before Start without exposing raw Encounter definitions.
+- Bind the projection to the server-selected new-operation game-data release identity.
+- Preserve the accepted privacy limits so no per-Encounter RNG outcome, hidden HP, Genetics, Shiny roll, capture roll, server secret or Player-specific admission state leaks.
+- Fail closed for missing/tampered/stale/oversized preview authority.
+- Preserve Start as current-authority revalidation with no preview token or exact-release binding.
 
 ## Out of scope
 
-- Backend implementation before Class-A acceptance.
+- Any backend/frontend semantics beyond the exact approved SPEC-024 v1 contract.
 - Player eligibility/admission changes unless explicitly accepted as part of the contract.
 - Battle/capture RNG prediction.
 - CombatPresentation transport.
@@ -46,17 +49,20 @@ Define the minimum authoritative, privacy-safe read contract needed for the firs
 
 ## Acceptance criteria
 
-- [ ] SPEC-024 reaches an explicit Owner-approved contract for public preview facts and release binding.
-- [ ] The contract is sufficient for TASK-039 to render possible Species and reward preview without local authority.
-- [ ] Privacy and information-disclosure limits are explicit and independently reviewed.
-- [ ] Missing/stale/tampered preview behavior is fail-closed and does not silently substitute local content.
-- [ ] Relationship to SPEC-018 and Start authority is explicit; no implied amendment remains.
+- [x] Human Owner selects the transport/release-binding direction: **Option 1 minimal authenticated server projection; Start revalidates current authority**.
+- [x] SPEC-024's exact v1 route, response fields, aggregation semantics, budgets and errors received explicit Human acceptance on 2026-10-06.
+- [x] The contract is sufficient for TASK-039 to render possible Species and reward preview without local authority or raw Encounter-definition bytes; independent contract QA READY after bounded-input P2 correction.
+- [x] Privacy and information-disclosure limits are explicit and independently reviewed; audit READY `0/0/0`.
+- [x] Missing/stale/tampered/oversized preview behavior is fail-closed and does not silently substitute local content.
+- [x] Relationship to SPEC-018 and Start authority is explicit; no implied amendment remains.
 
 ## Validation / tests
 
-- [ ] Contract examples cover current `Verdant Edge -> Wilds` without hard-coding that content as protocol.
-- [ ] Rollback/release-switch/missing-artifact scenarios are specified.
-- [ ] Disclosure review confirms no hidden per-Encounter or Player-private facts are required.
+- [x] Contract examples cover current `Verdant Edge -> Wilds` without hard-coding that content as protocol.
+- [x] Rollback/release-switch/missing-artifact scenarios are specified.
+- [x] Disclosure review confirms no hidden per-Encounter or Player-private facts are required.
+- [x] Contract QA confirms the candidate projection matches the minimum fields already consumed by TASK-039's existing Pre-Start presentation model.
+- [x] Local implementation validation: API typecheck + 267/267 unit PASS; web typecheck + 125/125 unit PASS; production web build PASS; Wrangler API dry-run PASS; targeted ESLint and `git diff --check` PASS.
 
 ## Dependencies
 
@@ -68,12 +74,13 @@ TASK-039 is the downstream client consumer of the accepted contract, not a prere
 
 ## Risks / irreversible actions
 
-- Publishing raw Encounter definitions may expose more information than the UI needs; the contract must minimize disclosure deliberately.
-- Changing Start version-binding semantics would amend accepted mutation authority and therefore requires explicit Class-A acceptance.
-- No implementation, deploy, publication or Git-history action is authorized by this DRAFT.
+- Raw Encounter definitions remain intentionally undisclosed under the selected Option 1.
+- Changing Start to exact preview-release binding remains outside this authorization and would require a new explicit Class-A amendment.
+- Exact endpoint fields/bounds are approved public protocol semantics; any semantic change requires a new explicit Class-A amendment.
+- Backend/frontend implementation, validation and repository-history integration of this exact v1 are authorized. Deploy/public enablement remain separate and blocked.
 
 ## Expected files / boundaries
 
 - `docs/specs/SPEC-024-hunt-prestart-encounter-preview-delivery.md`
 - `docs/project/PROJECT_ROADMAP.md`
-- TASK-039 dependency/blocker references after acceptance.
+- TASK-039 dependency/blocker wording may be reconciled to the selected projection direction without changing its implementation.

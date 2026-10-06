@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HuntApi, parseHuntState } from "./hunt-api";
+import { HuntApi, HuntReleaseMismatchError, parseHuntState } from "./hunt-api";
 
 describe("forward Hunt client contract", () => {
   it("invokes the default browser fetch without rebinding its receiver to HuntApi", async () => {
@@ -48,6 +48,99 @@ describe("forward Hunt client contract", () => {
     expect("useHuntItem" in api).toBe(false);
     expect("checkpoint" in api).toBe(false);
     expect("claim" in api).toBe(false);
+  });
+
+  it("reads the SPEC-024 prestart projection through GET only and binds it to the selected release", async () => {
+    const calls: Array<{ readonly input: string; readonly init?: RequestInit }> = [];
+    const api = new HuntApi(async (input, init) => {
+      calls.push({ input: String(input), init });
+      return new Response(JSON.stringify({
+        gameDataVersion: "game-data-core-kanto-johto-v5",
+        bundleHash: `sha256:${"a".repeat(64)}`,
+        huntDefinitionId: "hunt:verdant-edge:wilds",
+        preview: {
+          possibleSpeciesIds: ["species:a", "species:b"],
+          playerXp: { min: 0, max: 6 },
+          pokemonXpPool: { min: 6, max: 18 },
+          itemDrops: [{
+            itemId: "item:ball",
+            quantity: { min: 1, max: 2 },
+            chanceBasisPoints: { min: 0, max: 1500 },
+          }],
+        },
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    });
+
+    await expect(api.prestartPreview("hunt:verdant-edge:wilds", {
+      gameDataVersion: "game-data-core-kanto-johto-v5",
+      bundleHash: `sha256:${"a".repeat(64)}`,
+    })).resolves.toMatchObject({ huntDefinitionId: "hunt:verdant-edge:wilds" });
+    expect(calls[0]?.input).toBe("/player/hunts/prestart-preview/hunt%3Averdant-edge%3Awilds");
+    expect(calls[0]?.init?.method).toBe("GET");
+    expect(calls[0]?.init?.body).toBeUndefined();
+    expect(new Headers(calls[0]?.init?.headers).has("X-CSRF-Token")).toBe(false);
+  });
+
+  it("fails closed when the prestart preview release identity differs from the selector release", async () => {
+    const api = new HuntApi(async () => new Response(JSON.stringify({
+      gameDataVersion: "game-data:new",
+      bundleHash: `sha256:${"b".repeat(64)}`,
+      huntDefinitionId: "hunt:wilds",
+      preview: {
+        possibleSpeciesIds: ["species:a"],
+        playerXp: null,
+        pokemonXpPool: { min: 1, max: 1 },
+        itemDrops: [],
+      },
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    await expect(api.prestartPreview("hunt:wilds", {
+      gameDataVersion: "game-data:old",
+      bundleHash: `sha256:${"a".repeat(64)}`,
+    })).rejects.toBeInstanceOf(HuntReleaseMismatchError);
+  });
+
+  it("rejects raw Encounter disclosure fields in a successful prestart response", async () => {
+    const api = new HuntApi(async () => new Response(JSON.stringify({
+      gameDataVersion: "game-data:v5",
+      bundleHash: `sha256:${"a".repeat(64)}`,
+      huntDefinitionId: "hunt:wilds",
+      encounterId: "encounter:forbidden",
+      preview: {
+        possibleSpeciesIds: ["species:a"],
+        playerXp: null,
+        pokemonXpPool: { min: 1, max: 1 },
+        itemDrops: [],
+      },
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    await expect(api.prestartPreview("hunt:wilds", {
+      gameDataVersion: "game-data:v5",
+      bundleHash: `sha256:${"a".repeat(64)}`,
+    })).rejects.toThrow(/Invalid Hunt prestart preview/);
+  });
+
+  it("rejects an Item row that can never drop", async () => {
+    const api = new HuntApi(async () => new Response(JSON.stringify({
+      gameDataVersion: "game-data:v5",
+      bundleHash: `sha256:${"a".repeat(64)}`,
+      huntDefinitionId: "hunt:wilds",
+      preview: {
+        possibleSpeciesIds: ["species:a"],
+        playerXp: null,
+        pokemonXpPool: { min: 1, max: 1 },
+        itemDrops: [{
+          itemId: "item:never",
+          quantity: { min: 1, max: 1 },
+          chanceBasisPoints: { min: 0, max: 0 },
+        }],
+      },
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    await expect(api.prestartPreview("hunt:wilds", {
+      gameDataVersion: "game-data:v5",
+      bundleHash: `sha256:${"a".repeat(64)}`,
+    })).rejects.toThrow(/Invalid Item drop projection/);
   });
 
   it("reads Inventory through GET only and preserves exact decimal quantities", async () => {
