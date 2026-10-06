@@ -11,6 +11,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const DECIMAL_RE = /^(0|[1-9][0-9]*)$/u;
 const MAX_ERROR_BYTES = 4096;
 const MAX_CATALOG_BYTES = 1024 * 1024;
+const MAX_PRESTART_PREVIEW_BYTES = 256 * 1024;
 
 export class HuntApiError extends Error {
   constructor(readonly status: number, readonly code: string) {
@@ -164,6 +165,29 @@ export type HuntMutationResult =
     };
 
 export type HuntReconciliationMode = "online" | "return";
+
+export interface HuntPrestartPreview {
+  readonly gameDataVersion: string;
+  readonly bundleHash: string;
+  readonly huntDefinitionId: string;
+  readonly preview: {
+    readonly possibleSpeciesIds: readonly string[];
+    readonly playerXp: { readonly min: number; readonly max: number } | null;
+    readonly pokemonXpPool: { readonly min: number; readonly max: number };
+    readonly itemDrops: readonly {
+      readonly itemId: string;
+      readonly quantity: { readonly min: number; readonly max: number };
+      readonly chanceBasisPoints: { readonly min: number; readonly max: number };
+    }[];
+  };
+}
+
+export class HuntReleaseMismatchError extends Error {
+  constructor() {
+    super("Published Hunt release changed while loading the prestart preview");
+    this.name = "HuntReleaseMismatchError";
+  }
+}
 
 function object(value: unknown, label = "response"): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(`Invalid ${label}`);
@@ -415,6 +439,69 @@ async function boundedJson(response: Response, limit = MAX_ERROR_BYTES): Promise
   const text = await response.text();
   if (new TextEncoder().encode(text).byteLength > limit) throw new Error("Response body exceeded client budget");
   return JSON.parse(text) as unknown;
+}
+
+function exactKeys(row: Record<string, unknown>, expected: readonly string[], label: string): void {
+  const keys = Object.keys(row).sort();
+  const target = [...expected].sort();
+  if (keys.length !== target.length || keys.some((key, index) => key !== target[index])) {
+    throw new Error(`Invalid ${label}`);
+  }
+}
+
+function parseRange(value: unknown, minimum: number, maximum: number, label: string) {
+  const row = object(value, label);
+  exactKeys(row, ["min", "max"], label);
+  const min = integer(row.min, minimum, maximum, `${label} min`);
+  const max = integer(row.max, minimum, maximum, `${label} max`);
+  if (min > max) throw new Error(`Invalid ${label}`);
+  return { min, max };
+}
+
+function parseHuntPrestartPreview(value: unknown): HuntPrestartPreview {
+  const row = object(value, "Hunt prestart preview");
+  exactKeys(row, ["gameDataVersion", "bundleHash", "huntDefinitionId", "preview"], "Hunt prestart preview");
+  if (typeof row.gameDataVersion !== "string" || !/^[A-Za-z0-9:._-]{1,128}$/u.test(row.gameDataVersion) ||
+    typeof row.bundleHash !== "string" || !/^sha256:[0-9a-f]{64}$/u.test(row.bundleHash)) {
+    throw new Error("Invalid Hunt prestart release identity");
+  }
+  const preview = object(row.preview, "Hunt prestart projection");
+  exactKeys(preview, ["possibleSpeciesIds", "playerXp", "pokemonXpPool", "itemDrops"], "Hunt prestart projection");
+  if (!Array.isArray(preview.possibleSpeciesIds) || preview.possibleSpeciesIds.length === 0 ||
+    preview.possibleSpeciesIds.length > 512) throw new Error("Invalid possible Species projection");
+  const possibleSpeciesIds = preview.possibleSpeciesIds.map((id) => opaque(id, "speciesId"));
+  if (new Set(possibleSpeciesIds).size !== possibleSpeciesIds.length ||
+    [...possibleSpeciesIds].sort().some((id, index) => id !== possibleSpeciesIds[index])) {
+    throw new Error("Invalid possible Species ordering");
+  }
+  if (!Array.isArray(preview.itemDrops) || preview.itemDrops.length > 256) throw new Error("Invalid Item drop projection");
+  const itemDrops = preview.itemDrops.map((value) => {
+    const drop = object(value, "Item drop projection");
+    exactKeys(drop, ["itemId", "quantity", "chanceBasisPoints"], "Item drop projection");
+    const chanceBasisPoints = parseRange(drop.chanceBasisPoints, 0, 10_000, "drop chance");
+    if (chanceBasisPoints.max === 0) throw new Error("Invalid Item drop projection");
+    return {
+      itemId: opaque(drop.itemId, "itemId"),
+      quantity: parseRange(drop.quantity, 1, Number.MAX_SAFE_INTEGER, "drop quantity"),
+      chanceBasisPoints,
+    };
+  });
+  if (new Set(itemDrops.map(({ itemId }) => itemId)).size !== itemDrops.length ||
+    [...itemDrops].sort((left, right) => left.itemId < right.itemId ? -1 : left.itemId > right.itemId ? 1 : 0).some((drop, index) =>
+      drop.itemId !== itemDrops[index]!.itemId)) {
+    throw new Error("Invalid Item drop ordering");
+  }
+  return {
+    gameDataVersion: row.gameDataVersion,
+    bundleHash: row.bundleHash,
+    huntDefinitionId: opaque(row.huntDefinitionId, "huntDefinitionId"),
+    preview: {
+      possibleSpeciesIds,
+      playerXp: preview.playerXp === null ? null : parseRange(preview.playerXp, 0, Number.MAX_SAFE_INTEGER, "Player XP"),
+      pokemonXpPool: parseRange(preview.pokemonXpPool, 0, Number.MAX_SAFE_INTEGER, "Pokémon XP pool"),
+      itemDrops,
+    },
+  };
 }
 
 async function boundedBytes(response: Response, limit: number): Promise<Uint8Array> {
@@ -690,7 +777,7 @@ export class HuntApi {
     );
     return loadPublishedHuntChoices({
       read: async (path) => {
-        if (!/^version-[0-9a-f]{64}\/(?:manifest\.json|catalogs\/(?:zones|hunts|encounter-definitions)\.json)$/u.test(path)) {
+        if (!/^version-[0-9a-f]{64}\/(?:manifest\.json|catalogs\/(?:zones|hunts)\.json)$/u.test(path)) {
           throw new Error("Unexpected published Hunt artifact path");
         }
         const response = await this.transport(`${descriptor.artifactBasePath}${path}`, {
@@ -714,6 +801,40 @@ export class HuntApi {
         return boundedBytes(response, MAX_CATALOG_BYTES);
       },
     }, descriptor);
+  }
+
+  async prestartPreview(
+    huntDefinitionId: string,
+    release: Pick<PublishedHuntChoices, "gameDataVersion" | "bundleHash">,
+    signal?: AbortSignal,
+  ): Promise<HuntPrestartPreview> {
+    const id = opaque(huntDefinitionId, "huntDefinitionId");
+    const response = await this.transport(`/player/hunts/prestart-preview/${encodeURIComponent(id)}`, {
+      method: "GET",
+      credentials: "include",
+      redirect: "error",
+      headers: { Accept: "application/json" },
+      signal,
+    });
+    if (!response.ok) {
+      let code = "invalid_response";
+      try {
+        const body = object(await boundedJson(response), "prestart preview error");
+        if (typeof body.error === "string") code = body.error;
+      } catch {
+        // Preserve status.
+      }
+      applyResponsePolicy(response.status, code);
+      throw new HuntApiError(response.status, code);
+    }
+    const value = await boundedJson(response, MAX_PRESTART_PREVIEW_BYTES);
+    const preview = parseHuntPrestartPreview(value);
+    if (preview.huntDefinitionId !== id ||
+      preview.gameDataVersion !== release.gameDataVersion ||
+      preview.bundleHash !== release.bundleHash) {
+      throw new HuntReleaseMismatchError();
+    }
+    return preview;
   }
 
   start(csrf: string, key: string, body: { huntDefinitionId: string; teamId: string }): Promise<HuntMutationResult> {

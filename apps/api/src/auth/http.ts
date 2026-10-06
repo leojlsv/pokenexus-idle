@@ -30,6 +30,7 @@ import {
   type HuntRuntimeEnvironment,
 } from "../hunts/runtime";
 import { loadVerifiedHuntCatalogRelease } from "../hunts/catalog-release";
+import { loadVerifiedHuntPrestartPreview } from "../hunts/prestart-preview";
 
 export const SESSION_COOKIE_NAME = "__Host-pokenexus_session";
 export const RESTRICTED_COOKIE_NAME = "__Host-pokenexus_restricted";
@@ -409,6 +410,7 @@ export function createApiApp(options: CreateApiAppOptions = {}) {
     huntFor,
     playerIdFor: async (c, accountId) => (await playerFor(c).loadProfile(accountId))?.playerId ?? null,
     catalogReleaseFor: (c) => loadVerifiedHuntCatalogRelease(c.env),
+    prestartPreviewFor: (c, huntDefinitionId) => loadVerifiedHuntPrestartPreview(c.env, huntDefinitionId),
     security: {
       requireSession: (c) => requireSession(c, runtimeFor(c), false),
       requireCommandSession: (c) => requireSessionMutation(c, runtimeFor(c), true),

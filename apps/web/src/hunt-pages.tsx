@@ -3,8 +3,10 @@ import { EmptyState, ErrorState, LoadingState } from "./common-states";
 import {
   HuntApi,
   HuntApiError,
+  HuntReleaseMismatchError,
   type HuntActivityPage,
   type HuntActivityRecord,
+  type HuntPrestartPreview,
   type HuntState,
   type OwnedPokemonPreview,
   type SavedTeamDetail,
@@ -20,6 +22,18 @@ import type { PublishedHuntChoices } from "./hunt-published-choices";
 import "./hunt-pages.css";
 
 const LAST_HUNT_KEY = "pokenexus:hunt:last-visible-id:v1";
+
+export function prestartPreviewMatchesSelection(
+  preview: HuntPrestartPreview | null,
+  selectedHunt: string,
+  catalog: PublishedHuntChoices | null,
+): preview is HuntPrestartPreview {
+  return preview !== null
+    && catalog !== null
+    && preview.huntDefinitionId === selectedHunt
+    && preview.gameDataVersion === catalog.gameDataVersion
+    && preview.bundleHash === catalog.bundleHash;
+}
 
 type Navigate = (href: string) => void;
 
@@ -185,6 +199,9 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
   const [selectedTeam, setSelectedTeam] = useState("");
   const [teamPreview, setTeamPreview] = useState<TeamPreviewState | null>(null);
   const [teamError, setTeamError] = useState<string | null>(null);
+  const [prestartPreview, setPrestartPreview] = useState<HuntPrestartPreview | null>(null);
+  const [prestartError, setPrestartError] = useState<string | null>(null);
+  const [prestartRevision, setPrestartRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [commandError, setCommandError] = useState<string | null>(null);
@@ -232,10 +249,51 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
     return () => controller.abort();
   }, [api, selectedTeam]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    setPrestartPreview(null);
+    setPrestartError(null);
+    if (!selectedHunt || state.status !== "ready" || !state.catalog) return () => controller.abort();
+    const catalog = state.catalog;
+    void api.prestartPreview(selectedHunt, catalog, controller.signal).then((preview) => {
+      if (!controller.signal.aborted) setPrestartPreview(preview);
+    }).catch(async (cause: unknown) => {
+      if (controller.signal.aborted) return;
+      if (cause instanceof HuntApiError && cause.status === 401) {
+        onSessionLost();
+        return;
+      }
+      if (cause instanceof HuntReleaseMismatchError) {
+        try {
+          const refreshed = await api.publishedHuntChoices(controller.signal);
+          if (controller.signal.aborted) return;
+          if (refreshed.gameDataVersion === catalog.gameDataVersion && refreshed.bundleHash === catalog.bundleHash) {
+            setPrestartError("Published release identity is inconsistent. Retry after authority converges.");
+            return;
+          }
+          setState((current) => current.status === "ready"
+            ? { ...current, catalog: refreshed, catalogMessage: null }
+            : current);
+          return;
+        } catch (refreshCause) {
+          if (controller.signal.aborted) return;
+          if (refreshCause instanceof HuntApiError && refreshCause.status === 401) onSessionLost();
+          else setPrestartError(catalogError(refreshCause));
+          return;
+        }
+      }
+      setPrestartError(catalogError(cause));
+    });
+    return () => controller.abort();
+  }, [api, onSessionLost, prestartRevision, selectedHunt, state]);
+
   if (state.status === "loading") return <LoadingState label="Loading authoritative Hunt state" />;
   if (state.status === "error") return <ErrorState title="Hunt unavailable" message={state.message} onRetry={refresh} />;
 
   const choice = state.catalog?.hunts.find(({ huntDefinitionId }) => huntDefinitionId === selectedHunt) ?? null;
+  const currentPreview = prestartPreviewMatchesSelection(prestartPreview, selectedHunt, state.catalog)
+    ? prestartPreview
+    : null;
   const mutationBlocked = busy || state.pending.kind !== "none";
 
   const reconcile = async () => {
@@ -378,7 +436,11 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
         ) : null}
         <label>
           Zone / Hunt
-          <select value={selectedHunt} disabled={!state.catalog || mutationBlocked} onChange={(event) => setSelectedHunt(event.target.value)}>
+          <select value={selectedHunt} disabled={!state.catalog || mutationBlocked} onChange={(event) => {
+            setPrestartPreview(null);
+            setPrestartError(null);
+            setSelectedHunt(event.target.value);
+          }}>
             <option value="">Select authoritative Hunt</option>
             {state.catalog?.hunts.map((hunt) => <option key={hunt.huntDefinitionId} value={hunt.huntDefinitionId}>{hunt.zoneLabel} · {hunt.huntLabel}</option>)}
           </select>
@@ -397,18 +459,25 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
             <ol>{teamPreview.members.map((member) => <li key={member.pokemonInstanceId}><strong>{member.speciesId}</strong> · Lv. {member.level} · {member.moveIds.length ? member.moveIds.join(", ") : "no selected Moves"}</li>)}</ol>
           </div>
         ) : selectedTeam ? <LoadingState label="Loading current saved Team" /> : null}
-        {choice ? (
+        {prestartError ? (
+          <div className="state-card state-card--error" role="status">
+            <strong>Encounter preview unavailable</strong>
+            <span>{prestartError}</span>
+            <button className="button button--secondary" type="button" onClick={() => setPrestartRevision((value) => value + 1)}>Retry Encounter preview</button>
+          </div>
+        ) : selectedHunt && !currentPreview ? <LoadingState label="Loading authoritative Encounter preview" /> : null}
+        {choice && currentPreview ? (
           <div className="prestart-preview">
-            <h3>Published Encounter preview</h3>
-            <p>Possible Species: {choice.preview.possibleSpeciesIds.join(", ")}</p>
-            <p>Player XP: {choice.preview.playerXp ? `${choice.preview.playerXp.min}–${choice.preview.playerXp.max}` : "none"} · Pokémon XP pool: {choice.preview.pokemonXpPool.min}–{choice.preview.pokemonXpPool.max}</p>
-            <p>Drops: {choice.preview.itemDrops.length ? choice.preview.itemDrops.map((drop) => `${drop.itemId} ×${drop.quantity.min}${drop.quantity.max !== drop.quantity.min ? `–${drop.quantity.max}` : ""} @ ${(drop.chanceBasisPoints.min / 100).toFixed(0)}${drop.chanceBasisPoints.max !== drop.chanceBasisPoints.min ? `–${(drop.chanceBasisPoints.max / 100).toFixed(0)}` : ""}%`).join(" · ") : "none"}</p>
+            <h3>Authoritative Encounter preview</h3>
+            <p>Possible Species: {currentPreview.preview.possibleSpeciesIds.join(", ")}</p>
+            <p>Player XP: {currentPreview.preview.playerXp ? `${currentPreview.preview.playerXp.min}–${currentPreview.preview.playerXp.max}` : "none"} · Pokémon XP pool: {currentPreview.preview.pokemonXpPool.min}–{currentPreview.preview.pokemonXpPool.max}</p>
+            <p>Drops: {currentPreview.preview.itemDrops.length ? currentPreview.preview.itemDrops.map((drop) => `${drop.itemId} ×${drop.quantity.min}${drop.quantity.max !== drop.quantity.min ? `–${drop.quantity.max}` : ""} @ ${(drop.chanceBasisPoints.min / 100).toFixed(0)}${drop.chanceBasisPoints.max !== drop.chanceBasisPoints.min ? `–${(drop.chanceBasisPoints.max / 100).toFixed(0)}` : ""}%`).join(" · ") : "none"}</p>
           </div>
         ) : null}
         <div className="hunt-actions">
-          <button className="button" type="button" disabled={!choice || !teamPreview || !teamPreview.members.length || mutationBlocked}
+          <button className="button" type="button" disabled={!choice || !currentPreview || !teamPreview || !teamPreview.members.length || mutationBlocked}
             onClick={() => {
-              if (!choice || !teamPreview) return;
+              if (!choice || !currentPreview || !teamPreview) return;
               const intent = { huntDefinitionId: choice.huntDefinitionId, teamId: teamPreview.detail.teamId };
               if (!window.confirm(`Start ${choice.huntLabel} with Team ${teamPreview.detail.teamId}? Server authority revalidates current Team vitality, content and policies.`)) return;
               void run("start", intent, (key) => api.start(csrfToken, key, intent));

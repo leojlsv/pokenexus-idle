@@ -617,6 +617,20 @@ describe("authentication HTTP boundary", () => {
     expect(playerLoads).toEqual([sessionPrincipal.accountId]);
   });
 
+  it("keeps the authenticated SPEC-024 prestart preview read non-activity and self-scoped", async () => {
+    const response = await app.request(
+      "/player/hunts/prestart-preview/hunt%3Averdant-edge%3Awilds",
+      { headers: { Cookie: `${SESSION_COOKIE_NAME}=bearer`, "X-User-Activity": "true" } },
+      env,
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+    await expect(response.json()).resolves.toEqual({ error: "not_found" });
+    expect(auth.sessionTouches).toEqual([false]);
+    expect(playerLoads).toEqual([sessionPrincipal.accountId]);
+  });
+
   it("protects self-profile creation with exact Origin and session CSRF without touching activity", async () => {
     const missingCsrf = await app.request(
       "/player/profile",

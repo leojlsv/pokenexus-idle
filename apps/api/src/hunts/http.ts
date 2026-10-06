@@ -10,6 +10,7 @@ import {
 import {
   HUNT_MUTATION_BODY_MAX_BYTES,
   HuntProtocolError,
+  assertOpaqueId,
   isCanonicalUuid,
   parseAutoCapturePolicyReplaceBody,
   parseAutoPotionPolicyReplaceBody,
@@ -20,6 +21,13 @@ import {
   parsePokeCenterHealBody,
   parseStartHuntBody,
 } from "./protocol";
+import {
+  HUNT_PRESTART_RESPONSE_MAX_BYTES,
+  HuntPrestartPreviewError,
+  type HuntPrestartPreview,
+} from "./prestart-preview";
+
+const HUNT_PRESTART_ERROR_MAX_BYTES = 4 * 1024;
 
 interface HuntHttpSecurity {
   requireSession(c: ApiContext): Promise<AuthSessionPrincipal | Response>;
@@ -31,6 +39,7 @@ export interface RegisterHuntRoutesOptions {
   readonly playerIdFor: (c: ApiContext, accountId: string) => Promise<string | null>;
   readonly security: HuntHttpSecurity;
   readonly catalogReleaseFor?: (c: ApiContext) => Promise<VerifiedHuntCatalogRelease>;
+  readonly prestartPreviewFor?: (c: ApiContext, huntDefinitionId: string) => Promise<HuntPrestartPreview>;
 }
 
 function invalidRequest(c: ApiContext): Response {
@@ -174,6 +183,21 @@ function catalogJson(c: ApiContext, body: unknown, status: 200 | 404 | 503): Res
   });
 }
 
+function prestartJson(c: ApiContext, body: unknown, status: 200 | 400 | 404 | 503): Response {
+  const text = JSON.stringify(body);
+  const budget = status === 200 ? HUNT_PRESTART_RESPONSE_MAX_BYTES : HUNT_PRESTART_ERROR_MAX_BYTES;
+  if (new TextEncoder().encode(text).byteLength > budget) {
+    return c.newResponse(JSON.stringify({ error: "authority_unavailable" }), 503, {
+      "Cache-Control": "private, no-store",
+      "Content-Type": "application/json; charset=UTF-8",
+    });
+  }
+  return c.newResponse(text, status, {
+    "Cache-Control": "private, no-store",
+    "Content-Type": "application/json; charset=UTF-8",
+  });
+}
+
 export function registerHuntRoutes(app: ApiApp, options: RegisterHuntRoutesOptions): void {
   app.get("/player/hunts/catalog-release", async (c) => {
     const principal = await options.security.requireSession(c);
@@ -214,6 +238,32 @@ export function registerHuntRoutes(app: ApiApp, options: RegisterHuntRoutesOptio
       });
     } catch {
       return catalogJson(c, { error: "authority_unavailable" }, 503);
+    }
+  });
+
+  app.get("/player/hunts/prestart-preview/:huntDefinitionId", async (c) => {
+    const principal = await options.security.requireSession(c);
+    if (principal instanceof Response) return privateCatalogFailure(principal);
+    if (new URL(c.req.url).search !== "" || c.req.raw.body !== null ||
+      (c.req.header("Content-Length") !== undefined && c.req.header("Content-Length") !== "0")) {
+      return prestartJson(c, { error: "invalid_request" }, 400);
+    }
+    let huntDefinitionId: string;
+    try {
+      huntDefinitionId = assertOpaqueId(c.req.param("huntDefinitionId"), "huntDefinitionId");
+    } catch {
+      return prestartJson(c, { error: "invalid_request" }, 400);
+    }
+    const playerId = await requirePlayerId(c, options, principal);
+    if (playerId instanceof Response) return privateCatalogFailure(playerId);
+    try {
+      if (!options.prestartPreviewFor) throw new Error("Hunt prestart preview provider is unavailable");
+      return prestartJson(c, await options.prestartPreviewFor(c, huntDefinitionId), 200);
+    } catch (error) {
+      if (error instanceof HuntPrestartPreviewError && error.code === "not_found") {
+        return prestartJson(c, { error: "not_found" }, 404);
+      }
+      return prestartJson(c, { error: "authority_unavailable" }, 503);
     }
   });
 

@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { AuthSessionPrincipal } from "../auth/application";
 import type { ApiBindings, ApiVariables } from "../auth/http";
 import type { VerifiedHuntCatalogRelease } from "./catalog-release";
+import {
+  HuntPrestartPreviewError,
+  type HuntPrestartPreview,
+} from "./prestart-preview";
 import { HUNT_MUTATION_BODY_MAX_BYTES } from "./protocol";
 import { registerHuntRoutes } from "./http";
 
@@ -108,11 +112,13 @@ function createTestApp(input: {
   readonly sessionResult?: AuthSessionPrincipal | Response;
   readonly commandResult?: AuthSessionPrincipal | Response;
   readonly catalogReleaseResult?: VerifiedHuntCatalogRelease | Error;
+  readonly prestartPreviewResult?: HuntPrestartPreview | Error;
 } = {}) {
   const app = new Hono<{ Bindings: ApiBindings; Variables: ApiVariables }>();
   const hunt = input.hunt ?? new FakeHuntApplication();
   const guards = { read: 0, command: 0 };
   const catalog = { calls: 0 };
+  const preview = { calls: [] as string[] };
   registerHuntRoutes(app, {
     huntFor: () => hunt,
     catalogReleaseFor: async () => {
@@ -121,6 +127,13 @@ function createTestApp(input: {
         throw input.catalogReleaseResult ?? new Error("no accepted release");
       }
       return input.catalogReleaseResult;
+    },
+    prestartPreviewFor: async (_c, huntDefinitionId) => {
+      preview.calls.push(huntDefinitionId);
+      if (!input.prestartPreviewResult || input.prestartPreviewResult instanceof Error) {
+        throw input.prestartPreviewResult ?? new Error("no accepted preview");
+      }
+      return input.prestartPreviewResult;
     },
     playerIdFor: async (_c, requestAccountId) => {
       expect(requestAccountId).toBe(accountId);
@@ -137,7 +150,7 @@ function createTestApp(input: {
       },
     },
   });
-  return { app, hunt, guards, catalog };
+  return { app, hunt, guards, catalog, preview };
 }
 
 function commandHeaders(extra: Record<string, string> = {}): Record<string, string> {
@@ -252,6 +265,84 @@ describe("SPEC-015 Hunt HTTP routes", () => {
     expect(noPlayer.catalog.calls).toBe(0);
     expect(blocked.guards.command).toBe(0);
     expect(noPlayer.guards.command).toBe(0);
+  });
+
+  it("serves the exact authenticated SPEC-024 prestart projection with private no-store semantics", async () => {
+    const result: HuntPrestartPreview = {
+      gameDataVersion: "game-data-core-kanto-johto-v5",
+      bundleHash: `sha256:${"f".repeat(64)}`,
+      huntDefinitionId: "hunt:verdant-edge:wilds",
+      preview: {
+        possibleSpeciesIds: ["species:a", "species:b"],
+        playerXp: { min: 2, max: 6 },
+        pokemonXpPool: { min: 6, max: 18 },
+        itemDrops: [{
+          itemId: "item:ball",
+          quantity: { min: 1, max: 1 },
+          chanceBasisPoints: { min: 0, max: 1500 },
+        }],
+      },
+    };
+    const { app, guards, preview } = createTestApp({ prestartPreviewResult: result });
+    const response = await app.request(
+      "/player/hunts/prestart-preview/hunt%3Averdant-edge%3Awilds",
+      {},
+      {} as ApiBindings,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(response.headers.get("Content-Type")).toBe("application/json; charset=UTF-8");
+    await expect(response.json()).resolves.toEqual(result);
+    expect(preview.calls).toEqual(["hunt:verdant-edge:wilds"]);
+    expect(guards).toEqual({ read: 1, command: 0 });
+  });
+
+  it("fails the SPEC-024 read closed on malformed shape, absent Hunt and unavailable authority", async () => {
+    const malformed = createTestApp();
+    const invalid = await malformed.app.request(
+      "/player/hunts/prestart-preview/hunt%3Awilds?release=client-selected",
+      {},
+      {} as ApiBindings,
+    );
+    expect(invalid.status).toBe(400);
+    await expect(invalid.json()).resolves.toEqual({ error: "invalid_request" });
+    expect(malformed.preview.calls).toEqual([]);
+
+    const missing = createTestApp({
+      prestartPreviewResult: new HuntPrestartPreviewError("not_found", "missing Hunt"),
+    });
+    const notFound = await missing.app.request(
+      "/player/hunts/prestart-preview/hunt%3Amissing",
+      {},
+      {} as ApiBindings,
+    );
+    expect(notFound.status).toBe(404);
+    await expect(notFound.json()).resolves.toEqual({ error: "not_found" });
+
+    const unavailable = createTestApp({ prestartPreviewResult: new Error("origin unavailable") });
+    const authority = await unavailable.app.request(
+      "/player/hunts/prestart-preview/hunt%3Awilds",
+      {},
+      {} as ApiBindings,
+    );
+    expect(authority.status).toBe(503);
+    await expect(authority.json()).resolves.toEqual({ error: "authority_unavailable" });
+  });
+
+  it("never resolves prestart authority without a valid session and an owned Player", async () => {
+    const unauthorized = new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+    const blocked = createTestApp({ sessionResult: unauthorized });
+    const noPlayer = createTestApp({ playerIdResult: null });
+    const path = "/player/hunts/prestart-preview/hunt%3Awilds";
+    const withoutSession = await blocked.app.request(path, {}, {} as ApiBindings);
+    const withoutPlayer = await noPlayer.app.request(path, {}, {} as ApiBindings);
+    expect(withoutSession.status).toBe(401);
+    expect(withoutPlayer.status).toBe(404);
+    expect(withoutSession.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(withoutPlayer.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(blocked.preview.calls).toEqual([]);
+    expect(noPlayer.preview.calls).toEqual([]);
   });
 
   it("keeps the TASK-103 presentation GET unregistered until its independent enablement gate", async () => {

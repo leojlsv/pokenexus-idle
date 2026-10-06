@@ -22,4 +22,10 @@ describe("api entrypoint", () => {
       route.method === "GET" && route.path === "/player/hunts/catalog-artifacts/*",
     )).toBe(true);
   });
+
+  it("registers the authenticated SPEC-024 prestart preview read", () => {
+    expect(app.routes.some((route) =>
+      route.method === "GET" && route.path === "/player/hunts/prestart-preview/:huntDefinitionId",
+    )).toBe(true);
+  });
 });
