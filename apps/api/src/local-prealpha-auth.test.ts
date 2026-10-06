@@ -38,4 +38,3 @@ describe("local Pre-alpha auth fixture", () => {
     })).toThrow(/loopback/);
   });
 });
-

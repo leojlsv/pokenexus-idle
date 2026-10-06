@@ -46,4 +46,3 @@ describe("local Pre-alpha bindings", () => {
       .toThrow(/32 UTF-8 bytes/);
   });
 });
-

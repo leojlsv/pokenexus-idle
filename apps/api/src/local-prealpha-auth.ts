@@ -121,4 +121,3 @@ export function createLocalPrealphaAuthRuntime(env: LocalPrealphaAuthEnvironment
 
   return { auth, allowedOrigins: parseOrigins(env.LOCAL_PREALPHA_ALLOWED_ORIGINS) };
 }
-
