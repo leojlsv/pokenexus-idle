@@ -119,6 +119,7 @@ QA Reviewer / Independent Auditor
 | `TASK-119` Hunt Pre-Start Encounter Preview Contract | DONE — Human Class-A selected Option 1 and explicitly approved exact SPEC-024 v1 on 2026-10-06; authenticated minimal server projection validated as feature `3ae9604` and merged into canonical `main` as `490b6de`; deploy/public enablement remain separate |
 | `TASK-120` Durable Hunt Terminal & Offline Summary Contract | DRAFT — Class-A durable completed-Hunt read contract; DRAFT SPEC-025, no implementation/migration authority |
 | `TASK-121` Historical Manual-Capture Compatibility & Migration Plan | DRAFT — Class-A persisted compatibility decision; DRAFT SPEC-026, no migration authority |
+| `TASK-122` Local Pre-alpha Environment & Operator Runbook | ACTIVE — Class-B local-only operator environment; no public/production authority |
 | `TASK-112` Local Pokémon Source Snapshot & Authority Realignment | DONE — SPEC-022 QA READY `0/0/0/0`; Human-approved contract integrated with TASK-113/114 dependency chain on 2026-10-03 |
 | `TASK-113` Local Pokémon Source Snapshot Implementation | DONE — post-ACQUIRE QA final TECH/ARCH READY `0/0/0/0`; schema-5 local snapshot/PokéAPI foundation integrated on 2026-10-03 |
 | `TASK-114` PokéAPI Promotion Decision & Schema-5 Cutover Contract | DONE — immutable schema-5 v4 publication + repository history integrated; candidate/publication/integration QA READY `0/0/0/0`; runtime/deploy remain separate |
@@ -145,30 +146,30 @@ Milestone status is operational planning metadata; it does not change the canoni
 
 | Milestone | Status | Objective | Related tasks | Exit criteria |
 |---|---|---|---|---|
-| **M0 — Local Environment Validation** | CURRENT | Confirm reproducible local server/client/test environment. | TASK-104, TASK-105, TASK-109 | Fresh local environment boots, database reset/recreate works, account/bootstrap flow works, diagnostics are sufficient. |
-| **M1 — Core Gameplay Loop Validation** | NEXT | Validate the first playable vertical slice. | TASK-035, TASK-036, TASK-037, TASK-038, TASK-039, TASK-107, TASK-108, TASK-109, TASK-110, TASK-111 | Starter selection, Wilds Hunt, combat, capture, rewards, XP, Inventory, Collection, Team and HUB loop complete without soft locks. |
-| **M2 — Closed Local Alpha (1–2 Players)** | PLANNED | Validate player isolation and simultaneous usage through local server access. | TASK-038, TASK-039, TASK-041, TASK-107, TASK-108, TASK-110 | Multiple accounts/ALTs operate independently; no data leakage, duplicate rewards or checkpoint corruption. |
+| **M0 — Local Environment Validation** | CURRENT | Confirm reproducible local server/client/test environment. | TASK-104, TASK-105, TASK-109, TASK-122 | Fresh local environment boots, database reset/recreate works, account/bootstrap flow works, diagnostics are sufficient. |
+| **M1 — Core Gameplay Loop Validation** | NEXT | Validate the first playable vertical slice. | TASK-035, TASK-036, TASK-037, TASK-038, TASK-039, TASK-100, TASK-107, TASK-108, TASK-109, TASK-110, TASK-111, TASK-122 | Starter/bootstrap, Wilds Hunt, combat, capture, rewards, XP, Inventory, Collection, Team and HUB loop complete without soft locks; Move editing remains outside the slice. |
+| **M2 — Closed Local Alpha (1–2 Players)** | PLANNED | Validate player isolation and simultaneous usage through local server access. | TASK-038, TASK-039, TASK-041, TASK-107, TASK-108, TASK-110, TASK-122 | Multiple accounts/ALTs operate independently; no data leakage, duplicate rewards or checkpoint corruption. |
 | **M3 — Stability Validation** | PLANNED | Validate long sessions and recovery scenarios. | TASK-037, TASK-038, TASK-041, TASK-110 | Logout/reconnect, restart recovery, persistence, checkpoints and extended Hunts remain consistent. |
 | **M4 — Pre-alpha Balance Pass** | PLANNED | Adjust initial economy, progression and encounter balance based on observed sessions. | TASK-034, TASK-035, TASK-036, TASK-096, TASK-097, TASK-109 | Capture economy, XP pacing, resources and combat difficulty are reviewed from real test data. |
 | **M5 — Pre-alpha Expansion Gates** | GATED | Execute deferred capabilities after their own authorization gates are opened. | TASK-100, TASK-103, TASK-120, TASK-121 | Eligible-Moves, durable terminal/offline summary and public presentation changes occur only under their approved contracts/gates. |
 | **M6 — Closed Alpha Preparation** | PLANNED | Prepare broader controlled testing after local validation. | TASK-039, TASK-041, future approved tasks | Stable local Pre-alpha baseline and documented known limitations. |
 
-Current target: **M0 → M1**. The repository already contains the core needed for local vertical-slice testing; remaining Class-A/public gates are tracked separately and are not prerequisites for starting the local Pre-alpha cycle.
+Current target: **M0 → M1**. The integrated gameplay core and TASK-041 evidence exist, while TASK-122 owns the missing reproducible local operator environment. Public/deploy/production gates remain separate; any missing accepted gameplay/content authority discovered by TASK-122 must fail closed rather than being synthesized.
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-121`.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-122`.
 - DONE: 69.
 - DRAFT: 2.
 - READY: 0.
-- ACTIVE: 3.
+- ACTIVE: 4.
 - FIX: 0.
 - REVIEW: 0.
 - ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 1.
 - PLANNED: 46.
-- Task-count completion: **69 / 122 = 56.6%**.
+- Task-count completion: **69 / 123 = 56.1%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -680,6 +681,7 @@ content relies on those mechanics.
 | `TASK-119` Hunt Pre-Start Encounter Preview Contract | A | DONE | PM → ChatGPT project coordination | Contract QA READY after bounded-input P2 correction; implementation QA stale-lifecycle P2 corrected; security/privacy implementation audit stale-preview P2 corrected with exact Hunt+release render/click gating | `SK-GAME-ARCH`, `SK-API-SEC`, `SK-UI` reference-only | **COMPLETED — Human selected Option 1 + explicitly APPROVED exact v1; feature `3ae9604`, canonical merge `490b6de`; deploy/public enablement separate** | TASK-034 + SPEC-002/018 | Authenticated minimal projection with `gameDataVersion` + `bundleHash`; no raw Encounter definitions/weights/levels and no exact-release Start binding; input capped at 4096 rows / 4 MiB and response at 512 Species / 256 Items / 256 KiB. API 267/267, web 125/125, type/build/dry-run/lint/diff green; both independent P2s corrected before merge. |
 | `TASK-120` Durable Hunt Terminal & Offline Summary Contract | A | DRAFT | PM → ChatGPT project coordination | Independent protocol/replay QA + persistence/security audit | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only | **Human Class-A decision required before implementation/migration** | TASK-110 + APPROVED SPEC-020 | DRAFT SPEC-025 defines owner-scoped durable terminal reason/offline summary reads while keeping Encounter details in Hunt Activity and preventing duplicate reward semantics; TASK-039/041 are downstream consumers. |
 | `TASK-121` Historical Manual-Capture Compatibility & Migration Plan | A | DRAFT | PM → ChatGPT project coordination | Independent compatibility/replay QA + persistence/security audit | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only | **Human Class-A compatibility decision required before any migration** | TASK-038/098/106/110 + APPROVED SPEC-020 | DRAFT SPEC-026 inventories historical pending/manual-capture states and requires an idempotent no-reroll/no-duplicate-spend migration/recovery decision without restoring manual capture UX; TASK-039 is a downstream consumer. |
+| `TASK-122` Local Pre-alpha Environment & Operator Runbook | B | ACTIVE | SD → ChatGPT prime | Independent QA + local-boundary security/integrity review pending | `SK-TDD`, `SK-PG`, `SK-API-SEC` reference-only | **AUTHORIZED local-only by Human request 2026-10-06; no deploy/public/production action** | TASK-016/017/025/038/039/041/100/103/109/110/111/118/119 | Owned local PostgreSQL lifecycle, immutable local game-data delivery, non-production API/session fixture surface, trusted internal bootstrap wiring, 1–2 ALT proxy/smoke and operator runbook; production entry/contracts unchanged and missing authority fails closed. |
 | `TASK-116` Exact Production Rules Rebind for Game Data v5 | B | DONE | LD → ChatGPT coding agent | Independent TECH + architecture/integrity **ACCEPT `0/0/0/0`**; owner gates PASS | `SK-TDD`, `SK-GAME-ARCH` | **COMPLETED — Human-authorized repository/history integration 2026-10-04; persistent migration/deploy/public enablement remain separate and blocked on absent production infrastructure** | TASK-095/097/109/114/115 | New immutable production support/catalog + Genetic rules identity for exact v5 pair; retained identities untouched; no semantic drift. |
 
 **Exit / MVP gate:** Solo Hunt is a complete server-authoritative playable loop. Human Owner explicitly approves MVP behavior and presentation before the project expands into realtime multiplayer content.
