@@ -18,6 +18,16 @@ See:
 - `AGENTS.md`
 - `CONTRIBUTING.md`
 - `docs/agents/launching.md`
+- `docs/qa/PREALPHA_LOCAL_TEST.md` for the local-only Pre-alpha operator environment
+
+## Local Pre-alpha operator environment
+
+The bounded local environment is controlled with `pnpm local:prealpha:*` commands.
+Start with `pnpm local:prealpha:doctor`, then use `reset`, `start` (two ALTs),
+`start-one`, `status`, `smoke` and `stop` as documented in the runbook above.
+These commands are local-only and do not deploy, enable public routes or run
+production migrations. Genuine starter/Hunt gameplay remains fail-closed until the
+accepted Species-to-Genetic-Profile content authority exists.
 
 ## Project roadmap
 

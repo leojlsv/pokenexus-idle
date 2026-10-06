@@ -2,14 +2,15 @@
 
 ## Metadata
 
-- State: ACTIVE
+- State: DONE
 - Class: B
 - Owner: Software Developer (ChatGPT prime)
 - Owner execution surface: ChatGPT prime
 - Reviewer: independent QA Reviewer
 - Reviewer execution surface: independent ChatGPT delegated reviewer
-- Auditor: N/A — corrective compatibility change preserves the accepted origin/redirect security boundary
-- Auditor execution surface: N/A
+- Auditor: independent security/integrity reviewer
+- Auditor execution surface: independent ChatGPT delegated reviewer
+- Completion evidence: focused catalog regression 8/8 PASS; API typecheck + Worker dry-run PASS; live TASK-122 Workerd diagnostic returned exact accepted v5 bundle; independent QA READY 0/0/0; independent security/integrity READY 0/0/0
 - Consultants: N/A
 - Consultant execution surface(s): N/A
 - Dependencies: TASK-118, TASK-122
@@ -45,9 +46,8 @@ mode.
 
 ## Acceptance criteria
 
-- [ ] Workerd accepts the request configuration.
-- [ ] Redirect responses remain fail-closed and are never followed.
-- [ ] Exact immutable v5 catalog still validates.
-- [ ] TASK-122 local catalog endpoint becomes available.
-- [ ] Independent QA finds no unresolved P0/P1/P2.
-
+- [x] Workerd accepts the request configuration.
+- [x] Redirect responses remain fail-closed and are never followed.
+- [x] Exact immutable v5 catalog still validates.
+- [x] TASK-122 local catalog endpoint becomes available.
+- [x] Independent QA and security/integrity reviews find no unresolved P0/P1/P2.
