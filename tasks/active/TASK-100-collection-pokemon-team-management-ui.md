@@ -83,8 +83,9 @@ The client cannot become an authority for gameplay or Move eligibility.
   through the in-place change; 320/390/640/1024 roster arrow targets are at least 44×44 px. Focus-preserving
   aria-disabled state is visually distinguished from available controls, and repeated card action names include
   their resource identity. Inherited shell navigation clipping at 200% text zoom remains a TASK-031 follow-up.
-- Both independent reviewers cleared P0/P1 on the implemented partial surface. Full-task Class-B acceptance
-  and Human live validation are still pending, as is the approved Move-eligibility public read.
+- Both independent reviewers ultimately cleared the exact-current reconciliation candidate at P0/P1/P2 = 0/0/0,
+  and Human live-preview validation is approved. Full TASK-100 completion still depends on the approved
+  Move-eligibility public read described below.
 - Human Owner reported that the presented functionality was validated on 2026-09-28. This confirms user acceptance of the available partial functionality without asserting that the absent Move editor, full live gameplay or all viewport/browser variants were tested.
 - QA/Class-B and Human usability review remain separate gates. Full TASK-100 completion remains blocked
   by a Class-A public read contract for the server-current eligible Move set; no browser-side inferencing.
@@ -105,8 +106,9 @@ The client cannot become an authority for gameplay or Move eligibility.
 - Independent frontend QA then identified one remaining P2 validation gap: the reconciled tests covered transport/state helpers but did not import/mount the page components or regression-test their high-risk orchestration. The current candidate closes that gap with `player-pages.test.tsx`: all four real page components mount through React SSR, while production helpers used directly by those pages exercise exact Team-create persist-key → POST → clear ordering, ambiguous-response key retention, definitive-rejection clearing, equal/conflicting roster reconciliation, uncertain-mutation classification and deterministic conflict/error/unavailable/post-choice focus targeting. No external DOM/test dependency was added.
 - Final UX/Class-B re-gate identified one additional P2 in stale Team deletion guidance: a `409 stale` DELETE correctly performed only authoritative reconciliation but reused save-oriented copy when the Team still existed. The corrected path keeps the same OCC/read-only reconciliation semantics, never retries DELETE automatically, adopts the fresh authoritative rowVersion when matched, and explicitly tells the user that deletion was not applied and must be intentionally issued again. Action-specific save/delete guidance is covered by `teamStaleReconciliationCopy` tests.
 - Dependencies were materialized only with `pnpm install --offline --frozen-lockfile` (`272` reused, `0` downloaded); package/lock bytes were not changed.
-- Final independent exact-current re-gates on the corrected snapshot are **READY 0/0/0** from both technical QA (`worker-10`) and UX/accessibility/Class-B (`worker-11`). Both independently reproduced focused **42/42**, full web **117/117**, typecheck, lint, production build, roadmap 122 and `git diff --check` PASS. No commit, merge, push, deploy or public enablement has been performed for this reconciliation candidate.
+- Final independent exact-current re-gates on the corrected snapshot are **READY 0/0/0** from both technical QA (`worker-10`) and UX/accessibility/Class-B (`worker-11`). Both independently reproduced focused **42/42**, full web **117/117**, typecheck, lint, production build, roadmap 122 and `git diff --check` PASS.
 - Human Owner gate on 2026-10-06: the current local mock-backed preview is approved, and the validated candidate is authorized for commit, integration into repository history and push under the established project flow. This authority explicitly excludes deploy/public enablement and does not authorize TASK-119/TASK-120/TASK-121 or the missing Class-A eligible-Moves read contract.
+- Repository-history integration executed under that authority on 2026-10-06: candidate commit `d08e2f6` (`feat(web): reconcile TASK-100 player management UI`) was pushed to `origin/reconcile/TASK-100-current`; merge commit `f01f310` (`merge: integrate TASK-100 player management UI`) integrated the candidate into canonical `main`. Post-merge `main` validation reproduced full web **117/117**, typecheck, lint, production build, roadmap 122 and `git diff --check` PASS. No deploy/public enablement was performed.
 
 ## Known dependency gate
 
