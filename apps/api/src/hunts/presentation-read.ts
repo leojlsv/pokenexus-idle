@@ -17,6 +17,7 @@ import {
 } from "@pokenexus/database";
 import {
   type PresentationCursorCodec,
+  type PresentationCursorContents,
   type PresentationCursorPosition,
   type PresentationCursorSnapshot,
 } from "./presentation-cursor";
@@ -32,6 +33,7 @@ const INPUT_SCHEMA_V4 = "hunt-runtime-inputs-v4";
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_PUBLIC_JSON_BYTES = 256 * 1024;
 const RESERVE_JSON_METADATA_BYTES = 8 * 1024;
+const CURSOR_TOKEN_PATTERN = /^[A-Za-z0-9_-]+$/u;
 
 type PresentationFailure =
   | "invalid_request"
@@ -118,7 +120,11 @@ export function parseHuntPresentationQuery(query: URLSearchParams): {
     limit = Number(rawLimit);
     if (limit > 128) return null;
   }
-  if (cursor !== null && (cursor.length === 0 || cursor.length > 4096)) return null;
+  if (cursor !== null && (
+    cursor.length === 0
+    || cursor.length > 4096
+    || !CURSOR_TOKEN_PATTERN.test(cursor)
+  )) return null;
   return {
     ...(limit !== undefined ? { limit } : {}),
     ...(cursor !== null ? { rawCursor: cursor } : {}),
@@ -194,6 +200,13 @@ export async function readHuntPresentationFromPort(
   }
   const owned = await port.ownedHunt(playerId, huntId);
   if (!owned) return failure("not_found");
+  let verifiedCursor: PresentationCursorContents | null = null;
+  if (rawCursor !== undefined) {
+    const checked = await cursorCodec.verify(rawCursor, { playerId, huntId }, nowMs);
+    if (checked.status === "invalid") return failure("invalid_request");
+    if (checked.status === "expired") return failure("cursor_expired");
+    verifiedCursor = checked.cursor;
+  }
   const stream = await port.stream(playerId, huntId);
   const historicalV1 = stream?.checkpointSchemaVersion === CHECKPOINT_SCHEMA_V3
     && stream.inputSchemaVersion === INPUT_SCHEMA_V2
@@ -219,11 +232,8 @@ export async function readHuntPresentationFromPort(
   let originalSnapshot = current;
   let after: PresentationCursorPosition = { kind: "before_first" };
   let limit = request.limit ?? 64;
-  if (rawCursor !== undefined) {
-    const checked = await cursorCodec.verify(rawCursor, { playerId, huntId }, nowMs);
-    if (checked.status === "invalid") return failure("invalid_request");
-    if (checked.status === "expired") return failure("cursor_expired");
-    const bound = checked.cursor;
+  if (verifiedCursor !== null) {
+    const bound = verifiedCursor;
     if (request.limit !== undefined && request.limit !== bound.limit) {
       return failure("invalid_request");
     }

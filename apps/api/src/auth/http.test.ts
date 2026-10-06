@@ -708,6 +708,40 @@ describe("authentication HTTP boundary", () => {
     );
   });
 
+  it("keeps the TASK-103 presentation route disabled while inheriting exact Hunt CORS preflight", async () => {
+    const path = "/player/hunts/0199472a-0000-7000-8000-000000000101/presentation";
+    const preflight = await app.request(
+      path,
+      { method: "OPTIONS", headers: { Origin: allowedOrigin } },
+      env,
+    );
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("access-control-allow-origin")).toBe(allowedOrigin);
+    expect(preflight.headers.get("access-control-allow-origin")).not.toBe("*");
+    expect(preflight.headers.get("access-control-allow-credentials")).toBe("true");
+    expect(preflight.headers.get("access-control-allow-methods")).toBe("GET, POST, PUT, OPTIONS");
+    expect(preflight.headers.get("access-control-allow-headers")).toBe(
+      "Content-Type, X-CSRF-Token, Idempotency-Key",
+    );
+    expect(preflight.headers.get("vary")).toBe("Origin");
+
+    const deniedOrigin = await app.request(
+      path,
+      { method: "OPTIONS", headers: { Origin: "https://evil.example" } },
+      env,
+    );
+    expect(deniedOrigin.headers.get("access-control-allow-origin")).toBeNull();
+
+    const beforeTouches = [...auth.sessionTouches];
+    const disabled = await app.request(
+      path,
+      { headers: { Cookie: SESSION_COOKIE_NAME + "=bearer" } },
+      env,
+    );
+    expect(disabled.status).toBe(404);
+    expect(auth.sessionTouches).toEqual(beforeTouches);
+  });
+
   it("classifies Team commands as session activity while keeping profile creation non-activity", async () => {
     const profile = await app.request(
       "/player/profile",
