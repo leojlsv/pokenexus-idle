@@ -90,6 +90,23 @@ update its canonical `tasks/active/` or `tasks/done/` file and the corresponding
 `docs/project/PROJECT_ROADMAP.html` with `pnpm roadmap:generate` and run
 `pnpm roadmap:check`. Generated HTML must never be edited independently.
 
+After an implementation branch has been authorized and integrated, an open task may
+remain open for lifecycle, external, live or Human gates when its recorded state is
+intentionally preserved by project authority. In that case the canonical integration
+worktree may become the **current control-plane worktree** while the original
+implementation/review worktree is preserved as historical source evidence. This does
+not transfer implementation authority, does not make the PM an implementation owner
+and does not by itself authorize more implementation. Record `Control branch` /
+`Control worktree` separately from `Source branch` / `Source worktree` when this
+applies; `Branch` / `Worktree` remain the implementation-owner fields before source
+integration.
+Preserved historical worktrees do not compete for current ownership merely because
+their old task files still self-identify their original branch/worktree.
+
+A Class-A DRAFT may explicitly use `Branch: not created` and `Worktree: not created`
+until the Human gate and Definition of Ready authorize implementation. The portfolio
+checker must not manufacture an implementation owner for such drafts.
+
 **A local passing check does not publish to another branch.** The PM coordinates
 an isolated project-control reconciliation when several worktrees own different
 updates: reconcile all materialized task states and dependencies without
@@ -99,7 +116,8 @@ integrated `main` and which reflects provisional worktree state, including its
 as-of/provenance qualification. Do not silently redirect to one historical
 worktree or imply that a local branch is integrated.
 On a local multi-worktree checkout, run `pnpm portfolio:check-local` in the
-reconciliation worktree after updating the root landing, in addition to the
+reconciliation worktree after `pnpm portfolio:generate-local` updates the root
+landing, in addition to the
 branch-local `roadmap:check`. It verifies a source hash, link existence,
 portfolio counts, current owner worktree states and specification-ID collisions;
 neither command automatically merges or approves another worktree.

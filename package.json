@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "roadmap:generate": "node scripts/project-roadmap.mjs generate",
     "roadmap:check": "node scripts/project-roadmap.mjs check",
+    "portfolio:generate-local": "node scripts/project-portfolio-local.mjs generate",
     "portfolio:check-local": "node scripts/project-portfolio-local.mjs",
     "task-041:harness:local": "powershell -NoProfile -File scripts/task-041-first-prealpha-harness.ps1",
     "task-034:review": "corepack pnpm --filter @pokenexus/game-types build && corepack pnpm --filter @pokenexus/game-data exec vitest run --config integration/vitest.task034.config.ts",

@@ -6,9 +6,11 @@ import test from 'node:test';
 import {
   checkSpecIdentity,
   discoverCurrentOwnerWorktrees,
+  isUnmaterializedDraft,
   openTaskSourceErrors,
   readLanding,
   readPortfolio,
+  renderLanding,
 } from './project-portfolio-local.mjs';
 
 const statuses = ['PLANNED', 'DRAFT', 'READY', 'ACTIVE', 'REVIEW', 'FIX', 'ACCEPTANCE', 'DONE', 'BLOCKED', 'DEFERRED'];
@@ -33,7 +35,7 @@ test('portfolio checks exact contiguous task IDs, not only matching total rows',
 test('local entry fails closed for stale source hash, counters or missing links', () => {
   const result = readLanding('<meta name="pokenexus-portfolio-source-sha256" content="wrong"><div data-portfolio="total"><b>3</b><a href="does-not-exist.html">Not found</a>', {
     total: 2, done: 1, active: 1, acceptance: 0,
-  }, 'expected-hash');
+  }, 'expected-hash', ['integrated.html', 'provisional.html']);
   assert.match(result.errors.join('\n'), /current reconciled Markdown SHA-256/);
   assert.match(result.errors.join('\n'), /metric total/);
   assert.match(result.errors.join('\n'), /missing dashboard link/);
@@ -63,10 +65,30 @@ test('identical current specification identities cannot silently diverge in cont
 test('a local landing must keep distinct integrated and reconciliation destinations', () => {
   const result = readLanding('<meta name="pokenexus-portfolio-source-sha256" content="hash"><div data-portfolio="total"><b>2</b><div data-portfolio="done"><b>1</b><div data-portfolio="active"><b>1</b><div data-portfolio="acceptance"><b>0</b><a href="not-here.html">missing</a><a href="not-here.html">duplicate</a>', {
     total: 2, done: 1, active: 1, acceptance: 0,
-  }, 'hash');
+  }, 'hash', ['integrated.html', 'provisional.html']);
   assert.match(result.errors.join('\n'), /missing required portfolio link/);
   assert.match(result.errors.join('\n'), /duplicate dashboard links/);
-  assert.match(result.errors.join('\n'), /TASK-100-collection-pokemon-team-ui/);
+  assert.match(result.errors.join('\n'), /integrated\.html/);
+});
+
+test('generated landing identifies integrated and provisional views without redirects', () => {
+  const html = renderLanding({
+    counts: { total: 2, done: 1, active: 1, acceptance: 0 },
+    hash: 'hash', mainHead: '0123456789abcdef', branch: 'main',
+    requiredRefs: ['.maintenance/portfolio/integrated.html', '.worktrees/current/docs/project/PROJECT_ROADMAP.html'],
+  });
+  assert.match(html, /Integrated main/);
+  assert.match(html, /Provisional working tree/);
+  assert.doesNotMatch(html, /location\.replace/);
+});
+
+test('only an exact DRAFT task file may remain unmaterialized', () => {
+  const draft = '- State: DRAFT\n- Branch: not created\n- Worktree: not created\n';
+  assert.equal(isUnmaterializedDraft(draft, 'DRAFT'), true);
+  const ready = draft.replace('- State: DRAFT', '- State: READY');
+  assert.equal(isUnmaterializedDraft(ready, 'DRAFT'), false);
+  const active = draft.replace('- State: DRAFT', '- State: ACTIVE');
+  assert.equal(isUnmaterializedDraft(active, 'DRAFT'), false);
 });
 
 function ownedWorktreeFixture(t) {
@@ -102,17 +124,15 @@ test('nonstandard named current worktrees are discovered by self-owned metadata 
   }
 });
 
-test('a newly active owner with nonstandard worktree basename cannot evade the reconciled portfolio', (t) => {
+test('historical self-owned worktrees do not override the canonical reconciled owner', (t) => {
   const { root, createTree, writeTask } = ownedWorktreeFixture(t);
   const tree = createTree('unexpected-feature-lane');
   writeTask(tree, 'TASK-105', 'ACTIVE');
-  const errors = discoverCurrentOwnerWorktrees([tree], new Map([['TASK-105', 'PLANNED']]),
-    new Set(), new Map(), root).join('\n');
-  assert.match(errors, /TASK-105: owner worktree is ACTIVE, roadmap is PLANNED/);
-  assert.match(errors, /TASK-105: current owner worktree is not registered by an open reconciled task/);
+  assert.deepEqual(discoverCurrentOwnerWorktrees([tree], new Map([['TASK-105', 'PLANNED']]),
+    new Set(), new Map(), root), []);
 });
 
-test('two self-declared ACTIVE owner worktrees for the same ID are rejected', (t) => {
+test('only the canonical declared owner is checked when historical worktrees retain old ownership metadata', (t) => {
   const { root, createTree, writeTask } = ownedWorktreeFixture(t);
   const first = createTree('original-owner');
   const second = createTree('competing-owner');
@@ -121,9 +141,8 @@ test('two self-declared ACTIVE owner worktrees for the same ID are rejected', (t
   const errors = discoverCurrentOwnerWorktrees(
     [first, second], new Map([['TASK-105', 'ACTIVE']]), new Set(['TASK-105']),
     new Map([['TASK-105', first.path.toLowerCase()]]), root,
-  ).join('\n');
-  assert.match(errors, /TASK-105: competing current task owner worktrees/);
-  assert.match(errors, /competing-owner/);
+  );
+  assert.deepEqual(errors, []);
 });
 
 test('archived acceptance, deferred records and mirrored open task documents do not claim ownership', (t) => {

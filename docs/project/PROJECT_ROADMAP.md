@@ -14,6 +14,45 @@
 
 ## 1. Current position
 
+## Project Control Model
+
+This roadmap is a coordination view, not an authority replacement. Execution boundaries are enforced by `AGENTS.md` and `docs/agents/**`.
+
+### Decision flow
+
+```text
+Human Owner
+  └─ final authority: product scope, Class-A decisions, architecture acceptance
+
+PM / Architecture Coordinator (ChatGPT)
+  └─ planning, decomposition, specs, dependencies, acceptance coordination
+
+Implementation Owner
+  └─ Lead Developer / assigned developer role
+     └─ executes only READY task scope
+
+QA Reviewer / Independent Auditor
+  └─ validates implementation independently
+```
+
+### Boundary rules
+
+| Area | Owner | Constraint |
+|---|---|---|
+| Product direction | Human Owner | No inferred scope expansion |
+| Class-A decisions | Human Owner | Requires explicit approval before implementation |
+| Roadmap planning | PM / Architecture Coordinator | Coordinates; does not become implementation owner |
+| Implementation | Assigned task owner | One task = one implementation owner |
+| QA acceptance | Independent reviewer | Implementer cannot approve own work |
+| Public enablement / migration | Human-gated | Existing gates remain separate from implementation completion |
+
+### Task scope protection
+
+- Dependencies do not transfer ownership between tasks.
+- A blocked dependency does not authorize implementing the blocked scope elsewhere.
+- Completion evidence belongs to the task that produced it.
+- Roadmap status must distinguish implementation, acceptance and enablement states.
+
 **Project phase:** Foundation, core domain/combat-engine contracts, PostgreSQL persistence/identity/security, canonical static game data, baseline progression/Inventory/Reward persistence, authoritative Move eligibility, Player State API, and the SPEC-012 production combat-rule catalog are integrated.
 
 **Current work:** `TASK-096 — Idle/Gacha Progression & Acquisition Model`, `TASK-097 — Encounter Individualization & Genetics Runtime`, and `TASK-036 — Capture & Reward Resolution` are **DONE** and integrated into canonical `main` after explicit Human Owner repository/history authorization. The integrated implementation preserves correlation-first durable capture replay with frozen RNG-origin binding, exact production-executable Move authority, replay-validated reward-source authenticity, and authoritative TASK-097 IV/Genetics/Profile/Shiny provenance. Atomic Ball debit/Pokémon creation/Species Research/attempt evidence, PostgreSQL concurrency/rollback coverage, Worker compatibility and workspace validation are green. Deploy and production cutover remain separate gates. TASK-035 remains DONE/canonical. The approved acquisition authority includes Genetics/Shiny separation, Hunt-authored encounter rates, structural auto-capture, no Epic+/Apex/capture protection, final Genetic Profiles `Harmony / Might / Clarity / Endurance / Resilience` with exactly two compatible Profiles per Species/form selected 50/50, center-weighted canonical IV generation `U[0,15] + U[0,16]` per stat, exact Genetic Score→Budget bands/interpolation, the Genetic-aware stat formula `2*BaseStat + IV + perStatGeneticBonus` under a new immutable combat rules version, default Genetic Grade probabilities `55/28/12/4/1%`, Shiny `1/16384`, Species Research count-only duplicate progression, fail-closed Genetics/Shiny/Ascendant persistence/legacy authority, the 8–82% capture curve, Genetic capture modifiers, Ball ladder `Poké 1.00 / Great 1.25 / Super 1.50 / Ultra 2.00 / VIP 2.25`, supply hierarchy and reserve-aware visible-condition auto-capture. Human-approved **Ascendant** is `Shiny + Apex` with Resonance across the two frozen compatible Profiles and no higher Score/Budget/stat ceiling.
@@ -93,6 +132,28 @@
 | `TASK-099` Pokémon Sprite Generation Lab | DEFERRED — side-project abandoned by Human Owner; branch/worktree removed; historical ID retained only |
 
 **Next product milestone:** TASK-109, TASK-110, TASK-111, TASK-116, TASK-117, TASK-118, TASK-119 and TASK-042 are DONE and repository-integrated. TASK-103 remains in ACCEPTANCE after exact-current QA/IA and local canonical-main merge `d0593c7`; TASK-039 remains ACTIVE against the remaining fail-closed external/read/live blockers. TASK-118 closes the published Zone/Hunt catalog transport blocker and TASK-119 closes the source-side pre-Start possible-Species/reward preview blocker; deployed route/origin/live verification remains separate and local tests are not deployment proof. TASK-120 / SPEC-025 and TASK-121 / SPEC-026 remain DRAFT Class-A blockers with no implementation authority. Downstream TASK-043+ realtime implementation remains separately gated. TASK-117 remains an isolated local analysis/staging capability and does not alter the dependency-ordered gameplay milestone. Persistent migration, deploy and public enablement remain separately gated and materially blocked because the production PostgreSQL/Hyperdrive/Worker/Pages/domain/secrets release infrastructure does not exist yet.
+
+## 1.1 First Pre-alpha Local Test Milestones
+
+The first Pre-alpha validation cycle is a **local closed test program**. It does not authorize production deployment, public enablement, production migration, eligible-Moves, TASK-121 execution or CombatPresentation public exposure. These milestones organize validation of the already integrated core.
+
+**Phase:** PRE-ALPHA LOCAL VALIDATION
+**Current milestone:** M0 — Local Environment Validation
+**Next milestone:** M1 — Core Gameplay Loop Validation
+
+Milestone status is operational planning metadata; it does not change the canonical lifecycle state of any TASK.
+
+| Milestone | Status | Objective | Related tasks | Exit criteria |
+|---|---|---|---|---|
+| **M0 — Local Environment Validation** | CURRENT | Confirm reproducible local server/client/test environment. | TASK-104, TASK-105, TASK-109 | Fresh local environment boots, database reset/recreate works, account/bootstrap flow works, diagnostics are sufficient. |
+| **M1 — Core Gameplay Loop Validation** | NEXT | Validate the first playable vertical slice. | TASK-035, TASK-036, TASK-037, TASK-038, TASK-039, TASK-107, TASK-108, TASK-109, TASK-110, TASK-111 | Starter selection, Wilds Hunt, combat, capture, rewards, XP, Inventory, Collection, Team and HUB loop complete without soft locks. |
+| **M2 — Closed Local Alpha (1–2 Players)** | PLANNED | Validate player isolation and simultaneous usage through local server access. | TASK-038, TASK-039, TASK-041, TASK-107, TASK-108, TASK-110 | Multiple accounts/ALTs operate independently; no data leakage, duplicate rewards or checkpoint corruption. |
+| **M3 — Stability Validation** | PLANNED | Validate long sessions and recovery scenarios. | TASK-037, TASK-038, TASK-041, TASK-110 | Logout/reconnect, restart recovery, persistence, checkpoints and extended Hunts remain consistent. |
+| **M4 — Pre-alpha Balance Pass** | PLANNED | Adjust initial economy, progression and encounter balance based on observed sessions. | TASK-034, TASK-035, TASK-036, TASK-096, TASK-097, TASK-109 | Capture economy, XP pacing, resources and combat difficulty are reviewed from real test data. |
+| **M5 — Pre-alpha Expansion Gates** | GATED | Execute deferred capabilities after their own authorization gates are opened. | TASK-100, TASK-103, TASK-120, TASK-121 | Eligible-Moves, durable terminal/offline summary and public presentation changes occur only under their approved contracts/gates. |
+| **M6 — Closed Alpha Preparation** | PLANNED | Prepare broader controlled testing after local validation. | TASK-039, TASK-041, future approved tasks | Stable local Pre-alpha baseline and documented known limitations. |
+
+Current target: **M0 → M1**. The repository already contains the core needed for local vertical-slice testing; remaining Class-A/public gates are tracked separately and are not prerequisites for starting the local Pre-alpha cycle.
 
 ### Portfolio progress
 

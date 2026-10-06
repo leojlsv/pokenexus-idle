@@ -9,8 +9,10 @@
 - Reviewer: independent QA + integrity review completed READY `0/0/0`; final Human first-Prealpha live acceptance remains separate
 - Specs: APPROVED SPEC-015/016/017/020/021
 - Dependencies: TASK-034-039/100/103/106-111
-- Branch: `feat/TASK-041-first-prealpha-harness`
-- Worktree: `.worktrees/TASK-041-first-prealpha-harness`
+- Control branch: `main`
+- Control worktree: `.worktrees/TASK-103-final-integration` (current lifecycle/control-plane reconciliation after harness integration; this does not change the Software Developer implementation owner)
+- Source branch: `feat/TASK-041-first-prealpha-harness`
+- Source worktree: `.worktrees/TASK-041-first-prealpha-harness` (preserved implementation/evidence snapshot)
 
 ## Objective
 

@@ -30,7 +30,10 @@ In the local Windows workspace, `G:\pokenexus-idle\PROJECT_ROADMAP.html` is
 an untracked landing page with separately labelled integrated and provisional
 worktree views. It is not a source of Git history or automatic publication.
 Consult `docs/agents/workflow.md` before reconciling or publishing task states.
-In a Windows multi-worktree checkout, `pnpm portfolio:check-local` additionally
-checks its stamped snapshot, dashboard links, owned active-task worktree states
-and conflicting specification filenames. This is a local control, not a CI
-substitute or proof that the independent review/approval gates have passed.
+In a Windows multi-worktree checkout, run `pnpm portfolio:generate-local` after
+reconciling the control-plane files, then `pnpm portfolio:check-local`. The local
+gate checks the stamped landing, exact integrated-main snapshot, provisional
+dashboard link, canonical current control-plane worktrees and current specification-ID
+collisions. Preserved historical worktrees remain evidence and do not become
+current owners merely by retaining old task metadata. This is a local control,
+not a CI substitute or proof that independent review/approval gates passed.

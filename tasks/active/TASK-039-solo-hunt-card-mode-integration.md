@@ -18,6 +18,8 @@
 - Dependencies: TASK-029, TASK-038, TASK-101, TASK-109 and TASK-110 — DONE; approved SPEC-020/021; TASK-103 backend implementation accepted and repository-integrated into local canonical `main` at `d0593c7`
 - Acceptance blockers: TASK-120 / DRAFT SPEC-025 (durable terminal/offline summary), TASK-121 / DRAFT SPEC-026 (historical manual-capture compatibility), TASK-103 public-feed enablement and final Human live/Class-B acceptance. TASK-118 and TASK-119 are DONE/source-integrated and no longer source-side blockers; deploy/public route availability remains separately gated.
 - Specs: SPEC-013, SPEC-015, SPEC-016, SPEC-017, SPEC-018 as forward-amended by APPROVED SPEC-020/021; TASK-028 presentation event contract
+- Control branch: `main`
+- Control worktree: `.worktrees/TASK-103-final-integration` (current lifecycle/control-plane reconciliation after source integration; this does not change the Frontend Developer implementation owner)
 - Source branch: `reconcile/TASK-039-current` at `5b30db4`, merged into canonical local `main` as `9df7eeb` on 2026-10-05
 - Source worktree: `.worktrees/TASK-039-current-reconcile` (clean reconciliation from canonical `main` `b8f11ed`; preserved historical worktree `.worktrees/TASK-039-solo-hunt-card-integration` remains untouched)
 - Repository integration: canonical `main` was pushed through `35094f9` on 2026-10-05; TASK-039 remains ACTIVE only for the external/live acceptance gates documented below

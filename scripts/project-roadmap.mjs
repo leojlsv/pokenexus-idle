@@ -69,6 +69,12 @@ function extractCodeBlock(lines, headingPrefix) {
   return lines.slice(open + 1, close).join('\n').trim();
 }
 
+function singleBoldValue(lines, prefix) {
+  const line = lines.find((candidate) => candidate.startsWith(prefix));
+  if (!line) fail(`Missing roadmap field: ${prefix}`);
+  return stripInline(line.slice(prefix.length));
+}
+
 function parseRoadmap(markdown) {
   const lines = markdown.split('\n');
   const epics = [];
@@ -141,6 +147,38 @@ function parseRoadmap(markdown) {
     .filter((cells) => cells && cells.length === 5 && !isSeparatorRow(cells) && cells[0] !== 'Code')
     .map((cells) => ({ code: stripInline(cells[0]), skill: stripInline(cells[1]), stage: stripInline(cells[2]), adoption: stripInline(cells[3]), source: stripInline(cells[4]) }));
 
+  const controlFlow = extractCodeBlock(lines, '### Decision flow');
+  const controlBoundaries = section(lines, '### Boundary rules', '### Task scope protection')
+    .map(tableCells)
+    .filter((cells) => cells && cells.length === 3 && !isSeparatorRow(cells) && cells[0] !== 'Area')
+    .map((cells) => ({ area: stripInline(cells[0]), owner: stripInline(cells[1]), constraint: stripInline(cells[2]) }));
+  const protectionStart = lines.findIndex((line) => line.startsWith('### Task scope protection'));
+  const phaseStart = lines.findIndex((line, index) => index > protectionStart && line.startsWith('**Project phase:**'));
+  if (protectionStart < 0 || phaseStart < 0) fail('Missing Project Control Model task-scope protection boundary');
+  const taskScopeProtections = lines.slice(protectionStart + 1, phaseStart)
+    .filter((line) => line.startsWith('- '))
+    .map((line) => stripInline(line.slice(2)));
+
+  const prealphaSection = section(lines, '## 1.1 First Pre-alpha Local Test Milestones', '### Portfolio progress');
+  const prealphaMilestones = prealphaSection
+    .map(tableCells)
+    .filter((cells) => cells && cells.length === 5 && !isSeparatorRow(cells) && cells[0] !== 'Milestone')
+    .map((cells) => {
+      const milestone = stripInline(cells[0]);
+      const match = milestone.match(/^(M\d+)\s+—\s+(.+)$/);
+      if (!match) fail(`Invalid Pre-alpha milestone label: ${milestone}`);
+      return {
+        id: match[1],
+        title: match[2],
+        status: stripInline(cells[1]),
+        objective: stripInline(cells[2]),
+        tasks: stripInline(cells[3]),
+        exit: stripInline(cells[4]),
+      };
+    });
+  const prealphaCurrentTarget = prealphaSection.find((line) => line.startsWith('Current target:'));
+  if (!prealphaCurrentTarget) fail('Missing Pre-alpha current target');
+
   const currentActionLine = lines.find((line) => line.startsWith('**Current action:**'));
   const nextTaskLine = lines.find((line) => line.startsWith('**Next task after TASK-003 acceptance:**'));
   const taskRangeLine = lines.find((line) => line.startsWith('- Planned task IDs in this roadmap:'));
@@ -168,6 +206,18 @@ function parseRoadmap(markdown) {
     tasks,
     roles,
     skills,
+    controlModel: {
+      flow: controlFlow,
+      boundaries: controlBoundaries,
+      protections: taskScopeProtections,
+    },
+    prealpha: {
+      phase: singleBoldValue(prealphaSection, '**Phase:**'),
+      currentMilestone: singleBoldValue(prealphaSection, '**Current milestone:**'),
+      nextMilestone: singleBoldValue(prealphaSection, '**Next milestone:**'),
+      currentTarget: stripInline(prealphaCurrentTarget.replace('Current target:', '')),
+      milestones: prealphaMilestones,
+    },
     currentAction: stripInline(currentActionLine.replace('**Current action:**', '')),
     nextTask: stripInline(nextTaskLine.replace('**Next task after TASK-003 acceptance:**', '')),
     taskRange: { first: Number(taskRangeMatch[1]), last: Number(taskRangeMatch[2]) },
@@ -394,7 +444,7 @@ function renderHtml(data, sourceHash) {
 <title>PokeNexus Idle — Project Roadmap</title>
 <style>
 :root{--bg:#0b1017;--panel:#121923;--panel2:#182230;--line:#26364a;--text:#e9f0f7;--muted:#93a4b7;--accent:#62d3ff;--good:#64d98b;--active:#ffd166;--human:#ff9e64;--aclass:#ca9cff;--shadow:0 14px 38px rgba(0,0,0,.28)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#081019,#0d141d 35%,#0b1017);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--accent)}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.wrap{max-width:1500px;margin:auto;padding:22px}.hero{border:1px solid var(--line);background:linear-gradient(135deg,#132131,#101720);border-radius:14px;padding:24px;box-shadow:var(--shadow)}h1{font-size:30px;margin:0 0 6px}.kicker{color:var(--accent);text-transform:uppercase;letter-spacing:.12em;font-weight:800;font-size:11px}.muted{color:var(--muted)}.notice{margin-top:14px;border-left:3px solid var(--active);background:#171a1c;padding:10px 12px;border-radius:5px}.combat{margin-top:14px;border:1px solid #32506a;background:#0d2030;padding:12px 14px;border-radius:9px}.stats{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:16px 0}.stat,.section-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}.stat b{font-size:22px;display:block}.progress{height:8px;background:#1b2734;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--good)}.overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.overview h3{margin:0 0 8px}.overview pre{white-space:pre-wrap;margin:0;color:#cbd6e2;font-size:11px}.queue{display:flex;gap:6px;flex-wrap:wrap}.queue a{border:1px solid #8a573b;border-radius:99px;padding:4px 8px;text-decoration:none;color:var(--human);font-size:11px}.controls{position:sticky;top:0;z-index:9;margin:18px 0;padding:12px;background:rgba(11,16,23,.94);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:10px;display:flex;gap:9px;flex-wrap:wrap;align-items:center}input,select,button{background:#101823;color:var(--text);border:1px solid #34475d;border-radius:7px;padding:8px 10px}input[type=search]{min-width:280px;flex:1}button{cursor:pointer}label.toggle{display:flex;gap:7px;align-items:center;color:var(--muted)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}details{border:1px solid var(--line);background:var(--panel);border-radius:10px;margin:10px 0;overflow:hidden}summary{cursor:pointer;list-style:none;padding:13px 15px;font-weight:700}summary::-webkit-details-marker{display:none}details[open]>summary{border-bottom:1px solid var(--line);background:#151f2b}.epic>summary{font-size:17px}.epic-body{padding:4px 12px 12px}.epic-meta{color:var(--muted);padding:10px 4px 0}.story{background:#0f1620}.story>summary{color:#dce9f4}.tasks{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:10px;padding:10px}.task{border:1px solid #2a3c50;background:var(--panel2);border-radius:9px;padding:12px;min-width:0;scroll-margin-top:90px}.task.active{box-shadow:0 0 0 2px rgba(255,209,102,.45)}.task-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.task-id{font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);text-decoration:none}.task h4{margin:4px 0 9px;font-size:15px}.badges{display:flex;gap:5px;flex-wrap:wrap}.badge{font-size:10px;letter-spacing:.05em;text-transform:uppercase;border:1px solid #3b4b60;border-radius:99px;padding:2px 7px;color:#cbd6e2;white-space:nowrap}.badge.done{border-color:#356e49;color:var(--good)}.badge.active,.badge.review,.badge.acceptance,.badge.fix{border-color:#806d32;color:var(--active)}.badge.human{border-color:#8a573b;color:var(--human)}.badge.classa{border-color:#654f81;color:var(--aclass)}.meta{display:grid;grid-template-columns:86px 1fr;gap:5px 8px;margin-top:10px;font-size:12px}.meta dt{color:var(--muted)}.meta dd{margin:0;overflow-wrap:anywhere}.subs{margin-top:9px;padding-top:8px;border-top:1px solid #29394a;color:#bfccda;font-size:12px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:#9fb0c2;font-size:11px;text-transform:uppercase;letter-spacing:.06em}.hidden{display:none!important}.empty{padding:30px;text-align:center;color:var(--muted)}.source{margin:18px 0;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#081019,#0d141d 35%,#0b1017);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--accent)}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.wrap{max-width:1500px;margin:auto;padding:22px}.hero{border:1px solid var(--line);background:linear-gradient(135deg,#132131,#101720);border-radius:14px;padding:24px;box-shadow:var(--shadow)}h1{font-size:30px;margin:0 0 6px}.kicker{color:var(--accent);text-transform:uppercase;letter-spacing:.12em;font-weight:800;font-size:11px}.muted{color:var(--muted)}.notice{margin-top:14px;border-left:3px solid var(--active);background:#171a1c;padding:10px 12px;border-radius:5px}.combat{margin-top:14px;border:1px solid #32506a;background:#0d2030;padding:12px 14px;border-radius:9px}.stats{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:16px 0}.stat,.section-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}.stat b{font-size:22px;display:block}.progress{height:8px;background:#1b2734;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--good)}.overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.overview h3,.section-card h3{margin:0 0 8px}.overview pre{white-space:pre-wrap;margin:0;color:#cbd6e2;font-size:11px}.position-line{margin:7px 0}.milestone-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}.milestone{border:1px solid #2a3c50;background:var(--panel2);border-radius:9px;padding:12px}.milestone.current{box-shadow:0 0 0 2px rgba(98,211,255,.45)}.milestone.next{box-shadow:0 0 0 1px rgba(255,209,102,.45)}.milestone.gated{border-color:#654f81}.milestone h4{margin:6px 0}.milestone p{margin:6px 0}.control-flow{white-space:pre-wrap;margin:0;color:#cbd6e2;font-size:11px}.control-rules{margin:8px 0 0;padding-left:18px}.queue{display:flex;gap:6px;flex-wrap:wrap}.queue a{border:1px solid #8a573b;border-radius:99px;padding:4px 8px;text-decoration:none;color:var(--human);font-size:11px}.controls{position:sticky;top:0;z-index:9;margin:18px 0;padding:12px;background:rgba(11,16,23,.94);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:10px;display:flex;gap:9px;flex-wrap:wrap;align-items:center}input,select,button{background:#101823;color:var(--text);border:1px solid #34475d;border-radius:7px;padding:8px 10px}input[type=search]{min-width:280px;flex:1}button{cursor:pointer}label.toggle{display:flex;gap:7px;align-items:center;color:var(--muted)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}details{border:1px solid var(--line);background:var(--panel);border-radius:10px;margin:10px 0;overflow:hidden}summary{cursor:pointer;list-style:none;padding:13px 15px;font-weight:700}summary::-webkit-details-marker{display:none}details[open]>summary{border-bottom:1px solid var(--line);background:#151f2b}.epic>summary{font-size:17px}.epic-body{padding:4px 12px 12px}.epic-meta{color:var(--muted);padding:10px 4px 0}.story{background:#0f1620}.story>summary{color:#dce9f4}.tasks{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:10px;padding:10px}.task{border:1px solid #2a3c50;background:var(--panel2);border-radius:9px;padding:12px;min-width:0;scroll-margin-top:90px}.task.active{box-shadow:0 0 0 2px rgba(255,209,102,.45)}.task-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.task-id{font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);text-decoration:none}.task h4{margin:4px 0 9px;font-size:15px}.badges{display:flex;gap:5px;flex-wrap:wrap}.badge{font-size:10px;letter-spacing:.05em;text-transform:uppercase;border:1px solid #3b4b60;border-radius:99px;padding:2px 7px;color:#cbd6e2;white-space:nowrap}.badge.done{border-color:#356e49;color:var(--good)}.badge.active,.badge.review,.badge.acceptance,.badge.fix{border-color:#806d32;color:var(--active)}.badge.human{border-color:#8a573b;color:var(--human)}.badge.classa{border-color:#654f81;color:var(--aclass)}.meta{display:grid;grid-template-columns:86px 1fr;gap:5px 8px;margin-top:10px;font-size:12px}.meta dt{color:var(--muted)}.meta dd{margin:0;overflow-wrap:anywhere}.subs{margin-top:9px;padding-top:8px;border-top:1px solid #29394a;color:#bfccda;font-size:12px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:#9fb0c2;font-size:11px;text-transform:uppercase;letter-spacing:.06em}.hidden{display:none!important}.empty{padding:30px;text-align:center;color:var(--muted)}.source{margin:18px 0;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
 @media(max-width:1000px){.overview{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:850px){.grid2{grid-template-columns:1fr}.wrap{padding:12px}input[type=search]{min-width:180px}}
 @media print{body{background:white;color:#111}.controls{display:none}details{break-inside:avoid;background:white}details>*{display:block!important}}
@@ -411,11 +461,15 @@ function renderHtml(data, sourceHash) {
 </section>
 <section class="stats" id="stats"></section>
 <section class="overview">
-  <div class="section-card"><h3>Next Action</h3><div id="next-action"></div></div>
+  <div class="section-card"><h3>Current Position</h3><div id="current-position"></div></div>
   <div class="section-card"><h3>Human Gate Queue</h3><div id="human-queue" class="queue"></div></div>
-  <div class="section-card"><h3>Milestones</h3><pre>${esc(data.milestoneText)}</pre></div>
+  <div class="section-card"><h3>Project Control</h3><pre class="control-flow">${esc(data.controlModel.flow)}</pre></div>
 </section>
+<section class="section-card"><h3>Pre-alpha Local Test Milestones</h3><div class="muted">Milestone planning does not change TASK lifecycle state.</div><div id="prealpha-milestones" class="milestone-grid"></div></section>
+<details class="section-card"><summary>Project Control boundaries</summary><div class="tablewrap"><table><thead><tr><th>Area</th><th>Owner</th><th>Constraint</th></tr></thead><tbody>${data.controlModel.boundaries.map((row) => `<tr><td>${esc(row.area)}</td><td>${esc(row.owner)}</td><td>${esc(row.constraint)}</td></tr>`).join('')}</tbody></table></div><ul class="control-rules">${data.controlModel.protections.map((rule) => `<li>${esc(rule)}</li>`).join('')}</ul></details>
+<details class="section-card"><summary>Portfolio milestone sequence</summary><pre>${esc(data.milestoneText)}</pre></details>
 <details class="section-card"><summary>Critical path / dependency map</summary><pre>${esc(data.criticalPathText)}</pre></details>
+<details class="section-card"><summary>Canonical current-action narrative</summary><p>${esc(data.currentAction)}</p><p class="muted">${esc(data.nextTask)}</p></details>
 <div class="controls">
 <input id="q" type="search" placeholder="Buscar task, skill, owner, dependência…" aria-label="Buscar">
 <select id="epic"><option value="">Todos os Epics</option></select>
@@ -462,13 +516,25 @@ function initSummary(){
     '<div class="stat"><span class="muted">REVIEW/FIX/ACTIVE</span><b>'+DATA.tasks.filter(t=>isCurrent(t.status)).length+'</b><small>trabalho corrente</small></div>'+
     '<div class="stat"><span class="muted">PLANNED</span><b>'+(counts.PLANNED??0)+'</b><small>viram DRAFT/READY apenas após gates</small></div>'+
     '<div class="stat"><span class="muted">Validador final</span><b>HO</b><small>Human Owner em todo gate humano</small></div>';
-  $('#next-action').innerHTML='<div><b>Agora:</b> '+taskTextHtml(DATA.currentAction)+'</div><div class="muted"><b>Depois da aceitação:</b> '+taskTextHtml(DATA.nextTask)+'</div>';
+  const current=DATA.prealpha.milestones.find(item=>item.status==='CURRENT');
+  const next=DATA.prealpha.milestones.find(item=>item.status==='NEXT');
+  $('#current-position').innerHTML='<div class="position-line"><span class="muted">Phase</span><br><b>'+esc(DATA.prealpha.phase)+'</b></div>'+
+    '<div class="position-line"><span class="muted">Current milestone</span><br><b>'+esc(DATA.prealpha.currentMilestone)+'</b></div>'+
+    '<div class="position-line"><span class="muted">Next milestone</span><br>'+esc(DATA.prealpha.nextMilestone)+'</div>'+
+    '<div class="position-line"><span class="muted">Immediate objective</span><br>'+esc(current?.objective??DATA.prealpha.currentTarget)+'</div>'+
+    (next?'<div class="position-line"><span class="muted">Then</span><br>'+esc(next.objective)+'</div>':'');
   const humanTasks=DATA.tasks.filter(t=>t.status!=='DONE'&&/HUMAN/i.test(t.human));
   const ready=humanTasks.filter(t=>t.status==='ACCEPTANCE');
   const review=humanTasks.filter(t=>['ACTIVE','REVIEW','FIX'].includes(t.status));
   const future=humanTasks.filter(t=>!['ACTIVE','REVIEW','FIX','ACCEPTANCE'].includes(t.status)).slice(0,8);
   const group=(label,tasks)=>tasks.length?'<div><span class="muted">'+esc(label)+'</span><div class="queue">'+tasks.map(t=>'<a href="#'+t.id+'" title="'+esc(t.human)+'">'+esc(t.id)+'</a>').join('')+'</div></div>':'';
   $('#human-queue').innerHTML=group('Ready now',ready)+group('Current / review',review)+group('Future gates',future)||'Nenhum gate humano pendente.';
+}
+function initMilestones(){
+  $('#prealpha-milestones').innerHTML=DATA.prealpha.milestones.map(item=>{
+    const cls=item.status.toLowerCase();
+    return '<article class="milestone '+esc(cls)+'"><div class="badges">'+badge(item.id)+badge(item.status,cls)+'</div><h4>'+esc(item.title)+'</h4><p>'+esc(item.objective)+'</p><div class="meta"><dt>Tasks</dt><dd>'+taskTextHtml(item.tasks)+'</dd><dt>Exit</dt><dd>'+esc(item.exit)+'</dd></div></article>';
+  }).join('');
 }
 function initTables(){
   $('#roles tbody').innerHTML=DATA.roles.map(r=>'<tr><td><b>'+esc(r.code)+'</b><br>'+esc(r.role)+'</td><td>'+esc(r.use)+'</td><td>'+esc(r.agent)+'</td></tr>').join('');
@@ -499,7 +565,7 @@ function render(){
   }
   $('#roadmap').innerHTML=output; $('#empty').classList.toggle('hidden',visible>0);
 }
-initSummary(); initTables(); render();
+initSummary(); initMilestones(); initTables(); render();
 ['q','epic','status','class','owner','human'].forEach(id=>$('#'+id).addEventListener('input',render));
 $('#expand').onclick=()=>document.querySelectorAll('#roadmap details').forEach(item=>item.open=true);
 $('#collapse').onclick=()=>document.querySelectorAll('#roadmap details').forEach(item=>item.open=false);

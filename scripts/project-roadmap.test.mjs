@@ -71,6 +71,10 @@ test('an existing historical DONE/DEFERRED roadmap remains valid', () => {
   const root = fixture();
   const generated = runRoadmap(root, 'generate');
   assert.equal(generated.status, 0, generated.stderr || generated.stdout);
+  const html = readFileSync(join(root, 'docs/project/PROJECT_ROADMAP.html'), 'utf8');
+  assert.match(html, /Pre-alpha Local Test Milestones/);
+  assert.match(html, /Project Control boundaries/);
+  assert.match(html, /Current Position/);
   const checked = runRoadmap(root, 'check');
   assert.equal(checked.status, 0, checked.stderr || checked.stdout);
 });
