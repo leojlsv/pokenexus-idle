@@ -198,6 +198,7 @@ describe("SPEC-017 isolated authenticated projection reader (no HTTP exposure)",
     for (const invalid of [
       "limit=0", "limit=01", "limit=129", "limit=-1", "limit=1.0",
       "limit=1&limit=2", "cursor=a&cursor=b", "unsupported=true", "cursor=",
+      "cursor=a.b", "cursor=a%3D", "cursor=%C3%A9",
     ]) expect(parseHuntPresentationQuery(new URLSearchParams(invalid))).toBeNull();
   });
 
@@ -244,6 +245,31 @@ describe("SPEC-017 isolated authenticated projection reader (no HTTP exposure)",
       .toEqual({ httpStatus: 404, body: { error: "not_found" } });
     expect(await call(store, { rawCursor: first.nextCursor!, nowMs: now + 15 * 60 * 1000 }))
       .toEqual({ httpStatus: 410, body: { error: "cursor_expired" } });
+  });
+
+  it("validates an owned Hunt cursor before exposing presentation retention or unavailable state", async () => {
+    const unavailable = new FakeReadPort();
+    unavailable.streamRecord = { ...unavailable.streamRecord, status: "unavailable" };
+    expect(await call(unavailable, { rawCursor: "invalid" }))
+      .toEqual({ httpStatus: 400, body: { error: "invalid_request" } });
+
+    const expiredPresentation = new FakeReadPort();
+    expiredPresentation.terminalAt = new Date(now - 1000);
+    expiredPresentation.streamRecord = {
+      ...expiredPresentation.streamRecord,
+      isTerminal: true,
+      presentationTerminalRecordedAtCeilMs: BigInt(now - 30 * 24 * 60 * 60 * 1000),
+    };
+    expect(await call(expiredPresentation, { rawCursor: "invalid" }))
+      .toEqual({ httpStatus: 400, body: { error: "invalid_request" } });
+
+    const source = new FakeReadPort();
+    const first = successPage(await call(source, { limit: 1 }));
+    unavailable.streamRecord = { ...unavailable.streamRecord, status: "unavailable" };
+    expect(await call(unavailable, {
+      rawCursor: first.nextCursor!,
+      nowMs: now + 15 * 60 * 1000,
+    })).toEqual({ httpStatus: 410, body: { error: "cursor_expired" } });
   });
 
   it("returns snapshot_changed when a prior signed prefix is no longer retained or authentic", async () => {
@@ -316,6 +342,21 @@ describe("SPEC-017 isolated authenticated projection reader (no HTTP exposure)",
     store.streamRecord = { ...store.streamRecord, status: "unavailable" };
     expect(await call(store))
       .toEqual({ httpStatus: 410, body: { error: "presentation_unavailable" } });
+  });
+
+  it("fails closed on an unsupported legacy presentation authority tuple without reconstruction", async () => {
+    const store = new FakeReadPort();
+    store.streamRecord = {
+      ...store.streamRecord,
+      inputSchemaVersion: "hunt-runtime-inputs-v1",
+      checkpointSchemaVersion: "pokenexus.solo-hunt-checkpoint.v2",
+      presentationSchemaVersion: "pokenexus.combat-presentation.v1",
+    };
+    expect(await call(store)).toEqual({
+      httpStatus: 410,
+      body: { error: "presentation_unavailable" },
+    });
+    expect(store.readCount.index).toBe(0);
   });
 
   it("does not expire early when the PostgreSQL terminal anchor has fractional milliseconds", async () => {
