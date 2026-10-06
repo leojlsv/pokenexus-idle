@@ -391,10 +391,10 @@ prove the following prerequisites before actual endpoint activation:
 
 Until the SPEC-018 backend and a real configured release pass delivery tests,
 `catalog={null}` on failed or absent release verification remains correct.
-The Human Owner accepted SPEC-017 on 2026-09-29, but TASK-103 has not yet
-implemented or verified the immutable-origin source, additive persistence,
-bounded indexed endpoint, real integration/security and operational evidence.
-The standalone TASK-028/TASK-029 fixture remains only a demonstration, neither
-a live transport nor a completed TASK-039 event-feed acceptance test. TASK-039
-must not mount a real Combat feed before TASK-103's independent implementation
-gates and the separate Human public-enablement acceptance pass.
+The Human Owner accepted SPEC-017 on 2026-09-29, and TASK-103's authoritative
+source/persistence/reader implementation is now repository-integrated with
+exact-current implementation/security review plus non-public conformance and
+local/disposable workload evidence green. Its public presentation GET remains
+intentionally unregistered, so this still is not a live TASK-039 event-feed
+acceptance test. TASK-039 must not mount a real Combat feed before the remaining
+TASK-103 route/deployed-evidence gates and separate Human public-enablement pass.
