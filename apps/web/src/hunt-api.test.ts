@@ -50,6 +50,50 @@ describe("forward Hunt client contract", () => {
     expect("claim" in api).toBe(false);
   });
 
+  it("reads Inventory through GET only and preserves exact decimal quantities", async () => {
+    const calls: { readonly input: string; readonly init?: RequestInit }[] = [];
+    const api = new HuntApi(async (input, init) => {
+      calls.push({ input: String(input), init });
+      return new Response(JSON.stringify({
+        rowVersion: "12",
+        entries: [{ itemId: "pokenexus:item:poke-ball:v1", quantity: "900719925474099312345" }],
+        nextCursor: "next/cursor",
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    });
+
+    await expect(api.inventoryPage("page/cursor")).resolves.toEqual({
+      rowVersion: "12",
+      entries: [{ itemId: "pokenexus:item:poke-ball:v1", quantity: "900719925474099312345" }],
+      nextCursor: "next/cursor",
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.input).toBe("/player/inventory?limit=100&cursor=page%2Fcursor");
+    expect(calls[0]?.init?.method).toBe("GET");
+    expect(calls[0]?.init?.body).toBeUndefined();
+    expect(new Headers(calls[0]?.init?.headers).has("X-CSRF-Token")).toBe(false);
+  });
+
+  it("fails closed on duplicate Inventory identities and surfaces pagination_stale", async () => {
+    const duplicate = new HuntApi(async () => new Response(JSON.stringify({
+      rowVersion: "1",
+      entries: [
+        { itemId: "item:a", quantity: "1" },
+        { itemId: "item:a", quantity: "2" },
+      ],
+      nextCursor: null,
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    await expect(duplicate.inventoryPage()).rejects.toThrow(/duplicate item identity/);
+
+    const stale = new HuntApi(async () => new Response(JSON.stringify({ error: "pagination_stale" }), {
+      status: 409,
+      headers: { "Content-Type": "application/json" },
+    }));
+    await expect(stale.inventoryPage("stale-cursor")).rejects.toMatchObject({
+      status: 409,
+      code: "pagination_stale",
+    });
+  });
+
   it("preserves a bounded 202 mutation as an explicit same-command continuation", async () => {
     const api = new HuntApi(async () => new Response(JSON.stringify({
       status: "in_progress",

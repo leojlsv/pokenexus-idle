@@ -1,0 +1,28 @@
+.inventory-surface { min-width: 0; display: grid; gap: var(--space-4); }
+.inventory-toolbar { min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.inventory-toolbar > div { min-width: 0; }
+.inventory-toolbar h2 { margin: 0 0 var(--space-1); }
+.inventory-toolbar p { margin: 0; color: var(--color-muted); line-height: 1.5; }
+.inventory-grid { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.inventory-card { min-width: 0; display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--color-divider); border-radius: var(--radius-md); background: var(--color-surface); }
+.inventory-card__heading { min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.inventory-card__heading > div { min-width: 0; display: grid; gap: var(--space-1); }
+.inventory-card__heading strong { overflow-wrap: anywhere; }
+.inventory-card__heading span { color: var(--color-muted); font-size: 0.9rem; }
+.inventory-quantity { min-width: 0; flex: 0 1 auto; overflow-wrap: anywhere; word-break: break-word; text-align: right; font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.inventory-item-id { min-width: 0; overflow-wrap: anywhere; color: var(--color-muted); font-size: 0.8rem; }
+.inventory-controls { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.inventory-controls p { width: 100%; margin: 0; }
+.inventory-note, .inventory-notice, .inventory-error { margin: 0; line-height: 1.5; }
+.inventory-note { color: var(--color-muted); }
+.inventory-notice { padding: var(--space-3); border-left: 3px solid var(--color-interactive); background: var(--color-surface); }
+.inventory-error { color: var(--color-danger); }
+.inventory-boundary { gap: var(--space-3); }
+
+@media (min-width: 640px) {
+  .inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) {
+  .inventory-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

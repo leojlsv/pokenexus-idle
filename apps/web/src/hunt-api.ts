@@ -667,12 +667,16 @@ export class HuntApi {
     return this.read(`/player/inventory?limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, (value) => {
       const row = object(value, "Inventory page");
       if (!Array.isArray(row.entries) || row.entries.length > 100) throw new Error("Invalid Inventory page");
+      const entries = row.entries.map((entry) => {
+        const item = object(entry, "Inventory entry");
+        return { itemId: opaque(item.itemId, "itemId"), quantity: decimal(item.quantity, "quantity") };
+      });
+      if (new Set(entries.map(({ itemId }) => itemId)).size !== entries.length) {
+        throw new Error("Invalid Inventory page: duplicate item identity");
+      }
       return {
         rowVersion: decimal(row.rowVersion, "rowVersion"),
-        entries: row.entries.map((entry) => {
-          const item = object(entry, "Inventory entry");
-          return { itemId: opaque(item.itemId, "itemId"), quantity: decimal(item.quantity, "quantity") };
-        }),
+        entries,
         nextCursor: row.nextCursor === null ? null : opaque(row.nextCursor, "Inventory cursor"),
       };
     }, signal);

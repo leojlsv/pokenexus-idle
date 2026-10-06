@@ -55,4 +55,18 @@ describe("App shell", () => {
     expect(html).not.toContain('href="/hunt" aria-current="page"');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
   });
+
+  it("routes Inventory to its authoritative loading surface instead of the unavailable placeholder", () => {
+    const html = renderToStaticMarkup(
+      <AppShell
+        route={routeForPath("/inventory")}
+        preference="card"
+        onPreferenceChange={() => undefined}
+        onNavigate={() => undefined}
+      />,
+    );
+
+    expect(html).toContain("Loading Inventory");
+    expect(html).not.toContain("Area unavailable");
+  });
 });

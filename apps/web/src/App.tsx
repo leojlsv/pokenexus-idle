@@ -4,6 +4,7 @@ import { EmptyState, ErrorState, LoadingState } from "./common-states";
 import { HuntApi } from "./hunt-api";
 import { ActiveHuntPage, HuntOverviewPage, HuntResultPage } from "./hunt-pages";
 import { HuntSettingsPage } from "./hunt-settings";
+import { InventoryPage } from "./inventory-page";
 import { primaryNavigation, routeDocumentTitle, useBrowserRoute } from "./routing";
 import type { AppRoute } from "./routing";
 import { readRendererPreference, writeRendererPreference } from "./renderer-preference";
@@ -110,6 +111,8 @@ function RouteView({
     routeContent = <HuntResultPage api={api} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
   } else if (route.id === "hunt-settings") {
     routeContent = <HuntSettingsPage api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} />;
+  } else if (route.id === "inventory") {
+    routeContent = <InventoryPage api={api} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
   }
 
   return (
