@@ -120,6 +120,7 @@ QA Reviewer / Independent Auditor
 | `TASK-120` Durable Hunt Terminal & Offline Summary Contract | DRAFT — Class-A durable completed-Hunt read contract; DRAFT SPEC-025, no implementation/migration authority |
 | `TASK-121` Historical Manual-Capture Compatibility & Migration Plan | DRAFT — Class-A persisted compatibility decision; DRAFT SPEC-026, no migration authority |
 | `TASK-122` Local Pre-alpha Environment & Operator Runbook | ACTIVE — Class-B local-only operator environment; no public/production authority |
+| `TASK-123` Hunt Catalog Workerd Redirect Compatibility | ACTIVE — bounded TASK-118 runtime compatibility correction from local Worker evidence |
 | `TASK-112` Local Pokémon Source Snapshot & Authority Realignment | DONE — SPEC-022 QA READY `0/0/0/0`; Human-approved contract integrated with TASK-113/114 dependency chain on 2026-10-03 |
 | `TASK-113` Local Pokémon Source Snapshot Implementation | DONE — post-ACQUIRE QA final TECH/ARCH READY `0/0/0/0`; schema-5 local snapshot/PokéAPI foundation integrated on 2026-10-03 |
 | `TASK-114` PokéAPI Promotion Decision & Schema-5 Cutover Contract | DONE — immutable schema-5 v4 publication + repository history integrated; candidate/publication/integration QA READY `0/0/0/0`; runtime/deploy remain separate |
@@ -158,18 +159,18 @@ Current target: **M0 → M1**. The integrated gameplay core and TASK-041 evidenc
 
 ### Portfolio progress
 
-- Planned task IDs in this roadmap: `TASK-000` through `TASK-122`.
+- Planned task IDs in this roadmap: `TASK-000` through `TASK-123`.
 - DONE: 69.
 - DRAFT: 2.
 - READY: 0.
-- ACTIVE: 4.
+- ACTIVE: 5.
 - FIX: 0.
 - REVIEW: 0.
 - ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 1.
 - PLANNED: 46.
-- Task-count completion: **69 / 123 = 56.1%**.
+- Task-count completion: **69 / 124 = 55.6%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -682,6 +683,7 @@ content relies on those mechanics.
 | `TASK-120` Durable Hunt Terminal & Offline Summary Contract | A | DRAFT | PM → ChatGPT project coordination | Independent protocol/replay QA + persistence/security audit | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only | **Human Class-A decision required before implementation/migration** | TASK-110 + APPROVED SPEC-020 | DRAFT SPEC-025 defines owner-scoped durable terminal reason/offline summary reads while keeping Encounter details in Hunt Activity and preventing duplicate reward semantics; TASK-039/041 are downstream consumers. |
 | `TASK-121` Historical Manual-Capture Compatibility & Migration Plan | A | DRAFT | PM → ChatGPT project coordination | Independent compatibility/replay QA + persistence/security audit | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only | **Human Class-A compatibility decision required before any migration** | TASK-038/098/106/110 + APPROVED SPEC-020 | DRAFT SPEC-026 inventories historical pending/manual-capture states and requires an idempotent no-reroll/no-duplicate-spend migration/recovery decision without restoring manual capture UX; TASK-039 is a downstream consumer. |
 | `TASK-122` Local Pre-alpha Environment & Operator Runbook | B | ACTIVE | SD → ChatGPT prime | Independent QA + local-boundary security/integrity review pending | `SK-TDD`, `SK-PG`, `SK-API-SEC` reference-only | **AUTHORIZED local-only by Human request 2026-10-06; no deploy/public/production action** | TASK-016/017/025/038/039/041/100/103/109/110/111/118/119 | Owned local PostgreSQL lifecycle, immutable local game-data delivery, non-production API/session fixture surface, trusted internal bootstrap wiring, 1–2 ALT proxy/smoke and operator runbook; production entry/contracts unchanged and missing authority fails closed. |
+| `TASK-123` Hunt Catalog Workerd Redirect Compatibility | B | ACTIVE | SD → ChatGPT prime | Independent QA pending | `SK-TDD`, `SK-CF-WR` | **AUTHORIZED bounded Class-B correction from TASK-122 runtime evidence; no deploy/public action** | TASK-118/122 | Replace unsupported Worker `redirect:error` with `manual` while explicitly rejecting 3xx responses; preserve exact origin/artifact/hash boundaries and re-gate local Worker catalog delivery. |
 | `TASK-116` Exact Production Rules Rebind for Game Data v5 | B | DONE | LD → ChatGPT coding agent | Independent TECH + architecture/integrity **ACCEPT `0/0/0/0`**; owner gates PASS | `SK-TDD`, `SK-GAME-ARCH` | **COMPLETED — Human-authorized repository/history integration 2026-10-04; persistent migration/deploy/public enablement remain separate and blocked on absent production infrastructure** | TASK-095/097/109/114/115 | New immutable production support/catalog + Genetic rules identity for exact v5 pair; retained identities untouched; no semantic drift. |
 
 **Exit / MVP gate:** Solo Hunt is a complete server-authoritative playable loop. Human Owner explicitly approves MVP behavior and presentation before the project expands into realtime multiplayer content.

@@ -79,7 +79,7 @@ describe("backend-owned immutable Hunt catalog release", () => {
       if (!relativePath) throw new Error("unexpected test origin path");
       paths.push(relativePath);
       expect(init?.method).toBe("GET");
-      expect(init?.redirect).toBe("error");
+      expect(init?.redirect).toBe("manual");
       const bytes = await fileReader().read(relativePath);
       return new Response(Uint8Array.from(bytes), {
         status: 200,
@@ -240,6 +240,6 @@ describe("backend-owned immutable Hunt catalog release", () => {
       fetchImpl: fetchImpl as typeof fetch,
     })).rejects.toThrow("unavailable");
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-    expect(fetchImpl.mock.calls[0]![1]).toMatchObject({ redirect: "error" });
+    expect(fetchImpl.mock.calls[0]![1]).toMatchObject({ redirect: "manual" });
   });
 });

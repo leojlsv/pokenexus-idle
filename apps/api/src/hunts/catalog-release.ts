@@ -54,7 +54,14 @@ function createBoundedOriginReader(baseUrl: string, fetchImpl: typeof fetch): Ru
       if (url.origin !== root.origin || !url.pathname.startsWith(root.pathname)) {
         throw new Error("Hunt catalog artifact escaped its configured origin");
       }
-      const response = await fetchImpl(url, { method: "GET", redirect: "error" });
+      // Cloudflare Workers does not implement Request.redirect = "error".
+      // Manual mode preserves the contract: redirect responses are surfaced to
+      // this code and rejected before any bytes are consumed.
+      const response = await fetchImpl(url, { method: "GET", redirect: "manual" });
+      if (response.status >= 300 && response.status < 400) {
+        if (response.body !== null) await response.body.cancel("Hunt catalog redirects are forbidden");
+        throw new Error("Hunt catalog artifact is unavailable");
+      }
       if (!response.ok || response.body === null) {
         throw new Error("Hunt catalog artifact is unavailable");
       }
