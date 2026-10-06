@@ -69,4 +69,20 @@ describe("App shell", () => {
     expect(html).toContain("Loading Inventory");
     expect(html).not.toContain("Area unavailable");
   });
+
+  it("routes Collection and Team destinations to their authoritative loading surfaces", () => {
+    const shell = (path: string) => renderToStaticMarkup(
+      <AppShell
+        route={routeForPath(path)}
+        preference="card"
+        onPreferenceChange={() => undefined}
+        onNavigate={() => undefined}
+      />,
+    );
+
+    expect(shell("/pokemon")).toContain("Loading Collection");
+    expect(shell("/pokemon/0199472a-0000-7000-8000-000000000001")).toContain("Loading Pokémon");
+    expect(shell("/teams")).toContain("Loading Teams");
+    expect(shell("/teams/0199472a-0000-7000-8000-000000000101")).toContain("Loading saved Team");
+  });
 });

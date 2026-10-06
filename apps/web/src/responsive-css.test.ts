@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 const css = readFileSync(fileURLToPath(new URL("./app.css", import.meta.url)), "utf8");
 const inventoryCss = readFileSync(fileURLToPath(new URL("./inventory-page.css", import.meta.url)), "utf8");
+const playerCss = readFileSync(fileURLToPath(new URL("./player-pages.css", import.meta.url)), "utf8");
 
 describe("small-screen shell CSS contract", () => {
   it("keeps the bottom navigation as four shrinkable equal columns", () => {
@@ -32,5 +33,13 @@ describe("small-screen shell CSS contract", () => {
     expect(inventoryCss).toContain(".inventory-item-id { min-width: 0; overflow-wrap: anywhere;");
     expect(inventoryCss).toMatch(/\.inventory-quantity \{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/);
     expect(inventoryCss).toMatch(/@media \(min-width: 640px\)[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
+  });
+
+  it("keeps Collection and Team management shrinkable with keyboard-sized roster controls", () => {
+    expect(playerCss).toContain("grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr))");
+    expect(playerCss).toMatch(/\.player-tile \{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/);
+    expect(playerCss).toMatch(/\.roster-row \{[^}]*min-width: 0;[^}]*flex-wrap: wrap;/);
+    expect(playerCss).toContain(".roster-buttons .button { padding: 0 var(--space-3); min-width: var(--target-min); }");
+    expect(playerCss).toMatch(/@media \(max-width: 420px\)[\s\S]*\.player-picker \{ grid-template-columns: minmax\(0, 1fr\); \}/);
   });
 });

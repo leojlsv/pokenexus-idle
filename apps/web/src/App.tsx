@@ -5,6 +5,8 @@ import { HuntApi } from "./hunt-api";
 import { ActiveHuntPage, HuntOverviewPage, HuntResultPage } from "./hunt-pages";
 import { HuntSettingsPage } from "./hunt-settings";
 import { InventoryPage } from "./inventory-page";
+import { PlayerApi } from "./player-api";
+import { CollectionPage, PokemonPage, TeamDetailPage, TeamsPage } from "./player-pages";
 import { primaryNavigation, routeDocumentTitle, useBrowserRoute } from "./routing";
 import type { AppRoute } from "./routing";
 import { readRendererPreference, writeRendererPreference } from "./renderer-preference";
@@ -13,6 +15,7 @@ import "./app.css";
 
 type Navigate = (href: string) => void;
 const defaultHuntApi = new HuntApi();
+const defaultPlayerApi = new PlayerApi();
 const ignoreSessionLoss = () => undefined;
 
 function navigate(href: string): void {
@@ -51,10 +54,10 @@ function pageDescription(route: AppRoute): string {
     case "hunt": return "Choose a published Hunt and saved Team, or use HUB PokéCenter management.";
     case "hunt-active": return "Follow committed Hunt state and resolved activity without client-side combat simulation.";
     case "hunt-result": return "Review authoritative resolved Encounter activity after returning to HUB.";
-    case "pokemon": return "Browse your owned Pokémon when the management surface is available.";
-    case "pokemon-detail": return "Pokémon detail and configuration are opened by stable instance identity.";
-    case "teams": return "Saved Team management is available from this destination.";
-    case "team-detail": return "A saved Team is addressed by its stable Team identity.";
+    case "pokemon": return "Browse your owned Pokémon, then open their individual records.";
+    case "pokemon-detail": return "Read server-owned Pokémon progression and current ordered Move configuration.";
+    case "teams": return "Create and manage up to six saved Team presets.";
+    case "team-detail": return "Edit the ordered roster of a saved Team using authoritative version checks.";
     case "inventory": return "Review authoritative owned item quantities.";
     case "settings": return "Presentation preferences on this page are stored only on this device.";
     case "hunt-settings": return "Manage server-authoritative Capture, Potion and Revive automation policies.";
@@ -84,6 +87,7 @@ function RouteView({
   onPreferenceChange,
   onNavigate,
   api = defaultHuntApi,
+  playerApi = defaultPlayerApi,
   csrfToken = "",
   onSessionLost = ignoreSessionLoss,
 }: {
@@ -92,6 +96,7 @@ function RouteView({
   onPreferenceChange: (preference: RendererPreference) => void;
   onNavigate: Navigate;
   api?: HuntApi;
+  playerApi?: PlayerApi;
   csrfToken?: string;
   onSessionLost?: () => void;
 }) {
@@ -113,6 +118,18 @@ function RouteView({
     routeContent = <HuntSettingsPage api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} />;
   } else if (route.id === "inventory") {
     routeContent = <InventoryPage api={api} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
+  } else if (route.id === "pokemon") {
+    routeContent = <CollectionPage api={playerApi} csrfToken={csrfToken}
+      onSessionLost={onSessionLost} onNavigate={onNavigate} />;
+  } else if (route.id === "pokemon-detail") {
+    routeContent = <PokemonPage key={route.key} api={playerApi} csrfToken={csrfToken}
+      pokemonInstanceId={route.pokemonInstanceId} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
+  } else if (route.id === "teams") {
+    routeContent = <TeamsPage api={playerApi} csrfToken={csrfToken}
+      onSessionLost={onSessionLost} onNavigate={onNavigate} />;
+  } else if (route.id === "team-detail") {
+    routeContent = <TeamDetailPage key={route.key} api={playerApi} csrfToken={csrfToken}
+      teamId={route.teamId} onSessionLost={onSessionLost} onNavigate={onNavigate} />;
   }
 
   return (
@@ -163,6 +180,7 @@ export function AppShell({
   onPreferenceChange,
   onNavigate = navigate,
   api,
+  playerApi,
   csrfToken,
   onSessionLost,
 }: {
@@ -171,6 +189,7 @@ export function AppShell({
   onPreferenceChange: (preference: RendererPreference) => void;
   onNavigate?: Navigate;
   api?: HuntApi;
+  playerApi?: PlayerApi;
   csrfToken?: string;
   onSessionLost?: () => void;
 }) {
@@ -198,7 +217,7 @@ export function AppShell({
 
       <main id="main-content" className="main-content" tabIndex={-1}>
         <RouteView route={route} preference={preference} onPreferenceChange={onPreferenceChange} onNavigate={onNavigate}
-          api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} />
+          api={api} playerApi={playerApi} csrfToken={csrfToken} onSessionLost={onSessionLost} />
       </main>
     </div>
   );
@@ -207,6 +226,7 @@ export function AppShell({
 function AuthenticatedApp({ csrfToken, onSessionLost }: { readonly csrfToken: string; readonly onSessionLost: () => void }) {
   const route = useBrowserRoute();
   const api = useMemo(() => new HuntApi(), []);
+  const playerApi = useMemo(() => new PlayerApi(), []);
   const [preference, setPreference] = useState<RendererPreference>(() => readRendererPreference());
 
   const updatePreference = (next: RendererPreference) => {
@@ -215,7 +235,7 @@ function AuthenticatedApp({ csrfToken, onSessionLost }: { readonly csrfToken: st
   };
 
   return <AppShell route={route} preference={preference} onPreferenceChange={updatePreference}
-    api={api} csrfToken={csrfToken} onSessionLost={onSessionLost} />;
+    api={api} playerApi={playerApi} csrfToken={csrfToken} onSessionLost={onSessionLost} />;
 }
 
 function SessionBoundary() {
