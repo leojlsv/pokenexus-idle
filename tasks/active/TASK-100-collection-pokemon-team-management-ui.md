@@ -6,19 +6,20 @@
 - Execution gate: Class-B prerequisites READY; Move-choice selection gated by an authoritative public read
 - Class: B
 - Owner: Frontend Developer (ChatGPT prime)
-- Owner execution surface: ChatGPT prime (explicit non-default Frontend Developer assignment)
-- Reviewer: QA Reviewer (independent final full-task review pending)
-- Reviewer execution surface: independent ChatGPT delegated reviewers (explicit non-default; exact reviewer/session and reviewed-snapshot identities require reconciliation before final acceptance)
+- Owner execution surface: ChatGPT prime (explicit non-default Frontend Developer assignment; current reconciliation worktree based on canonical `main`)
+- Reviewer: QA Reviewer (independent exact-current technical + UX/Class-B READY 2026-10-06)
+- Reviewer execution surface: independent ChatGPT delegated reviewers `worker-10` and `worker-11` on the current reconciliation snapshot
 - Auditor: N/A — this FE scope does not implement a new security model, public contract or database strategy; reassess if scope changes
 - Auditor execution surface: N/A
 - Consultants: N/A — this implementation does not define new gameplay or economy rules
 - Consultant execution surface(s): N/A
 - Prior partial-review evidence: independent technical QA PARTIAL READY (P0/P1 clear); independent UX/visual QA PARTIAL READY
-- Delegated Class-B acceptance: pending; Human Owner reported "funcionalidades validadas" on 2026-09-28 for presented functionality (scope unspecified, full Move editor remains gated).
+- Delegated Class-B acceptance: READY 2026-10-06 with P0/P1/P2 = 0/0/0 on the current candidate; Human Owner approved the current mock-backed live preview and explicitly authorized repository-history integration/push on 2026-10-06. Deploy/public enablement remains unauthorized, and the full Move editor remains separately gated by Class-A authority.
 - Specs: `docs/specs/SPEC-011-player-state-api-contract.md`, `docs/specs/SPEC-016-ui-ux-architecture-navigation-design-system.md`
 - Dependencies: TASK-025, TASK-027 — DONE
-- Branch: `feat/TASK-100-collection-pokemon-team-ui`
-- Worktree: `.worktrees/TASK-100-collection-pokemon-team-ui`
+- Branch: `reconcile/TASK-100-current`
+- Worktree: `.worktrees/TASK-100-current-reconcile`
+- Preserved historical source: `.worktrees/TASK-100-collection-pokemon-team-ui` on `feat/TASK-100-collection-pokemon-team-ui` remains untouched as the September partial-candidate evidence source.
 
 ## Objective
 
@@ -56,9 +57,9 @@ The client cannot become an authority for gameplay or Move eligibility.
       is persisted before POST and scoped to the current session without storing the CSRF token.
 - [x] Move editing remains disabled until approved server-provided eligible options are available.
 - [x] Source-faithful Chrome layout and basic interaction checks at 320/390/640/1024 px, with no horizontal overflow.
-- [x] Tests, typecheck, lint, build, roadmap and diff-check pass on the partial implementation.
-- [ ] Independent QA and Class-B acceptance have no unresolved P0/P1.
-- [ ] Human Owner live/preview validation and separate history authorization.
+- [x] Tests, typecheck, lint, build, roadmap and diff-check pass on the current reconciliation candidate.
+- [x] Independent exact-current QA and UX/Class-B acceptance are READY with P0/P1/P2 = 0/0/0.
+- [x] Human Owner live/preview validation and repository-history integration/push authorization recorded 2026-10-06; no deploy/public enablement authorization.
 
 ## Partial implementation validation evidence
 
@@ -87,6 +88,25 @@ The client cannot become an authority for gameplay or Move eligibility.
 - Human Owner reported that the presented functionality was validated on 2026-09-28. This confirms user acceptance of the available partial functionality without asserting that the absent Move editor, full live gameplay or all viewport/browser variants were tested.
 - QA/Class-B and Human usability review remain separate gates. Full TASK-100 completion remains blocked
   by a Class-A public read contract for the server-current eligible Move set; no browser-side inferencing.
+
+## Canonical-main reconciliation candidate — 2026-10-06
+
+- The September TASK-100 worktree was **not** rebased/reset/cleaned because it is 51 commits behind current `main` and contains preserved historical local evidence. A fresh `reconcile/TASK-100-current` worktree was created from canonical `main` `7a1980f` and only the valid frontend implementation was transplanted.
+- Reconciled source is bounded to `player-api`, Collection/Pokémon/Teams pages/state, Team-create intent recovery, route integration and responsive tests. Historical temporary CDP scripts/screenshots, preview-only files and stale spec/roadmap edits were intentionally not imported.
+- Current route integration coexists with the already-integrated TASK-039 Hunt surfaces and TASK-111 Inventory surface; no Hunt/Inventory implementation was replaced or absorbed.
+- Player transport matches current SPEC-011 / `apps/api/src/player/http.ts`: authenticated self-scoped Collection/Pokémon/Team reads, Team create/roster/delete mutations, exact decimal OCC strings and no Player/account authority supplied by the client. Redirect following is explicitly rejected (`redirect: "error"`) for both reads and mutations.
+- Team-create response-loss recovery persists one exact UUID command identity before POST, scopes recovery to the current session without persisting the CSRF token, never automatically substitutes a new key, and forces explicit review before discarding a prior-session unresolved identity.
+- Team roster save/delete keeps exact `expectedRowVersion`, never automatically retries stale/uncertain mutations, validates successful echoed identities/order/status, and requires authoritative reconciliation on stale, 404 or ambiguous transport/server outcomes.
+- Pokémon detail keeps the selected Move loadout **read-only** and states the missing dependency explicitly. Repository search reconfirmed that current `main` exposes `PUT /player/pokemon/:pokemonInstanceId/moves` but still has **no** public eligible-Moves GET. No browser-side level/learnset inference was added.
+- Reconciliation owner gates after current-main integration and all QA/UX corrections: focused Player/pages/API/App/responsive **42/42 PASS** across 5 files; full web **117/117 PASS** across 16 files; web typecheck PASS; lint PASS; production Vite build PASS; roadmap **122** PASS; `git diff --check` PASS.
+- UX/Class-B review found two P2s on the first reconciled snapshot and no P0/P1: a stale Team save could enter a conflict even when the fresh server roster already exactly matched the local draft, and Pokémon-detail Refresh temporarily replaced safe prior data with a loading-only state. Both were corrected in the current candidate: exact ordered equality now reconciles as already applied with the fresh OCC token, and single-resource refresh retains the prior authoritative value with explicit pending/failure state. Exact helper behavior is covered by focused tests.
+- Additional fail-closed transport hardening on the corrected snapshot requires the exact accepted success status (`200`) for Team create/roster/profile commands, validates the returned profile UUID, rejects redirects, duplicate Collection/Team page identities, Player decimal values above PostgreSQL signed `bigint`, cursors above the public 4096-character bound and any Teams quota other than the SPEC-011 constant `6`.
+- Collection/Team continuation now also fails closed on a successful opaque-cursor cycle while still allowing an explicit retry of the same page after transport/server failure; concurrent cross-page identity overlap remains merged because SPEC-011 does not promise a cross-page Collection/Team snapshot.
+- Independent frontend QA then identified one remaining P2 validation gap: the reconciled tests covered transport/state helpers but did not import/mount the page components or regression-test their high-risk orchestration. The current candidate closes that gap with `player-pages.test.tsx`: all four real page components mount through React SSR, while production helpers used directly by those pages exercise exact Team-create persist-key → POST → clear ordering, ambiguous-response key retention, definitive-rejection clearing, equal/conflicting roster reconciliation, uncertain-mutation classification and deterministic conflict/error/unavailable/post-choice focus targeting. No external DOM/test dependency was added.
+- Final UX/Class-B re-gate identified one additional P2 in stale Team deletion guidance: a `409 stale` DELETE correctly performed only authoritative reconciliation but reused save-oriented copy when the Team still existed. The corrected path keeps the same OCC/read-only reconciliation semantics, never retries DELETE automatically, adopts the fresh authoritative rowVersion when matched, and explicitly tells the user that deletion was not applied and must be intentionally issued again. Action-specific save/delete guidance is covered by `teamStaleReconciliationCopy` tests.
+- Dependencies were materialized only with `pnpm install --offline --frozen-lockfile` (`272` reused, `0` downloaded); package/lock bytes were not changed.
+- Final independent exact-current re-gates on the corrected snapshot are **READY 0/0/0** from both technical QA (`worker-10`) and UX/accessibility/Class-B (`worker-11`). Both independently reproduced focused **42/42**, full web **117/117**, typecheck, lint, production build, roadmap 122 and `git diff --check` PASS. No commit, merge, push, deploy or public enablement has been performed for this reconciliation candidate.
+- Human Owner gate on 2026-10-06: the current local mock-backed preview is approved, and the validated candidate is authorized for commit, integration into repository history and push under the established project flow. This authority explicitly excludes deploy/public enablement and does not authorize TASK-119/TASK-120/TASK-121 or the missing Class-A eligible-Moves read contract.
 
 ## Known dependency gate
 
