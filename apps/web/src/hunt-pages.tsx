@@ -12,11 +12,14 @@ import {
 } from "./hunt-api";
 import { browserHuntCommandStore, type HuntCommandStoreState } from "./hunt-command-store";
 import { formatHuntDuration, formatHuntTimestamp } from "./hunt-display";
+import {
+  consumeActiveForegroundHandoff,
+  rememberActiveForegroundHandoff,
+} from "./hunt-foreground-handoff";
 import type { PublishedHuntChoices } from "./hunt-published-choices";
 import "./hunt-pages.css";
 
 const LAST_HUNT_KEY = "pokenexus:hunt:last-visible-id:v1";
-let activeForegroundHandoffHuntId: string | null = null;
 
 type Navigate = (href: string) => void;
 
@@ -342,7 +345,7 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
           <p>{state.hunt.activeHunt.huntDefinitionId} · {formatHuntDuration(state.hunt.activeHunt.logicalTimeMs)}</p>
           <TeamCards members={state.hunt.activeHunt.team} />
           <button className="button" type="button" onClick={() => {
-            activeForegroundHandoffHuntId = state.hunt.activeHunt!.huntId;
+            rememberActiveForegroundHandoff(state.hunt.activeHunt!.huntId);
             onNavigate("/hunt/active");
           }}>Open active Hunt</button>
         </section>
@@ -458,8 +461,9 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
   const [syncBlocking, setSyncBlocking] = useState(false);
   const [syncPulse, setSyncPulse] = useState(0);
   const [nextSyncAt, setNextSyncAt] = useState(0);
-  const [foregroundHandoffHuntId, setForegroundHandoffHuntId] = useState<string | null>(() =>
-    activeForegroundHandoffHuntId);
+  const [foregroundHandoffHuntId, setForegroundHandoffHuntId] = useState<string | null>(
+    consumeActiveForegroundHandoff,
+  );
   const [syncMode, setSyncMode] = useState<"return" | "online">(() => foregroundHandoffHuntId ? "online" : "return");
   const [returnSyncRequested, setReturnSyncRequested] = useState(() => foregroundHandoffHuntId === null);
   const [activityBusy, setActivityBusy] = useState(false);
@@ -529,7 +533,6 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
           }
           const foregroundHandoffMatches = foregroundHandoffHuntId === active.huntId;
           if (foregroundHandoffHuntId !== null && !foregroundHandoffMatches && inspected.kind === "none") {
-            activeForegroundHandoffHuntId = null;
             setForegroundHandoffHuntId(null);
             setReturnSyncRequested(true);
             return;
@@ -589,7 +592,6 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
           setSyncMessage("Hunt progression synchronized.");
           setSyncBlocking(false);
           if (mode === "online" && foregroundHandoffMatches) {
-            activeForegroundHandoffHuntId = null;
             setForegroundHandoffHuntId(null);
           }
           setReturnSyncRequested(queuedReturnAfterExisting);
