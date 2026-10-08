@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: PM / Architecture Coordinator (ChatGPT prime)
 - Owner execution surface: ChatGPT prime
@@ -16,6 +16,7 @@
 - ADR: N/A
 - Branch: `docs/TASK-124-prealpha-review-milestone-transition`
 - Worktree: `.worktrees/TASK-124-prealpha-review-milestone-transition`
+- Completion integration: accepted candidate committed as `2b561ec`, pushed to `origin/docs/TASK-124-prealpha-review-milestone-transition`, and merged into canonical `main` as `5f20e8e`; post-integration control handback completed in canonical root `main` under the separately authorized history-integration step.
 
 ## Objective
 
@@ -158,7 +159,7 @@ Consequences of the accepted transition:
 
 - Copying or integrating dirty TASK-122 application/test/spec bytes into `main`.
 - Marking TASK-122 `DONE` or claiming its repository-history gate is complete.
-- Commit, push, merge, rebase, deployment, public enablement or production migration.
+- During REVIEW/ACCEPTANCE, commit/push/merge/rebase remained out of scope until separately authorized. Human Owner subsequently authorized the required commit/push/merge for repository-history integration; deployment, public enablement and production migration remain out of scope.
 - Implementing DRAFT TASK-120 / SPEC-025 or TASK-121 / SPEC-026.
 - Changing accepted gameplay, economy, Genetics, combat, progression or realtime semantics.
 - Manufacturing missing authority or treating live/local evidence as production evidence.
@@ -188,6 +189,7 @@ Consequences of the accepted transition:
 - [x] Human Owner explicitly accepted PA-M0 → PA-M1; PA-M1 may become the current validation milestone.
 - [x] A durable post-integration control handback to canonical root `main` is defined and supported
       without deleting or reassigning source worktrees.
+- [x] Repository-history integration was separately authorized; the accepted candidate was merged into canonical `main`, and TASK-039/041/100/103/122 control metadata was handed back to `main` / `.` with source history preserved.
 
 ## Validation / tests
 
@@ -200,23 +202,15 @@ Consequences of the accepted transition:
 
 ## Post-integration control handback
 
-During REVIEW/ACCEPTANCE, TASK-124 is intentionally the temporary control worktree for the open
-reconciled TASK-039/041/100/103/122 metadata. This keeps the provisional control-plane candidate
-internally coherent without editing their preserved implementation worktrees.
+Completed after the Human Owner separately authorized repository-history integration:
 
-If and only if the Human Owner later authorizes TASK-124 repository-history integration:
+1. accepted TASK-124 control-plane bytes were committed/pushed on the task branch and merged into canonical `main`;
+2. TASK-039/041/100/103/122 now use `Control branch: main` and `Control worktree: .`;
+3. every `Source branch` / `Source worktree` or original implementation `Branch` / `Worktree` remains unchanged so historical ownership/evidence stays recoverable;
+4. roadmap and local portfolio are regenerated/checked from canonical root `main` before the closure commit/push;
+5. TASK-124 may therefore close as `DONE` without implying TASK-122 source-byte integration, deployment, public enablement or production authority.
 
-1. integrate the accepted TASK-124 control-plane bytes through the normal Git gate;
-2. in canonical root `main`, change those five open tasks to `Control branch: main` and
-   `Control worktree: .`;
-3. keep every `Source branch` / `Source worktree` or original implementation `Branch` / `Worktree`
-   unchanged so historical ownership/evidence remains recoverable;
-4. regenerate/check roadmap and local portfolio from canonical `main`;
-5. only then may TASK-124 leave `ACCEPTANCE` for `DONE`.
-
-`scripts/project-portfolio-local.mjs` accepts `.` only as the canonical root worktree reference;
-ordinary task worktrees continue to use `.worktrees/<name>`. Until history integration is actually
-authorized, the temporary TASK-124 control references remain correct and no handback is performed.
+`scripts/project-portfolio-local.mjs` accepts `.` only as the canonical root worktree reference; ordinary task worktrees continue to use `.worktrees/<name>`.
 
 ## Dependencies
 

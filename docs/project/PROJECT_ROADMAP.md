@@ -12,7 +12,7 @@
 >
 > **PRODUCT REALIGNMENT CLASS-A ACCEPTED — Human Owner 2026-10-02:** SPEC-020 and SPEC-021 are approved forward authority. Canonical local `main` owns TASK-104 (governance reconciliation), TASK-105 (CI stability), completed TASK-107/TASK-108/TASK-109/TASK-110/TASK-111 runtime/content/frontend foundations and completed TASK-112/113/114/115 static-data/runtime-delivery work. TASK-106 is DONE after its accepted Class-A package received separate repository-history/lifecycle authorization on 2026-10-06. TASK-110 is DONE after exact-current QA/IA, delegated Class-B `ACCEPT 0/0/0/0` and Human-authorized repository/history completion on 2026-10-05. TASK-111 is DONE after exact-current QA READY `0/0/0`, delegated Class-B ACCEPT `0/0/0`, Human live UI APPROVED and Human-authorized repository/history integration as feature `811b574` / canonical-main merge `b9d672e` on 2026-10-06. TASK-102 is DONE as the accepted SPEC-017 contract/history record; TASK-103 remains in ACCEPTANCE after exact-current QA/IA and local canonical-main merge `d0593c7`; canonical `main` was pushed to `origin/main` at `6e9733b`, while deployed workload/security gates, persistent migration, deploy and public enablement remain separate. TASK-039 remains ACTIVE after its management-first frontend source was committed as `5b30db4` and merged into canonical local `main` as `9df7eeb` on 2026-10-05 and canonical `main` was pushed through `35094f9`; published Start authority, public CombatPresentation, durable terminal/offline summary and final Human/Class-B live acceptance remain open. The historical dirty TASK-039 worktree remains preserved. **ADR-007 was accepted by the Human Owner on 2026-10-04 and TASK-042 is DONE/repository-integrated; the shared-HUB realtime premise is superseded while first-Pre-alpha HUB/PokéCenter behavior remains preserved.** Production-pair activation, persistent migration, deploy and public enablement remain separately gated.
 >
-> **PRE-ALPHA CONTROL-PLANE REVIEW — TASK-124:** canonical integrated `main` remains the executable/history baseline. The owning TASK-122 worktree contains later Human-directed local Pre-alpha evidence and self-reports `ACCEPTANCE`, including locally authorized Genetic authority/bootstrap and Level-5 conversion work, but its dirty application/spec bytes are **provisional source evidence, not integrated-main capability**. TASK-124 owns the control-plane review, skill allocation and PA-M0→PA-M1 Human transition gate; it must not copy or silently approve TASK-122 implementation bytes.
+> **PRE-ALPHA CONTROL-PLANE REVIEW — TASK-124 COMPLETED:** canonical integrated `main` remains the executable/history baseline. The owning TASK-122 worktree contains later Human-directed local Pre-alpha evidence and self-reports `ACCEPTANCE`, including locally authorized Genetic authority/bootstrap and Level-5 conversion work, but its dirty application/spec bytes are **provisional source evidence, not integrated-main capability**. TASK-124 completed the control-plane review, skill allocation, Human-approved PA-M0→PA-M1 transition and canonical root-main handback without copying or silently approving TASK-122 implementation bytes.
 
 ## 1. Current position
 
@@ -123,7 +123,7 @@ QA Reviewer / Independent Auditor
 | `TASK-121` Historical Manual-Capture Compatibility & Migration Plan | DRAFT — Class-A persisted compatibility decision; DRAFT SPEC-026, no migration authority |
 | `TASK-122` Local Pre-alpha Environment & Operator Runbook | ACTIVE — canonical-main operator baseline remains open; owning source worktree self-reports ACCEPTANCE with later Human-authorized local bootstrap/Level-5/live evidence classified as PROVISIONAL_SOURCE until history integration |
 | `TASK-123` Hunt Catalog Workerd Redirect Compatibility | DONE — Worker-compatible manual redirect handling integrated and live-local validated without widening origin/artifact security |
-| `TASK-124` Pre-alpha Baseline Review & PA-M0→PA-M1 Transition Gate | ACCEPTANCE — owner control-plane gates pass; independent structural/governance and functional/evidence QA are READY `0/0/0`; Human Owner accepted PA-M0→PA-M1 on 2026-10-07; repository-history integration/handback remain separate before TASK-124 DONE |
+| `TASK-124` Pre-alpha Baseline Review & PA-M0→PA-M1 Transition Gate | DONE — Human accepted PA-M0→PA-M1; independent structural/governance and functional/evidence QA READY `0/0/0`; accepted candidate merged into canonical `main` and post-integration control handback completed; TASK-122 source bytes remain separately provisional |
 | `TASK-112` Local Pokémon Source Snapshot & Authority Realignment | DONE — SPEC-022 QA READY `0/0/0/0`; Human-approved contract integrated with TASK-113/114 dependency chain on 2026-10-03 |
 | `TASK-113` Local Pokémon Source Snapshot Implementation | DONE — post-ACQUIRE QA final TECH/ARCH READY `0/0/0/0`; schema-5 local snapshot/PokéAPI foundation integrated on 2026-10-03 |
 | `TASK-114` PokéAPI Promotion Decision & Schema-5 Cutover Contract | DONE — immutable schema-5 v4 publication + repository history integrated; candidate/publication/integration QA READY `0/0/0/0`; runtime/deploy remain separate |
@@ -144,7 +144,7 @@ The first Pre-alpha validation cycle is a **local closed test program**. It does
 
 **Phase:** PRE-ALPHA LOCAL VALIDATION
 **Current milestone:** PA-M1 — Core Gameplay Loop Validation
-**Current transition gate:** PA-M1 validation gates remain open; TASK-124 history integration/handback is separate control-plane closure work
+**Current transition gate:** PA-M1 validation gates remain open; TASK-124 control-plane/history closure is complete
 **Next milestone:** PA-M2 — Closed Local Alpha (1–2 Players)
 
 Milestone status is operational planning metadata; it does not change the canonical lifecycle state of any TASK.
@@ -164,17 +164,17 @@ Current target: **PA-M1 — Core Gameplay Loop Validation**. Human Owner accepte
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-124`.
-- DONE: 70.
+- DONE: 71.
 - DRAFT: 2.
 - READY: 0.
 - ACTIVE: 4.
 - FIX: 0.
 - REVIEW: 0.
-- ACCEPTANCE: 2.
+- ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 1.
 - PLANNED: 46.
-- Task-count completion: **70 / 125 = 56%**.
+- Task-count completion: **71 / 125 = 56.8%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -718,7 +718,7 @@ content relies on those mechanics.
 | `TASK-121` Historical Manual-Capture Compatibility & Migration Plan | A | DRAFT | PM → ChatGPT project coordination | Independent compatibility/replay QA + persistence/security audit | `SK-GAME-ARCH`, `SK-PG`, `SK-API-SEC` reference-only, `SK-PNX-PLAN`, `SK-PNX-REPLAY` | **Human Class-A compatibility decision required before any migration** | TASK-038/098/106/110 + APPROVED SPEC-020 | DRAFT SPEC-026 inventories historical pending/manual-capture states and requires an idempotent no-reroll/no-duplicate-spend migration/recovery decision without restoring manual capture UX; TASK-039 is a downstream consumer. |
 | `TASK-122` Local Pre-alpha Environment & Operator Runbook | B | ACTIVE | SD → ChatGPT prime | Integrated baseline QA **READY 0/0/0** + security/integrity **READY 0/0/0**; owning source worktree reports later bounded QA/IA/Class-B evidence as `PROVISIONAL_SOURCE` | `SK-TDD`, `SK-PG`, `SK-API-SEC` reference-only, `SK-PNX-FLOW`, `SK-PNX-PLAN`, `SK-PNX-RUNTIME`, `SK-PNX-REPLAY`, `SK-PNX-VISUAL`, `SK-PNX-OBS`, `SK-PNX-RELEASE` | **AUTHORIZED local-only; Human review/history integration remain separate; no deploy/public/production action** | TASK-016/017/025/038/039/041/100/103/109/110/111/118/119 | Canonical `main` retains the integrated operator baseline. The owning source worktree has since resolved the former Genetic-authority/bootstrap blocker under explicit Human local authority and self-reports `ACCEPTANCE`, including Level-5/live validation evidence, but those dirty application/spec bytes are not integrated here. TASK-124 reviews provenance and remaining PA-M1/manual/live gaps without copying them. |
 | `TASK-123` Hunt Catalog Workerd Redirect Compatibility | B | DONE | SD → ChatGPT prime | Independent QA **READY 0/0/0** + security/integrity **READY 0/0/0** | `SK-TDD`, `SK-CF-WR` | **COMPLETED — bounded Class-B correction integrated locally after green independent gates; deploy/public enablement remain separate** | TASK-118/122 | Worker-incompatible `redirect:error` replaced with `manual` plus explicit 3xx rejection before body consumption; exact origin/artifact/hash boundaries preserved; focused 8/8 + API dry-run green; live TASK-122 Workerd catalog returned exact accepted v5 bundle. |
-| `TASK-124` Pre-alpha Baseline Review & PA-M0→PA-M1 Transition Gate | B | ACCEPTANCE | PM → ChatGPT prime | Independent structural/governance QA **READY 0/0/0** + functional/evidence QA **READY 0/0/0** | `SK-PNX-FLOW`, `SK-PNX-PLAN`, `SK-PNX-RUNTIME`, `SK-PNX-REPLAY`, `SK-PNX-VISUAL`, `SK-PNX-OBS`, `SK-PNX-RELEASE`; `code-review` | **HUMAN ACCEPTED PA-M0→PA-M1 on 2026-10-07; history integration/handback remain separate before TASK-124 DONE** | TASK-003/039/041/100/103/122; TASK-120/121 remain separate DRAFT gates | PA-M1 is now current. Integrated-vs-provisional evidence boundaries remain unchanged; TASK-122 source bytes are not promoted into main. No application/spec integration, task closure, deploy or history action. |
+| `TASK-124` Pre-alpha Baseline Review & PA-M0→PA-M1 Transition Gate | B | DONE | PM → ChatGPT prime | Independent structural/governance QA **READY 0/0/0** + functional/evidence QA **READY 0/0/0** | `SK-PNX-FLOW`, `SK-PNX-PLAN`, `SK-PNX-RUNTIME`, `SK-PNX-REPLAY`, `SK-PNX-VISUAL`, `SK-PNX-OBS`, `SK-PNX-RELEASE`; `code-review` | **COMPLETED — Human accepted PA-M0→PA-M1; repository-history integration and canonical root-main handback separately authorized and completed** | TASK-003/039/041/100/103/122; TASK-120/121 remain separate DRAFT gates | PA-M1 is current. TASK-124 control-plane bytes are integrated and open-task control refs are back on `main` / `.`; TASK-122 source bytes remain `PROVISIONAL_SOURCE`. Deploy/public/production gates remain separate. |
 | `TASK-116` Exact Production Rules Rebind for Game Data v5 | B | DONE | LD → ChatGPT coding agent | Independent TECH + architecture/integrity **ACCEPT `0/0/0/0`**; owner gates PASS | `SK-TDD`, `SK-GAME-ARCH` | **COMPLETED — Human-authorized repository/history integration 2026-10-04; persistent migration/deploy/public enablement remain separate and blocked on absent production infrastructure** | TASK-095/097/109/114/115 | New immutable production support/catalog + Genetic rules identity for exact v5 pair; retained identities untouched; no semantic drift. |
 
 **Exit / MVP gate:** Solo Hunt is a complete server-authoritative playable loop. Human Owner explicitly approves MVP behavior and presentation before the project expands into realtime multiplayer content.

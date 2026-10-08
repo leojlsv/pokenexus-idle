@@ -15,8 +15,8 @@
 - Consultant execution surface(s): N/A
 - Spec: `docs/specs/SPEC-017-public-hunt-combat-presentation-feed.md` — APPROVED 2026-09-29, forward-amended by APPROVED SPEC-020/021
 - Related: ADR-004; SPEC-002/003/011/013/015/016/020/021; TASK-028/035/037/038/097/101/102/104/105/106/108/039/040
-- Control branch: `docs/TASK-124-prealpha-review-milestone-transition`
-- Control worktree: `.worktrees/TASK-124-prealpha-review-milestone-transition` (temporary project-control reconciliation for the Pre-alpha review; implementation/history ownership remains unchanged)
+- Control branch: `main`
+- Control worktree: `.` (canonical post-TASK-124 project control; implementation/history ownership remains unchanged)
 - Source branch: `main` (local canonical-main integration completed at merge `d0593c7` from accepted implementation `0696d7d`; pushed and synchronized with `origin/main` at `6e9733b`)
 - Source worktree: root canonical `main`; historical TASK-103 worktrees, including detached `.worktrees/TASK-103-final-integration`, remain preserved and untouched
 
