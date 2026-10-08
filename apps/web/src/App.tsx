@@ -4,6 +4,7 @@ import { EmptyState, ErrorState, LoadingState } from "./common-states";
 import { HuntApi } from "./hunt-api";
 import { ActiveHuntPage, HuntOverviewPage, HuntResultPage } from "./hunt-pages";
 import { HuntSettingsPage } from "./hunt-settings";
+import { HuntSyncCoordinator } from "./hunt-sync-coordinator";
 import { InventoryPage } from "./inventory-page";
 import { PlayerApi } from "./player-api";
 import { CollectionPage, PokemonPage, TeamDetailPage, TeamsPage } from "./player-pages";
@@ -234,8 +235,16 @@ function AuthenticatedApp({ csrfToken, onSessionLost }: { readonly csrfToken: st
     writeRendererPreference(next);
   };
 
-  return <AppShell route={route} preference={preference} onPreferenceChange={updatePreference}
-    api={api} playerApi={playerApi} csrfToken={csrfToken} onSessionLost={onSessionLost} />;
+  return <>
+    <HuntSyncCoordinator
+      enabled={route.id !== "hunt-active"}
+      api={api}
+      csrfToken={csrfToken}
+      onSessionLost={onSessionLost}
+    />
+    <AppShell route={route} preference={preference} onPreferenceChange={updatePreference}
+      api={api} playerApi={playerApi} csrfToken={csrfToken} onSessionLost={onSessionLost} />
+  </>;
 }
 
 function SessionBoundary() {

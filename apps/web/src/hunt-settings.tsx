@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PREALPHA_ITEM_IDS } from "@pokenexus/game-data/runtime";
 import { ErrorState, LoadingState } from "./common-states";
 import {
@@ -11,10 +11,28 @@ import {
   type CapturePolicyRule,
   type OrderedAutomationItem,
 } from "./hunt-api";
-import { browserHuntCommandStore, type HuntCommandFamily } from "./hunt-command-store";
+import {
+  browserHuntCommandStore,
+  browserHuntPolicyCommandStore,
+  type HuntCommandFamily,
+} from "./hunt-command-store";
 import type { HuntCommandStoreState } from "./hunt-command-store";
 
 const POTION_THRESHOLDS = [90, 80, 70, 60, 50, 40, 30, 20, 10] as const;
+
+export function installPolicyLifecycleAbortGeneration(
+  ref: { current: AbortController | null },
+): { readonly signal: AbortSignal; readonly cleanup: () => void } {
+  const controller = new AbortController();
+  ref.current = controller;
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      controller.abort();
+      if (ref.current === controller) ref.current = null;
+    },
+  };
+}
 
 export function prealphaAutomationItemCandidates(
   family: "potion" | "revive",
@@ -66,6 +84,7 @@ interface SettingsSnapshot {
   readonly balls: CaptureBallCatalog;
   readonly inventoryEntries: readonly { readonly itemId: string; readonly quantity: string }[];
   readonly pending: HuntCommandStoreState;
+  readonly policyPending: HuntCommandStoreState;
 }
 
 type LoadState =
@@ -80,8 +99,7 @@ type RuleDraft = {
   readonly speciesIds: string;
   readonly zoneIds: string;
   readonly huntDefinitionIds: string;
-  readonly catchRateMin: string;
-  readonly catchRateMax: string;
+  readonly legacyCriteriaPresent: boolean;
 };
 
 function readableError(error: unknown): string {
@@ -96,22 +114,87 @@ export function isDefinitivePolicyRejection(error: unknown): error is HuntApiErr
     && (error.code === "automation_policy_invalid" || error.code === "auto_capture_policy_invalid");
 }
 
+function isPolicyFamily(family: HuntCommandFamily): family is "capture_policy" | "potion_policy" | "revive_policy" {
+  return family === "capture_policy" || family === "potion_policy" || family === "revive_policy";
+}
+
+export function isPolicySaveBlocked(
+  pending: HuntCommandStoreState,
+  policyPending: HuntCommandStoreState,
+): boolean {
+  if (policyPending.kind !== "none") return true;
+  if (pending.kind === "none") return false;
+  return !(pending.kind === "resume" && pending.family === "sync");
+}
+
+export function isPolicyAutoContinuable(pending: HuntCommandStoreState): boolean {
+  return pending.kind === "resume" && isPolicyFamily(pending.family);
+}
+
+type PolicyMutationResult = Awaited<ReturnType<HuntApi["replaceCapturePolicy"]>>;
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new DOMException("Policy continuation aborted", "AbortError");
+}
+
+function waitForPolicyContinuation(signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    throwIfAborted(signal);
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      reject(new DOMException("Policy continuation aborted", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, 25);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+export async function continuePolicyUntilSettled(
+  action: () => Promise<PolicyMutationResult>,
+  wait: (signal?: AbortSignal) => Promise<void> = waitForPolicyContinuation,
+  signal?: AbortSignal,
+): Promise<void> {
+  for (;;) {
+    throwIfAborted(signal);
+    const result = await action();
+    throwIfAborted(signal);
+    if (result.kind === "complete") return;
+    await wait(signal);
+  }
+}
+
 function splitIds(value: string): readonly string[] | undefined {
   const ids = value.split(",").map((entry) => entry.trim()).filter(Boolean);
   if (ids.length > 64) throw new Error("A Capture rule can contain at most 64 IDs per condition");
   return ids.length ? [...new Set(ids)] : undefined;
 }
 
+export function captureRuleForSettings(rule: CapturePolicyRule): CapturePolicyRule {
+  return {
+    selectedItemId: rule.selectedItemId,
+    when: {
+      ...(rule.when.shiny === undefined ? {} : { shiny: rule.when.shiny }),
+      ...(rule.when.speciesIds === undefined ? {} : { speciesIds: rule.when.speciesIds }),
+      ...(rule.when.zoneIds === undefined ? {} : { zoneIds: rule.when.zoneIds }),
+      ...(rule.when.huntDefinitionIds === undefined ? {} : { huntDefinitionIds: rule.when.huntDefinitionIds }),
+    },
+  };
+}
+
 function ruleDraft(rule: CapturePolicyRule): RuleDraft {
+  const visibleRule = captureRuleForSettings(rule);
   return {
     id: crypto.randomUUID(),
-    selectedItemId: rule.selectedItemId,
-    shiny: rule.when.shiny === undefined ? "any" : rule.when.shiny ? "true" : "false",
-    speciesIds: rule.when.speciesIds?.join(", ") ?? "",
-    zoneIds: rule.when.zoneIds?.join(", ") ?? "",
-    huntDefinitionIds: rule.when.huntDefinitionIds?.join(", ") ?? "",
-    catchRateMin: rule.when.catchRateMin === undefined ? "" : String(rule.when.catchRateMin),
-    catchRateMax: rule.when.catchRateMax === undefined ? "" : String(rule.when.catchRateMax),
+    selectedItemId: visibleRule.selectedItemId,
+    shiny: visibleRule.when.shiny === undefined ? "any" : visibleRule.when.shiny ? "true" : "false",
+    speciesIds: visibleRule.when.speciesIds?.join(", ") ?? "",
+    zoneIds: visibleRule.when.zoneIds?.join(", ") ?? "",
+    huntDefinitionIds: visibleRule.when.huntDefinitionIds?.join(", ") ?? "",
+    legacyCriteriaPresent: rule.when.catchRateMin !== undefined || rule.when.catchRateMax !== undefined,
   };
 }
 
@@ -121,8 +204,6 @@ function ruleIntent(rule: RuleDraft): CapturePolicyRule {
     speciesIds?: readonly string[];
     zoneIds?: readonly string[];
     huntDefinitionIds?: readonly string[];
-    catchRateMin?: number;
-    catchRateMax?: number;
   } = {};
   if (rule.shiny !== "any") when.shiny = rule.shiny === "true";
   const speciesIds = splitIds(rule.speciesIds);
@@ -131,18 +212,6 @@ function ruleIntent(rule: RuleDraft): CapturePolicyRule {
   if (speciesIds) when.speciesIds = speciesIds;
   if (zoneIds) when.zoneIds = zoneIds;
   if (huntDefinitionIds) when.huntDefinitionIds = huntDefinitionIds;
-  const parseRate = (raw: string, label: string): number | undefined => {
-    if (!raw) return undefined;
-    if (!/^\d+$/u.test(raw)) throw new Error(`${label} must be an integer from 3 to 255`);
-    const value = Number(raw);
-    if (!Number.isSafeInteger(value) || value < 3 || value > 255) throw new Error(`${label} must be from 3 to 255`);
-    return value;
-  };
-  when.catchRateMin = parseRate(rule.catchRateMin, "Minimum catch rate");
-  when.catchRateMax = parseRate(rule.catchRateMax, "Maximum catch rate");
-  if (when.catchRateMin !== undefined && when.catchRateMax !== undefined && when.catchRateMin > when.catchRateMax) {
-    throw new Error("Minimum catch rate cannot exceed maximum catch rate");
-  }
   return { when, selectedItemId: rule.selectedItemId };
 }
 
@@ -260,9 +329,9 @@ export function HuntSettingsPage({ api, csrfToken, onSessionLost }: {
 }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [revision, setRevision] = useState(0);
-  const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [policyAutoPaused, setPolicyAutoPaused] = useState(false);
 
   const load = useCallback(() => setRevision((value) => value + 1), []);
   useEffect(() => {
@@ -276,8 +345,13 @@ export function HuntSettingsPage({ api, csrfToken, onSessionLost }: {
       api.captureBalls(controller.signal),
       loadAllInventory(api, controller.signal),
     ]).then(async ([playerId, capture, potion, revive, balls, inventoryEntries]) => {
-      const pending = await browserHuntCommandStore().inspect(playerId);
-      if (!controller.signal.aborted) setState({ status: "ready", snapshot: { playerId, capture, potion, revive, balls, inventoryEntries, pending } });
+      const [pending, policyPending] = await Promise.all([
+        browserHuntCommandStore().inspect(playerId),
+        browserHuntPolicyCommandStore().inspect(playerId),
+      ]);
+      if (!controller.signal.aborted) {
+        setState({ status: "ready", snapshot: { playerId, capture, potion, revive, balls, inventoryEntries, pending, policyPending } });
+      }
     }).catch((cause: unknown) => {
       if (controller.signal.aborted) return;
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
@@ -292,22 +366,38 @@ export function HuntSettingsPage({ api, csrfToken, onSessionLost }: {
   const pendingKey = state.snapshot.pending.kind === "resume"
     ? `${state.snapshot.pending.family}:${state.snapshot.pending.key}`
     : state.snapshot.pending.kind;
-  return <HuntPolicyEditors key={`${state.snapshot.capture.rowVersion}:${state.snapshot.potion.rowVersion}:${state.snapshot.revive.rowVersion}:${pendingKey}`}
+  const policyPendingKey = state.snapshot.policyPending.kind === "resume"
+    ? `${state.snapshot.policyPending.family}:${state.snapshot.policyPending.key}`
+    : state.snapshot.policyPending.kind;
+  return <HuntPolicyEditors key={`${state.snapshot.capture.rowVersion}:${state.snapshot.potion.rowVersion}:${state.snapshot.revive.rowVersion}:${pendingKey}:${policyPendingKey}`}
     snapshot={state.snapshot} api={api} csrfToken={csrfToken}
-    busy={busy} setBusy={setBusy} notice={notice} setNotice={setNotice} error={error} setError={setError}
+    notice={notice} setNotice={setNotice} error={error} setError={setError}
+    policyAutoPaused={policyAutoPaused} setPolicyAutoPaused={setPolicyAutoPaused}
     onSessionLost={onSessionLost} onCommitted={load} />;
 }
 
-function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, setNotice, error, setError, onSessionLost, onCommitted }: {
+function HuntPolicyEditors({
+  snapshot,
+  api,
+  csrfToken,
+  notice,
+  setNotice,
+  error,
+  setError,
+  policyAutoPaused,
+  setPolicyAutoPaused,
+  onSessionLost,
+  onCommitted,
+}: {
   readonly snapshot: SettingsSnapshot;
   readonly api: HuntApi;
   readonly csrfToken: string;
-  readonly busy: boolean;
-  readonly setBusy: (value: boolean) => void;
   readonly notice: string | null;
   readonly setNotice: (value: string | null) => void;
   readonly error: string | null;
   readonly setError: (value: string | null) => void;
+  readonly policyAutoPaused: boolean;
+  readonly setPolicyAutoPaused: (value: boolean) => void;
   readonly onSessionLost: () => void;
   readonly onCommitted: () => void;
 }) {
@@ -328,103 +418,218 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
     snapshot.revive.orderedItems,
     prealphaAutomationItemCandidates("revive", snapshot.inventoryEntries),
   ));
+  const [busy, setBusy] = useState(false);
+  const lifecycleAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    // React StrictMode intentionally runs effect setup -> cleanup -> setup again
+    // in development. A render-lifetime AbortController would therefore stay
+    // permanently aborted after the first cleanup. Give every effect setup its
+    // own generation and let operations capture that generation's signal.
+    const generation = installPolicyLifecycleAbortGeneration(lifecycleAbortRef);
+    return generation.cleanup;
+  }, []);
+  const activeLifecycleSignal = useCallback((): AbortSignal => {
+    const controller = lifecycleAbortRef.current;
+    if (!controller || controller.signal.aborted) {
+      throw new DOMException("Policy editor lifecycle is not active", "AbortError");
+    }
+    return controller.signal;
+  }, []);
 
   const potionInventoryHint = useMemo(() =>
     "Only the currently owned Basic Potion is offered as an Auto-Potion candidate in this Pre-alpha. The server remains authoritative on save.", []);
   const reviveInventoryHint = useMemo(() =>
     "Only the currently owned Revive-25 is offered as an Auto-Revive candidate in this Pre-alpha. The server remains authoritative on save.", []);
 
-  const pendingPolicyFamily = snapshot.pending.kind === "resume"
-    && (snapshot.pending.family === "capture_policy" || snapshot.pending.family === "potion_policy" || snapshot.pending.family === "revive_policy")
-    ? snapshot.pending.family
+  const legacyPolicyPending = snapshot.pending.kind === "resume" && isPolicyFamily(snapshot.pending.family)
+    ? snapshot.pending
     : null;
+  const currentPolicyPending = legacyPolicyPending ?? snapshot.policyPending;
+  const pendingPolicyFamily = currentPolicyPending.kind === "resume" && isPolicyFamily(currentPolicyPending.family)
+    ? currentPolicyPending.family
+    : null;
+  const policySaveBlocked = isPolicySaveBlocked(snapshot.pending, snapshot.policyPending);
+  const syncPending = snapshot.pending.kind === "resume" && snapshot.pending.family === "sync";
 
-  const continueSavedPolicy = async () => {
-    if (snapshot.pending.kind !== "resume" || !pendingPolicyFamily || busy) return;
+  const policyStore = useCallback(
+    () => legacyPolicyPending ? browserHuntCommandStore() : browserHuntPolicyCommandStore(),
+    [legacyPolicyPending],
+  );
+
+  const continueSavedPolicy = useCallback(async () => {
+    if (currentPolicyPending.kind !== "resume" || !pendingPolicyFamily || busy) return;
+    let signal: AbortSignal;
+    try {
+      signal = activeLifecycleSignal();
+    } catch {
+      return;
+    }
     setBusy(true); setNotice(null); setError(null);
     try {
-      const result = pendingPolicyFamily === "capture_policy"
-        ? await api.replaceCapturePolicy(csrfToken, snapshot.pending.key, snapshot.pending.intent)
+      await continuePolicyUntilSettled(() => pendingPolicyFamily === "capture_policy"
+        ? api.replaceCapturePolicy(csrfToken, currentPolicyPending.key, currentPolicyPending.intent, signal)
         : pendingPolicyFamily === "potion_policy"
-          ? await api.replacePotionPolicy(csrfToken, snapshot.pending.key, snapshot.pending.intent)
-          : await api.replaceRevivePolicy(csrfToken, snapshot.pending.key, snapshot.pending.intent);
-      if (result.kind === "complete") {
-        if (!(await browserHuntCommandStore().clear(snapshot.playerId, snapshot.pending.key))) {
-          throw new Error("Completed policy command correlation could not be cleared");
-        }
-        setNotice("Saved policy command completed; reloading authoritative policy state.");
-        onCommitted();
-      } else {
-        setNotice(`Saved policy command continued through ${result.logicalTimeMs} / ${result.targetLogicalTimeMs}.`);
+          ? api.replacePotionPolicy(csrfToken, currentPolicyPending.key, currentPolicyPending.intent, signal)
+          : api.replaceRevivePolicy(csrfToken, currentPolicyPending.key, currentPolicyPending.intent, signal),
+      undefined, signal);
+      throwIfAborted(signal);
+      if (!(await policyStore().clear(snapshot.playerId, currentPolicyPending.key, signal))) {
+        throw new Error("Completed policy command correlation could not be cleared");
       }
+      throwIfAborted(signal);
+      setPolicyAutoPaused(false);
+      setNotice("Policy saved.");
+      onCommitted();
     } catch (cause) {
+      if (signal.aborted) return;
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
       else {
         if (isDefinitivePolicyRejection(cause)) {
-          if (!(await browserHuntCommandStore().clear(snapshot.playerId, snapshot.pending.key))) {
+          if (!(await policyStore().clear(snapshot.playerId, currentPolicyPending.key, signal))) {
             setError(`${readableError(cause)}. The terminal policy correlation could not be cleared locally.`);
+            setPolicyAutoPaused(true);
             return;
           }
+          setPolicyAutoPaused(false);
           onCommitted();
+        } else {
+          setPolicyAutoPaused(true);
         }
         setError(readableError(cause));
       }
-    } finally { setBusy(false); }
-  };
+    } finally {
+      if (!signal.aborted) setBusy(false);
+    }
+  }, [
+    activeLifecycleSignal,
+    api,
+    busy,
+    csrfToken,
+    currentPolicyPending,
+    onCommitted,
+    onSessionLost,
+    pendingPolicyFamily,
+    policyStore,
+    setError,
+    setNotice,
+    snapshot.playerId,
+  ]);
 
-  const reconcilePending = async () => {
-    if (snapshot.pending.kind !== "resume" && snapshot.pending.kind !== "different_player") return;
+  useEffect(() => {
+    if (!isPolicyAutoContinuable(currentPolicyPending) || policyAutoPaused || busy) return;
+    const timer = window.setTimeout(() => { void continueSavedPolicy(); }, 100);
+    return () => window.clearTimeout(timer);
+  }, [busy, continueSavedPolicy, currentPolicyPending, policyAutoPaused]);
+
+  const reconcilePolicyPending = async () => {
+    if (currentPolicyPending.kind !== "resume" && currentPolicyPending.kind !== "different_player") return;
+    let signal: AbortSignal;
     try {
-      if (snapshot.pending.kind === "resume" && snapshot.pending.family === "capture_policy") await api.autoCapturePolicy();
-      else if (snapshot.pending.kind === "resume" && snapshot.pending.family === "potion_policy") await api.autoPotionPolicy();
-      else if (snapshot.pending.kind === "resume" && snapshot.pending.family === "revive_policy") await api.autoRevivePolicy();
-      else await api.state();
-      if (!window.confirm("Fresh authoritative state was read successfully. Discard the stored command correlation? This does not undo server-side work and can make exact replay impossible.")) return;
-      if (!(await browserHuntCommandStore().discardAfterReconciliation(snapshot.playerId))) throw new Error("Stored command could not be cleared");
-      setNotice("Stored command correlation discarded after explicit reconciliation.");
+      signal = activeLifecycleSignal();
+    } catch {
+      return;
+    }
+    try {
+      if (currentPolicyPending.kind === "resume" && currentPolicyPending.family === "capture_policy") await api.autoCapturePolicy(signal);
+      else if (currentPolicyPending.kind === "resume" && currentPolicyPending.family === "potion_policy") await api.autoPotionPolicy(signal);
+      else if (currentPolicyPending.kind === "resume" && currentPolicyPending.family === "revive_policy") await api.autoRevivePolicy(signal);
+      else await api.state(signal);
+      if (!window.confirm("Fresh authoritative policy state was read successfully. Discard the stored policy correlation? This does not undo server-side work and can make exact replay impossible.")) return;
+      if (!(await policyStore().discardAfterReconciliation(snapshot.playerId, signal))) throw new Error("Stored policy command could not be cleared");
+      setNotice("Stored policy correlation discarded after explicit reconciliation.");
       onCommitted();
     } catch (cause) {
+      if (signal.aborted) return;
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
       else setError(readableError(cause));
     }
   };
 
-  const run = async (family: HuntCommandFamily, intent: unknown, action: (key: string) => ReturnType<HuntApi["replaceCapturePolicy"]>) => {
+  const reconcilePending = async () => {
+    if (snapshot.pending.kind !== "resume" && snapshot.pending.kind !== "different_player") return;
+    let signal: AbortSignal;
+    try {
+      signal = activeLifecycleSignal();
+    } catch {
+      return;
+    }
+    try {
+      if (snapshot.pending.kind === "resume" && snapshot.pending.family === "capture_policy") await api.autoCapturePolicy(signal);
+      else if (snapshot.pending.kind === "resume" && snapshot.pending.family === "potion_policy") await api.autoPotionPolicy(signal);
+      else if (snapshot.pending.kind === "resume" && snapshot.pending.family === "revive_policy") await api.autoRevivePolicy(signal);
+      else await api.state(signal);
+      if (!window.confirm("Fresh authoritative state was read successfully. Discard the stored command correlation? This does not undo server-side work and can make exact replay impossible.")) return;
+      if (!(await browserHuntCommandStore().discardAfterReconciliation(snapshot.playerId, signal))) throw new Error("Stored command could not be cleared");
+      setNotice("Stored command correlation discarded after explicit reconciliation.");
+      onCommitted();
+    } catch (cause) {
+      if (signal.aborted) return;
+      if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
+      else setError(readableError(cause));
+    }
+  };
+
+  const run = async (
+    family: HuntCommandFamily,
+    intent: unknown,
+    action: (key: string, signal?: AbortSignal) => ReturnType<HuntApi["replaceCapturePolicy"]>,
+  ) => {
     if (busy) return;
+    let signal: AbortSignal;
+    try {
+      signal = activeLifecycleSignal();
+    } catch {
+      return;
+    }
     setBusy(true);
+    setPolicyAutoPaused(false);
     setNotice(null);
     setError(null);
     let frozenKey: string | null = null;
     try {
-      const store = browserHuntCommandStore();
+      const pendingHuntCommand = await browserHuntCommandStore().inspect(snapshot.playerId);
+      if (
+        pendingHuntCommand.kind !== "none"
+        && !(pendingHuntCommand.kind === "resume" && pendingHuntCommand.family === "sync")
+      ) {
+        throw new Error("Another unresolved non-sync Hunt command must be reconciled before saving a policy");
+      }
+      const store = browserHuntPolicyCommandStore();
       const frozen = await store.begin(snapshot.playerId, family, intent);
       frozenKey = frozen.key;
-      const result = await action(frozen.key);
-      if (result.kind === "in_progress") {
-        setNotice(`Server accepted the command through ${result.logicalTimeMs} / ${result.targetLogicalTimeMs}. The same saved command must be continued; no new intent was created.`);
-        onCommitted();
-        return;
-      }
-      if (!(await store.clear(snapshot.playerId, frozen.key))) {
+      await continuePolicyUntilSettled(
+        () => action(frozen.key, signal),
+        undefined,
+        signal,
+      );
+      throwIfAborted(signal);
+      if (!(await store.clear(snapshot.playerId, frozen.key, signal))) {
         throw new Error("The server completed the command, but its local correlation key could not be cleared");
       }
-      setNotice("Policy committed. Reloading authoritative policy state.");
+      throwIfAborted(signal);
+      setPolicyAutoPaused(false);
+      setNotice("Policy saved.");
       onCommitted();
     } catch (cause) {
+      if (signal.aborted) return;
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
       else {
         if (frozenKey && isDefinitivePolicyRejection(cause)) {
-          if (!(await browserHuntCommandStore().clear(snapshot.playerId, frozenKey))) {
+          if (!(await browserHuntPolicyCommandStore().clear(snapshot.playerId, frozenKey, signal))) {
             setError(`${readableError(cause)}. The terminal policy correlation could not be cleared locally.`);
+            setPolicyAutoPaused(true);
             onCommitted();
             return;
           }
+          setPolicyAutoPaused(false);
+        } else if (frozenKey) {
+          setPolicyAutoPaused(true);
         }
         setError(readableError(cause));
         onCommitted();
       }
     } finally {
-      setBusy(false);
+      if (!signal.aborted) setBusy(false);
     }
   };
 
@@ -443,7 +648,9 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
     <div className="hunt-surface">
       {notice ? <p className="hunt-notice" role="status">{notice}</p> : null}
       {error ? <p className="hunt-error" role="alert">{error}</p> : null}
-      {snapshot.pending.kind !== "none" ? (
+      {snapshot.pending.kind !== "none"
+        && !syncPending
+        && !(legacyPolicyPending && !policyAutoPaused) ? (
         <div className="state-card state-card--error" role="status">
           <strong>Pending Hunt command</strong>
           <span>{snapshot.pending.kind === "resume"
@@ -451,12 +658,39 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
             : snapshot.pending.kind === "different_player"
               ? "The saved Hunt command belongs to another Player session."
               : "Hunt command correlation storage is unreadable."}</span>
-          {pendingPolicyFamily ? <button className="button" type="button" disabled={busy} onClick={() => void continueSavedPolicy()}>Continue exact saved policy command</button> : null}
-          {snapshot.pending.kind === "resume" && snapshot.pending.family === "sync"
-            ? <span>Return to the active Hunt to finish automatic synchronization before editing policies.</span>
+          {legacyPolicyPending && !policyAutoPaused
+            ? <span>The saved policy command is being continued automatically with its exact correlation.</span>
             : null}
-          {((snapshot.pending.kind === "resume" && snapshot.pending.family !== "sync") || snapshot.pending.kind === "different_player")
+          {legacyPolicyPending && policyAutoPaused
+            ? <button className="button" type="button" disabled={busy} onClick={() => { setPolicyAutoPaused(false); setError(null); }}>Retry exact saved policy command</button>
+            : null}
+          {legacyPolicyPending && policyAutoPaused
+            ? <button className="button button--secondary" type="button" disabled={busy} onClick={() => void reconcilePolicyPending()}>Reconcile and discard policy correlation</button>
+            : null}
+          {((snapshot.pending.kind === "resume" && snapshot.pending.family !== "sync" && !isPolicyFamily(snapshot.pending.family)) || snapshot.pending.kind === "different_player")
             ? <button className="button button--secondary" type="button" disabled={busy} onClick={() => void reconcilePending()}>Reconcile and discard local correlation</button>
+            : null}
+        </div>
+      ) : null}
+
+      {!legacyPolicyPending
+        && snapshot.policyPending.kind !== "none"
+        && !(snapshot.policyPending.kind === "resume" && !policyAutoPaused) ? (
+        <div className="state-card state-card--error" role="status">
+          <strong>Pending policy command</strong>
+          <span>{snapshot.policyPending.kind === "resume"
+            ? `${snapshot.policyPending.family.replaceAll("_", " ")} is still bound to ${snapshot.policyPending.key}.`
+            : snapshot.policyPending.kind === "different_player"
+              ? "The saved policy command belongs to another Player session."
+              : "Policy command correlation storage is unreadable."}</span>
+          {snapshot.policyPending.kind === "resume" && !policyAutoPaused
+            ? <span>Policy reconciliation is continuing automatically with the exact saved command.</span>
+            : null}
+          {snapshot.policyPending.kind === "resume" && policyAutoPaused
+            ? <button className="button" type="button" disabled={busy} onClick={() => { setPolicyAutoPaused(false); setError(null); }}>Retry exact saved policy command</button>
+            : null}
+          {policyAutoPaused && (snapshot.policyPending.kind === "resume" || snapshot.policyPending.kind === "different_player")
+            ? <button className="button button--secondary" type="button" disabled={busy} onClick={() => void reconcilePolicyPending()}>Reconcile and discard policy correlation</button>
             : null}
         </div>
       ) : null}
@@ -473,7 +707,7 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
             <h3>Rule order</h3>
             <button className="button button--secondary" type="button" disabled={captureRules.length >= 64} onClick={() => setCaptureRules((rules) => [...rules, {
               id: crypto.randomUUID(), selectedItemId: snapshot.balls.balls[0]?.itemId ?? "", shiny: "any",
-              speciesIds: "", zoneIds: "", huntDefinitionIds: "", catchRateMin: "", catchRateMax: "",
+              speciesIds: "", zoneIds: "", huntDefinitionIds: "", legacyCriteriaPresent: false,
             }])}>Add catch rule</button>
           </div>
           {captureRules.map((rule, index) => (
@@ -489,8 +723,9 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
               <label>Species IDs<input value={rule.speciesIds} placeholder="comma separated" onChange={(event) => setCaptureRules((rules) => rules.map((entry) => entry.id === rule.id ? { ...entry, speciesIds: event.target.value } : entry))} /></label>
               <label>Zone IDs<input value={rule.zoneIds} placeholder="comma separated" onChange={(event) => setCaptureRules((rules) => rules.map((entry) => entry.id === rule.id ? { ...entry, zoneIds: event.target.value } : entry))} /></label>
               <label>Hunt IDs<input value={rule.huntDefinitionIds} placeholder="comma separated" onChange={(event) => setCaptureRules((rules) => rules.map((entry) => entry.id === rule.id ? { ...entry, huntDefinitionIds: event.target.value } : entry))} /></label>
-              <label>Catch rate min<input inputMode="numeric" value={rule.catchRateMin} onChange={(event) => setCaptureRules((rules) => rules.map((entry) => entry.id === rule.id ? { ...entry, catchRateMin: event.target.value } : entry))} /></label>
-              <label>Catch rate max<input inputMode="numeric" value={rule.catchRateMax} onChange={(event) => setCaptureRules((rules) => rules.map((entry) => entry.id === rule.id ? { ...entry, catchRateMax: event.target.value } : entry))} /></label>
+              {rule.legacyCriteriaPresent
+                ? <small className="hunt-note">This saved rule contains a legacy condition no longer supported by Hunt Settings. Saving this policy will remove that condition.</small>
+                : null}
               <div className="policy-item__order">
                 <button className="button button--secondary" type="button" disabled={index === 0} onClick={() => setCaptureRules(move(captureRules, index, -1))}>Up</button>
                 <button className="button button--secondary" type="button" disabled={index === captureRules.length - 1} onClick={() => setCaptureRules(move(captureRules, index, 1))}>Down</button>
@@ -499,7 +734,7 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
             </fieldset>
           ))}
         </div>
-        <button className="button" type="button" disabled={busy || snapshot.pending.kind !== "none"} onClick={() => {
+        <button className="button" type="button" disabled={busy || policySaveBlocked} onClick={() => {
           try {
             const balls = normalizeAutomationItemsForOwnedInventory(captureBalls, snapshot.inventoryEntries);
             const rules = captureRules.map(ruleIntent);
@@ -513,7 +748,7 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
               balls,
               rules,
             };
-            void run("capture_policy", intent, (key) => api.replaceCapturePolicy(csrfToken, key, intent));
+            void run("capture_policy", intent, (key, signal) => api.replaceCapturePolicy(csrfToken, key, intent, signal));
           } catch (cause) { setError(readableError(cause)); }
         }}>{busy ? "Saving…" : "Save Capture policy"}</button>
       </section>
@@ -527,11 +762,11 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
         </select></label>
         <OrderedItemsEditor items={potionItems} onChange={setPotionItems} candidateLabel={potionInventoryHint}
           inventoryEntries={snapshot.inventoryEntries} />
-        <button className="button" type="button" disabled={busy || snapshot.pending.kind !== "none"} onClick={() => {
+        <button className="button" type="button" disabled={busy || policySaveBlocked} onClick={() => {
           try {
             const orderedItems = preserveKnownOrEnabled(potionItems, snapshot.potion.orderedItems);
             const intent = createAutoPotionPolicyIntent(snapshot.potion.rowVersion, potionEnabled, potionThreshold, orderedItems);
-            void run("potion_policy", intent, (key) => api.replacePotionPolicy(csrfToken, key, intent));
+            void run("potion_policy", intent, (key, signal) => api.replacePotionPolicy(csrfToken, key, intent, signal));
           } catch (cause) { setError(readableError(cause)); }
         }}>{busy ? "Saving…" : "Save Potion policy"}</button>
       </section>
@@ -542,12 +777,12 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
         <label className="policy-toggle"><input type="checkbox" checked={reviveEnabled} onChange={(event) => setReviveEnabled(event.target.checked)} /> Enable Auto-Revive</label>
         <OrderedItemsEditor items={reviveItems} onChange={setReviveItems} candidateLabel={reviveInventoryHint}
           inventoryEntries={snapshot.inventoryEntries} />
-        <button className="button" type="button" disabled={busy || snapshot.pending.kind !== "none"} onClick={() => {
+        <button className="button" type="button" disabled={busy || policySaveBlocked} onClick={() => {
           try {
             const orderedItems = preserveKnownOrEnabled(reviveItems, snapshot.revive.orderedItems);
             if (reviveEnabled && !orderedItems.some(({ autoUseEnabled }) => autoUseEnabled)) throw new Error("Enabled Auto-Revive requires at least one allowed item");
             const intent = { expectedRowVersion: snapshot.revive.rowVersion, enabled: reviveEnabled, orderedItems };
-            void run("revive_policy", intent, (key) => api.replaceRevivePolicy(csrfToken, key, intent));
+            void run("revive_policy", intent, (key, signal) => api.replaceRevivePolicy(csrfToken, key, intent, signal));
           } catch (cause) { setError(readableError(cause)); }
         }}>{busy ? "Saving…" : "Save Revive policy"}</button>
       </section>

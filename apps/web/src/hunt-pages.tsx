@@ -14,6 +14,7 @@ import {
 } from "./hunt-api";
 import {
   browserHuntCommandStore,
+  browserHuntPolicyCommandStore,
   type HuntCommandStore,
   type HuntCommandStoreState,
 } from "./hunt-command-store";
@@ -656,8 +657,20 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
     const timer = window.setTimeout(() => {
       void (async () => {
         const store = browserHuntCommandStore();
+        const policyStore = browserHuntPolicyCommandStore();
         let frozenKey: string | null = null;
         try {
+          const policyPending = await policyStore.inspect(state.playerId);
+          if (cancelled || controller.signal.aborted) return;
+          if (policyPending.kind === "different_player" || policyPending.kind === "unavailable") {
+            throw new Error("Policy correlation storage is unavailable or belongs to another Player");
+          }
+          if (policyPending.kind !== "none") {
+            setSyncBlocking(false);
+            setSyncMessage("Automatic Hunt synchronization is waiting for the pending policy save to settle.");
+            setNextSyncAt(Date.now() + 500);
+            return;
+          }
           setSyncBlocking(true);
           const inspected = await store.inspect(state.playerId);
           if (cancelled || controller.signal.aborted) return;
@@ -701,6 +714,18 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
           }
           if (cancelled || controller.signal.aborted) return;
           frozenKey = frozen.key;
+
+          const policyBeforeSend = await policyStore.inspect(state.playerId);
+          if (cancelled || controller.signal.aborted) return;
+          if (policyBeforeSend.kind === "different_player" || policyBeforeSend.kind === "unavailable") {
+            throw new Error("Policy correlation storage is unavailable or belongs to another Player");
+          }
+          if (policyBeforeSend.kind !== "none") {
+            setSyncBlocking(false);
+            setSyncMessage("Automatic Hunt synchronization is waiting for the pending policy save to settle.");
+            setNextSyncAt(Date.now() + 500);
+            return;
+          }
 
           const result = await api.reconcileHunt(csrfToken, frozen.key, active.huntId, mode, controller.signal);
           if (cancelled) return;
@@ -920,7 +945,7 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
             <button className="button" type="button" disabled={busy || syncBlocking || state.pending.kind !== "none"} onClick={() => void retreat()}>{busy ? "Retreating…" : "Retreat"}</button></div></div>
         <TeamCards members={active.team} />
         {active.currentEncounter ? (
-          <article className="encounter-card"><strong>{active.currentEncounter.speciesId}{active.currentEncounter.shiny ? " · Shiny" : ""}</strong><span>Lv. {active.currentEncounter.level} · catch rate {active.currentEncounter.catchRate}</span></article>
+          <article className="encounter-card"><strong>{active.currentEncounter.speciesId}{active.currentEncounter.shiny ? " · Shiny" : ""}</strong><span>Lv. {active.currentEncounter.level}</span></article>
         ) : <p className="hunt-note">No current Encounter is exposed at this committed boundary.</p>}
       </section>
 

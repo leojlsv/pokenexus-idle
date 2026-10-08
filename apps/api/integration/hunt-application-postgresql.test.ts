@@ -2344,6 +2344,94 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     expect(read.body as Record<string, unknown>).not.toHaveProperty("lossWarningAcknowledgement");
   });
 
+  it("batches an active-Hunt Capture policy prelude without changing its prospective boundary", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const initial = await harness.app.replaceAutoCapturePolicy(seeded.playerId, generateUuidV7(), {
+      expectedRowVersion: "0",
+      enabled: false,
+      balls: [],
+      rules: [],
+    });
+    expect(initial).toMatchObject({ httpStatus: 200, body: { policy: { rowVersion: "1", enabled: false } } });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    expect(started.httpStatus).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing active Capture policy Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '200 milliseconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const key = generateUuidV7();
+    let attempts = 0;
+    let replaced: Awaited<ReturnType<typeof harness.app.replaceAutoCapturePolicy>> | null = null;
+    for (; attempts < 8; attempts += 1) {
+      replaced = await harness.app.replaceAutoCapturePolicy(seeded.playerId, key, {
+        expectedRowVersion: "1",
+        enabled: false,
+        balls: [],
+        rules: [],
+      });
+      if (replaced.httpStatus !== 202) break;
+    }
+    expect(replaced).toMatchObject({
+      httpStatus: 200,
+      body: {
+        policy: { rowVersion: "2", enabled: false },
+        effectiveAt: { huntId, logicalTimeMs: expect.any(String) },
+      },
+    });
+    expect(attempts + 1).toBeLessThanOrEqual(2);
+  });
+
+  it("settles a routine Capture policy replacement across roughly seven seconds of Hunt lag within two requests", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    expect(await harness.app.replaceAutoCapturePolicy(seeded.playerId, generateUuidV7(), {
+      expectedRowVersion: "0",
+      enabled: false,
+      balls: [],
+      rules: [],
+    })).toMatchObject({ httpStatus: 200, body: { policy: { rowVersion: "1" } } });
+
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing seven-second policy benchmark Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '7 seconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+
+    const key = generateUuidV7();
+    let attempts = 0;
+    let replaced: Awaited<ReturnType<typeof harness.app.replaceAutoCapturePolicy>> | null = null;
+    for (; attempts < 16; attempts += 1) {
+      replaced = await harness.app.replaceAutoCapturePolicy(seeded.playerId, key, {
+        expectedRowVersion: "1",
+        enabled: false,
+        balls: [],
+        rules: [],
+      });
+      if (replaced.httpStatus !== 202) break;
+    }
+    expect(replaced?.httpStatus).toBe(200);
+    expect(attempts + 1).toBeLessThanOrEqual(2);
+  });
+
   it("TASK-122 saves disabled Auto-Potion configuration and replays without spending Inventory", async () => {
     const seeded = await seedPlayerTeamAndPotion();
     const harness = application();
@@ -2631,7 +2719,9 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
 
     const key = generateUuidV7();
     let replaced: Awaited<ReturnType<typeof harness.app.replaceAutoPotionPolicy>> | null = null;
+    let replaceAttempts = 0;
     for (let attempt = 0; attempt < 8; attempt += 1) {
+      replaceAttempts += 1;
       replaced = await harness.app.replaceAutoPotionPolicy(
         seeded.playerId,
         key,
@@ -2657,6 +2747,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         effectiveAt: { huntId, logicalTimeMs: expect.any(String) },
       },
     });
+    expect(replaceAttempts).toBeLessThanOrEqual(2);
     const result = replaced!.body as {
       policy: { policyVersion: string };
       effectiveAt: { huntId: string; logicalTimeMs: string };
@@ -2737,7 +2828,9 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
 
     const policyKey = generateUuidV7();
     let replacement: Awaited<ReturnType<typeof harness.app.replaceAutoPotionPolicy>> | null = null;
+    let replacementAttempts = 0;
     for (let attempt = 0; attempt < 32; attempt += 1) {
+      replacementAttempts += 1;
       replacement = await harness.app.replaceAutoPotionPolicy(
         seeded.playerId,
         policyKey,
@@ -2757,6 +2850,7 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
         effectiveAt: { huntId, logicalTimeMs: expect.any(String) },
       },
     });
+    expect(replacementAttempts).toBeLessThanOrEqual(8);
     releaseRuntime.resolve();
     const overtaken = await frozenAdvance;
     expect([200, 202, 409]).toContain(overtaken.httpStatus);
@@ -2782,6 +2876,63 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     expect(durable.at).toBe(policyResult.policy.policyVersion);
     expect(durable.uses).toEqual([]);
     expect(durable.inventory?.entries.find(({ itemId }) => itemId === "item:potion")?.quantity).toBe(3n);
+  });
+
+  it("joins a pending policy target when Hunt advancement freezes after the policy command", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(seeded.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test",
+      teamId: seeded.teamId,
+    });
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    const hunt = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadOwnedSoloHunt(client, seeded.playerId, huntId));
+    if (!hunt) throw new Error("missing policy-first Hunt fixture");
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      client.query(
+        "UPDATE pokenexus.hunt_checkpoints SET logical_time_anchor_at = transaction_timestamp() - interval '500 milliseconds' WHERE checkpoint_id = $1",
+        [hunt.checkpointId],
+      ).then(() => undefined));
+    const checkpoint = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadHuntCheckpoint(client, seeded.playerId, hunt.checkpointId));
+    if (!checkpoint) throw new Error("missing policy-first checkpoint fixture");
+
+    const policyIntent = {
+      policyFamily: "potion",
+      expectedRowVersion: "0",
+      enabled: false,
+      thresholdPercent: 90,
+      orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "0" }],
+    };
+    const policyTargetLogicalTimeMs = checkpoint.logicalTimeMs + 200;
+    const policyTargetWallClockAt = new Date(checkpoint.logicalTimeAnchorAt.getTime() + 200);
+    const policyKey = generateUuidV7();
+    const policyIntentHash = await hashNormalizedIntent(policyIntent);
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, async (transaction) => {
+        const root = await ensureAndLockPlayerHuntRoot(transaction, seeded.playerId);
+        if (!root) throw new Error("missing policy-first Player Hunt root");
+        const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+          playerId: seeded.playerId,
+          idempotencyKey: policyKey,
+          commandKind: "policy_replace",
+          intentHash: policyIntentHash,
+          intentJson: policyIntent,
+          advancementHuntId: huntId,
+          targetLogicalTimeMs: policyTargetLogicalTimeMs,
+          targetWallClockAt: policyTargetWallClockAt,
+        });
+        expect(claimed.status).toBe("accepted");
+      }));
+
+    const syncKey = generateUuidV7();
+    const advanced = await harness.app.checkpoint(seeded.playerId, syncKey, huntId);
+    expect([200, 202]).toContain(advanced.httpStatus);
+    const syncCommand = await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadPublicHuntCommand(client, seeded.playerId, syncKey));
+    expect(syncCommand?.targetLogicalTimeMs).toBe(policyTargetLogicalTimeMs);
+    expect(syncCommand?.targetWallClockAt?.getTime()).toBe(policyTargetWallClockAt.getTime());
   });
 
   it("reselects Auto-Potion fallback from locked Inventory after a snapshot race while honoring minimumReserve", async () => {

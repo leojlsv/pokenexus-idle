@@ -535,6 +535,16 @@ function inProgress(logicalTimeMs: number, targetLogicalTimeMs: number): HuntHtt
   }, 202);
 }
 
+const POLICY_PRELUDE_INTERNAL_STEP_BUDGET = 16;
+const POLICY_PRELUDE_INTERNAL_WALL_BUDGET_MS = 500;
+const ONLINE_CHECKPOINT_INTERNAL_STEP_BUDGET = 8;
+const ONLINE_CHECKPOINT_INTERNAL_WALL_BUDGET_MS = 250;
+
+type HuntAdvanceStepResult = {
+  readonly result: HuntHttpResult;
+  readonly continueWithinRequest: boolean;
+};
+
 function commandReplayResult(command: HuntPublicCommandRecord): HuntHttpResult | null {
   if (command.status === "gone") return error(410, "idempotency_gone");
   if (command.status === "terminal") {
@@ -2694,7 +2704,7 @@ export class HuntApplication implements HuntHttpApplication {
     const command = await withPgClient({ connectionString: this.connectionString }, (client) =>
       loadPublicHuntCommand(client, playerId, idempotencyKey));
     if (!command) return error(503, "authority_unavailable");
-    const prelude = await this.progressFrozenHuntPreludeOneStep(playerId, command);
+    const prelude = await this.progressFrozenPolicyPrelude(playerId, command);
     if (prelude.status === "response") return prelude.result;
 
     try {
@@ -3008,7 +3018,7 @@ export class HuntApplication implements HuntHttpApplication {
     const command = await withPgClient({ connectionString: this.connectionString }, (client) =>
       loadPublicHuntCommand(client, playerId, idempotencyKey));
     if (!command) return error(503, "authority_unavailable");
-    const prelude = await this.progressFrozenHuntPreludeOneStep(playerId, command);
+    const prelude = await this.progressFrozenPolicyPrelude(playerId, command);
     if (prelude.status === "response") return prelude.result;
 
     return withPgClient({ connectionString: this.connectionString }, (client) =>
@@ -3838,6 +3848,22 @@ export class HuntApplication implements HuntHttpApplication {
       : { status: "response", result: inProgress(state.logicalTimeMs, targetLogicalTimeMs) };
   }
 
+  private async progressFrozenPolicyPrelude(
+    playerId: string,
+    command: HuntPublicCommandRecord,
+  ): Promise<{ readonly status: "done" } | { readonly status: "response"; readonly result: HuntHttpResult }> {
+    const startedAt = Date.now();
+    let latest: { readonly status: "done" } | { readonly status: "response"; readonly result: HuntHttpResult } = {
+      status: "done",
+    };
+    for (let step = 0; step < POLICY_PRELUDE_INTERNAL_STEP_BUDGET; step += 1) {
+      latest = await this.progressFrozenHuntPreludeOneStep(playerId, command);
+      if (latest.status === "done" || latest.result.httpStatus !== 202) return latest;
+      if (Date.now() - startedAt >= POLICY_PRELUDE_INTERNAL_WALL_BUDGET_MS) return latest;
+    }
+    return latest;
+  }
+
   private async loadAutomationExecutionSnapshot(
     playerId: string,
     huntId: string,
@@ -4595,14 +4621,46 @@ export class HuntApplication implements HuntHttpApplication {
     };
 
     try {
-      const progressed = await this.progressOneStep(
+      if (kind !== "checkpoint") {
+        return (await this.progressOneStep(
+          playerId,
+          idempotencyKey,
+          frozen,
+          kind,
+          terminalizeAfterCutoff,
+        )).result;
+      }
+
+      // Online checkpoints are routine background maintenance. Continue the
+      // exact same frozen command through several authoritative boundaries in
+      // one HTTP request so the client can keep up with wall time without
+      // changing the command target, key, replay semantics or per-step OCC.
+      // Claim/return and Retreat intentionally remain one-step-per-request.
+      const startedAt = Date.now();
+      let progressed = await this.progressOneStep(
         playerId,
         idempotencyKey,
         frozen,
         kind,
         terminalizeAfterCutoff,
       );
-      return progressed;
+      for (
+        let step = 1;
+        step < ONLINE_CHECKPOINT_INTERNAL_STEP_BUDGET
+          && progressed.result.httpStatus === 202
+          && progressed.continueWithinRequest;
+        step += 1
+      ) {
+        if (Date.now() - startedAt >= ONLINE_CHECKPOINT_INTERNAL_WALL_BUDGET_MS) return progressed.result;
+        progressed = await this.progressOneStep(
+          playerId,
+          idempotencyKey,
+          frozen,
+          kind,
+          terminalizeAfterCutoff,
+        );
+      }
+      return progressed.result;
     } catch {
       return error(503, "authority_unavailable");
     }
@@ -4619,7 +4677,15 @@ export class HuntApplication implements HuntHttpApplication {
     },
     kind: "checkpoint" | "claim" | "retreat",
     terminalizeAfterCutoff: boolean,
-  ): Promise<HuntHttpResult> {
+  ): Promise<HuntAdvanceStepResult> {
+    const stop = (result: HuntHttpResult): HuntAdvanceStepResult => ({
+      result,
+      continueWithinRequest: false,
+    });
+    const continueProjection = (result: HuntHttpResult): HuntAdvanceStepResult => ({
+      result,
+      continueWithinRequest: true,
+    });
     const snapshot = await withPgClient({ connectionString: this.connectionString }, async (client) => {
       const hunt = await loadOwnedSoloHunt(client, playerId, frozen.huntId);
       const checkpoint = await loadHuntCheckpoint(client, playerId, frozen.checkpointId);
@@ -4628,19 +4694,19 @@ export class HuntApplication implements HuntHttpApplication {
       if (!hunt || !checkpoint || !inputAuthority || !command) return null;
       return { hunt, checkpoint, inputAuthority, command };
     });
-    if (!snapshot) return error(404, "not_found");
+    if (!snapshot) return stop(error(404, "not_found"));
     const replay = commandReplayResult(snapshot.command);
-    if (replay) return replay;
+    if (replay) return stop(replay);
     let state = decodeCheckpointState(snapshot.checkpoint.stateBytes, snapshot.checkpoint.schemaVersion);
     if (snapshot.hunt.terminalAt) {
       if (kind === "retreat") {
-        return this.finalizeRetreatAgainstExistingTerminal(
+        return stop(await this.finalizeRetreatAgainstExistingTerminal(
           playerId,
           snapshot.hunt,
           snapshot.command,
-        );
+        ));
       }
-      return this.finalizeAdvanceCommand(
+      return stop(await this.finalizeAdvanceCommand(
         playerId,
         idempotencyKey,
         snapshot.hunt,
@@ -4648,16 +4714,16 @@ export class HuntApplication implements HuntHttpApplication {
         kind,
         state,
         false,
-      );
+      ));
     }
     const inputs = await this.ports.authority.loadPersistedRuntime(
       snapshot.inputAuthority,
       snapshot.checkpoint.schemaVersion,
     );
     if (state.logicalTimeMs > frozen.targetLogicalTimeMs) {
-      return this.finalizeAdvanceCommand(
+      return stop(await this.finalizeAdvanceCommand(
         playerId, idempotencyKey, snapshot.hunt, snapshot.command, kind, state, true,
-      );
+      ));
     }
 
     const incomplete = await withPgClient({ connectionString: this.connectionString }, (client) =>
@@ -4666,8 +4732,8 @@ export class HuntApplication implements HuntHttpApplication {
       const boundaryResult = await this.completeBoundary(
         playerId, snapshot.hunt, snapshot.command, state, inputs, incomplete,
       );
-      if (boundaryResult.httpStatus !== 204) return boundaryResult;
-      return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+      if (boundaryResult.httpStatus !== 204) return stop(boundaryResult);
+      return stop(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
     }
 
     if (state.status === "active") {
@@ -4679,9 +4745,9 @@ export class HuntApplication implements HuntHttpApplication {
           ? snapshot.command.acceptanceSequence
           : undefined,
       );
-      if (healingProgress.status === "authority_unavailable") return error(503, "authority_unavailable");
+      if (healingProgress.status === "authority_unavailable") return stop(error(503, "authority_unavailable"));
       if (healingProgress.status === "resolved" || healingProgress.status === "progressed") {
-        return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+        return stop(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
       }
     }
 
@@ -4713,7 +4779,7 @@ export class HuntApplication implements HuntHttpApplication {
         terminalizeAfterCutoff ? frozen.targetLogicalTimeMs : undefined,
         stopBeforeNextEncounter,
       );
-      if (automationProgress.status === "response") return automationProgress.result;
+      if (automationProgress.status === "response") return stop(automationProgress.result);
       state = automationProgress.state;
       const stopReason = automationProgress.stopReason;
       const freezeResult = await this.persistAdvancedStateAndMaybeBoundary(
@@ -4728,16 +4794,18 @@ export class HuntApplication implements HuntHttpApplication {
         automationProgress.generatedEvents,
         automationProgress.automationGuard,
       );
-      if (freezeResult.httpStatus !== 204) return freezeResult;
+      if (freezeResult.httpStatus !== 204) return stop(freezeResult);
       if (
         stopReason === "encounterBoundary"
         || stopReason === "automationBoundary"
         || stopReason === "activityBoundary"
-        || stopReason === "projectionBudget"
       ) {
-        return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+        return stop(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
       }
-      if (blockerFence === state.logicalTimeMs) return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+      if (stopReason === "projectionBudget") {
+        return continueProjection(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
+      }
+      if (blockerFence === state.logicalTimeMs) return stop(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
     } else if (state.logicalTimeMs < frozen.targetLogicalTimeMs && state.status === "active") {
       const blocker = await withPgClient({ connectionString: this.connectionString }, (client) =>
         loadEarliestHealingAdvanceBlocker(
@@ -4762,25 +4830,28 @@ export class HuntApplication implements HuntHttpApplication {
         snapshot.checkpoint.schemaVersion,
         advanced.events,
       );
-      if (freezeResult.httpStatus !== 204) return freezeResult;
-      if (advanced.stopReason === "encounterBoundary") return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
-      if (blockerFence === state.logicalTimeMs) return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+      if (freezeResult.httpStatus !== 204) return stop(freezeResult);
+      if (advanced.stopReason === "encounterBoundary") return stop(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
+      if (advanced.stopReason === "projectionBudget") {
+        return continueProjection(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
+      }
+      if (blockerFence === state.logicalTimeMs) return stop(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
     }
 
     if (state.status === "terminal") {
       const reason = state.terminalReason === "noLivingTeam" ? "no_living" : state.terminalReason;
-      return this.finalizeAutomaticTerminal(
+      return stop(await this.finalizeAutomaticTerminal(
         playerId, snapshot.hunt, snapshot.command, kind, state, reason ?? "no_living",
-      );
+      ));
     }
 
     if (state.logicalTimeMs < frozen.targetLogicalTimeMs) {
-      return inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs);
+      return stop(inProgress(state.logicalTimeMs, frozen.targetLogicalTimeMs));
     }
     if (terminalizeAfterCutoff) {
-      return this.finalizeRetreat(playerId, snapshot.hunt, snapshot.command, state);
+      return stop(await this.finalizeRetreat(playerId, snapshot.hunt, snapshot.command, state));
     }
-    return this.finalizeAdvanceCommand(
+    return stop(await this.finalizeAdvanceCommand(
       playerId,
       idempotencyKey,
       snapshot.hunt,
@@ -4788,7 +4859,7 @@ export class HuntApplication implements HuntHttpApplication {
       kind,
       state,
       false,
-    );
+    ));
   }
 
   private async persistAdvancedStateAndMaybeBoundary(
