@@ -17,8 +17,8 @@
 - Delegated Class-B acceptance: READY 2026-10-06 with P0/P1/P2 = 0/0/0 on the current candidate; Human Owner approved the current mock-backed live preview and explicitly authorized repository-history integration/push on 2026-10-06. Deploy/public enablement remains unauthorized, and the full Move editor remains separately gated by Class-A authority.
 - Specs: `docs/specs/SPEC-011-player-state-api-contract.md`, `docs/specs/SPEC-016-ui-ux-architecture-navigation-design-system.md`
 - Dependencies: TASK-025, TASK-027 — DONE
-- Control branch: `main`
-- Control worktree: `.worktrees/TASK-103-final-integration` (current lifecycle/control-plane reconciliation after source integration; this does not change the Frontend Developer implementation owner)
+- Control branch: `docs/TASK-124-prealpha-review-milestone-transition`
+- Control worktree: `.worktrees/TASK-124-prealpha-review-milestone-transition` (temporary project-control reconciliation for the Pre-alpha review; this does not change the Frontend Developer implementation owner or source history)
 - Source branch: `reconcile/TASK-100-current`
 - Source worktree: `.worktrees/TASK-100-current-reconcile` (preserved exact-current implementation/review snapshot)
 - Preserved historical source: `.worktrees/TASK-100-collection-pokemon-team-ui` on `feat/TASK-100-collection-pokemon-team-ui` remains untouched as the September partial-candidate evidence source.

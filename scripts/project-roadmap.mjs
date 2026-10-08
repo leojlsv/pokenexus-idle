@@ -162,10 +162,10 @@ function parseRoadmap(markdown) {
   const prealphaSection = section(lines, '## 1.1 First Pre-alpha Local Test Milestones', '### Portfolio progress');
   const prealphaMilestones = prealphaSection
     .map(tableCells)
-    .filter((cells) => cells && cells.length === 5 && !isSeparatorRow(cells) && cells[0] !== 'Milestone')
+    .filter((cells) => cells && [5, 6].includes(cells.length) && !isSeparatorRow(cells) && cells[0] !== 'Milestone')
     .map((cells) => {
       const milestone = stripInline(cells[0]);
-      const match = milestone.match(/^(M\d+)\s+—\s+(.+)$/);
+      const match = milestone.match(/^((?:PA-)?M\d+)\s+—\s+(.+)$/);
       if (!match) fail(`Invalid Pre-alpha milestone label: ${milestone}`);
       return {
         id: match[1],
@@ -173,7 +173,8 @@ function parseRoadmap(markdown) {
         status: stripInline(cells[1]),
         objective: stripInline(cells[2]),
         tasks: stripInline(cells[3]),
-        exit: stripInline(cells[4]),
+        skills: cells.length === 6 ? stripInline(cells[4]) : '',
+        exit: stripInline(cells[cells.length - 1]),
       };
     });
   const prealphaCurrentTarget = prealphaSection.find((line) => line.startsWith('Current target:'));
@@ -533,12 +534,13 @@ function initSummary(){
 function initMilestones(){
   $('#prealpha-milestones').innerHTML=DATA.prealpha.milestones.map(item=>{
     const cls=item.status.toLowerCase();
-    return '<article class="milestone '+esc(cls)+'"><div class="badges">'+badge(item.id)+badge(item.status,cls)+'</div><h4>'+esc(item.title)+'</h4><p>'+esc(item.objective)+'</p><div class="meta"><dt>Tasks</dt><dd>'+taskTextHtml(item.tasks)+'</dd><dt>Exit</dt><dd>'+esc(item.exit)+'</dd></div></article>';
+    const skills=item.skills?'<dt>Skills</dt><dd>'+esc(item.skills)+'</dd>':'';
+    return '<article class="milestone '+esc(cls)+'"><div class="badges">'+badge(item.id)+badge(item.status,cls)+'</div><h4>'+esc(item.title)+'</h4><p>'+esc(item.objective)+'</p><div class="meta"><dt>Tasks</dt><dd>'+taskTextHtml(item.tasks)+'</dd>'+skills+'<dt>Exit</dt><dd>'+esc(item.exit)+'</dd></div></article>';
   }).join('');
 }
 function initTables(){
   $('#roles tbody').innerHTML=DATA.roles.map(r=>'<tr><td><b>'+esc(r.code)+'</b><br>'+esc(r.role)+'</td><td>'+esc(r.use)+'</td><td>'+esc(r.agent)+'</td></tr>').join('');
-  $('#skills tbody').innerHTML=DATA.skills.map(s=>'<tr><td><b>'+esc(s.code)+'</b><br>'+esc(s.skill)+'</td><td>'+esc(s.stage)+'</td><td>'+esc(s.adoption)+'<br><a href="'+esc(s.source)+'" target="_blank" rel="noreferrer">fonte</a></td></tr>').join('');
+  $('#skills tbody').innerHTML=DATA.skills.map(s=>{const source=s.source.startsWith('local:')?esc(s.source.slice(6)):'<a href="'+esc(s.source)+'" target="_blank" rel="noreferrer">fonte</a>'; return '<tr><td><b>'+esc(s.code)+'</b><br>'+esc(s.skill)+'</td><td>'+esc(s.stage)+'</td><td>'+esc(s.adoption)+'<br>'+source+'</td></tr>'}).join('');
   $('#epic').innerHTML+=DATA.epics.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.id)+' · '+esc(e.title)+'</option>').join('');
   $('#status').innerHTML+=DATA.statusVocabulary.map(status=>'<option value="'+esc(status)+'">'+esc(status)+'</option>').join('');
   $('#owner').innerHTML+=[...new Set(DATA.tasks.map(t=>t.owner))].sort().map(owner=>'<option value="'+esc(owner)+'">'+esc(owner)+'</option>').join('');
