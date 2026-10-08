@@ -1,4 +1,5 @@
 const STORAGE_KEY = "pokenexus:hunt:pending-command:v2";
+const POLICY_STORAGE_KEY = "pokenexus:hunt:pending-policy-command:v1";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const HEX_256_RE = /^[0-9a-f]{64}$/u;
 const MAX_STORED_BYTES = 64 * 1024;
@@ -97,12 +98,21 @@ export async function fingerprintPlayerId(playerId: string): Promise<string> {
 }
 
 export class HuntCommandStore {
-  constructor(private readonly storage: Pick<Storage, "getItem" | "setItem" | "removeItem">) {}
+  constructor(
+    private readonly storage: Pick<Storage, "getItem" | "setItem" | "removeItem">,
+    private readonly storageKey = STORAGE_KEY,
+    private readonly allowedFamilies: readonly HuntCommandFamily[] | null = null,
+  ) {}
+
+  private acceptsFamily(family: HuntCommandFamily): boolean {
+    return this.allowedFamilies === null || this.allowedFamilies.includes(family);
+  }
 
   private inspectWithFingerprint(playerFingerprint: string): HuntCommandStoreState {
-    const stored = decode(this.storage.getItem(STORAGE_KEY));
+    const stored = decode(this.storage.getItem(this.storageKey));
     if (stored === null) return { kind: "none" };
     if (stored === "invalid") return { kind: "unavailable" };
+    if (!this.acceptsFamily(stored.family)) return { kind: "unavailable" };
     return stored.playerFingerprint === playerFingerprint
       ? { kind: "resume", family: stored.family, key: stored.key, intent: stored.intent }
       : { kind: "different_player" };
@@ -123,6 +133,7 @@ export class HuntCommandStore {
     intent: unknown,
     signal?: AbortSignal,
   ): Promise<FrozenHuntCommand> {
+    if (!this.acceptsFamily(family)) throw new Error("Hunt command family is not allowed in this correlation lane");
     if (!jsonSafe(intent)) throw new Error("Hunt command intent is not safely serializable");
     if (signal?.aborted) throw new Error("Hunt command freeze was aborted");
     const playerFingerprint = await fingerprintPlayerId(playerId);
@@ -147,7 +158,7 @@ export class HuntCommandStore {
       intent,
     };
     if (signal?.aborted) throw new Error("Hunt command freeze was aborted");
-    this.storage.setItem(STORAGE_KEY, JSON.stringify(frozen));
+    this.storage.setItem(this.storageKey, JSON.stringify(frozen));
     // setItem/getItem are synchronous. No cancelled effect or competing begin()
     // can interleave between the final abort check, durable write and confirm.
     const confirmed = this.inspectWithFingerprint(playerFingerprint);
@@ -162,24 +173,36 @@ export class HuntCommandStore {
     return confirmed;
   }
 
-  async clear(playerId: string, key: string): Promise<boolean> {
+  async clear(playerId: string, key: string, signal?: AbortSignal): Promise<boolean> {
+    if (signal?.aborted) throw new DOMException("Hunt command clear was aborted", "AbortError");
     const current = await this.inspect(playerId);
+    if (signal?.aborted) throw new DOMException("Hunt command clear was aborted", "AbortError");
     if (current.kind !== "resume" || current.key !== key) return false;
     try {
-      this.storage.removeItem(STORAGE_KEY);
-      return (await this.inspect(playerId)).kind === "none";
-    } catch {
+      if (signal?.aborted) throw new DOMException("Hunt command clear was aborted", "AbortError");
+      this.storage.removeItem(this.storageKey);
+      const cleared = (await this.inspect(playerId)).kind === "none";
+      if (signal?.aborted) throw new DOMException("Hunt command clear was aborted", "AbortError");
+      return cleared;
+    } catch (cause) {
+      if (signal?.aborted) throw cause;
       return false;
     }
   }
 
-  async discardAfterReconciliation(playerId: string): Promise<boolean> {
+  async discardAfterReconciliation(playerId: string, signal?: AbortSignal): Promise<boolean> {
+    if (signal?.aborted) throw new DOMException("Hunt command discard was aborted", "AbortError");
     const current = await this.inspect(playerId);
+    if (signal?.aborted) throw new DOMException("Hunt command discard was aborted", "AbortError");
     if (current.kind !== "resume" && current.kind !== "different_player") return false;
     try {
-      this.storage.removeItem(STORAGE_KEY);
-      return (await this.inspect(playerId)).kind === "none";
-    } catch {
+      if (signal?.aborted) throw new DOMException("Hunt command discard was aborted", "AbortError");
+      this.storage.removeItem(this.storageKey);
+      const discarded = (await this.inspect(playerId)).kind === "none";
+      if (signal?.aborted) throw new DOMException("Hunt command discard was aborted", "AbortError");
+      return discarded;
+    } catch (cause) {
+      if (signal?.aborted) throw cause;
       return false;
     }
   }
@@ -187,4 +210,12 @@ export class HuntCommandStore {
 
 export function browserHuntCommandStore(): HuntCommandStore {
   return new HuntCommandStore(window.sessionStorage);
+}
+
+export function browserHuntPolicyCommandStore(): HuntCommandStore {
+  return new HuntCommandStore(window.sessionStorage, POLICY_STORAGE_KEY, [
+    "capture_policy",
+    "potion_policy",
+    "revive_policy",
+  ]);
 }

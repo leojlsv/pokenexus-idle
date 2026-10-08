@@ -60,4 +60,52 @@ describe("HuntCommandStore", () => {
     )).rejects.toThrow(/aborted/);
     expect(await store.inspect(PLAYER_A)).toEqual({ kind: "none" });
   });
+
+  it("does not clear an exact frozen correlation when clear is already aborted", async () => {
+    const store = new HuntCommandStore(new MemoryStorage());
+    const frozen = await store.begin(PLAYER_A, "sync", {
+      huntId: "44444444-4444-4444-8444-444444444444",
+      mode: "online",
+    });
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(store.clear(PLAYER_A, frozen.key, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    expect(await store.inspect(PLAYER_A)).toEqual({ kind: "resume", ...frozen });
+  });
+
+  it("keeps progression and policy correlations independent when they use separate durable lanes", async () => {
+    const storage = new MemoryStorage();
+    const progression = new HuntCommandStore(storage);
+    const policy = new HuntCommandStore(storage, "pokenexus:test:pending-policy", [
+      "capture_policy", "potion_policy", "revive_policy",
+    ]);
+    const sync = await progression.begin(PLAYER_A, "sync", {
+      huntId: "44444444-4444-4444-8444-444444444444",
+      mode: "online",
+    });
+    const capture = await policy.begin(PLAYER_A, "capture_policy", {
+      expectedRowVersion: "1",
+      enabled: false,
+      balls: [],
+      rules: [],
+    });
+
+    expect(capture.key).not.toBe(sync.key);
+    expect(await progression.inspect(PLAYER_A)).toEqual({ kind: "resume", ...sync });
+    expect(await policy.inspect(PLAYER_A)).toEqual({ kind: "resume", ...capture });
+    expect(await policy.clear(PLAYER_A, capture.key)).toBe(true);
+    expect(await progression.inspect(PLAYER_A)).toEqual({ kind: "resume", ...sync });
+  });
+
+  it("fails closed when a progression family is used in the policy-only lane", async () => {
+    const store = new HuntCommandStore(new MemoryStorage(), "pokenexus:test:policy-only", [
+      "capture_policy", "potion_policy", "revive_policy",
+    ]);
+    await expect(store.begin(PLAYER_A, "sync", {
+      huntId: "44444444-4444-4444-8444-444444444444",
+      mode: "online",
+    })).rejects.toThrow("not allowed in this correlation lane");
+    expect(await store.inspect(PLAYER_A)).toEqual({ kind: "none" });
+  });
 });

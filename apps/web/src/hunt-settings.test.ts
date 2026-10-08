@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { PREALPHA_ITEM_IDS } from "@pokenexus/game-data/runtime";
 import {
+  captureRuleForSettings,
+  continuePolicyUntilSettled,
   createAutoPotionPolicyIntent,
+  installPolicyLifecycleAbortGeneration,
   isDefinitivePolicyRejection,
+  isPolicyAutoContinuable,
+  isPolicySaveBlocked,
   normalizeAutomationItemsForOwnedInventory,
   prealphaAutomationItemCandidates,
 } from "./hunt-settings";
@@ -71,6 +76,126 @@ describe("Minimum reserve ownership bound", () => {
     expect(isDefinitivePolicyRejection(new HuntApiError(422, "auto_capture_policy_invalid"))).toBe(true);
     expect(isDefinitivePolicyRejection(new HuntApiError(503, "authority_unavailable"))).toBe(false);
     expect(isDefinitivePolicyRejection(new HuntApiError(409, "stale"))).toBe(false);
+  });
+});
+
+describe("Policy save availability during Hunt synchronization", () => {
+  const sync = {
+    kind: "resume" as const,
+    family: "sync" as const,
+    key: "11111111-1111-4111-8111-111111111111",
+    intent: { huntId: "22222222-2222-4222-8222-222222222222", mode: "online" },
+  };
+  const policy = {
+    kind: "resume" as const,
+    family: "capture_policy" as const,
+    key: "33333333-3333-4333-8333-333333333333",
+    intent: { expectedRowVersion: "1", enabled: false, balls: [], rules: [] },
+  };
+
+  it("does not let a pending automatic sync hard-lock policy saves", () => {
+    expect(isPolicySaveBlocked(sync, { kind: "none" })).toBe(false);
+  });
+
+  it("auto-continues only an exact saved policy command", () => {
+    expect(isPolicyAutoContinuable(policy)).toBe(true);
+    expect(isPolicyAutoContinuable(sync)).toBe(false);
+    expect(isPolicyAutoContinuable({ kind: "none" })).toBe(false);
+    expect(isPolicyAutoContinuable({ kind: "different_player" })).toBe(false);
+    expect(isPolicyAutoContinuable({ kind: "unavailable" })).toBe(false);
+  });
+
+  it("continues one saved policy action through repeated 202 results until complete", async () => {
+    const results = [
+      { kind: "in_progress" as const, logicalTimeMs: "0", targetLogicalTimeMs: "4000" },
+      { kind: "in_progress" as const, logicalTimeMs: "2000", targetLogicalTimeMs: "4000" },
+      { kind: "complete" as const },
+    ];
+    const observed: string[] = [];
+    let calls = 0;
+    await continuePolicyUntilSettled(
+      async () => {
+        const result = results[calls++];
+        if (!result) throw new Error("unexpected extra continuation");
+        observed.push(result.kind);
+        return result;
+      },
+      async () => undefined,
+    );
+    expect(calls).toBe(3);
+    expect(observed).toEqual(["in_progress", "in_progress", "complete"]);
+  });
+
+  it("stops before another continuation request after the owning lifecycle is aborted", async () => {
+    const controller = new AbortController();
+    let calls = 0;
+    await expect(continuePolicyUntilSettled(
+      async () => {
+        calls += 1;
+        return { kind: "in_progress", logicalTimeMs: "0", targetLogicalTimeMs: "4000" };
+      },
+      async () => { controller.abort(); },
+      controller.signal,
+    )).rejects.toMatchObject({ name: "AbortError" });
+    expect(calls).toBe(1);
+  });
+
+  it("honors an abort that lands immediately after the final policy response", async () => {
+    const controller = new AbortController();
+    let calls = 0;
+    await expect(continuePolicyUntilSettled(
+      async () => {
+        calls += 1;
+        controller.abort();
+        return { kind: "complete" };
+      },
+      async () => undefined,
+      controller.signal,
+    )).rejects.toMatchObject({ name: "AbortError" });
+    expect(calls).toBe(1);
+  });
+
+  it("still serializes policy saves behind an unresolved policy correlation", () => {
+    expect(isPolicySaveBlocked(sync, policy)).toBe(true);
+    expect(isPolicySaveBlocked({ kind: "none" }, policy)).toBe(true);
+  });
+
+  it("keeps ambiguous non-sync Hunt mutations fail-closed", () => {
+    expect(isPolicySaveBlocked({ ...sync, family: "retreat" }, { kind: "none" })).toBe(true);
+    expect(isPolicySaveBlocked({ kind: "different_player" }, { kind: "none" })).toBe(true);
+    expect(isPolicySaveBlocked({ kind: "unavailable" }, { kind: "none" })).toBe(true);
+  });
+
+  it("replaces the aborted StrictMode effect generation with a fresh lifecycle signal", () => {
+    const ref: { current: AbortController | null } = { current: null };
+    const first = installPolicyLifecycleAbortGeneration(ref);
+    expect(first.signal.aborted).toBe(false);
+
+    first.cleanup();
+    expect(first.signal.aborted).toBe(true);
+    expect(ref.current).toBeNull();
+
+    const second = installPolicyLifecycleAbortGeneration(ref);
+    expect(second.signal.aborted).toBe(false);
+    expect(ref.current?.signal).toBe(second.signal);
+    second.cleanup();
+  });
+});
+
+describe("Capture rule player-visible criteria", () => {
+  it("drops historical catch-rate bounds because they are not a player-visible policy input", () => {
+    expect(captureRuleForSettings({
+      selectedItemId: PREALPHA_ITEM_IDS.standardPokeBall,
+      when: {
+        shiny: true,
+        speciesIds: ["species:test"],
+        catchRateMin: 20,
+        catchRateMax: 120,
+      },
+    })).toEqual({
+      selectedItemId: PREALPHA_ITEM_IDS.standardPokeBall,
+      when: { shiny: true, speciesIds: ["species:test"] },
+    });
   });
 });
 

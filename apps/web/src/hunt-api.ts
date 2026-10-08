@@ -545,6 +545,7 @@ export class HuntApi {
     idempotencyKey: string,
     body: unknown,
     parseSuccess: (value: unknown) => void,
+    signal?: AbortSignal,
   ): Promise<HuntMutationResult> {
     if (!csrfToken || !UUID_RE.test(idempotencyKey)) throw new Error("Invalid Hunt command identity");
     const response = await this.transport(path, {
@@ -558,6 +559,7 @@ export class HuntApi {
         "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify(body),
+      signal,
     });
     const parsed = await boundedJson(response, 64 * 1024).catch(() => null);
     if (!response.ok) {
@@ -904,27 +906,27 @@ export class HuntApi {
     });
   }
 
-  replaceCapturePolicy(csrf: string, key: string, body: unknown): Promise<HuntMutationResult> {
+  replaceCapturePolicy(csrf: string, key: string, body: unknown, signal?: AbortSignal): Promise<HuntMutationResult> {
     return this.mutate("/player/hunts/auto-capture-policy", csrf, key, body, (value) => {
       const row = object(value, "Capture policy result");
       parseAutoCapturePolicy(row.policy);
       parseEffectiveAt(row.effectiveAt);
-    });
+    }, signal);
   }
 
-  replacePotionPolicy(csrf: string, key: string, body: unknown): Promise<HuntMutationResult> {
+  replacePotionPolicy(csrf: string, key: string, body: unknown, signal?: AbortSignal): Promise<HuntMutationResult> {
     return this.mutate("/player/hunts/auto-potion-policy", csrf, key, body, (value) => {
       const row = object(value, "Potion policy result");
       parseAutoPotionPolicy(row.policy);
       parseEffectiveAt(row.effectiveAt);
-    });
+    }, signal);
   }
 
-  replaceRevivePolicy(csrf: string, key: string, body: unknown): Promise<HuntMutationResult> {
+  replaceRevivePolicy(csrf: string, key: string, body: unknown, signal?: AbortSignal): Promise<HuntMutationResult> {
     return this.mutate("/player/hunts/auto-revive-policy", csrf, key, body, (value) => {
       const row = object(value, "Revive policy result");
       parseAutoRevivePolicy(row.policy);
       parseEffectiveAt(row.effectiveAt);
-    });
+    }, signal);
   }
 }
