@@ -9,8 +9,8 @@
 - Reviewer: independent QA + integrity review completed READY `0/0/0`; final Human first-Prealpha live acceptance remains separate
 - Specs: APPROVED SPEC-015/016/017/020/021
 - Dependencies: TASK-034-039/100/103/106-111
-- Control branch: `main`
-- Control worktree: `.worktrees/TASK-103-final-integration` (current lifecycle/control-plane reconciliation after harness integration; this does not change the Software Developer implementation owner)
+- Control branch: `docs/TASK-124-prealpha-review-milestone-transition`
+- Control worktree: `.worktrees/TASK-124-prealpha-review-milestone-transition` (temporary project-control reconciliation for the Pre-alpha review; this does not change the Software Developer implementation owner or source history)
 - Source branch: `feat/TASK-041-first-prealpha-harness`
 - Source worktree: `.worktrees/TASK-041-first-prealpha-harness` (preserved implementation/evidence snapshot)
 

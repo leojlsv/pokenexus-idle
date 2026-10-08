@@ -18,6 +18,8 @@
 - Consultants: N/A — this task must consume existing accepted gameplay/data/auth contracts without redefining them
 - Consultant execution surface(s): N/A
 - Dependencies: TASK-016/017/025/038/039/041/100/103/109/110/111/118/119; existing APPROVED contracts only
+- Control branch: `docs/TASK-124-prealpha-review-milestone-transition`
+- Control worktree: `.worktrees/TASK-124-prealpha-review-milestone-transition` (temporary project-control reconciliation only; the implementation owner/source worktree below remain unchanged)
 - Branch: `feat/TASK-122-local-prealpha-environment-runbook`
 - Worktree: `.worktrees/TASK-122-local-prealpha-environment-runbook`
 

@@ -171,6 +171,12 @@ function isUnmaterializedDraft(source, roadmapState) {
     && /^- Branch:\s*not created\s*$/m.test(source);
 }
 
+function canonicalWorktreeRef(tree) {
+  return tree.path.toLowerCase() === PROJECT_ROOT.toLowerCase()
+    ? '.'
+    : `.worktrees/${basename(tree.path)}`;
+}
+
 function primaryTaskFiles(trees, roadmap) {
   const errors = [];
   const current = new Set();
@@ -194,7 +200,7 @@ function primaryTaskFiles(trees, roadmap) {
       errors.push(`${taskId}: reconciled task state ${reconciledState ?? 'missing'} differs from roadmap ${state}`);
       continue;
     }
-    const controlWorktreeRef = taskSource.match(/^- Control worktree:\s*`(\.worktrees\/[^`]+)`/m)?.[1];
+    const controlWorktreeRef = taskSource.match(/^- Control worktree:\s*`(\.|\.worktrees\/[^`]+)`/m)?.[1];
     const controlBranch = taskSource.match(/^- Control branch:\s*`([^`]+)`/m)?.[1];
     const worktreeRef = controlWorktreeRef ?? taskSource.match(/^- Worktree:\s*`(\.worktrees\/[^`]+)`/m)?.[1];
     const declaredBranch = controlBranch ?? taskSource.match(/^- Branch:\s*`([^`]+)`/m)?.[1];
@@ -213,7 +219,7 @@ function primaryTaskFiles(trees, roadmap) {
       errors.push(`${taskId}: declared control/owner worktree is not registered: ${worktreeRef}`);
       continue;
     }
-    if (worktreeRef !== `.worktrees/${basename(ownerTree.path)}`) {
+    if (worktreeRef !== canonicalWorktreeRef(ownerTree)) {
       errors.push(`${taskId}: control/owner Worktree metadata must use the canonical registered relative path`);
     }
     if (declaredBranch !== ownerTree.branch) {
