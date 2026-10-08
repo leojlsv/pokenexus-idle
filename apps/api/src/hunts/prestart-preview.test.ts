@@ -147,10 +147,14 @@ describe("SPEC-024 server-owned prestart preview", () => {
 
   it("enforces the 4 MiB bounded reader before parsing streamed Encounter input", async () => {
     const source = fileReader();
-    const fetchImpl = vi.fn(async (input: Parameters<typeof fetch>[0]) => {
+    const fetchImpl = vi.fn(async (
+      input: Parameters<typeof fetch>[0],
+      init?: Parameters<typeof fetch>[1],
+    ) => {
       const url = new URL(input.toString());
       const relative = url.pathname.split("/game-data/")[1]!;
       if (relative.endsWith("/catalogs/encounter-definitions.json")) {
+        expect(init?.redirect).toBe("manual");
         return new Response(new ReadableStream<Uint8Array>({
           start(controller) {
             controller.enqueue(new Uint8Array(HUNT_PRESTART_ENCOUNTER_MAX_BYTES));
@@ -172,5 +176,24 @@ describe("SPEC-024 server-owned prestart preview", () => {
 
   it("keeps the approved input row ceiling fixed at 4096", () => {
     expect(HUNT_PRESTART_ENCOUNTER_MAX_RECORDS).toBe(4096);
+  });
+
+  it("rejects Encounter redirects without following the Location target", async () => {
+    const source = fileReader();
+    const fetchImpl = vi.fn(async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      const url = new URL(input.toString());
+      expect(url.origin).toBe("https://published.example.invalid");
+      const relative = url.pathname.split("/game-data/")[1]!;
+      if (relative.endsWith("/catalogs/encounter-definitions.json")) {
+        expect(init?.redirect).toBe("manual");
+        return new Response(null, { status: 302, headers: { Location: "https://outside.example.invalid/data" } });
+      }
+      return new Response(Uint8Array.from(await source.read(relative)));
+    });
+    await expect(loadVerifiedHuntPrestartPreview(env(), "hunt:verdant-edge:wilds", {
+      fetchImpl: fetchImpl as typeof fetch,
+    })).rejects.toThrow(/unavailable/);
+    expect(fetchImpl.mock.calls.filter(([url]) => url.toString().endsWith("/catalogs/encounter-definitions.json")))
+      .toHaveLength(1);
   });
 });

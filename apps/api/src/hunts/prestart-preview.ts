@@ -63,7 +63,7 @@ function createBoundedEncounterOriginReader(
       if (url.origin !== root.origin || !url.pathname.startsWith(root.pathname)) {
         throw new Error("Hunt preview artifact escaped its configured origin");
       }
-      const response = await fetchImpl(url, { method: "GET", redirect: "error" });
+      const response = await fetchImpl(url, { method: "GET", redirect: "manual" });
       if (!response.ok || response.body === null) throw new Error("Hunt preview artifact is unavailable");
       const contentLength = response.headers.get("Content-Length");
       if (contentLength !== null && (!/^(0|[1-9][0-9]*)$/u.test(contentLength) ||

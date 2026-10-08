@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PREALPHA_ITEM_IDS } from "@pokenexus/game-data/runtime";
 import { ErrorState, LoadingState } from "./common-states";
 import {
   HuntApi,
@@ -15,13 +16,55 @@ import type { HuntCommandStoreState } from "./hunt-command-store";
 
 const POTION_THRESHOLDS = [90, 80, 70, 60, 50, 40, 30, 20, 10] as const;
 
+export function prealphaAutomationItemCandidates(
+  family: "potion" | "revive",
+  inventoryEntries: readonly { readonly itemId: string; readonly quantity: string }[],
+): readonly string[] {
+  const acceptedItemId = family === "potion"
+    ? PREALPHA_ITEM_IDS.basicPotion
+    : PREALPHA_ITEM_IDS.revive25;
+  return inventoryEntries
+    .filter(({ itemId, quantity }) => itemId === acceptedItemId && BigInt(quantity) > 0n)
+    .map(({ itemId }) => itemId);
+}
+
+export function normalizeAutomationItemsForOwnedInventory(
+  items: readonly OrderedAutomationItem[],
+  inventoryEntries: readonly { readonly itemId: string; readonly quantity: string }[],
+): readonly OrderedAutomationItem[] {
+  const quantities = new Map(inventoryEntries.map(({ itemId, quantity }) => [itemId, BigInt(quantity)] as const));
+  return items.map((entry) => {
+    if (!/^\d+$/u.test(entry.minimumReserve)) {
+      throw new Error("Minimum reserve must be a non-negative integer");
+    }
+    const minimumReserve = BigInt(entry.minimumReserve);
+    const ownedQuantity = quantities.get(entry.itemId) ?? 0n;
+    if (minimumReserve > ownedQuantity) {
+      throw new Error(`Minimum reserve for ${entry.itemId} cannot exceed owned quantity ${ownedQuantity}`);
+    }
+    return { ...entry, minimumReserve: minimumReserve.toString() };
+  });
+}
+
+export function createAutoPotionPolicyIntent(
+  expectedRowVersion: string,
+  enabled: boolean,
+  thresholdPercent: NonNullable<AutoPotionPolicy["thresholdPercent"]>,
+  orderedItems: readonly OrderedAutomationItem[],
+) {
+  if (enabled && !orderedItems.some(({ autoUseEnabled }) => autoUseEnabled)) {
+    throw new Error("Enabled Auto-Potion requires at least one allowed item");
+  }
+  return { expectedRowVersion, enabled, thresholdPercent, orderedItems };
+}
+
 interface SettingsSnapshot {
   readonly playerId: string;
   readonly capture: AutoCapturePolicy;
   readonly potion: AutoPotionPolicy;
   readonly revive: AutoRevivePolicy;
   readonly balls: CaptureBallCatalog;
-  readonly inventoryItemIds: readonly string[];
+  readonly inventoryEntries: readonly { readonly itemId: string; readonly quantity: string }[];
   readonly pending: HuntCommandStoreState;
 }
 
@@ -45,6 +88,12 @@ function readableError(error: unknown): string {
   return error instanceof HuntApiError
     ? `HTTP ${error.status}: ${error.code}`
     : error instanceof Error ? error.message : "Unknown Hunt settings error";
+}
+
+export function isDefinitivePolicyRejection(error: unknown): error is HuntApiError {
+  return error instanceof HuntApiError
+    && error.status === 422
+    && (error.code === "automation_policy_invalid" || error.code === "auto_capture_policy_invalid");
 }
 
 function splitIds(value: string): readonly string[] | undefined {
@@ -117,18 +166,23 @@ function itemDraft(base: readonly OrderedAutomationItem[], candidates: readonly 
   ].slice(0, 64);
 }
 
-function OrderedItemsEditor({ items, onChange, candidateLabel }: {
+function OrderedItemsEditor({ items, onChange, candidateLabel, inventoryEntries }: {
   readonly items: readonly OrderedAutomationItem[];
   readonly onChange: (items: readonly OrderedAutomationItem[]) => void;
   readonly candidateLabel: string;
+  readonly inventoryEntries: readonly { readonly itemId: string; readonly quantity: string }[];
 }) {
+  const quantities = new Map(inventoryEntries.map(({ itemId, quantity }) => [itemId, quantity] as const));
   return (
     <div className="policy-items">
       <p className="hunt-note">{candidateLabel}</p>
       {items.length === 0 ? <p>No candidate items are currently visible.</p> : (
         <ol className="policy-items__list">
-          {items.map((item, index) => (
-            <li key={item.itemId} className="policy-item">
+          {items.map((item, index) => {
+            const ownedQuantity = quantities.get(item.itemId) ?? "0";
+            const reserveExceedsOwned = /^\d+$/u.test(item.minimumReserve)
+              && BigInt(item.minimumReserve) > BigInt(ownedQuantity);
+            return <li key={item.itemId} className="policy-item">
               <strong>{item.itemId}</strong>
               <label>
                 <input
@@ -143,17 +197,27 @@ function OrderedItemsEditor({ items, onChange, candidateLabel }: {
               <label>
                 Minimum reserve
                 <input
+                  type="number"
+                  min="0"
+                  max={ownedQuantity}
+                  step="1"
                   inputMode="numeric"
                   pattern="[0-9]*"
+                  aria-invalid={reserveExceedsOwned || undefined}
                   value={item.minimumReserve}
                   onChange={(event) => {
-                    if (/^\d*$/u.test(event.target.value)) {
+                    const value = event.target.value;
+                    if (/^\d*$/u.test(value) && (value === "" || BigInt(value) <= BigInt(ownedQuantity))) {
                       onChange(items.map((entry, position) => position === index
-                        ? { ...entry, minimumReserve: event.target.value }
+                        ? { ...entry, minimumReserve: value }
                         : entry));
                     }
                   }}
                 />
+                <small>Owned: {ownedQuantity}. Maximum reserve: {ownedQuantity}.</small>
+                {reserveExceedsOwned
+                  ? <small className="hunt-error">Saved reserve exceeds current ownership; lower it before saving.</small>
+                  : null}
               </label>
               <div className="policy-item__order" aria-label={`Priority for ${item.itemId}`}>
                 <button className="button button--secondary" type="button" disabled={index === 0}
@@ -162,20 +226,28 @@ function OrderedItemsEditor({ items, onChange, candidateLabel }: {
                   onClick={() => onChange(move(items, index, 1))}>Down</button>
               </div>
             </li>
-          ))}
+          })}
         </ol>
       )}
     </div>
   );
 }
 
-async function loadAllInventory(api: HuntApi, signal: AbortSignal): Promise<readonly string[]> {
-  const ids: string[] = [];
+async function loadAllInventory(
+  api: HuntApi,
+  signal: AbortSignal,
+): Promise<readonly { readonly itemId: string; readonly quantity: string }[]> {
+  const entries = new Map<string, string>();
   let cursor: string | undefined;
   for (let page = 0; page < 10; page += 1) {
     const result = await api.inventoryPage(cursor, signal);
-    ids.push(...result.entries.filter(({ quantity }) => BigInt(quantity) > 0n).map(({ itemId }) => itemId));
-    if (result.nextCursor === null) return [...new Set(ids)];
+    for (const entry of result.entries) {
+      if (entries.has(entry.itemId)) throw new Error("Inventory pagination returned a duplicate item identity");
+      entries.set(entry.itemId, entry.quantity);
+    }
+    if (result.nextCursor === null) {
+      return [...entries].map(([itemId, quantity]) => ({ itemId, quantity }));
+    }
     cursor = result.nextCursor;
   }
   throw new Error("Inventory pagination exceeded the client safety bound");
@@ -203,9 +275,9 @@ export function HuntSettingsPage({ api, csrfToken, onSessionLost }: {
       api.autoRevivePolicy(controller.signal),
       api.captureBalls(controller.signal),
       loadAllInventory(api, controller.signal),
-    ]).then(async ([playerId, capture, potion, revive, balls, inventoryItemIds]) => {
+    ]).then(async ([playerId, capture, potion, revive, balls, inventoryEntries]) => {
       const pending = await browserHuntCommandStore().inspect(playerId);
-      if (!controller.signal.aborted) setState({ status: "ready", snapshot: { playerId, capture, potion, revive, balls, inventoryItemIds, pending } });
+      if (!controller.signal.aborted) setState({ status: "ready", snapshot: { playerId, capture, potion, revive, balls, inventoryEntries, pending } });
     }).catch((cause: unknown) => {
       if (controller.signal.aborted) return;
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
@@ -246,12 +318,21 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
   ));
   const [captureRules, setCaptureRules] = useState<readonly RuleDraft[]>(() => snapshot.capture.rules.map(ruleDraft));
   const [potionEnabled, setPotionEnabled] = useState(snapshot.potion.enabled);
-  const [potionThreshold, setPotionThreshold] = useState<AutoPotionPolicy["thresholdPercent"]>(snapshot.potion.thresholdPercent ?? 50);
-  const [potionItems, setPotionItems] = useState<readonly OrderedAutomationItem[]>(() => itemDraft(snapshot.potion.orderedItems, snapshot.inventoryItemIds));
+  const [potionThreshold, setPotionThreshold] = useState<NonNullable<AutoPotionPolicy["thresholdPercent"]>>(snapshot.potion.thresholdPercent ?? 50);
+  const [potionItems, setPotionItems] = useState<readonly OrderedAutomationItem[]>(() => itemDraft(
+    snapshot.potion.orderedItems,
+    prealphaAutomationItemCandidates("potion", snapshot.inventoryEntries),
+  ));
   const [reviveEnabled, setReviveEnabled] = useState(snapshot.revive.enabled);
-  const [reviveItems, setReviveItems] = useState<readonly OrderedAutomationItem[]>(() => itemDraft(snapshot.revive.orderedItems, snapshot.inventoryItemIds));
+  const [reviveItems, setReviveItems] = useState<readonly OrderedAutomationItem[]>(() => itemDraft(
+    snapshot.revive.orderedItems,
+    prealphaAutomationItemCandidates("revive", snapshot.inventoryEntries),
+  ));
 
-  const inventoryHint = useMemo(() => `Up to 64 of ${snapshot.inventoryItemIds.length} currently owned item ID(s) are shown as candidates. Compatibility is validated only by the server's pinned item authority.`, [snapshot.inventoryItemIds.length]);
+  const potionInventoryHint = useMemo(() =>
+    "Only the currently owned Basic Potion is offered as an Auto-Potion candidate in this Pre-alpha. The server remains authoritative on save.", []);
+  const reviveInventoryHint = useMemo(() =>
+    "Only the currently owned Revive-25 is offered as an Auto-Revive candidate in this Pre-alpha. The server remains authoritative on save.", []);
 
   const pendingPolicyFamily = snapshot.pending.kind === "resume"
     && (snapshot.pending.family === "capture_policy" || snapshot.pending.family === "potion_policy" || snapshot.pending.family === "revive_policy")
@@ -278,7 +359,16 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
       }
     } catch (cause) {
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
-      else setError(readableError(cause));
+      else {
+        if (isDefinitivePolicyRejection(cause)) {
+          if (!(await browserHuntCommandStore().clear(snapshot.playerId, snapshot.pending.key))) {
+            setError(`${readableError(cause)}. The terminal policy correlation could not be cleared locally.`);
+            return;
+          }
+          onCommitted();
+        }
+        setError(readableError(cause));
+      }
     } finally { setBusy(false); }
   };
 
@@ -304,9 +394,11 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
     setBusy(true);
     setNotice(null);
     setError(null);
+    let frozenKey: string | null = null;
     try {
       const store = browserHuntCommandStore();
       const frozen = await store.begin(snapshot.playerId, family, intent);
+      frozenKey = frozen.key;
       const result = await action(frozen.key);
       if (result.kind === "in_progress") {
         setNotice(`Server accepted the command through ${result.logicalTimeMs} / ${result.targetLogicalTimeMs}. The same saved command must be continued; no new intent was created.`);
@@ -321,6 +413,13 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
     } catch (cause) {
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
       else {
+        if (frozenKey && isDefinitivePolicyRejection(cause)) {
+          if (!(await browserHuntCommandStore().clear(snapshot.playerId, frozenKey))) {
+            setError(`${readableError(cause)}. The terminal policy correlation could not be cleared locally.`);
+            onCommitted();
+            return;
+          }
+        }
         setError(readableError(cause));
         onCommitted();
       }
@@ -329,16 +428,15 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
     }
   };
 
-  const normalizedItems = (items: readonly OrderedAutomationItem[]): readonly OrderedAutomationItem[] => items.map((entry) => {
-    if (!/^\d+$/u.test(entry.minimumReserve)) throw new Error("Minimum reserve must be a non-negative integer");
-    return { ...entry, minimumReserve: entry.minimumReserve || "0" };
-  });
   const preserveKnownOrEnabled = (
     items: readonly OrderedAutomationItem[],
     known: readonly OrderedAutomationItem[],
   ): readonly OrderedAutomationItem[] => {
     const knownIds = new Set(known.map(({ itemId }) => itemId));
-    return normalizedItems(items).filter(({ itemId, autoUseEnabled }) => knownIds.has(itemId) || autoUseEnabled);
+    return normalizeAutomationItemsForOwnedInventory(
+      items.filter(({ itemId, autoUseEnabled }) => knownIds.has(itemId) || autoUseEnabled),
+      snapshot.inventoryEntries,
+    );
   };
 
   return (
@@ -367,7 +465,9 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
         <h2 id="capture-policy-title">Automatic Capture</h2>
         <p>Current row version: {snapshot.capture.rowVersion}. Capture is management-only; there is no per-Encounter Ball prompt.</p>
         <label className="policy-toggle"><input type="checkbox" checked={captureEnabled} onChange={(event) => setCaptureEnabled(event.target.checked)} /> Enable automatic Capture</label>
-        <OrderedItemsEditor items={captureBalls} onChange={setCaptureBalls} candidateLabel="Only server-authorized capture Balls are listed here." />
+        <OrderedItemsEditor items={captureBalls} onChange={setCaptureBalls}
+          candidateLabel="Only server-authorized capture Balls are listed here. Reserve cannot exceed current ownership."
+          inventoryEntries={snapshot.inventoryEntries} />
         <div className="policy-rules">
           <div className="policy-rules__heading">
             <h3>Rule order</h3>
@@ -401,7 +501,7 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
         </div>
         <button className="button" type="button" disabled={busy || snapshot.pending.kind !== "none"} onClick={() => {
           try {
-            const balls = normalizedItems(captureBalls);
+            const balls = normalizeAutomationItemsForOwnedInventory(captureBalls, snapshot.inventoryEntries);
             const rules = captureRules.map(ruleIntent);
             if (captureEnabled && (!balls.some(({ autoUseEnabled }) => autoUseEnabled) || rules.length === 0 || rules.some(({ selectedItemId }) => !selectedItemId))) {
               throw new Error("Enabled Capture requires an allowed Ball and at least one complete rule");
@@ -422,15 +522,15 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
         <h2 id="potion-policy-title">Auto-Potion</h2>
         <p>Current row version: {snapshot.potion.rowVersion}. Trigger is evaluated against current HP percentage; Potion never revives.</p>
         <label className="policy-toggle"><input type="checkbox" checked={potionEnabled} onChange={(event) => setPotionEnabled(event.target.checked)} /> Enable Auto-Potion</label>
-        <label>HP trigger<select value={potionThreshold ?? 50} onChange={(event) => setPotionThreshold(Number(event.target.value) as AutoPotionPolicy["thresholdPercent"])}>
+        <label>HP trigger<select value={potionThreshold} onChange={(event) => setPotionThreshold(Number(event.target.value) as NonNullable<AutoPotionPolicy["thresholdPercent"]>)}>
           {POTION_THRESHOLDS.map((threshold) => <option key={threshold} value={threshold}>{threshold}% or lower</option>)}
         </select></label>
-        <OrderedItemsEditor items={potionItems} onChange={setPotionItems} candidateLabel={inventoryHint} />
+        <OrderedItemsEditor items={potionItems} onChange={setPotionItems} candidateLabel={potionInventoryHint}
+          inventoryEntries={snapshot.inventoryEntries} />
         <button className="button" type="button" disabled={busy || snapshot.pending.kind !== "none"} onClick={() => {
           try {
             const orderedItems = preserveKnownOrEnabled(potionItems, snapshot.potion.orderedItems);
-            if (potionEnabled && !orderedItems.some(({ autoUseEnabled }) => autoUseEnabled)) throw new Error("Enabled Auto-Potion requires at least one allowed item");
-            const intent = { expectedRowVersion: snapshot.potion.rowVersion, enabled: potionEnabled, thresholdPercent: potionEnabled ? potionThreshold : null, orderedItems };
+            const intent = createAutoPotionPolicyIntent(snapshot.potion.rowVersion, potionEnabled, potionThreshold, orderedItems);
             void run("potion_policy", intent, (key) => api.replacePotionPolicy(csrfToken, key, intent));
           } catch (cause) { setError(readableError(cause)); }
         }}>{busy ? "Saving…" : "Save Potion policy"}</button>
@@ -440,7 +540,8 @@ function HuntPolicyEditors({ snapshot, api, csrfToken, busy, setBusy, notice, se
         <h2 id="revive-policy-title">Auto-Revive</h2>
         <p>Current row version: {snapshot.revive.rowVersion}. Revive applies only under the authoritative Hunt policy and cannot rewrite an already sealed Battle result.</p>
         <label className="policy-toggle"><input type="checkbox" checked={reviveEnabled} onChange={(event) => setReviveEnabled(event.target.checked)} /> Enable Auto-Revive</label>
-        <OrderedItemsEditor items={reviveItems} onChange={setReviveItems} candidateLabel={inventoryHint} />
+        <OrderedItemsEditor items={reviveItems} onChange={setReviveItems} candidateLabel={reviveInventoryHint}
+          inventoryEntries={snapshot.inventoryEntries} />
         <button className="button" type="button" disabled={busy || snapshot.pending.kind !== "none"} onClick={() => {
           try {
             const orderedItems = preserveKnownOrEnabled(reviveItems, snapshot.revive.orderedItems);

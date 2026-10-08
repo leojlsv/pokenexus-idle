@@ -22,6 +22,7 @@
     "local:prealpha:status": "powershell -NoProfile -File scripts/local-prealpha.ps1 -Action Status",
     "local:prealpha:smoke": "powershell -NoProfile -File scripts/local-prealpha.ps1 -Action Smoke",
     "local:prealpha:stop": "powershell -NoProfile -File scripts/local-prealpha.ps1 -Action Stop",
+    "local:prealpha:test": "powershell -NoProfile -File scripts/local-prealpha.test.ps1",
     "task-041:harness:local": "powershell -NoProfile -File scripts/task-041-first-prealpha-harness.ps1",
     "task-034:review": "corepack pnpm --filter @pokenexus/game-types build && corepack pnpm --filter @pokenexus/game-data exec vitest run --config integration/vitest.task034.config.ts",
     "task-034:publish": "corepack pnpm --filter @pokenexus/game-types build && corepack pnpm --filter @pokenexus/game-data exec vitest run --config integration/vitest.task034.publish.config.ts"

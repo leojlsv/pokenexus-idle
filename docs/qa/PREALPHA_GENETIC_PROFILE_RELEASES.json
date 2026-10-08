@@ -1,0 +1,56 @@
+[
+  {
+    "gameDataVersion": "game-data-core-kanto-johto-v5",
+    "rulesVersion": "combat-rules-management-first-v1",
+    "species": [
+      {
+        "speciesId": "candidate:species:pokedex-bulbasaur-1:91b07648a3",
+        "compatibleProfiles": ["Resilience", "Harmony"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-charmander-4:76e12e8c3b",
+        "compatibleProfiles": ["Clarity", "Resilience"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-squirtle-7:6f5ada4df3",
+        "compatibleProfiles": ["Might", "Harmony"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-chikorita-152:24bd4cdb1d",
+        "compatibleProfiles": ["Clarity", "Resilience"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-cyndaquil-155:f879aca845",
+        "compatibleProfiles": ["Harmony", "Resilience"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-totodile-158:f3d3f9a1f7",
+        "compatibleProfiles": ["Might", "Clarity"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-pidgey-16:8e97efe736",
+        "compatibleProfiles": ["Harmony", "Clarity"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-rattata-19:9975b0175c",
+        "compatibleProfiles": ["Endurance", "Clarity"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-caterpie-10:f77ea3bb04",
+        "compatibleProfiles": ["Clarity", "Resilience"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-sentret-161:fa09afb6e0",
+        "compatibleProfiles": ["Might", "Harmony"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-ledyba-165:092570add7",
+        "compatibleProfiles": ["Clarity", "Might"]
+      },
+      {
+        "speciesId": "candidate:species:pokedex-sunkern-191:8f850eef0e",
+        "compatibleProfiles": ["Resilience", "Harmony"]
+      }
+    ]
+  }
+]

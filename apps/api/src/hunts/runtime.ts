@@ -9,6 +9,7 @@ import {
   deriveLevelAvailableMoves,
   deriveMaxHpForRulesVersion,
   geneticBudgetForScore,
+  resolveProductionBattleAbility,
   usesGeneticCombatSemantics,
   replayValidateSoloHuntCompletedCaptureSource,
   selectBootstrapMoveLoadout,
@@ -17,6 +18,7 @@ import {
   type EncounterIndividualizationAuthority,
   type GeneticProfile,
   type HuntAutomationPolicyAuthoritySnapshot,
+  type ProductionCombatRuleCatalog,
   type ResolvedCombatContext,
   type SoloHuntEncounterOption,
   type SoloHuntOpponentTemplate,
@@ -808,6 +810,20 @@ function buildTeamMembers(
   });
 }
 
+export function bindProductionBattleAbilities(
+  team: readonly SoloHuntTeamMemberSnapshot[],
+  catalog: ProductionCombatRuleCatalog,
+): readonly SoloHuntTeamMemberSnapshot[] {
+  return team.map((member) => {
+    const binding = resolveProductionBattleAbility(catalog, member.abilityId ?? null);
+    if (!binding.abilityId) {
+      const { abilityId: _inactiveAbilityId, ...withoutAbility } = member;
+      return withoutAbility;
+    }
+    return { ...member, abilityId: binding.abilityId };
+  });
+}
+
 function deriveTeamMaxHp(
   team: readonly SoloHuntTeamMemberSnapshot[],
   rulesVersion: string,
@@ -1229,7 +1245,10 @@ export function createHuntRuntimeAuthorityPort(
         geneticProfiles: profiles,
       });
       const sourceEnabled = env.HUNT_PRESENTATION_SOURCE_ENABLED === "1";
-      const inputTeam = buildTeamMembers(team, release.speciesById);
+      const inputTeam = bindProductionBattleAbilities(
+        buildTeamMembers(team, release.speciesById),
+        moveContext.productionCatalog!,
+      );
       if (sourceEnabled && !inputTeam.every((member) => typeof member.shiny === "boolean")) {
         throw unavailable("new Hunt is missing original owned Shiny authority");
       }

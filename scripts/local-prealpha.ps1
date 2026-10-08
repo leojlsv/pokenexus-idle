@@ -1,20 +1,34 @@
 param(
-  [ValidateSet("Doctor", "Reset", "Start", "Status", "Smoke", "Stop")]
+  [ValidateSet("Bootstrap", "Doctor", "Reset", "Start", "Status", "Smoke", "Stop")]
   [string]$Action = "Doctor",
   [ValidateRange(1, 2)]
   [int]$Players = 2,
-  [int]$PostgresPort = 55432,
-  [int]$ApiPort = 8787,
-  [int]$GameDataPort = 8788,
-  [int]$WebPortA = 5173,
-  [int]$WebPortB = 5174
+  [ValidateRange(1, 65535)][int]$PostgresPort = 55432,
+  [ValidateRange(1, 65535)][int]$ApiPort = 8787,
+  [ValidateRange(1, 65535)][int]$GameDataPort = 8788,
+  [ValidateRange(1, 65535)][int]$WebPortA = 5173,
+  [ValidateRange(1, 65535)][int]$WebPortB = 5174,
+  [string]$GeneticProfilesPath,
+  [string]$StarterA,
+  [string]$StarterB
 )
 
 $ErrorActionPreference = "Stop"
+function Get-LocalPrealphaProjectRoot([string]$Root) {
+  $common = @(& git -C $Root rev-parse --path-format=absolute --git-common-dir)
+  if ($LASTEXITCODE -ne 0 -or $common.Count -ne 1) { throw "Cannot resolve the owning Git directory" }
+  $resolved = (Resolve-Path -LiteralPath $common[0]).Path
+  if ((Split-Path -Leaf $resolved) -ne ".git") { throw "Local Pre-alpha requires a non-bare Git checkout" }
+  return Split-Path -Parent $resolved
+}
 $WorktreeRoot = Split-Path -Parent $PSScriptRoot
-$ProjectRoot = (Resolve-Path (Join-Path $WorktreeRoot "..\..")).Path
+$ProjectRoot = Get-LocalPrealphaProjectRoot $WorktreeRoot
 $Maintenance = Join-Path $ProjectRoot ".maintenance\prealpha-local"
 $StateFile = Join-Path $Maintenance "state.json"
+$IndividualizationAuthorityFile = Join-Path $Maintenance "individualization-authority.json"
+$ApprovedGeneticProfilesFile = Join-Path $WorktreeRoot "docs\qa\PREALPHA_GENETIC_PROFILE_RELEASES.json"
+$ApprovedGeneticProfilesTextSha256 = "sha256:0d5e94600dc98335d85ea586586b9b73eb5ea7576f5fea26eb2e5bed23996b61"
+$WranglerConfigFile = Join-Path $WorktreeRoot "apps\api\.wrangler\task122.local.toml"
 $Container = "pokenexus-prealpha-local"
 $Volume = "pokenexus-prealpha-local-pgdata"
 $ScopeLabel = "prealpha-local"
@@ -22,6 +36,8 @@ $DatabaseUrl = "postgresql://pokenexus:pokenexus_local@127.0.0.1:$PostgresPort/p
 $PublishedDirectory = "version-38ed5230053095b7ef69290f55f40278e681f20eb530788040be5639cdde3c19"
 $AccountA = "019a7f50-0000-7000-8000-000000000001"
 $AccountB = "019a7f50-0000-7000-8000-000000000002"
+$PlayerA = "019a7f50-0000-7000-8000-000000000101"
+$PlayerB = "019a7f50-0000-7000-8000-000000000102"
 
 function Invoke-Checked {
   param([string]$FilePath, [string[]]$Arguments)
@@ -31,6 +47,30 @@ function Invoke-Checked {
 
 function Assert-Tool([string]$Name) {
   if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) { throw "Required tool not found: $Name" }
+}
+
+function Protect-LocalPrealphaMaintenance {
+  $tracked = @(& git -C $ProjectRoot ls-files -- .maintenance/prealpha-local)
+  if ($LASTEXITCODE -ne 0 -or $tracked.Count -ne 0) {
+    throw "Local Pre-alpha runtime state must not be Git-tracked"
+  }
+  $exclude = Join-Path $ProjectRoot ".git\info\exclude"
+  $rule = "/.maintenance/prealpha-local/"
+  $existing = if (Test-Path -LiteralPath $exclude) { [IO.File]::ReadAllText($exclude) } else { "" }
+  if (($existing -split "\r?\n") -notcontains $rule) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $exclude) -Force | Out-Null
+    [IO.File]::AppendAllText($exclude, "`n$rule`n", (New-Object Text.UTF8Encoding($false)))
+  }
+}
+
+function Enter-LocalPrealphaOperation {
+  New-Item -ItemType Directory -Path $Maintenance -Force | Out-Null
+  try {
+    return [IO.File]::Open((Join-Path $Maintenance "operation.lock"), [IO.FileMode]::OpenOrCreate,
+      [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+  } catch {
+    throw "Another local Pre-alpha operation is running, or its lock is unavailable"
+  }
 }
 
 function Get-OwnedContainer {
@@ -53,6 +93,26 @@ function Get-OwnedVolume {
   $label = $inspect[0].Labels.'pokenexus.scope'
   if ($label -ne $ScopeLabel) { throw "Refusing unmanaged Docker volume named $Volume" }
   return $true
+}
+
+function Get-OwnedLocalDatabasePort {
+  if (-not (Get-OwnedContainer) -or -not (Get-OwnedVolume)) { throw "Owned local database is unavailable" }
+  $inspect = @(& docker inspect $Container | ConvertFrom-Json)
+  if ($LASTEXITCODE -ne 0 -or $inspect.Count -ne 1) { throw "Cannot inspect the local database target" }
+  $bindings = @($inspect[0].HostConfig.PortBindings.'5432/tcp')
+  $mounts = @($inspect[0].Mounts | Where-Object { $_.Destination -eq "/var/lib/postgresql/data" })
+  if ($bindings.Count -ne 1 -or $bindings[0].HostIp -ne "127.0.0.1" -or
+      [string]$bindings[0].HostPort -notmatch '^[1-9][0-9]{0,4}$' -or [int]$bindings[0].HostPort -gt 65535 -or
+      $mounts.Count -ne 1 -or $mounts[0].Type -ne "volume" -or $mounts[0].Name -ne $Volume) {
+    throw "Local database target does not match the owned volume and exclusive loopback port"
+  }
+  return [int]$bindings[0].HostPort
+}
+
+function Assert-LocalDatabaseTarget([int]$ExpectedPort) {
+  if ((Get-OwnedLocalDatabasePort) -ne $ExpectedPort) {
+    throw "Local database target does not match the owned volume and exclusive loopback port"
+  }
 }
 
 function Wait-Postgres {
@@ -80,9 +140,11 @@ function Ensure-Database {
       "postgres:17-alpine"
     ) | Out-Null
   } else {
+    Assert-LocalDatabaseTarget $PostgresPort
     $running = (docker inspect --format "{{.State.Running}}" $Container).Trim()
     if ($running -ne "true") { Invoke-Checked "docker" @("start", $Container) | Out-Null }
   }
+  Assert-LocalDatabaseTarget $PostgresPort
   Wait-Postgres
 }
 
@@ -101,7 +163,46 @@ function Migrate-And-Seed {
 }
 
 function Write-LocalState($State) {
-  $State | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $StateFile -Encoding UTF8
+  $temporary = "$StateFile.$([guid]::NewGuid().ToString('N')).tmp"
+  try {
+    [IO.File]::WriteAllText($temporary, (ConvertTo-Json -InputObject $State -Depth 6), (New-Object Text.UTF8Encoding($false)))
+    if (Test-Path -LiteralPath $StateFile) {
+      [IO.File]::Replace($temporary, $StateFile, [NullString]::Value)
+    } else {
+      [IO.File]::Move($temporary, $StateFile)
+    }
+  } finally {
+    if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }
+  }
+}
+
+function Read-OwnedLocalState([switch]$RequireDatabasePort) {
+  if (-not (Test-Path -LiteralPath $StateFile -PathType Leaf)) { throw "Local stack is not started" }
+  $state = Get-Content -LiteralPath $StateFile -Raw | ConvertFrom-Json
+  if ($state.version -ne "pokenexus.local-prealpha-state.v2" -or $state.worktreeRoot -ne $WorktreeRoot -or
+      $state.PSObject.Properties.Name -notcontains "processes" -or $state.players -notin @(1, 2) -or -not $state.ports) {
+    throw "Local Pre-alpha state is malformed or not owned by this worktree"
+  }
+  if ($RequireDatabasePort -and $state.ports.PSObject.Properties.Name -notcontains "postgres") {
+    # A missing optional port is resolved from owned Docker metadata, never from a default.
+    $state.ports | Add-Member -NotePropertyName postgres -NotePropertyValue (Get-OwnedLocalDatabasePort)
+  }
+  $names = @("api", "gameData", "webA")
+  if ($state.players -eq 2) { $names += "webB" }
+  if ($RequireDatabasePort) { $names += "postgres" }
+  foreach ($name in $names) {
+    $port = $state.ports.$name
+    if ($null -eq $port -or [string]$port -notmatch '^[1-9][0-9]{0,4}$' -or [int]$port -gt 65535) {
+      throw "Local Pre-alpha state has an invalid $name port; use guarded Stop/Start to refresh state"
+    }
+  }
+  if ($state.apiUrl -cne "http://127.0.0.1:$($state.ports.api)" -or
+      $state.gameDataUrl -cne "http://127.0.0.1:$($state.ports.gameData)" -or
+      $state.playerAUrl -cne "http://localhost:$($state.ports.webA)" -or
+      ($state.players -eq 2 -and $state.playerBUrl -cne "http://localhost:$($state.ports.webB)")) {
+    throw "Local Pre-alpha state URLs do not match their owned loopback ports"
+  }
+  return $state
 }
 
 function Get-LiveProcessIdentity([int]$ProcessId) {
@@ -224,9 +325,168 @@ function New-Secret([int]$Bytes = 32) {
   return [Convert]::ToBase64String($data).TrimEnd("=").Replace("+", "-").Replace("/", "_")
 }
 
-function Write-WranglerConfig([string]$SessionA, [string]$SessionB, [string]$CursorKey) {
+function ConvertTo-Base64Url([byte[]]$Bytes) {
+  return [Convert]::ToBase64String($Bytes).TrimEnd("=").Replace("+", "-").Replace("/", "_")
+}
+
+function ConvertFrom-Base64Url([string]$Value) {
+  if (-not $Value -or $Value -notmatch '^[A-Za-z0-9_-]+$') {
+    throw "Local individualization secret must be canonical unpadded base64url"
+  }
+  $base64 = $Value.Replace("-", "+").Replace("_", "/")
+  $padding = (4 - ($base64.Length % 4)) % 4
+  try {
+    $decoded = [Convert]::FromBase64String($base64 + ("=" * $padding))
+    if ((ConvertTo-Base64Url $decoded) -cne $Value) { throw "Noncanonical base64url" }
+    return $decoded
+  } catch {
+    throw "Local individualization secret is invalid base64url"
+  }
+}
+
+function Get-IndividualizationKeyId([byte[]]$Secret) {
+  if ($Secret.Length -lt 32) { throw "Local individualization secret must contain at least 32 bytes" }
+  $hmac = New-Object Security.Cryptography.HMACSHA256
+  $hmac.Key = $Secret
+  try {
+    $domain = [Text.Encoding]::UTF8.GetBytes("pokenexus-individualization-authority-key-id-v1")
+    $hash = $hmac.ComputeHash($domain)
+  } finally {
+    $hmac.Dispose()
+  }
+  $hex = ([BitConverter]::ToString($hash)).Replace("-", "").ToLowerInvariant()
+  return "key-v1:$hex"
+}
+
+function Get-OrCreate-LocalIndividualizationAuthority {
+  New-Item -ItemType Directory -Force -Path $Maintenance | Out-Null
+  if (Test-Path -LiteralPath $IndividualizationAuthorityFile) {
+    $authority = Get-Content -LiteralPath $IndividualizationAuthorityFile -Raw | ConvertFrom-Json
+    if ($authority.version -ne "pokenexus.local-prealpha-individualization-authority.v1" -or
+        $authority.authorityVersion -ne "local-prealpha-individualization-v1" -or
+        -not $authority.keyId -or -not $authority.secretKeyBase64url) {
+      throw "Local individualization authority file is malformed"
+    }
+    $secret = ConvertFrom-Base64Url ([string]$authority.secretKeyBase64url)
+    $derivedKeyId = Get-IndividualizationKeyId $secret
+    if ($authority.keyId -ne $derivedKeyId) {
+      throw "Local individualization authority keyId does not match its persisted secret"
+    }
+    return $authority
+  }
+
+  if ((Get-OwnedVolume) -or (Get-OwnedContainer)) {
+    throw "Persisted individualization authority is missing while the database is preserved; restore the original key instead of regenerating it"
+  }
+  $secret = New-Object byte[] 32
+  $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+  try {
+    $rng.GetBytes($secret)
+  } finally {
+    $rng.Dispose()
+  }
+  $authority = [ordered]@{
+    version = "pokenexus.local-prealpha-individualization-authority.v1"
+    authorityVersion = "local-prealpha-individualization-v1"
+    keyId = Get-IndividualizationKeyId $secret
+    secretKeyBase64url = ConvertTo-Base64Url $secret
+  }
+  $temporary = "$IndividualizationAuthorityFile.$([guid]::NewGuid().ToString('N')).tmp"
+  try {
+    [IO.File]::WriteAllText($temporary, (ConvertTo-Json -InputObject $authority -Depth 4), (New-Object Text.UTF8Encoding($false)))
+    [IO.File]::Move($temporary, $IndividualizationAuthorityFile)
+  } finally {
+    if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }
+  }
+  return [pscustomobject]$authority
+}
+
+function Assert-PreservedIndividualizationAuthority($Authority, [string]$ConnectionString) {
+  $values = @{
+    POKENEXUS_LOCAL_DATABASE_URL = $ConnectionString
+    POKENEXUS_LOCAL_AUTHORITY_VERSION = [string]$Authority.authorityVersion
+    POKENEXUS_LOCAL_AUTHORITY_KEY_ID = [string]$Authority.keyId
+  }
+  $previous = @{}
+  foreach ($name in $values.Keys) {
+    $previous[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
+    [Environment]::SetEnvironmentVariable($name, $values[$name], "Process")
+  }
+  try {
+    Invoke-Checked "corepack" @("pnpm", "--filter", "@pokenexus/database", "build")
+    Invoke-Checked "corepack" @("pnpm", "--filter", "@pokenexus/database", "exec", "node", "scripts/local-prealpha-authority-check.mjs")
+  } finally {
+    foreach ($name in $values.Keys) { [Environment]::SetEnvironmentVariable($name, $previous[$name], "Process") }
+  }
+}
+
+function Read-GeneticProfilesInput([string]$Path) {
+  if (-not $Path) { return $null }
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "Genetic Profile authority file does not exist: $Path"
+  }
+  if (-not (Test-Path -LiteralPath $ApprovedGeneticProfilesFile -PathType Leaf)) {
+    throw "Human-approved Pre-alpha Genetic Profile authority artifact is missing"
+  }
+  $approvedRaw = (Get-Content -LiteralPath $ApprovedGeneticProfilesFile -Raw).Trim()
+  if ((Get-TextSha256 $approvedRaw) -ne $ApprovedGeneticProfilesTextSha256) {
+    throw "Human-approved Pre-alpha Genetic Profile authority artifact does not match its frozen digest"
+  }
+  $raw = Get-Content -LiteralPath $Path -Raw
+  try {
+    $null = $raw | ConvertFrom-Json
+  } catch {
+    throw "Genetic Profile authority file is not valid JSON"
+  }
+  $trimmed = $raw.Trim()
+  if ((Get-TextSha256 $trimmed) -ne $ApprovedGeneticProfilesTextSha256) {
+    throw "Genetic Profile authority differs from the Human-approved frozen Pre-alpha authority"
+  }
+  return $trimmed
+}
+
+function Get-TextSha256([string]$Value) {
+  $sha = [Security.Cryptography.SHA256]::Create()
+  try {
+    $bytes = [Text.Encoding]::UTF8.GetBytes($Value)
+    $hash = $sha.ComputeHash($bytes)
+  } finally {
+    $sha.Dispose()
+  }
+  return "sha256:" + ([BitConverter]::ToString($hash)).Replace("-", "").ToLowerInvariant()
+}
+
+function Get-IndividualizationReleasesJson($IndividualizationAuthority) {
+  return ConvertTo-Json -InputObject @([ordered]@{
+    rulesVersion = "encounter-individualization-v1"
+    authorityVersion = [string]$IndividualizationAuthority.authorityVersion
+    keyId = [string]$IndividualizationAuthority.keyId
+    secretKeyBase64url = [string]$IndividualizationAuthority.secretKeyBase64url
+    newOperationsAllowed = $true
+  }) -Depth 6 -Compress
+}
+
+function ConvertTo-TomlBasicString([string]$Value) {
+  return $Value.Replace("\", "\\").Replace('"', '\"').
+    Replace([string][char]13, "\r").Replace([string][char]10, "\n").Replace([string][char]9, "\t")
+}
+
+function Write-WranglerConfig(
+  [string]$SessionA,
+  [string]$SessionB,
+  [string]$CursorKey,
+  $IndividualizationAuthority,
+  [string]$GeneticProfilesJson
+) {
   $wranglerDir = Join-Path $WorktreeRoot "apps\api\.wrangler"
   New-Item -ItemType Directory -Force -Path $wranglerDir | Out-Null
+  $individualizationReleases = Get-IndividualizationReleasesJson $IndividualizationAuthority
+  $escapedIndividualizationReleases = ConvertTo-TomlBasicString $individualizationReleases
+  $geneticLine = if ($GeneticProfilesJson) {
+    'HUNT_GENETIC_PROFILE_RELEASES = "' + (ConvertTo-TomlBasicString $GeneticProfilesJson) + '"'
+  } else {
+    ""
+  }
   $config = @"
 name = "pokenexus-api-local-prealpha"
 main = "../src/local-prealpha.ts"
@@ -242,13 +502,22 @@ LOCAL_PREALPHA_SESSION_B = "$SessionB"
 LOCAL_PREALPHA_ACCOUNT_B = "$AccountB"
 LOCAL_PREALPHA_GAME_DATA_BASE_URL = "http://127.0.0.1:$GameDataPort/"
 LOCAL_PREALPHA_CURSOR_HMAC_KEY = "$CursorKey"
+HUNT_INDIVIDUALIZATION_AUTHORITY_VERSION = "$($IndividualizationAuthority.authorityVersion)"
+HUNT_INDIVIDUALIZATION_AUTHORITY_RELEASES = "$escapedIndividualizationReleases"
+$geneticLine
 
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "00000000-0000-0000-0000-000000000000"
 localConnectionString = "$DatabaseUrl"
 "@
-  Set-Content -LiteralPath (Join-Path $wranglerDir "task122.local.toml") -Value $config -Encoding UTF8
+  Set-Content -LiteralPath $WranglerConfigFile -Value $config -Encoding UTF8
+}
+
+function Remove-GeneratedWranglerConfig {
+  if (Test-Path -LiteralPath $WranglerConfigFile) {
+    Remove-Item -LiteralPath $WranglerConfigFile -Force
+  }
 }
 
 function Start-Hidden {
@@ -258,31 +527,38 @@ function Start-Hidden {
 
 function Start-Stack {
   if (Test-Path -LiteralPath $StateFile) { throw "Local stack already has state. Run Status or Stop first." }
+  $geneticProfilesJson = Read-GeneticProfilesInput $GeneticProfilesPath
+  $node = (Get-Command node.exe).Source
+  $wranglerCli = Join-Path $WorktreeRoot "apps\api\node_modules\wrangler\bin\wrangler.js"
+  $viteCli = Join-Path $WorktreeRoot "apps\web\node_modules\vite\bin\vite.js"
+  if (-not (Test-Path -LiteralPath $wranglerCli)) { throw "Wrangler CLI is unavailable in the workspace" }
+  if (-not (Test-Path -LiteralPath $viteCli)) { throw "Vite CLI is unavailable in the workspace" }
+  $requestedPorts = @($PostgresPort, $ApiPort, $GameDataPort, $WebPortA)
+  if ($Players -eq 2) { $requestedPorts += $WebPortB }
+  if (@($requestedPorts | Select-Object -Unique).Count -ne $requestedPorts.Count) {
+    throw "Local Pre-alpha service ports must be distinct"
+  }
   foreach ($port in @($ApiPort, $GameDataPort, $WebPortA, $(if ($Players -eq 2) { $WebPortB } else { $null }))) {
     if (-not $port) { continue }
     if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) {
       throw "Local Pre-alpha application port $port is already in use"
     }
   }
+  $individualizationAuthority = Get-OrCreate-LocalIndividualizationAuthority
   Ensure-Database
+  Assert-PreservedIndividualizationAuthority $individualizationAuthority $DatabaseUrl
   Migrate-And-Seed
   New-Item -ItemType Directory -Force -Path $Maintenance | Out-Null
   $sessionA = New-Secret
   $sessionB = New-Secret
   $cursorKey = New-Secret 48
-  Write-WranglerConfig $sessionA $sessionB $cursorKey
-
-  $node = (Get-Command node.exe).Source
-  $wranglerCli = Join-Path $WorktreeRoot "apps\api\node_modules\wrangler\bin\wrangler.js"
-  $viteCli = Join-Path $WorktreeRoot "apps\web\node_modules\vite\bin\vite.js"
-  if (-not (Test-Path -LiteralPath $wranglerCli)) { throw "Wrangler CLI is unavailable in the workspace" }
-  if (-not (Test-Path -LiteralPath $viteCli)) { throw "Vite CLI is unavailable in the workspace" }
   $state = [ordered]@{
     version = "pokenexus.local-prealpha-state.v2"
     worktreeRoot = $WorktreeRoot
     players = $Players
     processes = @()
     ports = [ordered]@{
+      postgres = $PostgresPort
       api = $ApiPort
       gameData = $GameDataPort
       webA = $WebPortA
@@ -293,10 +569,14 @@ function Start-Stack {
     playerAUrl = "http://localhost:$WebPortA"
     playerBUrl = if ($Players -eq 2) { "http://localhost:$WebPortB" } else { $null }
     gameplayBootstrap = "blocked_missing_accepted_genetic_profile_pairs"
+    geneticProfilesInput = if ($geneticProfilesJson) { "provided" } else { "missing" }
+    geneticProfilesHash = if ($geneticProfilesJson) { Get-TextSha256 $geneticProfilesJson } else { $null }
+    individualizationAuthorityVersion = [string]$individualizationAuthority.authorityVersion
+    individualizationAuthorityKeyId = [string]$individualizationAuthority.keyId
   }
-  Write-LocalState $state
-
   try {
+    Write-LocalState $state
+    Write-WranglerConfig $sessionA $sessionB $cursorKey $individualizationAuthority $geneticProfilesJson
     $gameDataProcess = Start-Hidden $node @(
       (Join-Path $WorktreeRoot "scripts\local-game-data-server.mjs"),
       "--root", "packages/game-data/published",
@@ -334,30 +614,57 @@ function Start-Stack {
     }
     Start-Sleep -Seconds 3
     Assert-StackReady $state
+    $diagnostics = Invoke-RestMethod "http://127.0.0.1:$ApiPort/__local-prealpha/diagnostics"
+    if ($diagnostics.mode -ne "local-prealpha" -or
+        $diagnostics.individualization.status -ne "ready" -or
+        $diagnostics.individualization.keyId -cne $state.individualizationAuthorityKeyId -or
+        $diagnostics.geneticProfiles.authorityHash -cne $state.geneticProfilesHash -or
+        $diagnostics.wildsPreview.status -ne "ready" -or
+        $diagnostics.wildsPreview.possibleSpeciesIds.Count -ne 6 -or
+        $diagnostics.geneticProfiles.requiredDecisions.Count -ne 12) {
+      throw "Local Pre-alpha authority diagnostics did not reach the expected fail-closed readiness surface"
+    }
+    $state.gameplayBootstrap = if ($diagnostics.geneticProfiles.status -eq "ready") {
+      "ready_for_trusted_bootstrap"
+    } else {
+      "blocked_missing_accepted_genetic_profile_pairs"
+    }
+    Write-LocalState $state
   } catch {
     try {
       Stop-Processes
+      Remove-GeneratedWranglerConfig
     } catch {
       throw "Local Pre-alpha Start failed and owned-process cleanup also failed: $($_.Exception.Message)"
     }
     throw
   }
 
-  Write-Output "Local Pre-alpha infrastructure started. Gameplay bootstrap remains fail-closed: accepted Genetic Profile pairs are missing."
+  Write-Output "Local Pre-alpha infrastructure started. Authority preflight: $($state.gameplayBootstrap)."
   Write-Output "Player A: $($state.playerAUrl)"
   if ($Players -eq 2) { Write-Output "Player B: $($state.playerBUrl)" }
 }
 
 function Invoke-Smoke {
-  if (-not (Test-Path -LiteralPath $StateFile)) { throw "Local stack is not started" }
-  $state = Get-Content -LiteralPath $StateFile -Raw | ConvertFrom-Json
+  $state = Read-OwnedLocalState
+  Assert-StackReady $state
   $manifest = Invoke-RestMethod "$($state.gameDataUrl)/$PublishedDirectory/manifest.json"
   if ($manifest.gameDataVersion -ne "game-data-core-kanto-johto-v5") { throw "Unexpected local game-data release" }
   $sessionA = Invoke-RestMethod "$($state.playerAUrl)/auth/session"
   if (-not $sessionA.authenticated) { throw "Player A local session failed" }
   $profileA = Invoke-RestMethod "$($state.playerAUrl)/player/profile"
+  if ($profileA.playerId -cne $PlayerA) { throw "Player A session does not match the expected local fixture" }
   $catalogA = Invoke-RestMethod "$($state.playerAUrl)/player/hunts/catalog-release"
   if ($catalogA.gameDataVersion -ne "game-data-core-kanto-johto-v5") { throw "Player A catalog release mismatch" }
+  $diagnostics = Invoke-RestMethod "$($state.apiUrl)/__local-prealpha/diagnostics"
+  if ($diagnostics.individualization.status -ne "ready" -or
+      $diagnostics.individualization.keyId -cne $state.individualizationAuthorityKeyId -or
+      $diagnostics.geneticProfiles.authorityHash -cne $state.geneticProfilesHash -or
+      $diagnostics.wildsPreview.status -ne "ready" -or
+      $diagnostics.wildsPreview.possibleSpeciesIds.Count -ne 6 -or
+      $diagnostics.geneticProfiles.requiredDecisions.Count -ne 12) {
+    throw "Local authority diagnostics are not structurally ready"
+  }
   if ($state.players -eq 2) {
     $sessionB = Invoke-RestMethod "$($state.playerBUrl)/auth/session"
     if (-not $sessionB.authenticated) { throw "Player B local session failed" }
@@ -371,6 +678,7 @@ function Invoke-Smoke {
       Remove-Job -Job @($jobA, $jobB) -Force -ErrorAction SilentlyContinue
     }
     if ($concurrentProfileA.playerId -ne $profileA.playerId) { throw "ALT A concurrent self-scope changed Player identity" }
+    if ($concurrentProfileB.playerId -cne $PlayerB) { throw "Player B session does not match the expected local fixture" }
     if ($concurrentProfileA.playerId -eq $concurrentProfileB.playerId) { throw "ALT concurrent isolation failed: Player IDs match" }
   }
   if ($state.players -eq 2) {
@@ -378,7 +686,96 @@ function Invoke-Smoke {
   } else {
     Write-Output "Infrastructure smoke PASS: immutable v5, local session, Player self-scope and catalog transport."
   }
-  Write-Output "Gameplay smoke intentionally BLOCKED: no accepted Species -> Genetic Profile pair authority exists."
+  if ($diagnostics.geneticProfiles.status -eq "ready") {
+    Write-Output "Genetic Profile authority preflight READY: trusted TASK-109 bootstrap may execute."
+  } else {
+    Write-Output "Gameplay smoke intentionally BLOCKED: $($diagnostics.geneticProfiles.missingSpeciesIds.Count) of 12 Species still lack approved Genetic Profile pairs."
+  }
+}
+
+function Invoke-Bootstrap {
+  if (-not (Test-Path -LiteralPath $StateFile)) {
+    throw "Local stack is not started; Start with the approved Genetic Profile authority before Bootstrap"
+  }
+  $state = Read-OwnedLocalState -RequireDatabasePort
+  Assert-StackReady $state
+  if ($state.gameplayBootstrap -ne "ready_for_trusted_bootstrap") {
+    throw "Trusted bootstrap is blocked until all 12 approved Genetic Profile pairs pass Start preflight"
+  }
+  if (-not $GeneticProfilesPath) {
+    throw "Bootstrap requires -GeneticProfilesPath with the same approved authority used by Start"
+  }
+  if (-not $StarterA) {
+    throw "Bootstrap requires -StarterA using one of the six accepted starter Species IDs"
+  }
+  if ($state.players -eq 2 -and -not $StarterB) {
+    throw "Two-Player local bootstrap requires -StarterB"
+  }
+  if ($state.players -eq 1 -and $StarterB) {
+    throw "StarterB cannot be supplied when the running local stack has one Player"
+  }
+
+  $profileA = Invoke-RestMethod "$($state.playerAUrl)/player/profile" -TimeoutSec 10
+  if ($profileA.playerId -cne $PlayerA) { throw "Player A session does not match the expected local fixture" }
+  if ($state.players -eq 2) {
+    $profileB = Invoke-RestMethod "$($state.playerBUrl)/player/profile" -TimeoutSec 10
+    if ($profileB.playerId -cne $PlayerB) { throw "Player B session does not match the expected local fixture" }
+  }
+
+  $geneticProfilesJson = Read-GeneticProfilesInput $GeneticProfilesPath
+  if ((Get-TextSha256 $geneticProfilesJson) -ne $state.geneticProfilesHash) {
+    throw "Bootstrap Genetic Profile authority differs from the authority preflighted by the running Start"
+  }
+  if (-not (Test-Path -LiteralPath $IndividualizationAuthorityFile -PathType Leaf)) {
+    throw "Persisted local individualization authority is unavailable"
+  }
+  $individualizationAuthority = Get-OrCreate-LocalIndividualizationAuthority
+  if ($individualizationAuthority.keyId -ne $state.individualizationAuthorityKeyId) {
+    throw "Persisted individualization authority differs from the running local stack"
+  }
+  $diagnostics = Invoke-RestMethod "$($state.apiUrl)/__local-prealpha/diagnostics"
+  if ($diagnostics.geneticProfiles.status -ne "ready" -or
+      $diagnostics.geneticProfiles.authorityHash -cne $state.geneticProfilesHash -or
+      $diagnostics.individualization.status -ne "ready" -or
+      $diagnostics.individualization.keyId -cne $state.individualizationAuthorityKeyId -or
+      $diagnostics.wildsPreview.status -ne "ready" -or
+      $diagnostics.wildsPreview.possibleSpeciesIds.Count -ne 6) {
+    throw "Local authority diagnostics are not ready for trusted bootstrap"
+  }
+
+  Assert-LocalDatabaseTarget ([int]$state.ports.postgres)
+  Assert-PreservedIndividualizationAuthority $individualizationAuthority "postgresql://pokenexus:pokenexus_local@127.0.0.1:$($state.ports.postgres)/pokenexus_local_prealpha"
+  $individualizationReleases = Get-IndividualizationReleasesJson $individualizationAuthority
+  $values = [ordered]@{
+    POKENEXUS_LOCAL_BOOTSTRAP = "1"
+    POKENEXUS_LOCAL_BOOTSTRAP_CURSOR_KEY = New-Secret 48
+    POKENEXUS_LOCAL_DATABASE_URL = "postgresql://pokenexus:pokenexus_local@127.0.0.1:$($state.ports.postgres)/pokenexus_local_prealpha"
+    POKENEXUS_LOCAL_GAME_DATA_BASE_URL = "$($state.gameDataUrl)/"
+    POKENEXUS_LOCAL_GENETIC_PROFILE_RELEASES = $geneticProfilesJson
+    POKENEXUS_LOCAL_INDIVIDUALIZATION_AUTHORITY_VERSION = [string]$individualizationAuthority.authorityVersion
+    POKENEXUS_LOCAL_INDIVIDUALIZATION_AUTHORITY_RELEASES = $individualizationReleases
+    POKENEXUS_LOCAL_PLAYER_A = $PlayerA
+    POKENEXUS_LOCAL_STARTER_A = $StarterA
+    POKENEXUS_LOCAL_PLAYER_B = if ($state.players -eq 2) { $PlayerB } else { $null }
+    POKENEXUS_LOCAL_STARTER_B = if ($state.players -eq 2) { $StarterB } else { $null }
+  }
+  $previous = @{}
+  foreach ($name in $values.Keys) {
+    $previous[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
+    [Environment]::SetEnvironmentVariable($name, $values[$name], "Process")
+  }
+  try {
+    Invoke-Checked "corepack" @(
+      "pnpm", "--filter", "@pokenexus/api", "exec", "vitest", "run",
+      "integration/local-prealpha-bootstrap-operator.test.ts",
+      "--config", "vitest.integration.config.ts"
+    )
+  } finally {
+    foreach ($name in $values.Keys) {
+      [Environment]::SetEnvironmentVariable($name, $previous[$name], "Process")
+    }
+  }
+  Write-Output "Trusted TASK-109 bootstrap PASS for the requested local Player fixture(s)."
 }
 
 function Invoke-Doctor {
@@ -394,14 +791,24 @@ function Invoke-Doctor {
   }
   $manifest = Join-Path $WorktreeRoot "packages\game-data\published\$PublishedDirectory\manifest.json"
   if (-not (Test-Path -LiteralPath $manifest)) { throw "Accepted v5 publication is missing" }
+  $geneticProfilesJson = Read-GeneticProfilesInput $GeneticProfilesPath
   Write-Output "Doctor PASS: Node/corepack/Docker, required ports and immutable v5 publication are available."
-  Write-Output "Authority BLOCKER: exact Species -> Genetic Profile pairs are not accepted/integrated; genuine bootstrap/Hunt cannot start."
+  if ($geneticProfilesJson) {
+    Write-Output "Genetic Profile input: JSON syntax PASS; exact runtime schema/12-Species coverage will be checked fail-closed at Start."
+  } else {
+    Write-Output "Authority BLOCKER: exact Species -> Genetic Profile pairs are not accepted/integrated; genuine bootstrap/Hunt cannot start."
+  }
 }
 
 function Invoke-Reset {
   Stop-Processes
+  Remove-GeneratedWranglerConfig
   if (Get-OwnedContainer) { Invoke-Checked "docker" @("rm", "-f", $Container) | Out-Null }
   if (Get-OwnedVolume) { Invoke-Checked "docker" @("volume", "rm", $Volume) | Out-Null }
+  if (Test-Path -LiteralPath $IndividualizationAuthorityFile) {
+    Remove-Item -LiteralPath $IndividualizationAuthorityFile -Force
+  }
+  $null = Get-OrCreate-LocalIndividualizationAuthority
   Ensure-Database
   Migrate-And-Seed
   Write-Output "Local Pre-alpha DB reset/migrate/identity seed PASS. Starter/gameplay bootstrap remains blocked by missing Genetic Profile authority."
@@ -425,6 +832,7 @@ function Invoke-Status {
 
 function Invoke-Stop {
   Stop-Processes
+  Remove-GeneratedWranglerConfig
   if (Get-OwnedContainer) {
     $running = (docker inspect --format "{{.State.Running}}" $Container).Trim()
     if ($running -eq "true") { Invoke-Checked "docker" @("stop", $Container) | Out-Null }
@@ -433,11 +841,21 @@ function Invoke-Stop {
 }
 
 Set-Location $WorktreeRoot
-switch ($Action) {
-  "Doctor" { Invoke-Doctor }
-  "Reset" { Invoke-Reset }
-  "Start" { Start-Stack }
-  "Status" { Invoke-Status }
-  "Smoke" { Invoke-Smoke }
-  "Stop" { Invoke-Stop }
+$operation = $null
+try {
+  if ($Action -in @("Bootstrap", "Reset", "Start", "Stop")) {
+    $operation = Enter-LocalPrealphaOperation
+    Protect-LocalPrealphaMaintenance
+  }
+  switch ($Action) {
+    "Bootstrap" { Invoke-Bootstrap }
+    "Doctor" { Invoke-Doctor }
+    "Reset" { Invoke-Reset }
+    "Start" { Start-Stack }
+    "Status" { Invoke-Status }
+    "Smoke" { Invoke-Smoke }
+    "Stop" { Invoke-Stop }
+  }
+} finally {
+  if ($operation) { $operation.Dispose() }
 }

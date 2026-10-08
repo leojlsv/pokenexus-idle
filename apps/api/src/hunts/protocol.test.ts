@@ -153,6 +153,17 @@ describe("SPEC-015 Hunt protocol parsing", () => {
     }))).toThrowError(HuntProtocolError);
   });
 
+  it("requires an integer threshold on explicit disabled Potion saves, not the no-saved null sentinel", () => {
+    for (const thresholdPercent of [90, 80, 70, 60, 50, 40, 30, 20, 10]) {
+      for (const orderedItems of [[], [{ itemId: "pokenexus:item:basic-potion:v1", autoUseEnabled: true, minimumReserve: "18" }]]) {
+        const input = { expectedRowVersion: "0", enabled: false, thresholdPercent, orderedItems };
+        expect(parseAutoPotionPolicyReplaceBody(JSON.stringify(input))).toEqual(input);
+        expect(() => parseAutoPotionPolicyReplaceBody(JSON.stringify({ ...input, thresholdPercent: null })))
+          .toThrow("thresholdPercent must be an integer");
+      }
+    }
+  });
+
   it("parses exact Auto-Revive policy bodies and rejects structural drift", () => {
     expect(parseAutoRevivePolicyReplaceBody(JSON.stringify({
       expectedRowVersion: "3",

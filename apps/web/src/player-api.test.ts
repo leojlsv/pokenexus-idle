@@ -31,6 +31,36 @@ function apiWith(handler: (url: string, init: RequestInit) => Response | Promise
 }
 
 describe("Player State API client contract", () => {
+  it("calls default fetch with a browser-compatible receiver for reads and mutations", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = [];
+    const teamId = "0199472a-0000-7000-8000-000000000102";
+    vi.stubGlobal("fetch", function (this: unknown, input: RequestInfo | URL, init: RequestInit = {}) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation");
+      requests.push({ url: String(input), init });
+      return Promise.resolve(response(init.method === "POST"
+        ? { teamId, rowVersion: "0" }
+        : { items: [], nextCursor: null }));
+    });
+    try {
+      const api = new PlayerApi();
+      await expect(api.collection()).resolves.toEqual({ items: [], nextCursor: null });
+      await expect(api.createTeam("csrf-token", "original-key"))
+        .resolves.toEqual({ teamId, rowVersion: "0" });
+      expect(requests.map(({ url }) => url)).toEqual(["/player/collection?limit=50", "/player/teams"]);
+      for (const { init } of requests) {
+        expect(init.credentials).toBe("include");
+        expect(init.redirect).toBe("error");
+      }
+      expect(requests[0]?.init.method).toBe("GET");
+      expect(new Headers(requests[0]?.init.headers).has("X-CSRF-Token")).toBe(false);
+      expect(requests[1]?.init.method).toBe("POST");
+      expect(new Headers(requests[1]?.init.headers).get("X-CSRF-Token")).toBe("csrf-token");
+      expect(new Headers(requests[1]?.init.headers).get("Idempotency-Key")).toBe("original-key");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("uses self-scoped GET paths, opaque page cursors and credentials without mutation credentials", async () => {
     const pokemonId = "0199472a-0000-7000-8000-000000000001";
     const { api, requests } = apiWith((url) => url.includes("/progression")

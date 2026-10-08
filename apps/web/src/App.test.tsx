@@ -4,6 +4,13 @@ import { AppShell } from "./App";
 import { routeForPath } from "./routing";
 
 describe("App shell", () => {
+  it("describes result reads without claiming that this tab observed a Hunt ending", () => {
+    const html = renderToStaticMarkup(<AppShell route={routeForPath("/hunt/result")}
+      preference="card" onPreferenceChange={() => undefined} onNavigate={() => undefined} />);
+    expect(html).toContain("Review available Hunt activity and current Player recovery status.");
+    expect(html).not.toContain("after returning to HUB");
+  });
+
   it("renders the four primary destinations and marks the active destination", () => {
     const html = renderToStaticMarkup(
       <AppShell

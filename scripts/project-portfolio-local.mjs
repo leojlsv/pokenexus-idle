@@ -11,7 +11,7 @@ const gitCommonDir = execFileSync('git', ['rev-parse', '--git-common-dir'], {
   cwd: BRANCH_ROOT,
   encoding: 'utf8',
 }).trim();
-const PROJECT_ROOT = dirname(isAbsolute(gitCommonDir) ? gitCommonDir : resolve(BRANCH_ROOT, gitCommonDir));
+const PROJECT_ROOT = dirname(resolve(BRANCH_ROOT, gitCommonDir));
 const ROADMAP_MD = resolve(BRANCH_ROOT, 'docs/project/PROJECT_ROADMAP.md');
 const LOCAL_ENTRY = resolve(PROJECT_ROOT, 'PROJECT_ROADMAP.html');
 const LOCAL_SNAPSHOT_DIR = resolve(PROJECT_ROOT, '.maintenance/portfolio');

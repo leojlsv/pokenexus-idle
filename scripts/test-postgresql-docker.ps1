@@ -7,6 +7,8 @@
 # -SkipDependencyBuild is for a caller that already built the exact current source.
 [CmdletBinding()]
 param(
+  [ValidateSet('@pokenexus/api', '@pokenexus/database')]
+  [string]$TestPackage = '@pokenexus/api',
   [string]$TestFile,
   [string]$TestName,
   [switch]$SkipDependencyBuild
@@ -63,7 +65,7 @@ try {
   $env:POKENEXUS_TEST_DATABASE_URL = ('postgresql://{0}:{1}@127.0.0.1:{2}/{3}' -f $databaseUser, $password, $port, $databaseName)
 
   Write-Output "Running API PostgreSQL integration against disposable postgres:17-alpine (loopback port $port)."
-  $arguments = @('pnpm', '--filter', '@pokenexus/api', 'exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts')
+  $arguments = @('pnpm', '--filter', $TestPackage, 'exec', 'vitest', 'run', '--config', 'vitest.integration.config.ts')
   if ($TestFile) { $arguments += $TestFile }
   if ($TestName) { $arguments += @('-t', $TestName) }
   Push-Location -LiteralPath $root

@@ -8,6 +8,9 @@ import {
   deriveLevelAvailableMoves,
   deriveMaxHpForRulesVersion,
   individualizeEncounter,
+  pokemonXpFloor,
+  POKEMON_PROGRESSION_RULE_ID,
+  selectBootstrapMoveLoadout,
   usesGeneticCombatSemantics,
   type EncounterIndividualizationAuthority,
   type GeneticProfile,
@@ -15,7 +18,11 @@ import {
 import { PREALPHA_ITEM_IDS } from "@pokenexus/game-data/runtime";
 import type { MoveEligibilityContextLoader } from "../moves/context";
 
-export const PLAYER_BOOTSTRAP_CONTENT_VERSION = "player-bootstrap-prealpha-v1" as const;
+export const PLAYER_BOOTSTRAP_CONTENT_VERSION_V1 = "player-bootstrap-prealpha-v1" as const;
+export const PLAYER_BOOTSTRAP_CONTENT_VERSION = "player-bootstrap-prealpha-v2" as const;
+export const PREALPHA_STARTER_LEVEL = 5 as const;
+export const PREALPHA_STARTER_TOTAL_EXPERIENCE = pokemonXpFloor(BigInt(PREALPHA_STARTER_LEVEL));
+const STARTER_ORIGIN_PREFIX = "player-bootstrap-starter-v2";
 
 export const PREALPHA_POKE_BALL_ITEM_ID = PREALPHA_ITEM_IDS.standardPokeBall;
 export const PREALPHA_BASIC_POTION_ITEM_ID = PREALPHA_ITEM_IDS.basicPotion;
@@ -27,7 +34,7 @@ export const PREALPHA_INITIAL_INVENTORY = Object.freeze([
   Object.freeze({ itemId: PREALPHA_REVIVE_25_ITEM_ID, quantity: 5n }),
 ] as const);
 
-export const PREALPHA_STARTER_LOADOUTS = Object.freeze({
+export const PREALPHA_STARTER_LOADOUTS_V1 = Object.freeze({
   "candidate:species:pokedex-bulbasaur-1:91b07648a3": Object.freeze([
     "candidate:move:growl:7d61e39e75",
     "candidate:move:tackle:ceab38a5be",
@@ -54,10 +61,10 @@ export const PREALPHA_STARTER_LOADOUTS = Object.freeze({
   ]),
 } as const);
 
-export const PLAYER_BOOTSTRAP_CONTENT_AUTHORITY = Object.freeze({
-  version: PLAYER_BOOTSTRAP_CONTENT_VERSION,
+export const PLAYER_BOOTSTRAP_CONTENT_AUTHORITY_V1 = Object.freeze({
+  version: PLAYER_BOOTSTRAP_CONTENT_VERSION_V1,
   starters: Object.freeze(
-    Object.entries(PREALPHA_STARTER_LOADOUTS)
+    Object.entries(PREALPHA_STARTER_LOADOUTS_V1)
       .sort(([left], [right]) => left.localeCompare(right, "en", { sensitivity: "variant" }))
       .map(([speciesId, moveIds]) => Object.freeze({
         speciesId,
@@ -71,8 +78,40 @@ export const PLAYER_BOOTSTRAP_CONTENT_AUTHORITY = Object.freeze({
   ),
 });
 
-export const PLAYER_BOOTSTRAP_CONTENT_HASH =
+export const PLAYER_BOOTSTRAP_CONTENT_HASH_V1 =
   "sha256:07c12e90845a8073323a59a4261b0c0e213c77912e5402a44342e43a764e459e" as const;
+
+export const PREALPHA_STARTER_LOADOUTS = Object.freeze({
+  ...PREALPHA_STARTER_LOADOUTS_V1,
+  "candidate:species:pokedex-bulbasaur-1:91b07648a3": Object.freeze([
+    "candidate:move:vine-whip:10e8c8f861",
+    ...PREALPHA_STARTER_LOADOUTS_V1["candidate:species:pokedex-bulbasaur-1:91b07648a3"],
+  ]),
+  "candidate:species:pokedex-squirtle-7:6f5ada4df3": Object.freeze([
+    "candidate:move:water-gun:797195321c",
+    ...PREALPHA_STARTER_LOADOUTS_V1["candidate:species:pokedex-squirtle-7:6f5ada4df3"],
+  ]),
+} as const);
+
+export const PLAYER_BOOTSTRAP_CONTENT_AUTHORITY = Object.freeze({
+  version: PLAYER_BOOTSTRAP_CONTENT_VERSION,
+  starterLevel: PREALPHA_STARTER_LEVEL,
+  starterTotalExperience: PREALPHA_STARTER_TOTAL_EXPERIENCE.toString(),
+  progressionRuleId: POKEMON_PROGRESSION_RULE_ID,
+  originIdentityPrefix: STARTER_ORIGIN_PREFIX,
+  starters: Object.freeze(
+    Object.entries(PREALPHA_STARTER_LOADOUTS)
+      .sort(([left], [right]) => left.localeCompare(right, "en", { sensitivity: "variant" }))
+      .map(([speciesId, moveIds]) => Object.freeze({
+        speciesId,
+        moveIds: Object.freeze([...moveIds]),
+      })),
+  ),
+  inventory: PLAYER_BOOTSTRAP_CONTENT_AUTHORITY_V1.inventory,
+});
+
+export const PLAYER_BOOTSTRAP_CONTENT_HASH =
+  "sha256:a8ed10eaa73f4105da2c08a62d69df823983bbc6640a1121b2fc6195798304ae" as const;
 
 export type PrealphaStarterSpeciesId = keyof typeof PREALPHA_STARTER_LOADOUTS;
 
@@ -150,16 +189,17 @@ export class PlayerBootstrapApplicationService {
     if (!species) return { status: "authority_unavailable", reason: "starter_species" };
 
     const moveIds = PREALPHA_STARTER_LOADOUTS[input.starterSpeciesId];
-    let available: ReadonlySet<string>;
+    let eligible: ReturnType<typeof deriveLevelAvailableMoves>;
     try {
-      available = new Set(deriveLevelAvailableMoves({
+      eligible = deriveLevelAvailableMoves({
         speciesId: input.starterSpeciesId,
-        currentLevel: 1,
+        currentLevel: PREALPHA_STARTER_LEVEL,
         learnset: context.learnsetsBySpecies.get(input.starterSpeciesId) ?? [],
-      }).map(({ moveId }) => moveId));
+      });
     } catch {
       return { status: "authority_unavailable", reason: "starter_moves" };
     }
+    const available = new Set(eligible.map(({ moveId }) => moveId));
     if (moveIds.some((moveId) => !context.moveIds.has(moveId) || !available.has(moveId))) {
       return { status: "authority_unavailable", reason: "starter_moves" };
     }
@@ -171,6 +211,11 @@ export class PlayerBootstrapApplicationService {
     ) {
       return { status: "authority_unavailable", reason: "production_moves" };
     }
+    const executable = new Set(context.productionExecutableMoveIds);
+    const selected = selectBootstrapMoveLoadout(eligible.filter(({ moveId }) => executable.has(moveId)));
+    if (selected.length !== moveIds.length || selected.some((moveId, index) => moveId !== moveIds[index])) {
+      return { status: "authority_unavailable", reason: "starter_moves" };
+    }
 
     const compatibleProfiles = await this.profileAuthority.resolve({
       gameDataVersion: context.pair.gameDataVersion,
@@ -180,9 +225,9 @@ export class PlayerBootstrapApplicationService {
     if (!compatibleProfiles) return { status: "authority_unavailable", reason: "genetic_profiles" };
     const authority = await this.individualizationAuthority.loadForNewOperation();
     const snapshot = individualizeEncounter({
-      pendingSelectionIdentity: `player-bootstrap-starter-v1:${input.playerId}`,
+      pendingSelectionIdentity: `${STARTER_ORIGIN_PREFIX}:${input.playerId}`,
       speciesId: input.starterSpeciesId as never,
-      level: 1,
+      level: PREALPHA_STARTER_LEVEL,
       compatibleProfiles,
       authority,
     });
@@ -191,7 +236,7 @@ export class PlayerBootstrapApplicationService {
       context.pair.rulesVersion as never,
       species.baseStats,
       snapshot.ivs,
-      1,
+      PREALPHA_STARTER_LEVEL,
       geneticAware ? snapshot.birthGeneticBonuses : undefined,
     );
     if (maxHp === undefined) return { status: "authority_unavailable", reason: "max_hp" };
@@ -201,9 +246,9 @@ export class PlayerBootstrapApplicationService {
       rulesVersion: context.pair.rulesVersion,
       pokemon: {
         speciesId: input.starterSpeciesId,
-        level: 1,
+        level: PREALPHA_STARTER_LEVEL,
         ivs: snapshot.ivs,
-        totalExperience: 0n,
+        totalExperience: PREALPHA_STARTER_TOTAL_EXPERIENCE,
         geneticScore: snapshot.geneticScore,
         compatibleProfiles: snapshot.compatibleProfiles,
         birthProfile: snapshot.birthProfile,

@@ -22,12 +22,20 @@ See:
 
 ## Local Pre-alpha operator environment
 
+For local access and a step-by-step manual test checklist in Portuguese, use the
+[Pre-alpha player guide](docs/qa/PREALPHA_PLAYER_GUIDE.md). It distinguishes playable
+management/progression tests from the disabled detailed combat feed and other known limits.
+
 The bounded local environment is controlled with `pnpm local:prealpha:*` commands.
-Start with `pnpm local:prealpha:doctor`, then use `reset`, `start` (two ALTs),
-`start-one`, `status`, `smoke` and `stop` as documented in the runbook above.
+For an already initialized environment, use `status` and `smoke`; start it only if
+stopped, supplying the approved Genetic authority as shown in the player guide and
+[operator runbook](docs/qa/PREALPHA_LOCAL_TEST.md). Reset deletes local progress and
+is not part of ordinary access or recovery.
 These commands are local-only and do not deploy, enable public routes or run
-production migrations. Genuine starter/Hunt gameplay remains fail-closed until the
-accepted Species-to-Genetic-Profile content authority exists.
+production migrations. The Human-approved Pre-alpha Species-to-Genetic-Profile
+authority is frozen in `docs/qa/PREALPHA_GENETIC_PROFILE_RELEASES.json`; the local
+launcher accepts only those exact approved bytes and genuine starter/Hunt entry has
+passed locally. Production/public authority remains separately gated.
 
 ## Project roadmap
 
