@@ -53,7 +53,7 @@ function pageDescription(route: AppRoute): string {
   switch (route.id) {
     case "hunt": return "Choose a published Hunt and saved Team, or use HUB PokéCenter management.";
     case "hunt-active": return "Follow committed Hunt state and resolved activity without client-side combat simulation.";
-    case "hunt-result": return "Review authoritative resolved Encounter activity after returning to HUB.";
+    case "hunt-result": return "Review available Hunt activity and current Player recovery status.";
     case "pokemon": return "Browse your owned Pokémon, then open their individual records.";
     case "pokemon-detail": return "Read server-owned Pokémon progression and current ordered Move configuration.";
     case "teams": return "Create and manage up to six saved Team presets.";

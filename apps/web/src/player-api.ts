@@ -159,7 +159,7 @@ function errorFields(value: unknown): {
 }
 
 export class PlayerApi {
-  constructor(private readonly transport: Fetcher = fetch) {}
+  constructor(private readonly transport: Fetcher = (input, init) => fetch(input, init)) {}
 
   private async request<T>(path: string, settings: RequestSettings = {}): Promise<T> {
     const method = settings.method ?? "GET";

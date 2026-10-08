@@ -1151,6 +1151,15 @@ function inventoryQuantities(
   return new Map(inventory.entries.map(({ itemId, quantity }) => [itemId, quantity] as const));
 }
 
+function automationMinimumReservesFitInventory(
+  items: readonly { readonly itemId: string; readonly minimumReserve: string }[],
+  inventory: NonNullable<Awaited<ReturnType<typeof loadInventory>>>,
+): boolean {
+  const quantities = inventoryQuantities(inventory);
+  return items.every(({ itemId, minimumReserve }) =>
+    BigInt(minimumReserve) <= (quantities.get(itemId) ?? 0n));
+}
+
 type ResolvedAutomationItemRule = NonNullable<
   Awaited<ReturnType<HuntRuntimeAuthorityPort["itemRule"]>>
 >;
@@ -2572,6 +2581,26 @@ export class HuntApplication implements HuntHttpApplication {
             );
             return result;
           }
+          const inventory = await loadInventory(transaction, playerId, true);
+          if (!inventory) return error(503, "authority_unavailable");
+          if (!automationMinimumReservesFitInventory(input.body.orderedItems, inventory)) {
+            const claimed = await claimPublicHuntCommandInTransaction(transaction, {
+              playerId,
+              idempotencyKey,
+              commandKind: "policy_replace",
+              intentHash,
+              intentJson: intent,
+            });
+            if (claimed.status === "conflict") return error(409, "correlation_conflict");
+            const result = error(422, "automation_policy_invalid");
+            await completePublicHuntCommandInTransaction(
+              transaction,
+              claimed.command.commandId,
+              result.httpStatus,
+              result.body,
+            );
+            return result;
+          }
 
           let advancementHuntId: string | null = null;
           let targetLogicalTimeMs: number | null = null;
@@ -2753,6 +2782,18 @@ export class HuntApplication implements HuntHttpApplication {
               };
             }
           }
+          const inventory = await loadInventory(transaction, playerId, true);
+          if (!inventory) return error(503, "authority_unavailable");
+          if (!automationMinimumReservesFitInventory(input.body.orderedItems, inventory)) {
+            const result = error(422, "automation_policy_invalid");
+            await completePublicHuntCommandInTransaction(
+              transaction,
+              current.commandId,
+              result.httpStatus,
+              result.body,
+            );
+            return result;
+          }
 
           const inserted = input.family === "potion"
             ? await insertAutoPotionPolicyInTransaction(transaction, {
@@ -2910,6 +2951,18 @@ export class HuntApplication implements HuntHttpApplication {
             );
             return result;
           }
+          const inventory = await loadInventory(transaction, playerId, true);
+          if (!inventory) return error(503, "authority_unavailable");
+          if (!automationMinimumReservesFitInventory(body.balls, inventory)) {
+            const result = error(422, "auto_capture_policy_invalid");
+            await completePublicHuntCommandInTransaction(
+              transaction,
+              claimed.command.commandId,
+              result.httpStatus,
+              result.body,
+            );
+            return result;
+          }
 
           let advancementHuntId: string | null = null;
           let targetLogicalTimeMs: number | null = null;
@@ -3014,6 +3067,18 @@ export class HuntApplication implements HuntHttpApplication {
               logicalTimeMs: checkpoint.logicalTimeMs.toString(),
             };
           }
+        }
+        const inventory = await loadInventory(transaction, playerId, true);
+        if (!inventory) return error(503, "authority_unavailable");
+        if (!automationMinimumReservesFitInventory(body.balls, inventory)) {
+          const result = error(422, "auto_capture_policy_invalid");
+          await completePublicHuntCommandInTransaction(
+            transaction,
+            current.commandId,
+            result.httpStatus,
+            result.body,
+          );
+          return result;
         }
         const inserted = await insertAutoCapturePolicyInTransaction(transaction, {
           playerId,

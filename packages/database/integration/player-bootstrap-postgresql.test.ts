@@ -96,6 +96,39 @@ function bootstrapInput(
 beforeEach(prepareSchema);
 afterAll(resetSchema);
 
+function bootstrapV2Input(playerId: string, speciesId = "species:starter-a"): CommitPlayerBootstrapInput {
+  const legacy = bootstrapInput(playerId, speciesId);
+  return {
+    ...legacy,
+    pokemon: {
+      ...legacy.pokemon, level: 5, totalExperience: 124n, initialCurrentHp: 20,
+      contentVersion: "player-bootstrap-prealpha-v2",
+      contentHash: "sha256:a8ed10eaa73f4105da2c08a62d69df823983bbc6640a1121b2fc6195798304ae",
+      originIdentity: `player-bootstrap-starter-v2:${playerId}`,
+    },
+  };
+}
+
+async function playerSnapshot(playerId: string): Promise<readonly string[]> {
+  return withClient(async (client) => {
+    const snapshots: string[] = [];
+    for (const [table, owner] of [
+      ["players", "player_id"], ["player_inventories", "player_id"],
+      ["pokemon_instances", "owner_player_id"], ["pokemon_move_loadout", "owner_player_id"],
+      ["pokemon_vitalities", "owner_player_id"], ["pokemon_teams", "owner_player_id"],
+      ["pokemon_team_members", "owner_player_id"], ["inventory_entries", "player_id"],
+      ["player_hunt_roots", "player_id"], ["player_bootstraps", "player_id"],
+    ]) {
+      const result = await client.query<{ snapshot: string }>(
+        `SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]'::jsonb)::text AS snapshot
+           FROM pokenexus.${table} t WHERE ${owner} = $1`, [playerId],
+      );
+      snapshots.push(result.rows[0]!.snapshot);
+    }
+    return snapshots;
+  });
+}
+
 describe("TASK-109 Player bootstrap PostgreSQL authority", () => {
   it("commits and replays the exact six accepted starter/loadout aggregates without regranting", async () => {
     for (const [speciesId, moveIds] of ACCEPTED_STARTERS) {
@@ -258,5 +291,79 @@ describe("TASK-109 Player bootstrap PostgreSQL authority", () => {
         total_items: "75",
       });
     });
+  });
+
+  it("persists Level 5/124 XP and full construction HP without changing Player progression", async () => {
+    const playerId = await createPlayer();
+    const input = bootstrapV2Input(playerId);
+    const first = await withClient((client) => commitPlayerBootstrap(client, input));
+    expect(first).toMatchObject({ status: "accepted", replayed: false,
+      bootstrap: { contentVersion: "player-bootstrap-prealpha-v2" } });
+    await withClient(async (client) => {
+      const stored = await client.query(`SELECT p.level, p.total_experience::text AS xp,
+        v.current_hp, u.player_level::text AS player_level, u.player_total_experience::text AS player_xp
+        FROM pokenexus.pokemon_instances p JOIN pokenexus.pokemon_vitalities v USING(pokemon_instance_id)
+        JOIN pokenexus.players u ON u.player_id=p.owner_player_id WHERE p.owner_player_id=$1`, [playerId]);
+      expect(stored.rows).toEqual([{ level: 5, xp: "124", current_hp: 20, player_level: "1", player_xp: "0" }]);
+    });
+    const before = await playerSnapshot(playerId);
+    expect(await withClient((client) => commitPlayerBootstrap(client, input))).toEqual({ ...first, replayed: true });
+    expect(await playerSnapshot(playerId)).toEqual(before);
+  });
+
+  it("replays a progressed and damaged v1 starter through a v2 request without promotion, healing or regrant", async () => {
+    const playerId = await createPlayer();
+    const first = await withClient((client) => commitPlayerBootstrap(client, bootstrapInput(playerId)));
+    await withClient(async (client) => {
+      await client.query("UPDATE pokenexus.pokemon_instances SET level=2, total_experience=8, row_version=1 WHERE owner_player_id=$1", [playerId]);
+      await client.query("UPDATE pokenexus.pokemon_vitalities SET current_hp=3, row_version=1 WHERE owner_player_id=$1", [playerId]);
+      await client.query("UPDATE pokenexus.inventory_entries SET quantity=quantity-1 WHERE player_id=$1", [playerId]);
+      await client.query("UPDATE pokenexus.player_inventories SET row_version=row_version+1 WHERE player_id=$1", [playerId]);
+    });
+    const before = await playerSnapshot(playerId);
+    const replay = await withClient((client) => commitPlayerBootstrap(client, bootstrapV2Input(playerId)));
+    expect(replay).toEqual({ ...first, replayed: true });
+    expect(await playerSnapshot(playerId)).toEqual(before);
+    expect(await withClient((client) => commitPlayerBootstrap(client, bootstrapV2Input(playerId, "species:starter-b"))))
+      .toMatchObject({ status: "starter_conflict" });
+    expect(await playerSnapshot(playerId)).toEqual(before);
+  });
+
+  it("rejects unsupported or inconsistent version/level/XP tuples before bootstrap writes", async () => {
+    const playerId = await createPlayer();
+    const input = bootstrapV2Input(playerId);
+    const before = await playerSnapshot(playerId);
+    for (const pokemon of [
+      { ...input.pokemon, contentVersion: "player-bootstrap-prealpha-v1" },
+      { ...input.pokemon, level: 1 as const, totalExperience: 0n },
+      { ...input.pokemon, totalExperience: 0n },
+      { ...input.pokemon, totalExperience: 123n },
+      { ...input.pokemon, totalExperience: 125n },
+      { ...input.pokemon, contentVersion: "player-bootstrap-prealpha-v3" },
+    ]) {
+      await expect(withClient((client) => commitPlayerBootstrap(client, { ...input, pokemon })))
+        .rejects.toThrow(/accepted baseline/);
+      expect(await playerSnapshot(playerId)).toEqual(before);
+    }
+  });
+
+  it("serializes concurrent v2 retries and rolls back a failed v2 grant atomically", async () => {
+    const playerId = await createPlayer();
+    const input = bootstrapV2Input(playerId);
+    const before = await playerSnapshot(playerId);
+    await expect(withClient((client) => commitPlayerBootstrap(client, {
+      ...input, inventoryGrants: [{ itemId: "pokenexus:item:poke-ball:v1", quantity: 9_223_372_036_854_775_808n }],
+    }))).rejects.toThrow();
+    expect(await playerSnapshot(playerId)).toEqual(before);
+    const results = await Promise.all([
+      withClient((client) => commitPlayerBootstrap(client, input)),
+      withClient((client) => commitPlayerBootstrap(client, input)),
+    ]);
+    expect(results.every((result) => result.status === "accepted")).toBe(true);
+    expect(results.filter((result) => result.status === "accepted" && !result.replayed)).toHaveLength(1);
+    expect(results[0]).toMatchObject({ bootstrap: results[1].status === "accepted" ? results[1].bootstrap : {} });
+    const stored = await playerSnapshot(playerId);
+    await withClient((client) => commitPlayerBootstrap(client, input));
+    expect(await playerSnapshot(playerId)).toEqual(stored);
   });
 });

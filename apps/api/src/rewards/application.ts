@@ -387,7 +387,11 @@ export class RewardApplicationService {
           const schemaVersion = authority.runtimeInputsJson.schemaVersion;
           if (schemaVersion === "hunt-runtime-inputs-v1") {
             activeHistoricalHunt = true;
-          } else if (schemaVersion !== "hunt-runtime-inputs-v2") {
+          } else if (
+            schemaVersion !== "hunt-runtime-inputs-v2"
+            && schemaVersion !== "hunt-runtime-inputs-v3"
+            && schemaVersion !== "hunt-runtime-inputs-v4"
+          ) {
             throw new RewardApplicationError("Active Hunt vitality semantics are unsupported");
           }
         }

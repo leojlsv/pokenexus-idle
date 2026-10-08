@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState, ErrorState, LoadingState } from "./common-states";
+import { ErrorState, LoadingState } from "./common-states";
 import {
   HuntApi,
   HuntApiError,
@@ -12,8 +12,13 @@ import {
   type SavedTeamDetail,
   type SavedTeamsPage,
 } from "./hunt-api";
-import { browserHuntCommandStore, type HuntCommandStoreState } from "./hunt-command-store";
+import {
+  browserHuntCommandStore,
+  type HuntCommandStore,
+  type HuntCommandStoreState,
+} from "./hunt-command-store";
 import { formatHuntDuration, formatHuntTimestamp } from "./hunt-display";
+import { HuntActivityCoverage, HuntReturnStatus, HuntStillActiveNotice } from "./hunt-feedback";
 import {
   consumeActiveForegroundHandoff,
   rememberActiveForegroundHandoff,
@@ -58,6 +63,29 @@ function readableError(error: unknown): string {
   return error instanceof Error ? error.message : "Unexpected Hunt client error";
 }
 
+export function automaticHuntSyncPausedMessage(error: unknown): string {
+  return `Automatic Hunt synchronization paused: ${readableError(error)}`;
+}
+
+export function isDefinitiveStartRejection(error: unknown): error is HuntApiError {
+  return error instanceof HuntApiError
+    && error.status === 422
+    && error.code === "hunt_not_admissible";
+}
+
+export async function clearDefinitiveStartCorrelation(
+  store: Pick<HuntCommandStore, "clear">,
+  playerId: string,
+  key: string,
+  error: unknown,
+): Promise<boolean> {
+  if (!isDefinitiveStartRejection(error)) return false;
+  if (!(await store.clear(playerId, key))) {
+    throw new Error("The terminal Start correlation could not be cleared locally");
+  }
+  return true;
+}
+
 function catalogError(error: unknown): string {
   if (error instanceof HuntApiError && error.status === 404) {
     return "Published Hunt catalog transport is not enabled on this backend. Start remains fail-closed; no local Hunt IDs are inferred.";
@@ -80,11 +108,14 @@ function captureText(disposition: Readonly<Record<string, unknown>>): string {
 }
 
 function ActivityList({ page }: { readonly page: HuntActivityPage | null }) {
-  if (!page || page.records.length === 0) return <EmptyState title="No resolved Encounters yet" message="Resolved Encounter facts will appear here without reconstructing Combat events." />;
+  if (!page || page.records.length === 0) return <HuntActivityCoverage page={page} />;
   return (
-    <ol className="activity-list">
-      {page.records.map((record) => <ActivityCard key={record.encounterOrdinal} record={record} />)}
-    </ol>
+    <>
+      <HuntActivityCoverage page={page} />
+      <ol className="activity-list">
+        {page.records.map((record) => <ActivityCard key={record.encounterOrdinal} record={record} />)}
+      </ol>
+    </>
   );
 }
 
@@ -312,9 +343,11 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
   ) => {
     if (mutationBlocked) return;
     setBusy(true); setCommandError(null); setNotice(null);
+    let frozenKey: string | null = null;
     try {
       const store = browserHuntCommandStore();
       const frozen = await store.begin(state.playerId, family, intent);
+      frozenKey = frozen.key;
       const result = await action(frozen.key);
       if (result.kind === "in_progress") {
         setNotice(`Command accepted through ${result.logicalTimeMs} / ${result.targetLogicalTimeMs}. The exact same key remains stored for deliberate continuation.`);
@@ -327,6 +360,20 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
     } catch (cause) {
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
       else {
+        if (family === "start" && frozenKey) {
+          try {
+            await clearDefinitiveStartCorrelation(
+              browserHuntCommandStore(),
+              state.playerId,
+              frozenKey,
+              cause,
+            );
+          } catch (clearCause) {
+            setCommandError(`${readableError(cause)}. ${readableError(clearCause)}`);
+            refresh();
+            return;
+          }
+        }
         setCommandError(readableError(cause));
         refresh();
       }
@@ -391,7 +438,22 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
       refresh();
     } catch (cause) {
       if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
-      else setCommandError(readableError(cause));
+      else {
+        if (state.pending.family === "start") {
+          try {
+            if (await clearDefinitiveStartCorrelation(
+              browserHuntCommandStore(),
+              state.playerId,
+              state.pending.key,
+              cause,
+            )) refresh();
+          } catch (clearCause) {
+            setCommandError(`${readableError(cause)}. ${readableError(clearCause)}`);
+            return;
+          }
+        }
+        setCommandError(readableError(cause));
+      }
     } finally { setBusy(false); }
   };
 
@@ -416,6 +478,8 @@ export function HuntOverviewPage({ api, csrfToken, onSessionLost, onNavigate }: 
 
   return (
     <div className="hunt-surface">
+      {readLastHuntId() ? <button className="button button--secondary" type="button"
+        onClick={() => onNavigate("/hunt/result")}>Open last viewed Hunt activity</button> : null}
       {state.hunt.recoveryReadyAt ? (
         <p className="hunt-note" role="status">Recovery anchor: {formatHuntTimestamp(state.hunt.recoveryReadyAt)}. Server authority decides whether a new Start is currently admissible.</p>
       ) : null}
@@ -676,6 +740,7 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
           if (freshHunt.activeHunt === null) onNavigate("/hunt/result");
         } catch (cause) {
           if (cancelled) return;
+          let pauseCause: unknown = cause;
           if (cause instanceof HuntApiError && cause.status === 401) onSessionLost();
           else if (
             frozenKey
@@ -708,12 +773,12 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
               if (freshHunt.activeHunt === null) onNavigate("/hunt/result");
               return;
             } catch (reconcileCause) {
-              setSyncMessage(`Automatic Hunt synchronization paused: ${readableError(reconcileCause)}`);
+              pauseCause = reconcileCause;
             }
           }
           setSyncBlocking(true);
           setSyncPaused(true);
-          setSyncMessage((current) => current ?? `Automatic Hunt synchronization paused: ${readableError(cause)}`);
+          setSyncMessage(automaticHuntSyncPausedMessage(pauseCause));
         }
       })();
     }, delay);
@@ -727,7 +792,14 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
   if (state.status === "loading") return <LoadingState label="Loading active Hunt" />;
   if (state.status === "error") return <ErrorState title="Active Hunt unavailable" message={state.message} onRetry={refresh} />;
   if (!state.hunt.activeHunt) {
-    return <EmptyState title="No active Hunt" message="The authoritative Hunt is no longer active. Open the result summary or return to Hunt." />;
+    return <div className="hunt-surface">
+      <HuntReturnStatus lastHuntId={readLastHuntId()} recoveryReadyAt={state.hunt.recoveryReadyAt} />
+      <div className="hunt-actions">
+        {readLastHuntId() ? <button className="button button--secondary" type="button"
+          onClick={() => onNavigate("/hunt/result")}>Open last viewed Hunt activity</button> : null}
+        <button className="button" type="button" onClick={() => onNavigate("/hunt")}>Back to Hunt / PokéCenter</button>
+      </div>
+    </div>;
   }
 
   const active = state.hunt.activeHunt;
@@ -854,7 +926,7 @@ export function ActiveHuntPage({ api, csrfToken, onSessionLost, onNavigate }: {
 
       <section className="panel hunt-section" aria-labelledby="combat-presentation-title">
         <h2 id="combat-presentation-title">Combat Card</h2>
-        <p className="hunt-note">The authenticated CombatPresentation HTTP feed is not enabled yet. Card Mode does not synthesize Battle events from Team HP, Encounter state or Hunt activity. The renderer is already compatible with immutable v1 and forward v2/CombatantRevived, but remains unmounted until genuine feed authority is exposed.</p>
+        <p className="hunt-note">Detailed combat display is unavailable in this Pre-alpha. Attacks, damage and healing are not shown individually. The HP and Encounter above are committed snapshots, not a replay; Hunt activity below is not a complete combat log.</p>
       </section>
 
       <section className="panel hunt-section" aria-labelledby="activity-title">
@@ -891,7 +963,7 @@ export function HuntResultPage({ api, onSessionLost, onNavigate }: {
 
   if (state.status === "loading") return <LoadingState label="Loading Hunt return summary" />;
   if (state.status === "error") return <ErrorState title="Hunt result unavailable" message={state.message} />;
-  if (state.hunt.activeHunt) return <EmptyState title="Hunt is still active" message="The server still reports an active Hunt; no terminal result is inferred." />;
+  if (state.hunt.activeHunt) return <HuntStillActiveNotice onNavigate={onNavigate} />;
   const loadMoreActivity = async () => {
     if (!lastHuntId || !state.activity?.nextCursor || activityBusy) return;
     setActivityBusy(true);
@@ -919,13 +991,15 @@ export function HuntResultPage({ api, onSessionLost, onNavigate }: {
   return (
     <div className="hunt-surface">
       <section className="panel hunt-section">
-        <h2>Returned to HUB</h2>
-        <p>Recovery anchor: {state.hunt.recoveryReadyAt ? formatHuntTimestamp(state.hunt.recoveryReadyAt) : "none"}</p>
-        <p className="hunt-note">The current public read contracts do not expose a durable terminal reason. This page therefore reports only authoritative resolved Encounter activity and recovery; it does not guess whether exit was Retreat, defeat, or another terminal cause.</p>
-        <button className="button" type="button" onClick={() => onNavigate("/hunt")}>Back to Hunt / PokéCenter</button>
+        <HuntReturnStatus lastHuntId={lastHuntId} recoveryReadyAt={state.hunt.recoveryReadyAt} />
+        <div className="hunt-actions">
+          <button className="button" type="button" onClick={() => onNavigate("/hunt")}>Back to Hunt / PokéCenter</button>
+          <button className="button button--secondary" type="button" onClick={() => onNavigate("/inventory")}>Check current Inventory</button>
+          <button className="button button--secondary" type="button" onClick={() => onNavigate("/pokemon")}>Check Pokémon</button>
+        </div>
       </section>
       <section className="panel hunt-section">
-        <h2>Resolved activity</h2>
+        <h2>Recorded activity</h2>
         <ActivityList page={state.activity} />
         {state.activity?.nextCursor ? <button className="button button--secondary" type="button" disabled={activityBusy} onClick={() => void loadMoreActivity()}>{activityBusy ? "Loading…" : "Load more activity"}</button> : null}
       </section>

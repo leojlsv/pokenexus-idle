@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { RuntimeGameDataReader } from "@pokenexus/game-data/runtime";
-import type { SoloHuntRuntimeInputs } from "@pokenexus/game-core";
+import {
+  PRODUCTION_COMBAT_RULE_CATALOG_V1,
+  type SoloHuntRuntimeInputs,
+  type SoloHuntTeamMemberSnapshot,
+} from "@pokenexus/game-core";
 import { describe, expect, it } from "vitest";
 import { HuntAuthorityUnavailableError } from "./application";
 import {
@@ -12,6 +16,7 @@ import {
   createHuntItemRuleReleaseResolver,
   createPublishedHuntGameDataLoader,
   assertPublishedHuntPveManifest,
+  bindProductionBattleAbilities,
   deriveEncounterIndividualizationAuthorityKeyId,
   HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V3,
   HUNT_RUNTIME_INPUTS_SCHEMA_VERSION_V4,
@@ -45,6 +50,26 @@ function base64url(bytes: Uint8Array): string {
 }
 
 describe("Hunt runtime release authorities", () => {
+  it("omits selected Abilities that are explicitly inactive in the production combat catalog", () => {
+    const chlorophyll = "candidate:ability:chlorophyll:e883803e27";
+    expect(PRODUCTION_COMBAT_RULE_CATALOG_V1.abilitySupportById[chlorophyll]?.support)
+      .toBe("inactive-by-policy");
+    const member = {
+      pokemonInstanceId: "pokemon:sunkern",
+      speciesId: "species:sunkern",
+      level: 3,
+      baseStats: { hp: 30, atk: 30, def: 30, spa: 30, spd: 30, spe: 30 },
+      ivs: { hp: 24, atk: 15, def: 6, spa: 7, spd: 17, spe: 26 },
+      geneticBonuses: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      types: ["type:grass"],
+      moveLoadout: ["candidate:move:tackle:ceab38a5be"],
+      abilityId: chlorophyll,
+    } as unknown as SoloHuntTeamMemberSnapshot;
+
+    expect(bindProductionBattleAbilities([member], PRODUCTION_COMBAT_RULE_CATALOG_V1))
+      .toEqual([{ ...member, abilityId: undefined }].map(({ abilityId: _abilityId, ...rest }) => rest));
+  });
+
   it("accepts PVE content authority on retained schema 4 and forward schema 5 only", () => {
     expect(() => assertPublishedHuntPveManifest({
       schemaVersion: "4",

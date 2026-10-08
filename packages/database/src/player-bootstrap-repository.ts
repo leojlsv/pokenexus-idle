@@ -16,7 +16,7 @@ export type BootstrapGeneticProfile =
 
 export interface PlayerBootstrapPokemonConstruction {
   readonly speciesId: string;
-  readonly level: 1;
+  readonly level: 1 | 5;
   readonly ivs: {
     readonly hp: number;
     readonly atk: number;
@@ -25,7 +25,7 @@ export interface PlayerBootstrapPokemonConstruction {
     readonly spd: number;
     readonly spe: number;
   };
-  readonly totalExperience: 0n;
+  readonly totalExperience: bigint;
   readonly geneticScore: number;
   readonly compatibleProfiles: readonly [BootstrapGeneticProfile, BootstrapGeneticProfile];
   readonly birthProfile: BootstrapGeneticProfile;
@@ -110,8 +110,13 @@ function mapBootstrap(row: BootstrapRow): PlayerBootstrapRecord {
 }
 
 function validatePokemon(pokemon: PlayerBootstrapPokemonConstruction): void {
-  if (pokemon.level !== 1 || pokemon.totalExperience !== 0n) {
-    throw new Error("starter bootstrap requires a Level 1 Pokémon with zero total experience");
+  // Source versions bind creation baselines; bootstrap is not a general Level/XP setter.
+  const validBaseline = pokemon.contentVersion === "player-bootstrap-prealpha-v1"
+    ? pokemon.level === 1 && pokemon.totalExperience === 0n
+    : pokemon.contentVersion === "player-bootstrap-prealpha-v2"
+      && pokemon.level === 5 && pokemon.totalExperience === 124n;
+  if (!validBaseline) {
+    throw new Error("starter bootstrap content version, level and experience do not match an accepted baseline");
   }
   for (const key of IV_KEYS) {
     const value = pokemon.ivs[key];
@@ -210,9 +215,9 @@ async function insertPokemon(
        individualization_content_hash, individualization_game_data_version,
        row_version, created_at, updated_at
      ) VALUES (
-       $1, $2, $3, 1,
+       $1, $2, $3, $26,
        $4, $5, $6, $7, $8, $9,
-       0, $10,
+       $27, $10,
        $11, $12, $13, $14, $14, $15,
        $16, $17, $18, $19, $20, $21, $22, $23, $24,
        0, $25, $25
@@ -243,6 +248,8 @@ async function insertPokemon(
       encode(pokemon.contentHash, "contentHash"),
       encode(pokemon.gameDataVersion, "gameDataVersion"),
       input.now,
+      pokemon.level,
+      pokemon.totalExperience.toString(),
     ],
   );
   for (let index = 0; index < pokemon.moveIds.length; index += 1) {

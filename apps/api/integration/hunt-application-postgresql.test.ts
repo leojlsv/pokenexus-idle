@@ -62,7 +62,7 @@ import {
   type HuntApplicationPorts,
   type HuntRuntimeAuthorityPort,
 } from "../src/hunts/application";
-import { hashNormalizedIntent } from "../src/hunts/protocol";
+import { hashNormalizedIntent, parseAutoPotionPolicyReplaceBody } from "../src/hunts/protocol";
 import { createPresentationCursorCodec } from "../src/hunts/presentation-cursor";
 import { readHuntPresentationWithConsistentSnapshot } from "../src/hunts/presentation-read";
 import { publishCommittedHuntPresentation } from "../src/hunts/presentation-source";
@@ -1399,6 +1399,46 @@ describe("TASK-103 forward V4/V2 presentation on real PostgreSQL", () => {
 });
 
 describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
+  it("TASK-122 rejects foreign Team Start and foreign Hunt mutations without changing gameplay state", async () => {
+    const owner = await seedPlayerTeamAndPotion();
+    const other = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const started = await harness.app.start(owner.playerId, generateUuidV7(), {
+      huntDefinitionId: "hunt:test", teamId: owner.teamId,
+    });
+    expect(started.httpStatus, JSON.stringify(started.body)).toBe(200);
+    const huntId = (started.body as { activeHunt: { huntId: string } }).activeHunt.huntId;
+    await withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      withTransaction(client, (transaction) => ensureAndLockPlayerHuntRoot(transaction, other.playerId)));
+    const snapshot = () => withPgClient({ connectionString: testDatabaseUrl }, async (client) => {
+      const result: Record<string, unknown> = {};
+      for (const table of [
+        "player_hunt_roots", "solo_hunts", "hunt_checkpoints", "hunt_input_authorities",
+        "player_inventories", "inventory_entries", "pokemon_instances", "pokemon_vitalities",
+      ]) {
+        const rows = await client.query(`SELECT coalesce(
+          jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]'::jsonb
+        ) AS rows FROM pokenexus.${table} t`);
+        result[table] = rows.rows[0]?.rows;
+      }
+      return result;
+    });
+    const before = await snapshot();
+    const startKey = generateUuidV7();
+    const checkpointKey = generateUuidV7();
+    const retreatKey = generateUuidV7();
+    const commands = [
+      () => harness.app.start(other.playerId, startKey, { huntDefinitionId: "hunt:test", teamId: owner.teamId }),
+      () => harness.app.checkpoint(other.playerId, checkpointKey, huntId),
+      () => harness.app.retreat(other.playerId, retreatKey, huntId),
+    ];
+    for (const command of commands) {
+      expect(await command()).toMatchObject({ httpStatus: 404, body: { error: "not_found" } });
+      expect(await command()).toMatchObject({ httpStatus: 404, body: { error: "not_found" } });
+    }
+    expect(await snapshot()).toEqual(before);
+  });
+
   it("TASK-108 pins damaged vitality, writes terminal HP, and PokéCenter heals during recovery without replay churn", async () => {
     const seeded = await seedPlayerTeamAndPotion();
     const harness = application();
@@ -2302,6 +2342,129 @@ describe("TASK-038 HuntApplication PostgreSQL healing lifecycle", () => {
     });
     expect(read.body as Record<string, unknown>).not.toHaveProperty("expectedRowVersion");
     expect(read.body as Record<string, unknown>).not.toHaveProperty("lossWarningAcknowledgement");
+  });
+
+  it("TASK-122 saves disabled Auto-Potion configuration and replays without spending Inventory", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    const harness = application();
+    const inventory = () => withPgClient({ connectionString: testDatabaseUrl }, (client) =>
+      loadInventory(client, seeded.playerId));
+    const before = await inventory();
+    const key = generateUuidV7();
+    const input = parseAutoPotionPolicyReplaceBody(JSON.stringify({
+      expectedRowVersion: "0", enabled: false, thresholdPercent: 50,
+      orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "2" }],
+    }));
+    const saved = await harness.app.replaceAutoPotionPolicy(seeded.playerId, key, input);
+    expect(saved).toMatchObject({ httpStatus: 200, body: { policy: {
+      policyVersion: expect.any(String), rowVersion: "1", enabled: false,
+      thresholdPercent: 50, orderedItems: input.orderedItems,
+    }, effectiveAt: null } });
+    expect(await harness.app.replaceAutoPotionPolicy(seeded.playerId, key, input)).toEqual(saved);
+    expect(await harness.app.getAutoPotionPolicy(seeded.playerId)).toMatchObject({
+      httpStatus: 200, body: { rowVersion: "1", enabled: false, thresholdPercent: 50, orderedItems: input.orderedItems },
+    });
+    expect(await inventory()).toEqual(before);
+
+    for (const [expectedRowVersion, enabled, orderedItems] of [
+      ["1", false, []],
+      ["2", true, input.orderedItems],
+      ["3", false, input.orderedItems],
+    ] as const) {
+      const result = await harness.app.replaceAutoPotionPolicy(seeded.playerId, generateUuidV7(), {
+        expectedRowVersion, enabled, thresholdPercent: 30, orderedItems,
+      });
+      expect(result).toMatchObject({ httpStatus: 200, body: { policy: {
+        rowVersion: (BigInt(expectedRowVersion) + 1n).toString(), enabled, thresholdPercent: 30, orderedItems,
+      }, effectiveAt: null } });
+      expect(await inventory()).toEqual(before);
+    }
+  });
+
+  it("rejects automation minimum reserve above currently owned quantity and accepts the exact owned bound", async () => {
+    const seeded = await seedPlayerTeamAndPotion();
+    await addInventoryItem(seeded.playerId, "item:revive", 5n);
+    await addInventoryItem(seeded.playerId, "item:poke-ball", 2n);
+    const harness = applicationWithOptions({
+      ballAuthority: {
+        version: "balls:test",
+        balls: [{ itemId: "item:poke-ball", powerQuarterUnits: 4, premium: false }],
+      },
+    });
+
+    expect(await harness.app.replaceAutoPotionPolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        thresholdPercent: 50,
+        orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "4" }],
+      },
+    )).toEqual({ httpStatus: 422, body: { error: "automation_policy_invalid" } });
+    expect(await harness.app.getAutoPotionPolicy(seeded.playerId)).toMatchObject({
+      httpStatus: 200,
+      body: { rowVersion: "0", policyVersion: null },
+    });
+
+    expect(await harness.app.replaceAutoRevivePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "6" }],
+      },
+    )).toEqual({ httpStatus: 422, body: { error: "automation_policy_invalid" } });
+    expect(await harness.app.getAutoRevivePolicy(seeded.playerId)).toMatchObject({
+      httpStatus: 200,
+      body: { rowVersion: "0", policyVersion: null },
+    });
+
+    expect(await harness.app.replaceAutoCapturePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: false,
+        balls: [{ itemId: "item:poke-ball", autoUseEnabled: true, minimumReserve: "3" }],
+        rules: [],
+      },
+    )).toEqual({ httpStatus: 422, body: { error: "auto_capture_policy_invalid" } });
+    expect(await harness.app.getAutoCapturePolicy(seeded.playerId)).toMatchObject({
+      httpStatus: 200,
+      body: { rowVersion: "0", policyVersion: null },
+    });
+
+    expect(await harness.app.replaceAutoPotionPolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        thresholdPercent: 50,
+        orderedItems: [{ itemId: "item:potion", autoUseEnabled: true, minimumReserve: "3" }],
+      },
+    )).toMatchObject({ httpStatus: 200, body: { policy: { rowVersion: "1" } } });
+    expect(await harness.app.replaceAutoRevivePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: true,
+        orderedItems: [{ itemId: "item:revive", autoUseEnabled: true, minimumReserve: "5" }],
+      },
+    )).toMatchObject({ httpStatus: 200, body: { policy: { rowVersion: "1" } } });
+    expect(await harness.app.replaceAutoCapturePolicy(
+      seeded.playerId,
+      generateUuidV7(),
+      {
+        expectedRowVersion: "0",
+        enabled: false,
+        balls: [{ itemId: "item:poke-ball", autoUseEnabled: true, minimumReserve: "2" }],
+        rules: [],
+      },
+    )).toMatchObject({ httpStatus: 200, body: { policy: { rowVersion: "1" } } });
   });
 
   it("persists Potion/Revive policies with exact no-saved sentinels, OCC, and Start-pinned authority", async () => {
