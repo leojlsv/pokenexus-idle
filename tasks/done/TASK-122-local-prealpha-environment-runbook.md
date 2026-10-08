@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Software Developer (ChatGPT prime)
 - Owner execution surface: ChatGPT prime
@@ -10,8 +10,8 @@
 - Reviewer execution surface: independent ChatGPT delegated reviewer
 - Auditor: independent security/integrity reviewer for the local-only auth/session boundary
 - Auditor execution surface: independent ChatGPT delegated reviewer
-- Independent review result: forward bootstrap READY is retained. Existing-A/B conversion has independent QA and IA READY0/0/0 for the exact source and frozen plan, 17/17 disposable PostgreSQL tests and scoped checks/probes PASS. Real Apply, fresh-client verification, no-write replay, Check and restarted-stack Smoke PASS; post-restart API reads confirm both existing starters Level5/XP124 with preserved identities/IVs/Moves/Inventory. Manual M1, repository-history completion and public/production enablement remain separate.
-- Delegated Class-B acceptance: ACCEPT P0/P1/P2 `0/0/0` on the exact-current candidate after the stale pre-conversion Lv1 evidence labels were corrected. The post-conversion Reward/Hunt UI delta also has independent re-gate READY `0/0/0`: runtime inputs v2/v3/v4 remain accepted while unknown future schema fails closed, and automatic Hunt sync preserves the reconciliation failure as the displayed pause cause. Repository-history completion remains separately gated.
+- Independent review result: forward bootstrap READY is retained. Existing-A/B conversion has independent QA and IA READY0/0/0 for the exact source and frozen plan, 17/17 disposable PostgreSQL tests and scoped checks/probes PASS. Real Apply, fresh-client verification, no-write replay, Check and restarted-stack Smoke PASS; post-restart API reads confirm both existing starters Level5/XP124 with preserved identities/IVs/Moves/Inventory. Repository-history completion is now integrated; Manual M1 and public/production enablement remain separate.
+- Delegated Class-B acceptance: ACCEPT P0/P1/P2 `0/0/0` on the exact-current candidate after the stale pre-conversion Lv1 evidence labels were corrected. The post-conversion Reward/Hunt UI delta also has independent re-gate READY `0/0/0`: runtime inputs v2/v3/v4 remain accepted while unknown future schema fails closed, and automatic Hunt sync preserves the reconciliation failure as the displayed pause cause. Repository-history completion was subsequently authorized and integrated as recorded below.
 - Auto-Potion OFF correction: explicit disabled saves now retain the selected integer HP threshold rather than sending the no-saved null sentinel. The helper used by the Save button preserves enablement/item permissions/reserves/OCC and keeps the existing ON-only allowed-item requirement. Editing state excludes null; initial fallback50 was already present. Runtime/API/request contracts and immutable pending-command behavior are unchanged. Old invalid requests recover through the existing fresh-policy-read plus explicit discard flow, not by rewriting/reusing their key with different intent.
 - Auto-Potion regression evidence: payload regression first reproduced 12 failures with the old OFF-null logic. Final web 139/139 (including 13 new intent/store cases), API protocol/HTTP 33/33, web TypeScript/Vite build, API typecheck and scoped ESLint PASS. One focused disposable PostgreSQL regression PASS (51 unrelated cases skipped) verifies disabled configured/empty saves, ON-to-OFF, exact replay/OCC/readback and unchanged Inventory. No live policy write was used for those tests.
 - Auto-Potion browser evidence: real headless Edge exercised the actual React settings/Save handlers with isolated in-memory HTTP simulation: OFF selected item/50, chosen30 retention, ON-to-OFF, immutable old400 replay, cancelled reconciliation, GET-before-confirmed-discard and fresh key after recovery PASS. Backend parser/persistence were tested separately; this is not a live policy-save acceptance claim. Initial browser-fixture attempts did not execute because a test-only backend import pulled Node crypto into the browser; removing that import confined simulation to HTTP, and the final browser run passed without browser errors. Existing user browser storage and policies were not edited. Player guide documents the scoped recovery path.
@@ -34,9 +34,9 @@
 - Consultants: GSC advisory consultation for the Human-directed starter Level-5 amendment; no consultant approval substitutes for Human or independent review
 - Consultant execution surface(s): independent ChatGPT delegated advisory assignment
 - Dependencies: TASK-016/017/025/038/039/041/100/103/109/110/111/118/119; existing APPROVED contracts only
-- Control branch: `reconcile/TASK-122-current`
-- Control worktree: `.worktrees/TASK-122-current-reconcile` (exact-current reconciliation candidate on canonical `main`; original source worktree remains preserved and untouched)
-- Reconciliation provenance: source candidate frozen from `feat/TASK-122-local-prealpha-environment-runbook@4753235` with 51 dirty entries; non-control-plane files were copied byte-exact onto `main@961589d`; roadmap/task control metadata is reconciled separately before exact-current gates.
+- Control branch: `main`
+- Control worktree: `.` (canonical post-integration project control; original source worktree remains preserved and untouched)
+- Reconciliation provenance: source candidate frozen from `feat/TASK-122-local-prealpha-environment-runbook@4753235` with 51 dirty entries; non-control-plane files were copied byte-exact onto `main@961589d`; exact-current reconciliation committed as `fc73b70` and merged into canonical `main` as `704ad53` after QA/IA READY `0/0/0`.
 - Branch: `feat/TASK-122-local-prealpha-environment-runbook`
 - Worktree: `.worktrees/TASK-122-local-prealpha-environment-runbook`
 
@@ -191,12 +191,13 @@ test accounts/ALTs without enabling any public/production capability.
 ## Exact-current reconciliation on canonical main — 2026-10-08
 
 - Reconciliation base: canonical `main@961589d9a2fdd1c7f79a75cde61e18f32c1bc2c9`. Original owning source remains preserved at `feat/TASK-122-local-prealpha-environment-runbook@4753235` with its dirty candidate untouched.
-- Source transfer: 48 non-control-plane dirty files were copied byte-exact into `.worktrees/TASK-122-current-reconcile`; only `docs/project/PROJECT_ROADMAP.{md,html}` and this task file required semantic reconciliation against the newer control plane. The task is intentionally `REVIEW` until fresh exact-current independent gates finish.
+- Source transfer: 48 non-control-plane dirty files were copied byte-exact into `.worktrees/TASK-122-current-reconcile`; only `docs/project/PROJECT_ROADMAP.{md,html}` and this task file required semantic reconciliation against the newer control plane. The task passed fresh exact-current independent gates and was promoted through `REVIEW` → `ACCEPTANCE` before history integration.
 - Linked-worktree portfolio correction: `scripts/project-portfolio-local.mjs` now normalizes an absolute `git --git-common-dir` through `path.resolve` before deriving the project root, so canonical `Control worktree: .` works identically from root `main` and linked worktrees. Roadmap/portfolio generate/check PASS on the reconciled worktree with 125 tasks, 83 worktrees, 7 open task files and 2 control worktrees.
 - Deterministic owner gates on the reconciled candidate: web 154/154 PASS + production build; API 295/295 PASS + typecheck + Wrangler dry-run; database unit 66/66 PASS + typecheck; game-core 265/265 PASS + typecheck; API/web/database scoped lint PASS; `local:prealpha:test` 18/18 PASS; `task-041:harness:local` PASS with web 40/40, API offline/runtime 44/44 and selected Hunt PostgreSQL 9/9.
 - Disposable API PostgreSQL full integration: 120 PASS / 3 expected operator-only skips. This includes Hunt 53/53, Reward 18/18, starter conversion 17/17 and starter Level-5 6/6 on the exact reconciled bytes.
 - Disposable database PostgreSQL full integration: 110 PASS / 2 failures. Both failures are proven pre-existing `main@961589d` migration-list drift: `collection-team-postgresql.test.ts` and `postgresql.test.ts` still enumerate through `0013`, while canonical main already contains `0014_hunt_presentation_feed.sql`; the reconciled TASK-122 candidate does not modify either failing test or migration 0014. TASK-122-owned database regressions are green, including `local-prealpha-seed-postgresql` 6/6 and `player-bootstrap-postgresql` 8/8. This baseline drift is recorded rather than absorbed into TASK-122 scope.
 - Fresh exact-current independent review: QA **READY P0/P1/P2 = 0/0/0** and integrity/security/persistence **READY P0/P1/P2 = 0/0/0** on the reconciled candidate. Both reviewers kept the two exhaustive migration-list failures classified as separate pre-existing baseline drift, not a TASK-122 regression, and explicitly preserved the remaining PA-M1 Human/live/public gates.
+- Repository-history completion: Human Owner authorized continuation after the accepted reconciliation gate; `fc73b70` was pushed on `reconcile/TASK-122-current` and merged into canonical `main` as `704ad53`. This closes TASK-122 itself without closing PA-M1 or authorizing TASK-120/121, public CombatPresentation, eligible-Moves, deploy or production migration.
 - No live Player/Hunt mutation was performed by this reconciliation. Prior Human/live evidence remains provenance-bound to the preserved source candidate. Remaining PA-M1 Human gates are still: full T1–T8 walkthrough, clean Auto-Revive live use, broader active-Hunt policy editing, long real offline/return validation up to 8h, representative Minimum Reserve render, and a fresh real two-member Start after the captured-Ability correction.
 
 ## Completion rule
@@ -205,3 +206,5 @@ TASK-122 may close only when the operator flow itself is reproducible and indepe
 tooling task does **not** mark M0/M1/M2 complete by itself and does not satisfy any Human/Class-A/public gate.
 If an accepted gameplay authority required by trusted bootstrap/Hunt start is absent from the repository,
 record that as a blocker and leave the affected milestone open rather than manufacturing test authority.
+
+**Completion:** satisfied on 2026-10-08 by the exact-current reconciliation, fresh QA/IA `0/0/0`, repository-history integration and canonical-main handback above. PA-M1 remains independently gated by the Human/live evidence listed in this task.
