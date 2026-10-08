@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Software Developer (ChatGPT prime)
 - Owner execution surface: ChatGPT prime
@@ -256,10 +256,17 @@ Consequences of the accepted transition:
 1. `PA-M1 — Core Gameplay Loop Validation` is complete and no longer the current local-validation milestone.
 2. `PA-M2 — Closed Local Alpha (1–2 Players)` becomes the current milestone.
 3. `PA-M3 — Stability Validation` becomes the next local-validation milestone.
-4. TASK-125 advances to `ACCEPTANCE`: its live/manual/evidence gates and Human milestone decision are complete, but repository-history handback remains separately gated.
+4. TASK-125 reached `ACCEPTANCE` after the live/manual/evidence gates and Human milestone decision closed; repository-history handback was then separately authorized and completed.
 5. This decision does **not** authorize commit, push, merge, deploy, production migration, public CombatPresentation, TASK-120/121 implementation, eligible-Moves/Move-editor authority or any other deferred capability.
 6. PA-M2 must reuse the accepted runtime/evidence baseline rather than reinterpret the PA-M1 results; new defects or scope changes return through their normal task/governance gates.
 
 ## Completion rule
 
-TASK-125 is now in `ACCEPTANCE`: the required PA-M1 live evidence is explicit, independently reviewed, and the Human Owner accepted PA-M1→PA-M2. It may reach DONE only after any separately authorized repository-history handback is complete.
+TASK-125 is `DONE`: the required PA-M1 live evidence is explicit, independently reviewed, the Human Owner accepted PA-M1→PA-M2, and the separately authorized repository-history handback is complete.
+
+### Repository-history handback
+
+- Human Owner separately authorized commit/push/merge after accepting the PA-M1→PA-M2 transition.
+- Candidate commit: `2e816f3` (`fix(prealpha): close PA-M1 live validation`) on `test/TASK-125-pa-m1-live-validation-exit-gate`, pushed to `origin`.
+- Canonical merge: `35c468f` (`merge: close TASK-125 PA-M1 exit gate`) merged the accepted candidate into `main` and was pushed to `origin/main`.
+- This final lifecycle handback marks TASK-125 DONE without authorizing deploy, public enablement, production migration or any deferred gameplay capability.

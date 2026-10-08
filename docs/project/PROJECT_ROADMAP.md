@@ -124,7 +124,7 @@ QA Reviewer / Independent Auditor
 | `TASK-122` Local Pre-alpha Environment & Operator Runbook | DONE — exact-current reconciliation QA/IA READY `0/0/0`; feature `fc73b70` merged into canonical `main` as `704ad53`; TASK-125 subsequently closed the PA-M1 Human/live gaps |
 | `TASK-123` Hunt Catalog Workerd Redirect Compatibility | DONE — Worker-compatible manual redirect handling integrated and live-local validated without widening origin/artifact security |
 | `TASK-124` Pre-alpha Baseline Review & PA-M0→PA-M1 Transition Gate | DONE — Human accepted PA-M0→PA-M1; independent structural/governance and functional/evidence QA READY `0/0/0`; accepted candidate merged into canonical `main` and post-integration control handback completed; TASK-122 was subsequently reconciled and integrated under its own gate |
-| `TASK-125` PA-M1 Live Gameplay Validation & Exit Gate | ACCEPTANCE — all required PA-M1 live/manual/visual gates are closed; final QA/integrity found no P0/P1; Human Owner accepted PA-M1→PA-M2 on 2026-10-08; repository-history handback remains separately gated |
+| `TASK-125` PA-M1 Live Gameplay Validation & Exit Gate | DONE — all required PA-M1 live/manual/visual gates are closed; final QA/integrity found no P0/P1; Human Owner accepted PA-M1→PA-M2 on 2026-10-08; candidate `2e816f3` merged into canonical `main` as `35c468f` and repository-history handback completed |
 | `TASK-112` Local Pokémon Source Snapshot & Authority Realignment | DONE — SPEC-022 QA READY `0/0/0/0`; Human-approved contract integrated with TASK-113/114 dependency chain on 2026-10-03 |
 | `TASK-113` Local Pokémon Source Snapshot Implementation | DONE — post-ACQUIRE QA final TECH/ARCH READY `0/0/0/0`; schema-5 local snapshot/PokéAPI foundation integrated on 2026-10-03 |
 | `TASK-114` PokéAPI Promotion Decision & Schema-5 Cutover Contract | DONE — immutable schema-5 v4 publication + repository history integrated; candidate/publication/integration QA READY `0/0/0/0`; runtime/deploy remain separate |
@@ -165,17 +165,17 @@ Current target: **PA-M2 — Closed Local Alpha (1–2 Players)**. TASK-125 close
 ### Portfolio progress
 
 - Planned task IDs in this roadmap: `TASK-000` through `TASK-125`.
-- DONE: 72.
+- DONE: 73.
 - DRAFT: 2.
 - READY: 0.
 - ACTIVE: 3.
 - FIX: 0.
 - REVIEW: 0.
-- ACCEPTANCE: 2.
+- ACCEPTANCE: 1.
 - BLOCKED: 0.
 - DEFERRED: 1.
 - PLANNED: 46.
-- Task-count completion: **72 / 126 = 57.1%**.
+- Task-count completion: **73 / 126 = 57.9%**.
 
 This percentage is a visibility metric, not a schedule estimate. Tasks are not equally sized and future scope can be split, merged or removed through normal governance.
 
@@ -705,7 +705,7 @@ content relies on those mechanics.
 | `TASK-039` Solo Hunt Card Mode Integration | B | ACTIVE | FE → ChatGPT prime | Fresh exact-current independent broad QA + sync/correlation + post-integration foreground-handoff re-gates **READY 0/0/0** | `SK-REACT`, `SK-UI`, `SK-A11Y`, `SK-FE-TEST`, `SK-PNX-FLOW`, `SK-PNX-PLAN`, `SK-PNX-RUNTIME`, `SK-PNX-VISUAL`, `SK-PNX-OBS`, `SK-PNX-RELEASE` | **Human authorized source/history integration; later HUMAN live validation and feed enablement remain separate** | TASK-029/038/101/103/106/109/110/118/119 + approved SPEC-020/021; acceptance blockers TASK-120/121 | Management-only Start/Retreat/PokéCenter, three automation policies, automatic online/return reconciliation, paged Hunt activity, v1/v2 Card support and APPROVED SPEC-024 pre-Start preview are source-integrated. **7/10 acceptance criteria are closed locally**. Exact-current combined web suite **125/125** + type/lint/build/diff green. Public presentation GET, durable terminal/offline summary, historical manual-capture compatibility and final Human live/Class-B validation remain fail-closed/open. |
 | `TASK-040` Solo Hunt Visual/Pixi Integration | B | PLANNED | FE → Claude Code | QA | `SK-GAME-PERF`, `SK-UI`, `SK-FE-TEST` | **DEFERRED beyond first Pre-alpha; HUMAN visual/live validation in later Pre-alpha step** | TASK-030/038/104 | Visual/Pixi presentation remains planned but is **not required for the first Pre-alpha**, which is Cards-only. When resumed: automated PvE traversal/progression only, same authoritative Hunt/event source as Cards, scene transitions/animations, terminal/return presentation, performance/fallback and behavior/E2E coverage. |
 | `TASK-041` Solo Hunt End-to-End, Offline & Performance Harness | B | ACTIVE | SD → ChatGPT prime | Independent QA/integrity READY 0/0/0 | `SK-GAME-PERF`, `SK-TDD`, `SK-PNX-PLAN`, `SK-PNX-RUNTIME`, `SK-PNX-REPLAY`, `SK-PNX-RELEASE` | **Local/disposable Cards-only harness authorized by accepted SPEC-020/021; HUMAN first Pre-alpha live acceptance remains final gate** | TASK-034-039/100/103/106-111/119 | Exact-current local harness: web 35/35, API offline/runtime 40/40 and disposable PostgreSQL 9/9 PASS with owned-container cleanup and diagnostic-only timings; independent re-gate found no P0/P1/P2. TASK-119 preview source is integrated; TASK-120/121, public presentation GET, eligible-Moves and production performance/deploy remain external and are explicitly not simulated or authorized. |
-| `TASK-125` PA-M1 Live Gameplay Validation & Exit Gate | B | ACCEPTANCE | SD → ChatGPT prime | Final independent QA READY `P0=0/P1=0`; final integrity READY `P0=0/P1=0`; Human T8 PASS; real >8h return/replay PASS | `SK-PNX-FLOW`, `SK-PNX-PLAN`, `SK-PNX-RUNTIME`, `SK-PNX-REPLAY`, `SK-PNX-VISUAL`, `SK-PNX-OBS`, `SK-PNX-RELEASE`; `SK-TDD` for reproduced defects only | **HUMAN accepted PA-M1→PA-M2 on 2026-10-08; repository-history handback remains separately gated; no deploy/public enablement implied** | TASK-039/041/100/103/110/122 | PA-M1 exit evidence complete: fresh corrected two-member Start, real Auto-Revive, prospective active-Hunt policy editing, Minimum Reserve rendered/live state, real offline return with exact 8h cap + replay, T1–T8 Human consolidation and final no-P0/P1 re-gate. PA-M2 is now current. |
+| `TASK-125` PA-M1 Live Gameplay Validation & Exit Gate | B | DONE | SD → ChatGPT prime | Final independent QA READY `P0=0/P1=0`; final integrity READY `P0=0/P1=0`; Human T8 PASS; real >8h return/replay PASS | `SK-PNX-FLOW`, `SK-PNX-PLAN`, `SK-PNX-RUNTIME`, `SK-PNX-REPLAY`, `SK-PNX-VISUAL`, `SK-PNX-OBS`, `SK-PNX-RELEASE`; `SK-TDD` for reproduced defects only | **COMPLETED — Human accepted PA-M1→PA-M2; candidate `2e816f3` merged to canonical `main` as `35c468f`; no deploy/public enablement implied** | TASK-039/041/100/103/110/122 | PA-M1 exit evidence complete: fresh corrected two-member Start, real Auto-Revive, prospective active-Hunt policy editing, Minimum Reserve rendered/live state, real offline return with exact 8h cap + replay, T1–T8 Human consolidation and final no-P0/P1 re-gate. PA-M2 is now current. |
 | `TASK-104` Project Governance and Roadmap Reconciliation | B | DONE | PM → ChatGPT project coordination | Independent QA/IA PASS 0/0/0 | `SK-TDD` | **COMPLETED — local-main integration 2026-09-30** | TASK-003 | Canonical governance control-plane task. |
 | `TASK-105` CI Test Discovery and Published-Loader Timeout Stability | C | DONE | LD → ChatGPT isolated worktree | N/A | `SK-TDD` | **COMPLETED — local-main integration 2026-09-30** | TASK-003/104 | Canonical CI/test stability task. |
 | `TASK-106` Management-First Idle Product Realignment | A | DONE | PM → ChatGPT project coordination | Semantic + architecture/replay QA READY 0/0/0 | `SK-GAME-ARCH`, `SK-UI`, `SK-GAME-BAL` as needed | **HUMAN Class-A acceptance COMPLETE 2026-10-02; history/lifecycle completion authorized 2026-10-06** | TASK-033/038/093/098 + SPEC-020/021 | First-Pre-alpha management-first contract authority complete; downstream runtime/migration/deploy remains separately scoped. |
