@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Software Developer (ChatGPT prime)
 - Owner execution surface: ChatGPT prime
@@ -184,7 +184,7 @@ The first gate is a **read-only concurrent baseline**. Before any new mutation, 
 - Final integrity/security reviewer: `READY P0=0 / P1=0 / P2=0` within PA-M2 scope. The review confirmed owner-scoped Player/Hunt/command lookup, concurrent Hunts and exact-key replay, asymmetric reconnect with same-key resumption, isolated policy OCC versions, foreign Pokémon/Hunt/Team/command probes failing closed, owner-local Capture/Potion/Revive/reward/XP/Inventory effects, mutation-free replay and Human two-session isolation.
 - The direct cross-owner completed-key + foreign-Hunt probes close the prior integrity evidence-strengthening P2: both directions returned `404`, and read-only DB evidence retained one command row per key under its original Player/Hunt only.
 - `git diff --check`, `roadmap:check` and `portfolio:check-local` remain green after the Human evidence update.
-- The independent-review acceptance criterion is closed. The Human Owner subsequently accepted the recommended PA-M2→PA-M3 transition, so **PA-M2 is COMPLETE and PA-M3 is CURRENT**; repository-history handback remains separately gated.
+- The independent-review acceptance criterion is closed. The Human Owner subsequently accepted the recommended PA-M2→PA-M3 transition, so **PA-M2 is COMPLETE and PA-M3 is CURRENT**. Repository-history handback was separately authorized and completed.
 
 ### Human Owner PA-M2 exit decision
 
@@ -192,9 +192,11 @@ The first gate is a **read-only concurrent baseline**. Before any new mutation, 
 - Human Owner message: `Autorizado`.
 - Recorded message timestamp: `2026-10-09T01:34:17Z`.
 - Consequence: PA-M2 becomes `COMPLETE`, PA-M3 becomes `CURRENT`, and PA-M4 becomes `NEXT`.
-- TASK-126 advances from `ACTIVE` to `ACCEPTANCE`; it is **not DONE** until separately authorized repository-history handback is completed.
+- TASK-126 advanced from `ACTIVE` to `ACCEPTANCE`, then to `DONE` after the separately authorized repository-history handback.
+- Repository-history authorization message: `Autorizado` at `2026-10-09T01:57:06Z`.
+- Candidate commit `c1d6a28` was published and merged `--no-ff` into canonical `main` as `6af0118` before this lifecycle closeout.
 - This decision does not authorize commit, push, merge, deploy, public enablement, production migration, TASK-120/121, eligible-Moves or public CombatPresentation.
 
 ## Completion rule
 
-TASK-126 may reach ACCEPTANCE only after the required PA-M2 concurrent-account evidence is explicit, reproducible where applicable, independently reviewed and all unresolved findings are classified without inference. It may reach DONE only after the Human Owner makes the PA-M2 exit decision and any separately authorized repository-history handback is complete.
+TASK-126 reached `DONE` only after the required PA-M2 concurrent-account evidence was explicit, reproducible where applicable, independently reviewed, the Human Owner accepted PA-M2→PA-M3, and the separately authorized repository-history handback was completed. No deploy/public/production action is implied.
