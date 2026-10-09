@@ -1,36 +1,92 @@
-# SPEC-026 — Historical Manual-Capture Compatibility & Migration
+# TASK-121 — Historical Manual-Capture Compatibility & Migration Plan
 
-- Status: APPROVED Class-A — Human-approved 2026-10-09; Class-B implementation/migration remain separately gated
-- Owner: Human Owner
-- Coordinator: ChatGPT
-- Related ADRs: ADR-006
-- Related tasks: TASK-038, TASK-039, TASK-098, TASK-106, TASK-110, TASK-121
+## Metadata
 
-## Problem
+- State: DONE
+- Class: A — persisted/public compatibility and migration decision
+- Owner: PM / Architecture Coordinator
+- Owner execution surface: ChatGPT project coordination
+- Reviewer: independent QA/Architecture Reviewer
+- Reviewer execution surface: independent compatibility/replay review
+- Auditor: Persistence/Security Reviewer
+- Auditor execution surface: independent migration/idempotency audit
+- Consultants: Game Systems Consultant as needed
+- Consultant execution surface(s): advisory only
+- Spec: APPROVED SPEC-026
+- Related: TASK-038 / TASK-039 / TASK-098 / TASK-106 / TASK-110
+- Control branch: `docs/TASK-121-history-handback` — repository-history handback only
+- Control worktree: `.worktrees/TASK-121-history-handback`
+- Dedicated implementation/migration branch/worktree: not allocated; create only after Human Class-A acceptance and a separate implementation gate
 
-Historical accepted Hunt contracts persisted manual pending-capture state and durable manual-capture commands. APPROVED SPEC-020 removes per-Encounter capture/Ball-choice UX from the forward product, but canonical persistence still has legacy states that cannot be discarded or reinterpreted safely without an explicit compatibility plan.
+## Objective
 
-## Goals
+Choose and specify the compatibility/migration treatment for historical persisted manual-capture boundaries now that the accepted management-first product no longer exposes per-Encounter Ball/skip controls.
 
-- Inventory every legacy persisted/manual-capture state that can still be encountered.
-- Select a deterministic forward treatment for each state class.
-- Preserve no-free-reroll, Inventory debit, capture provenance, completed-command replay and exactly-once semantics.
-- Define when the forward API/client can stop exposing the legacy compatibility marker.
+## Context
 
-## Non-goals
+- Canonical backend still retains historical `pendingManualCapture` persistence and manual-capture command machinery for replay/compatibility.
+- TASK-039 intentionally exposes only a non-actionable compatibility marker and must not fabricate an automatic resolution.
+- TASK-106 explicitly requires compatibility/migration planning before removing or superseding already-persisted/public behavior.
 
-- Reintroduce manual capture UX.
-- Change forward automatic capture policy semantics.
-- Rewrite immutable historical command outcomes.
-- Execute a production migration before separate implementation/deployment authorization.
+## Scope
 
-## Approved Class-A contract
+- Inventory every persisted/manual-capture state and completed-command shape that can exist from historical contracts.
+- Decide the forward treatment for each state: preserve/read-only, migrate, deterministically resolve, or require an explicit recovery path.
+- Preserve immutable historical command/economic evidence and prevent free rerolls, duplicate Ball spend, duplicate capture creation or reward duplication.
+- Separate exact-existing-key historical replay from migration/recovery of unresolved pending states whose correlation has expired; replay-only transport may never mint a new manual-capture intent.
+- Define migration/versioning/idempotency/rollback and replay behavior if any persisted state changes.
+- Define the public compatibility surface after migration, including when the legacy marker can be removed from forward state.
 
-This specification promotes the exact TASK-121 Class-A package accepted by the Human Owner. It defines compatibility, replay, migration-planning and retirement requirements only. It does not authorize schema/runtime implementation, migration Apply, route removal, deploy or production mutation.
+## Out of scope
 
-### Legacy state classes and approved treatment
+- Reintroducing manual per-Encounter capture UX.
+- Changing accepted automatic capture policy semantics.
+- Executing a production migration before Class-A acceptance and a separate implementation/deployment gate.
+- Rewriting immutable historical command results.
 
-| Class | Exact historical state | Approved forward treatment |
+## Acceptance criteria
+
+- [x] The task-local Class-A candidate inventories every legacy persisted/manual-capture boundary that must remain replay-safe; canonical SPEC-026 promotion was performed only after Human acceptance and the separately authorized history handback.
+- [x] Human Owner selects and accepts the exact forward treatment for each legacy state class.
+- [x] No-free-reroll, Inventory debit, capture provenance and exactly-once semantics are preserved by the candidate treatment.
+- [x] Replay-only compatibility rejects unseen keys/new manual intents; expired/no-command pending states use deterministic zero-effect skip-equivalent closure with migration audit.
+- [x] Rollback/restart/replay, H5 partial-effect ambiguity and historical command retention cases are specified fail-closed.
+- [x] A separate future Class-B implementation/migration task is identified as the only implementation surface after Class-A acceptance; no task ID/worktree is allocated or activated by this approval.
+- [x] Independent compatibility and persistence/security review finds no unresolved P0/P1.
+
+## Validation / tests
+
+- [x] Contract matrix covers pending, skipped/no-attempt, attempted-success/failure evidence, completed replay, orphan command, blocked-existing and ambiguous/interrupted boundaries; concrete fixtures belong to the later Class-B task.
+- [x] Candidate distinguishes exact-existing-key replay from expired/no-command pending recovery and prohibits implicit replacement command creation.
+- [x] Migration plan specifies dry-run/count/digest/drift/owner-graph evidence before any persistent mutation.
+- [x] Forward product boundary remains no manual capture UI/new-intent API; replay-only transport is historical recovery only.
+
+## PA-M5 activation / Gate 1 — exact-current legacy inventory
+
+- Human Owner instruction `continue` at `2026-10-09T17:39:22Z` followed the explicitly identified next action: activate **TASK-121** as the next PA-M5 Class-A compatibility gate. This activates contract/evidence work only; no migration, runtime implementation, route removal, deploy or production mutation is authorized.
+- Exact-current source confirms four distinct legacy authorities that must never be conflated:
+  1. `hunt_pending_manual_captures` — Player-wide unresolved legacy capture opportunity bound to exact source Hunt/Encounter evidence;
+  2. `hunt_public_commands(command_kind='manual_capture')` — durable public command/idempotency/replay identity and any frozen attempt/skip intent;
+  3. `capture_attempts` — immutable one-attempt-per-Encounter economic/capture result authority;
+  4. `hunt_encounter_boundaries` — immutable capture/reward boundary/provenance, including historical `manualDisposition`.
+- Current forward product does not create new manual fallback when checkpoint state carries `automationPolicies`; auto-capture OFF produces `automaticDisposition='disabled'`, `manualDisposition='not_applicable'` and no Player prompt.
+- Forward Card UI already treats any legacy pending row as a **non-actionable compatibility marker** and exposes no Ball/skip controls.
+- Preserved local Pre-alpha PostgreSQL read-only census (`pokenexus-prealpha-local`, database `pokenexus_local_prealpha`) found:
+  - `hunt_pending_manual_captures = 0`;
+  - `hunt_public_commands` with `command_kind='manual_capture' = 0` in every command status;
+  - `hunt_encounter_boundaries = 297`, all `manual_disposition='not_applicable'`;
+  - `capture_attempts = 115`, all current attempts use automatic `auto:` correlation provenance (`90` success / `25` failure), with no manual attempt present.
+- Therefore the **preserved first-Pre-alpha database inspected here** needs no manual-capture data migration today. This zero-row result is environment-specific evidence only and MUST NOT be extrapolated to other historical/staging/production databases; every supported environment requires its own dry-run census before cutover.
+- Historical code/tests prove a manual pending row can survive the source Hunt and remain visible during a newer Hunt. Reward/progression is independent of that stale opportunity; a pending manual row is not authority to rewind the Hunt, re-grant reward or reroll an Encounter.
+- A historical manual command attempt freezes its exact Ball authority + capture RNG under that command before the final attempt. Without such a still-supported exact command, the pending row alone contains no selected Ball or frozen manual-attempt RNG and therefore cannot be safely converted into an automatic capture using current policy/Inventory.
+
+## Approved Class-A compatibility treatment — preserved review packet
+
+This section preserves the exact task-local candidate that received independent review and Human Class-A acceptance. The separately authorized history handback promotes the same accepted contract into canonical APPROVED SPEC-026 without changing its compatibility/economic semantics.
+
+### Legacy state classes and proposed treatment
+
+| Class | Exact historical state | Proposed forward treatment |
 |---|---|---|
 | `H0 clean` | No pending manual row and no supported manual command requiring replay. | No action. Forward management-first behavior remains authoritative. |
 | `H1 completed replay` | Exact existing terminal/gone `manual_capture` command; no unresolved pending work required. | Preserve immutable exact-key replay/tombstone semantics for the existing supported retry horizon. Never rewrite result bytes or mint another attempt. |
@@ -114,7 +170,7 @@ Apply must be resumable and bounded rather than one unbounded global transaction
 5. forward UI/API negative tests prove no manual capture intent can be created;
 6. rollback/write-guard tests prove old code cannot re-enable either new manual-command creation or new pending-manual-opportunity creation.
 
-### Approved Human decisions
+### Candidate Human decisions
 
 1. Preserve exact historical manual-command replay only; retire creation of all new manual capture intents.
 2. Allow an already-accepted, unexpired exact pending command to finish only with its frozen key/intent/authority.
@@ -169,14 +225,22 @@ Apply must be resumable and bounded rather than one unbounded global transaction
 - Explicitly excluded: Class-B implementation task allocation, migration schema/Apply, retirement guard implementation, replay-route modification/removal, pending-row deletion, runtime changes, deploy and production mutation.
 - History candidate is isolated from the dirty TASK-121 control worktree so its provisional control-plane state is preserved rather than committed directly.
 
-## Environment-specific current evidence
+## Dependencies
 
-- Preserved local Pre-alpha PostgreSQL census at acceptance: `hunt_pending_manual_captures=0`, `manual_capture` public commands `=0`, `hunt_encounter_boundaries=297` all `manual_disposition='not_applicable'`, and `capture_attempts=115` (`90` success / `25` failure), all current automatic attempts.
-- Therefore the preserved local Pre-alpha database is expected to produce a zero-row/no-op TASK-121 migration plan.
-- This evidence is environment-specific and MUST NOT be extrapolated to historical/staging/production databases. Every supported environment requires its own read-only dry-run census and canonical Plan digest before any Apply.
+- Historical SPEC-015/TASK-038/TASK-098 command behavior.
+- APPROVED SPEC-020 management-first supersession.
+- TASK-110 forward automatic capture/runtime provenance.
 
-## Implementation boundary
+TASK-039 is a downstream compatibility consumer, not a prerequisite for the Class-A migration decision.
 
-- A separate future Class-B implementation/migration task is required and is intentionally not allocated by this approval/history handback.
-- That future task owns the durable rollback-safe retirement guard for both new `manual_capture` command insertion and new `hunt_pending_manual_captures`/legacy producer insertion, immutable H3/H4 receipts, dry-run planner, bounded resumable Apply, historical fixtures and rollback tests.
-- No application/runtime/database migration, pending-row deletion, replay-route change/removal, public marker removal, deploy or production action is authorized by APPROVED SPEC-026 alone.
+## Risks / irreversible actions
+
+- Incorrect migration can spend/restore Items incorrectly, duplicate Pokémon creation or permit rerolls.
+- Historical rows/command results must not be destructively rewritten without an accepted compatibility proof.
+- No persistent migration, deploy, deletion or public API removal is authorized by TASK-121 completion.
+
+## Expected files / boundaries
+
+- `docs/specs/SPEC-026-historical-manual-capture-compatibility.md`
+- Historical fixtures/evidence inventory only after plan acceptance.
+- No database migration file until a separate implementation task is authorized.
