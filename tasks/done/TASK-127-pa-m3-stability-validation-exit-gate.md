@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- State: ACCEPTANCE
+- State: DONE
 - Class: B
 - Owner: Software Developer (ChatGPT prime)
 - Owner execution surface: ChatGPT prime
@@ -197,7 +197,7 @@ The first gate is a **read-only persistence baseline** from canonical `main@9277
 - Final QA also confirms the evidence wording remains bounded and accurate: Gate 2 is only the observed `84.004 s` sustained run; the invalid overlapping-controller attempt remains explicitly discarded; Gate 4 quiescence is scoped to TASK-127 services; Gate 5 naturally terminalized `no_living` before exhausting its larger frozen target; historical unrelated pending keys remain preserved rather than claimed as cleared.
 - Final integrity/replay reviewer: `READY P0=0 / P1=0 / P2=0`. Exact-current Human Gate 6 PASS, API restart with frozen checkpoint key, PostgreSQL/service restart persistence, exact-key continuation, replay invariance, natural terminal/recovery and fresh-Hunt continuity are sufficient for the prescribed PA-M3 matrix. No mandatory negative/replay scenario remains.
 - Historical pending commands outside the active PA-M3 Hunts remain explicitly scoped as inherited state. Current-Hunt inherited claims were reconciled exactly; the six older historical pending rows were preserved and are not required to be deleted/terminalized by TASK-127.
-- Independent-review acceptance is therefore closed. The Human Owner subsequently accepted the recommended PA-M3→PA-M4 transition, so **PA-M3 is COMPLETE and PA-M4 is CURRENT**; repository-history handback remains separately gated.
+- Independent-review acceptance is therefore closed. The Human Owner subsequently accepted the recommended PA-M3→PA-M4 transition, so **PA-M3 is COMPLETE and PA-M4 is CURRENT**. Repository-history handback was separately authorized and completed.
 
 ### Human Owner PA-M3 exit decision
 
@@ -205,10 +205,12 @@ The first gate is a **read-only persistence baseline** from canonical `main@9277
 - Human Owner message: `Autorizado`.
 - Recorded message timestamp: `2026-10-09T12:19:34Z`.
 - Consequence: PA-M3 becomes `COMPLETE` and PA-M4 becomes `CURRENT`. PA-M5 remains `GATED`; this decision does not open the expansion-gate capabilities.
-- TASK-127 advances from `ACTIVE` to `ACCEPTANCE`; it is **not DONE** until separately authorized repository-history handback is completed.
+- TASK-127 advanced from `ACTIVE` to `ACCEPTANCE`, then to `DONE` after the separately authorized repository-history handback.
+- Repository-history authorization message: `avance` at `2026-10-09T12:25:30Z`.
+- Candidate commit `7d93202` was published and merged `--no-ff` into canonical `main` as `0537867` before this lifecycle closeout.
 - The final QA P2 remains recorded as non-blocking operational evidence for later performance work; no correctness, persistence or replay blocker is carried into PA-M4.
 - This decision does not authorize commit, push, merge, deploy, public enablement, production migration, TASK-120/121, eligible-Moves, public CombatPresentation, or any specific PA-M4 balance-rule change.
 
 ## Completion rule
 
-TASK-127 may reach ACCEPTANCE only after the required PA-M3 stability/restart/persistence evidence is explicit, reproducible where applicable, independently reviewed and all unresolved findings are classified without inference. It may reach DONE only after the Human Owner makes the PA-M3 exit decision and any separately authorized repository-history handback is complete.
+TASK-127 reached `DONE` only after the required PA-M3 stability/restart/persistence evidence was explicit, reproducible where applicable, independently reviewed, the Human Owner accepted PA-M3→PA-M4, and the separately authorized repository-history handback was completed. No deploy/public/production action or balance-rule change is implied.
