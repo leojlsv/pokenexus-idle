@@ -7,6 +7,7 @@ import { Script } from 'node:vm';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ROADMAP_MD = resolve(ROOT, 'docs/project/PROJECT_ROADMAP.md');
 const ROADMAP_HTML = resolve(ROOT, 'docs/project/PROJECT_ROADMAP.html');
+const BACKLOG_TASK_DIR = resolve(ROOT, 'tasks/backlog');
 const ACTIVE_TASK_DIR = resolve(ROOT, 'tasks/active');
 const DONE_TASK_DIR = resolve(ROOT, 'tasks/done');
 const STATUS_VOCABULARY = ['PLANNED', 'DRAFT', 'READY', 'ACTIVE', 'REVIEW', 'FIX', 'ACCEPTANCE', 'DONE', 'BLOCKED', 'DEFERRED'];
@@ -259,6 +260,42 @@ function taskStateFromFile(path) {
   return match[1];
 }
 
+function backlogTaskStateFromFile(path) {
+  const { normalized } = readUtf8(path);
+  const lines = normalized.split('\n');
+  const sectionStart = lines.findIndex((line) => line.startsWith('## '));
+  const sectionName = lines[sectionStart];
+  if (sectionName !== '## Metadata' && sectionName !== '## Lifecycle') {
+    fail(`${path} must declare backlog lifecycle in its first Metadata/Lifecycle section`);
+  }
+  const premature = lines.slice(0, sectionStart).some((line) =>
+    line.startsWith('- State:') || /^`(PLANNED|DRAFT|READY|ACTIVE|REVIEW|FIX|ACCEPTANCE|DONE|BLOCKED|DEFERRED)`/.test(line));
+  const repeatedSection = lines.some((line, index) => index > sectionStart
+    && (line === '## Metadata' || line === '## Lifecycle'));
+  if (premature || repeatedSection) {
+    fail(`${path} has conflicting or repeated backlog lifecycle declarations`);
+  }
+  const sectionEnd = lines.findIndex((line, index) => index > sectionStart && line.startsWith('## '));
+  const section = lines.slice(sectionStart + 1, sectionEnd < 0 ? lines.length : sectionEnd);
+  if (sectionName === '## Metadata') {
+    const states = section.filter((line) => line.startsWith('- State:'));
+    if (states.length !== 1 || !/^- State: (PLANNED|DRAFT|READY|ACTIVE|REVIEW|FIX|ACCEPTANCE|DONE|BLOCKED|DEFERRED)$/.test(states[0])) {
+      fail(`${path} must have exactly one valid State in its initial Metadata section`);
+    }
+    return states[0].slice('- State: '.length);
+  }
+  // Historical backlog files use a single backticked state on the first
+  // content line of the initial Lifecycle section. Later retrospective
+  // mentions must not be used to infer current task lifecycle.
+  const content = section.filter((line) => line.trim().length > 0);
+  if (!/^`(PLANNED|DRAFT|READY|ACTIVE|REVIEW|FIX|ACCEPTANCE|DONE|BLOCKED|DEFERRED)`$/.test(content[0] ?? '')
+    || section.some((line) => line.startsWith('- State:'))
+    || content.slice(1).some((line) => /^`(PLANNED|DRAFT|READY|ACTIVE|REVIEW|FIX|ACCEPTANCE|DONE|BLOCKED|DEFERRED)`$/.test(line))) {
+    fail(`${path} must have a single unambiguous state at the start of its initial Lifecycle section`);
+  }
+  return content[0].slice(1, -1);
+}
+
 function taskFilesById(directory) {
   const files = new Map();
   for (const name of readdirSync(directory)) {
@@ -269,6 +306,44 @@ function taskFilesById(directory) {
     }
   }
   return files;
+}
+
+// Frozen integrated history contains four human-readable title variants.
+// Only these exact historical headings are allowed; never rewrite DONE bytes
+// merely to make a new control-plane title validator pass.
+const HISTORICAL_TASK_TITLE_ALIASES = new Map([
+  ['TASK-028', { canonical: 'Combat Event Presentation Contract', heading: '# TASK-028 — Combat Presentation Event Contract' }],
+  ['TASK-038', { canonical: 'Hunt API & Persistence Orchestration', heading: '# TASK-038 — Authoritative Hunt API / Persistence Orchestration' }],
+  ['TASK-042', { canonical: 'ADR-007 HUB Action-Scoped Realtime State & Protocol', heading: '# TASK-042 — HUB Action-Scoped Realtime State & Protocol' }],
+  ['TASK-111', { canonical: 'First Pre-alpha Inventory Management UI', heading: '# TASK-111 ? First Pre-alpha Inventory Management UI' }],
+]);
+
+function taskHeadingErrors(id, path, title) {
+  const actual = readUtf8(path).normalized.split('\n', 1)[0];
+  const canonical = `# ${id} — ${title}`;
+  const historical = HISTORICAL_TASK_TITLE_ALIASES.get(id);
+  if (actual !== canonical && !(historical && historical.canonical === title && historical.heading === actual)) {
+    return [`${id}: task heading/meaning mismatch: source ${JSON.stringify(actual)} vs roadmap ${JSON.stringify(canonical)}`];
+  }
+  return [];
+}
+
+// These four newly reconciled governance/Alpha-planning tasks distinguish
+// formal blocking dependencies from related technical source references.
+// Enforce the exact roadmap <-> task hard-edge agreement to prevent a future
+// control-plane edit from silently making unintegrated implementations look
+// like prerequisites of a documentary decision (or dropping TASK-136 E0–E4).
+const GOVERNANCE_DEPENDENCY_TASKS = ['TASK-133', 'TASK-135', 'TASK-141', 'TASK-142'];
+function declaredBlockingTaskRefs(path) {
+  const lines = readUtf8(path).normalized.split('\n');
+  const start = lines.indexOf('## Dependencies');
+  if (start < 0) fail(`${path} must define a ## Dependencies section`);
+  const end = lines.findIndex((line, index) => index > start && line.startsWith('## '));
+  const block = lines.slice(start + 1, end < 0 ? lines.length : end);
+  return [...new Set(block.flatMap((line) => {
+    const match = line.match(/^- (TASK-\d{3})(?=\s|$)/);
+    return match ? [match[1]] : [];
+  }))].sort();
 }
 
 function readyTaskMetadataErrors(id, path, expectedClass) {
@@ -360,12 +435,30 @@ function validateRoadmap(data) {
   if (data.completionSummary.total !== data.tasks.length) errors.push(`Completion summary total=${data.completionSummary.total}, actual=${data.tasks.length}`);
   if (data.completionSummary.percent !== actualPercent) errors.push(`Completion summary percent=${data.completionSummary.percent}, actual=${actualPercent}`);
 
+  const backlogFiles = taskFilesById(BACKLOG_TASK_DIR);
   const activeFiles = taskFilesById(ACTIVE_TASK_DIR);
   const doneFiles = taskFilesById(DONE_TASK_DIR);
+  for (const id of activeFiles.keys()) {
+    if (doneFiles.has(id)) errors.push(`${id}: duplicate current task identity across active and done directories`);
+  }
+  for (const [id, path] of backlogFiles) {
+    const state = taskById.get(id)?.status;
+    if (!state) errors.push(`${id}: backlog task file exists but roadmap row is missing`);
+    else if (state !== 'PLANNED') errors.push(`${id}: backlog file is materialized while roadmap state is ${state} (expected PLANNED)`);
+    if (activeFiles.has(id) || doneFiles.has(id)) {
+      errors.push(`${id}: duplicate current task identity across backlog and active/done directories`);
+    }
+    const expectedTitle = taskById.get(id)?.title;
+    if (expectedTitle) errors.push(...taskHeadingErrors(id, path, expectedTitle));
+    else if (!readUtf8(path).normalized.startsWith(`# ${id} — `)) errors.push(`${id}: backlog heading does not match its filename identity`);
+    const fileState = backlogTaskStateFromFile(path);
+    if (fileState !== 'PLANNED') errors.push(`${id}: backlog source declares ${fileState}, expected PLANNED`);
+  }
   for (const [id, path] of activeFiles) {
     const roadmapState = taskById.get(id)?.status;
     if (!roadmapState) errors.push(`${id}: active task file exists but roadmap row is missing`);
     else {
+      errors.push(...taskHeadingErrors(id, path, taskById.get(id).title));
       const fileState = taskStateFromFile(path);
       if (roadmapState !== fileState) errors.push(`${id} state mismatch: roadmap=${roadmapState}, active task=${fileState}`);
       if (roadmapState === 'READY' && fileState === 'READY') {
@@ -373,7 +466,24 @@ function validateRoadmap(data) {
       }
     }
   }
-  for (const [id] of doneFiles) if (taskById.has(id) && taskById.get(id).status !== 'DONE') errors.push(`${id}: done task file exists but roadmap state is ${taskById.get(id).status}`);
+  for (const [id, path] of doneFiles) {
+    if (!taskById.has(id)) {
+      errors.push(`${id}: done task file exists but roadmap row is missing`);
+      continue;
+    }
+    errors.push(...taskHeadingErrors(id, path, taskById.get(id).title));
+    if (taskById.get(id).status !== 'DONE') errors.push(`${id}: done task file exists but roadmap state is ${taskById.get(id).status}`);
+  }
+  for (const id of GOVERNANCE_DEPENDENCY_TASKS) {
+    const task = taskById.get(id);
+    const path = activeFiles.get(id) ?? backlogFiles.get(id);
+    if (!task || !path) continue; // Missing task/files are diagnosed by the normal lifecycle checks.
+    const expected = expandTaskRefs(task.dependencies).sort();
+    const declared = declaredBlockingTaskRefs(path);
+    if (expected.join('|') !== declared.join('|')) {
+      errors.push(`${id}: blocking dependency mismatch: roadmap=${expected.join(',') || 'none'} task=${declared.join(',') || 'none'}`);
+    }
+  }
   for (const task of data.tasks) {
     if (task.status === 'DONE' && !doneFiles.has(task.id)) errors.push(`${task.id}: roadmap says DONE but tasks/done file is missing`);
     if (!['PLANNED', 'DONE'].includes(task.status) && !activeFiles.has(task.id)) errors.push(`${task.id}: state ${task.status} requires a materialized tasks/active file`);
@@ -484,7 +594,7 @@ function renderHtml(data, sourceHash) {
 <details><summary>Roles & agents canônicos</summary><div class="tablewrap"><table id="roles"><thead><tr><th>Role</th><th>Responsabilidade</th><th>Agent/surface</th></tr></thead><tbody></tbody></table></div></details>
 <details><summary>Skills externos curados</summary><div class="tablewrap"><table id="skills"><thead><tr><th>Skill</th><th>Aplicação</th><th>Adoção</th></tr></thead><tbody></tbody></table></div></details>
 </section>
-<section class="section-card"><strong>Estados:</strong> <span class="badge done">DONE</span> concluído · <span class="badge active">ACTIVE/REVIEW/FIX/ACCEPTANCE</span> trabalho corrente · <span class="badge">PLANNED</span> portfólio, ainda sem autorização de implementação · <span class="badge classa">Class A</span> decisão/alto impacto · <span class="badge human">HUMAN</span> validação final do Human Owner.</section>
+<section class="section-card"><strong>Estados desta visão do main:</strong> <span class="badge done">DONE</span> conclusão histórica · <span class="badge active">ACTIVE/REVIEW/FIX/ACCEPTANCE</span> lifecycle no controle atual · <span class="badge">PLANNED</span> trabalho não promovido no main (pode haver fonte técnica autorizada em worktree isolada; consultar o <strong>Local Portfolio</strong> para o lifecycle de origem verificado). Um índice PLANNED de integração <strong>não cancela</strong> implementação isolada nem autoriza merge/SQL/deploy. <span class="badge classa">Class A</span> decisão/alto impacto · <span class="badge human">HUMAN</span> validação final do Human Owner.</section>
 <main id="roadmap"></main>
 <div id="empty" class="empty hidden">Nenhuma task corresponde aos filtros atuais.</div>
 <div class="source">Normalized Markdown SHA-256: <code>${sourceHash}</code></div>

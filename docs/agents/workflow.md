@@ -111,6 +111,21 @@ checker must not manufacture an implementation owner for such drafts.
 an isolated project-control reconciliation when several worktrees own different
 updates: reconcile all materialized task states and dependencies without
 copying unapproved application code or prematurely transitioning tasks to DONE.
+For a source task that is authorized and active **only in an unintegrated owner
+worktree**, the dirty-main backlog may hold a `PLANNED` **integration-only index**
+without pretending that the underlying implementation was never started.
+Such an index must declare the exact `Source lifecycle`, `Source branch`,
+`Source worktree` and `Source task`. `portfolio:check-local` verifies the
+registered worktree/branch, source title and current source lifecycle against
+those declared fields and presents isolated source work separately from main
+portfolio status counts. The mandatory source set is independently pinned in
+`docs/project/ISOLATED_TASK_SOURCE_INDEX.json`; deleting all four metadata
+fields, deleting the task index or changing source status cannot silently hide
+an authorized owner worktree. An addition or removal from that manifest is a
+separately reviewed governance change, **not** automatic source integration.
+This exception does **not** transfer ownership,
+authorize source integration or qualify a task for DONE. If source and index
+drift, treat validation as failed until the original owner reconciles them.
 The root `PROJECT_ROADMAP.html` must state which dashboard reflects authorized
 integrated `main` and which reflects provisional worktree state, including its
 as-of/provenance qualification. Do not silently redirect to one historical

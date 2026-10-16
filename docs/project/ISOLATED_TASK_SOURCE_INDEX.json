@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "scope": "Local governance only: unintegrated source work must not be hidden or promoted by main PLANNED integration indices",
+  "sources": [
+    {
+      "id": "TASK-130",
+      "lifecycle": "REVIEW",
+      "branch": "feat/TASK-130-historical-manual-capture-compatibility-implementation",
+      "worktree": ".worktrees/TASK-130-historical-manual-capture-compatibility-implementation",
+      "task": "tasks/active/TASK-130-historical-manual-capture-compatibility-implementation.md"
+    },
+    {
+      "id": "TASK-132",
+      "lifecycle": "ACTIVE",
+      "branch": "feat/TASK-132-gameplay-balance-telemetry-implementation",
+      "worktree": ".worktrees/TASK-132-gameplay-balance-telemetry-implementation",
+      "task": "tasks/active/TASK-132-gameplay-balance-telemetry.md"
+    },
+    {
+      "id": "TASK-134",
+      "lifecycle": "ACTIVE",
+      "branch": "feat/TASK-134-durable-hunt-summary-implementation",
+      "worktree": ".worktrees/TASK-134-durable-hunt-summary-implementation",
+      "task": "tasks/active/TASK-134-durable-hunt-terminal-offline-summary-implementation.md"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import {
   readLanding,
   readPortfolio,
   renderLanding,
+  verifyIsolatedSourceIndices,
 } from './project-portfolio-local.mjs';
 
 const statuses = ['PLANNED', 'DRAFT', 'READY', 'ACTIVE', 'REVIEW', 'FIX', 'ACCEPTANCE', 'DONE', 'BLOCKED', 'DEFERRED'];
@@ -171,4 +172,120 @@ test('matching task State is insufficient when reconciled owner/reviewer or acce
     'TASK-105-fixture.md', original).join('\n'), /metadata\/body differs from owner worktree/);
   assert.match(openTaskSourceErrors('TASK-105', 'TASK-105-renamed.md', original,
     'TASK-105-fixture.md', original).join('\n'), /filename differs from owner worktree/);
+});
+
+test('isolated source index verifies registered branch, source title and lifecycle without promoting main', (t) => {
+  const { root, createTree } = ownedWorktreeFixture(t);
+  const tree = createTree('task130-owner');
+  const backlog = join(root, 'tasks/backlog');
+  mkdirSync(backlog, { recursive: true });
+  const index = join(backlog, 'TASK-130-historical.md');
+  const sourceTask = join(tree.path, 'tasks/active/TASK-130-historical.md');
+  const original = [
+    '# TASK-130 — Historical Manual-Capture Compatibility Implementation',
+    '## Metadata',
+    '- State: PLANNED',
+    '- Source lifecycle: REVIEW',
+    `- Source branch: \`${tree.branch}\``,
+    '- Source worktree: `.worktrees/task130-owner`',
+    '- Source task: `tasks/active/TASK-130-historical.md`',
+    '',
+  ].join('\n');
+  mkdirSync(join(root, 'docs/project'), { recursive: true });
+  writeFileSync(join(root, 'docs/project/ISOLATED_TASK_SOURCE_INDEX.json'), JSON.stringify({
+    schemaVersion: 1, sources: [{ id: 'TASK-130', lifecycle: 'REVIEW', branch: tree.branch,
+      worktree: '.worktrees/task130-owner', task: 'tasks/active/TASK-130-historical.md' }],
+  }));
+  const source = original.replace('- State: PLANNED', '- State: REVIEW');
+  writeFileSync(index, original);
+  writeFileSync(sourceTask, source);
+  const status = new Map([['TASK-130', 'PLANNED']]);
+  const verify = () => verifyIsolatedSourceIndices([tree], status, root, root, ['TASK-130']);
+  const valid = verify();
+  assert.deepEqual(valid.errors, []);
+  assert.equal(valid.items[0].lifecycle, 'REVIEW');
+  writeFileSync(sourceTask, source.replace('- State: REVIEW', '- State: ACTIVE'));
+  assert.match(verify().errors.join('\n'), /source lifecycle drift \(index=REVIEW, owner=ACTIVE\)/);
+  writeFileSync(sourceTask, source.replace('- State: REVIEW', '- State: REVIEW\n- State: ACTIVE'));
+  assert.match(verify().errors.join('\n'), /source lifecycle drift \(index=REVIEW, owner=unknown\)/);
+  writeFileSync(sourceTask, source.replace('Historical Manual-Capture Compatibility Implementation', 'Different ownership'));
+  assert.match(verify().errors.join('\n'), /source task title differs from main integration index/);
+  writeFileSync(sourceTask, source);
+  writeFileSync(index, original.replace(tree.branch, 'feat/other-branch'));
+  assert.match(verify().errors.join('\n'), /source worktree\/branch does not match registered Git owner/);
+  writeFileSync(index, original.replace('tasks/active/TASK-130-historical.md', 'tasks/active/../secrets.toml'));
+  assert.match(verify().errors.join('\n'), /noncanonical or escaping source worktree\/task path/);
+  // Removing all four fields or the task index must never make its active
+  // source invisible to portfolio checks with a newly consistent dashboard.
+  writeFileSync(index, original.replace(/^- Source (lifecycle|branch|worktree|task):.*\n/gm, ''));
+  assert.match(verify().errors.join('\n'), /TASK-130: required isolated source index is missing/);
+  rmSync(index);
+  assert.match(verify().errors.join('\n'), /TASK-130: required isolated source index is missing/);
+  writeFileSync(index, original);
+  writeFileSync(join(root, 'docs/project/ISOLATED_TASK_SOURCE_INDEX.json'), JSON.stringify({schemaVersion: 1, sources: []}));
+  assert.match(verify().errors.join('\n'), /TASK-130: required isolated source is missing from manifest/);
+  rmSync(join(root, 'docs/project/ISOLATED_TASK_SOURCE_INDEX.json'));
+  assert.match(verify().errors.join('\n'), /missing required isolated source index manifest/);
+});
+
+test('an incomplete isolated source index cannot silently suppress source lifecycle checks', (t) => {
+  const { root, createTree } = ownedWorktreeFixture(t);
+  const tree = createTree('task134-owner');
+  const backlog = join(root, 'tasks/backlog');
+  mkdirSync(backlog, { recursive: true });
+  mkdirSync(join(root, 'docs/project'), { recursive: true });
+  writeFileSync(join(root, 'docs/project/ISOLATED_TASK_SOURCE_INDEX.json'), JSON.stringify({
+    schemaVersion: 1, sources: [{ id: 'TASK-134', lifecycle: 'ACTIVE', branch: tree.branch,
+      worktree: '.worktrees/task134-owner', task: 'tasks/active/TASK-134-fixture.md' }],
+  }));
+  writeFileSync(join(backlog, 'TASK-134-fixture.md'), [
+    '# TASK-134 — Durable Hunt Terminal & Offline Summary Implementation',
+    '## Metadata',
+    '- State: PLANNED',
+    '- Source lifecycle: ACTIVE',
+    `- Source branch: \`${tree.branch}\``,
+    '- Source worktree: `.worktrees/task134-owner`',
+    // Missing Source task must fail without inferring one by ID.
+    '',
+  ].join('\n'));
+  const result = verifyIsolatedSourceIndices([tree], new Map([['TASK-134', 'PLANNED']]), root, root, ['TASK-134']);
+  assert.match(result.errors.join('\n'), /incomplete or invalid Source lifecycle\/branch\/worktree\/task/);
+});
+
+test('source lifecycle signature must be represented in generated landing', () => {
+  const html = '<meta name="pokenexus-portfolio-source-sha256" content="hash"><div data-portfolio="total"><b>2</b><div data-portfolio="done"><b>1</b><div data-portfolio="active"><b>1</b><div data-portfolio="acceptance"><b>0</b><a href="not-here.html">Missing</a>';
+  const context = { items: [{ id: 'TASK-130', lifecycle: 'REVIEW' }], hash: 'verified-source-hash' };
+  const result = readLanding(html, { total: 2, done: 1, active: 1, acceptance: 0 }, 'hash', [], context);
+  assert.match(result.errors.join('\n'), /isolated source task count/);
+  assert.match(result.errors.join('\n'), /isolated source lifecycle\/owner identity signature is stale/);
+});
+
+test('landing rejects missing visible source rows even if count and hash attributes still match', () => {
+  const sourceIndices = {
+    items: [{ id: 'TASK-130', lifecycle: 'REVIEW', worktree: '.worktrees/TASK-130-owner' }],
+    hash: 'source-integrity-hash',
+  };
+  const original = renderLanding({
+    counts: { total: 2, done: 1, active: 1, acceptance: 0 }, hash: 'roadmap-hash',
+    mainHead: '0123456789abcdef', branch: 'main', isolatedSources: sourceIndices,
+    requiredRefs: ['.maintenance/portfolio/integrated.html', 'docs/project/PROJECT_ROADMAP.html'],
+  });
+  const withoutRow = original.replace(
+    '<p><code>TASK-130</code> — source <b>REVIEW</b> em <code>.worktrees/TASK-130-owner</code>; integração no main bloqueada.</p>', '');
+  const verified = readLanding(withoutRow, { total: 2, done: 1, active: 1, acceptance: 0 },
+    'roadmap-hash', [], sourceIndices);
+  assert.match(verified.errors.join('\n'), /TASK-130: visible isolated source status row is missing/);
+});
+
+test('generated landing visibly exposes source-index signature separate from roadmap SHA', () => {
+  const html = renderLanding({
+    counts: { total: 2, done: 1, active: 1, acceptance: 0 }, hash: 'roadmap-hash',
+    mainHead: '0123456789abcdef', branch: 'main',
+    isolatedSources: { items: [{ id: 'TASK-130', lifecycle: 'REVIEW', worktree: '.worktrees/TASK-130-owner' }],
+      hash: 'source-index-hash' },
+    requiredRefs: ['.maintenance/portfolio/integrated.html', 'docs/project/PROJECT_ROADMAP.html'],
+  });
+  assert.match(html, /SHA-256 do manifesto e metadados de identidade\/lifecycle: <code>source-index-hash<\/code>/);
+  assert.match(html, /data-source-index-sha256="source-index-hash"/);
+  assert.match(html, /<code>roadmap-hash<\/code>/);
 });

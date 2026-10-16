@@ -56,7 +56,7 @@ function localHref(filename) {
   return relative(PROJECT_ROOT, filename).split(sep).join('/');
 }
 
-function readLanding(html, expected, hash, requiredRefs = []) {
+function readLanding(html, expected, hash, requiredRefs = [], sourceIndices = null) {
   const errors = [];
   if (html.includes('location.replace(')) errors.push('legacy automatic redirect');
   if (!html.includes(`<meta name="pokenexus-portfolio-source-sha256" content="${hash}">`)) {
@@ -65,6 +65,21 @@ function readLanding(html, expected, hash, requiredRefs = []) {
   for (const key of ['total', 'done', 'active', 'acceptance']) {
     if (!html.includes(`data-portfolio="${key}"><b>${expected[key]}</b>`)) {
       errors.push(`local landing metric ${key} does not match reconciled roadmap (${expected[key]})`);
+    }
+  }
+  if (sourceIndices) {
+    if (!html.includes(`data-source-index-count="${sourceIndices.items.length}"`)) {
+      errors.push('isolated source task count does not match current verified source indices');
+    }
+    if (!html.includes(`data-source-index-sha256="${sourceIndices.hash}"`)) {
+      errors.push('isolated source lifecycle/owner identity signature is stale');
+    }
+    if (!html.includes(`SHA-256 do manifesto e metadados de identidade/lifecycle: <code>${sourceIndices.hash}</code>`)) {
+      errors.push('visible isolated source signature is missing or stale');
+    }
+    for (const item of sourceIndices.items) {
+      const visible = `<p><code>${item.id}</code> — source <b>${item.lifecycle}</b> em <code>${item.worktree}</code>; integração no main bloqueada.</p>`;
+      if (!html.includes(visible)) errors.push(`${item.id}: visible isolated source status row is missing`);
     }
   }
   const refs = [...html.matchAll(/href="([^"]+)"/g)].map((entry) => entry[1]).filter((ref) => !ref.startsWith('#'));
@@ -168,6 +183,123 @@ function taskState(source) {
   return source.match(/^- State:\s*(\S+)\s*$/m)?.[1] ?? null;
 }
 
+function sourceLifecycleFromTask(source) {
+  const lines = source.split('\n');
+  const first = lines.findIndex((line) => line.startsWith('## '));
+  if (first < 0 || !['## Metadata', '## Lifecycle'].includes(lines[first])) return null;
+  const end = lines.findIndex((line, i) => i > first && line.startsWith('## '));
+  const section = lines.slice(first + 1, end < 0 ? lines.length : end);
+  const stateLines = section.filter((line) => line.startsWith('- State:'));
+  const lifecycleLines = section.filter((line) => /^`(PLANNED|DRAFT|READY|ACTIVE|REVIEW|FIX|ACCEPTANCE|DONE|BLOCKED|DEFERRED)(?:\s|`)/.test(line));
+  if (lines[first] === '## Metadata' && stateLines.length !== 1) return null;
+  if (lines[first] === '## Lifecycle' && (stateLines.length || lifecycleLines.length !== 1)) return null;
+  const marker = lines[first] === '## Metadata'
+    ? stateLines[0].match(/^- State:\s*(\S+)/)?.[1]
+    : lifecycleLines[0].match(/^`(\w+)(?:\s|`)/)?.[1];
+  return STATES.includes(marker) ? marker : null;
+}
+
+// A source task can be ACTIVE/REVIEW in its own unintegrated worktree while
+// main holds a PLANNED *integration-only index*. Verify BOTH dimensions so
+// main portfolio counts never silently conceal real authorized source work.
+// This does not copy owner task bytes, promote main or authorize Git/SQL.
+// An independent ID baseline prevents accidentally deleting both the manifest
+// entry and all four Source fields from silently hiding authorized work. Any
+// change to this set requires a separately reviewed integration/retirement gate.
+const REQUIRED_ISOLATED_SOURCE_IDS = Object.freeze(['TASK-130', 'TASK-132', 'TASK-134']);
+function verifyIsolatedSourceIndices(trees, roadmap, projectRoot = PROJECT_ROOT, branchRoot = BRANCH_ROOT,
+  requiredIds = REQUIRED_ISOLATED_SOURCE_IDS) {
+  const errors = [];
+  const items = [];
+  const byPath = new Map(trees.map((tree) => [tree.path.toLowerCase(), tree]));
+  const directory = resolve(branchRoot, 'tasks/backlog');
+  const manifestPath = resolve(branchRoot, 'docs/project/ISOLATED_TASK_SOURCE_INDEX.json');
+  if (!existsSync(manifestPath)) {
+    return { errors: ['missing required isolated source index manifest'], items, hash: '' };
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(loadUtf8(manifestPath));
+  } catch {
+    return { errors: ['isolated source index manifest is not valid UTF-8 JSON'], items, hash: '' };
+  }
+  if (manifest?.schemaVersion !== 1 || !Array.isArray(manifest.sources)) {
+    return { errors: ['isolated source index manifest has invalid schemaVersion or sources'], items, hash: '' };
+  }
+  const mandatory = new Map();
+  for (const source of manifest.sources) {
+    if (!/^TASK-\d{3}$/.test(source?.id ?? '') || mandatory.has(source.id)) {
+      errors.push('isolated source index manifest has a malformed or duplicated task ID');
+      continue;
+    }
+    mandatory.set(source.id, source);
+  }
+  for (const id of requiredIds) {
+    if (!mandatory.has(id)) errors.push(`${id}: required isolated source is missing from manifest`);
+  }
+  const inspected = new Set();
+  for (const filename of readdirSync(directory)) {
+    const id = filename.match(/^(TASK-\d{3})-.+\.md$/)?.[1];
+    if (!id) continue;
+    const indexSource = loadUtf8(resolve(directory, filename));
+    const field = (name) => indexSource.match(new RegExp(`^- ${name}:\\s*(.+)$`, 'm'))?.[1]?.trim() ?? null;
+    const lifecycle = field('Source lifecycle');
+    const branch = field('Source branch')?.match(/^`([^`]+)`$/)?.[1];
+    const worktree = field('Source worktree')?.match(/^`([^`]+)`$/)?.[1];
+    const task = field('Source task')?.match(/^`([^`]+)`/)?.[1];
+    // A source pointer without a lifecycle is as unsafe as an unknown owner.
+    if (![lifecycle, field('Source branch'), field('Source worktree'), field('Source task')].some(Boolean)) continue;
+    inspected.add(id);
+    const expected = mandatory.get(id);
+    if (!expected) {
+      errors.push(`${id}: unregistered isolated source index is not in required manifest`);
+      continue;
+    }
+    if (expected.lifecycle !== lifecycle || expected.branch !== branch
+      || expected.worktree !== worktree || expected.task !== task) {
+      errors.push(`${id}: source integration index differs from required manifest`);
+    }
+    if (roadmap.get(id) !== 'PLANNED') errors.push(`${id}: source integration index must remain PLANNED until a separately approved promotion`);
+    if (!['DRAFT', 'READY', 'ACTIVE', 'REVIEW', 'FIX', 'ACCEPTANCE', 'BLOCKED'].includes(lifecycle)
+      || !branch || !worktree || !task) {
+      errors.push(`${id}: incomplete or invalid Source lifecycle/branch/worktree/task fields`);
+      continue;
+    }
+    if (!/^\.worktrees\/[A-Za-z0-9_-]+$/.test(worktree)
+      || !new RegExp(`^tasks/active/${id}-[A-Za-z0-9_-]+\\.md$`).test(task)) {
+      errors.push(`${id}: noncanonical or escaping source worktree/task path`);
+      continue;
+    }
+    const ownerPath = resolve(projectRoot, worktree);
+    const registered = byPath.get(ownerPath.toLowerCase());
+    if (!registered || canonicalWorktreeRef(registered) !== worktree || registered.branch !== branch) {
+      errors.push(`${id}: source worktree/branch does not match registered Git owner`);
+      continue;
+    }
+    const ownerFilename = resolve(ownerPath, task);
+    if (!existsSync(ownerFilename)) {
+      errors.push(`${id}: declared source task file does not exist in owner worktree`);
+      continue;
+    }
+    const ownerSource = loadUtf8(ownerFilename);
+    const expectedHeading = indexSource.split('\n', 1)[0];
+    const ownerHeading = ownerSource.split('\n', 1)[0];
+    const actualLifecycle = sourceLifecycleFromTask(ownerSource);
+    if (ownerHeading !== expectedHeading) errors.push(`${id}: source task title differs from main integration index`);
+    if (actualLifecycle !== lifecycle) {
+      errors.push(`${id}: source lifecycle drift (index=${lifecycle}, owner=${actualLifecycle ?? 'unknown'})`);
+    }
+    items.push({ id, lifecycle, branch, worktree, task });
+  }
+  for (const id of mandatory.keys()) {
+    if (!inspected.has(id)) errors.push(`${id}: required isolated source index is missing from the PLANNED backlog task`);
+  }
+  items.sort((a, b) => a.id.localeCompare(b.id));
+  const hash = createHash('sha256').update(loadUtf8(manifestPath)).update('\n')
+    .update(items.map((item) => Object.values(item).join('|')).join('\n')).digest('hex');
+  return { errors, items, hash };
+}
+
 function isUnmaterializedDraft(source, roadmapState) {
   return roadmapState === 'DRAFT'
     && taskState(source) === 'DRAFT'
@@ -268,7 +400,7 @@ function primaryTaskFiles(trees, roadmap) {
   return { errors, current: [...current], currentOwnerWorktrees: currentTrees.size, mainTree };
 }
 
-function landingContext(source, counts, trees, active) {
+function landingContext(source, counts, trees, active, isolatedSources) {
   if (!active.mainTree) throw new Error('Cannot build local landing without a registered main worktree');
   const mainDashboard = resolve(active.mainTree.path, 'docs/project/PROJECT_ROADMAP.html');
   const provisionalDashboard = resolve(BRANCH_ROOT, 'docs/project/PROJECT_ROADMAP.html');
@@ -283,19 +415,22 @@ function landingContext(source, counts, trees, active) {
     mainDashboard,
     provisionalDashboard,
     requiredRefs: [localHref(INTEGRATED_SNAPSHOT), localHref(provisionalDashboard)],
+    isolatedSources,
   };
 }
 
 function renderLanding(context) {
   const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
   const metric = (key, label) => `<div class="metric" data-portfolio="${key}"><b>${context.counts[key]}</b><span>${label}</span></div>`;
+  const isolatedSources = context.isolatedSources ?? { items: [], hash: createHash('sha256').update('').digest('hex') };
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="pokenexus-portfolio-source-sha256" content="${context.hash}">
-<title>PokeNexus Idle — Local Portfolio</title><style>
+<title>Skadyn Idle — Local Portfolio</title><style>
 body{margin:0;background:#0b1017;color:#e9f0f7;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}.wrap{max-width:1050px;margin:auto;padding:28px}.panel{background:#121923;border:1px solid #26364a;border-radius:12px;padding:18px;margin:14px 0}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#182230;border:1px solid #26364a;border-radius:9px;padding:14px}.metric b{display:block;font-size:24px}.metric span,.muted{color:#93a4b7}.views{display:grid;grid-template-columns:1fr 1fr;gap:12px}.view{display:block;color:#e9f0f7;text-decoration:none;background:#182230;border:1px solid #26364a;border-radius:10px;padding:16px}.view strong{color:#62d3ff}code{color:#ffd166}@media(max-width:700px){.metrics,.views{grid-template-columns:1fr 1fr}} </style></head><body><div class="wrap">
-<h1>PokeNexus Idle — Project Control</h1><p class="muted">Entrada local multi-worktree. Não altera autoridade, task state ou Git history.</p>
-<section class="metrics">${metric('total','Tasks')}${metric('done','DONE')}${metric('active','ACTIVE')}${metric('acceptance','ACCEPTANCE')}</section>
+  <h1>Skadyn Idle — Project Control</h1><p class="muted">Entrada local multi-worktree. Não altera autoridade, task state ou Git history.</p>
+  <section class="metrics">${metric('total','Tasks no main')}${metric('done','DONE no main')}${metric('active','ACTIVE no main')}${metric('acceptance','ACCEPTANCE no main')}</section>
+  <section class="panel" data-source-index-count="${isolatedSources.items.length}" data-source-index-sha256="${isolatedSources.hash}"><h2>Trabalho técnico isolado, ainda não integrado</h2><p class="muted">Essas tasks são PLANNED apenas quanto à integração no main. Seus estados reais de source são verificados nos worktrees Git registrados; não são novas tasks, aceites, migrações ou autorização de release.</p>${isolatedSources.items.map((item) => `<p><code>${esc(item.id)}</code> — source <b>${esc(item.lifecycle)}</b> em <code>${esc(item.worktree)}</code>; integração no main bloqueada.</p>`).join('')}<p class="muted">SHA-256 do manifesto e metadados de identidade/lifecycle: <code>${esc(isolatedSources.hash)}</code></p></section>
 <section class="panel"><h2>Dashboards</h2><div class="views">
 <a class="view" href="${esc(context.requiredRefs[0])}"><strong>Integrated main</strong><br><span class="muted">Snapshot exato do commit <code>${esc(context.mainHead.slice(0,12))}</code>.</span></a>
 <a class="view" href="${esc(context.requiredRefs[1])}"><strong>Provisional working tree</strong><br><span class="muted">Branch <code>${esc(context.branch)}</code>; pode conter alterações locais ainda não integradas.</span></a>
@@ -320,12 +455,15 @@ function portfolioContext() {
   const { counts, taskStatus } = readPortfolio(source);
   const trees = worktrees();
   const active = primaryTaskFiles(trees, taskStatus);
-  return { source, counts, taskStatus, trees, active, landing: landingContext(source, counts, trees, active) };
+  const isolatedSources = verifyIsolatedSourceIndices(trees, taskStatus);
+  return { source, counts, taskStatus, trees, active, isolatedSources,
+    landing: landingContext(source, counts, trees, active, isolatedSources) };
 }
 
 function generateLocalLanding() {
   const context = portfolioContext();
-  if (context.active.errors.length) throw new Error(`Local portfolio ownership validation failed:\n- ${context.active.errors.join('\n- ')}`);
+  const errors = [...context.active.errors, ...context.isolatedSources.errors];
+  if (errors.length) throw new Error(`Local portfolio ownership validation failed:\n- ${errors.join('\n- ')}`);
   writeIntegratedSnapshot(context.active);
   writeFileSync(LOCAL_ENTRY, renderLanding(context.landing), 'utf8');
   console.log(`Generated local portfolio landing for main ${context.landing.mainHead.slice(0, 12)} and provisional ${context.landing.branch}`);
@@ -333,8 +471,9 @@ function generateLocalLanding() {
 
 function main() {
   const context = portfolioContext();
-  const entry = readLanding(loadUtf8(LOCAL_ENTRY), context.counts, context.landing.hash, context.landing.requiredRefs);
-  const errors = [...entry.errors, ...context.active.errors];
+  const entry = readLanding(loadUtf8(LOCAL_ENTRY), context.counts, context.landing.hash,
+    context.landing.requiredRefs, context.isolatedSources);
+  const errors = [...entry.errors, ...context.active.errors, ...context.isolatedSources.errors];
   if (!existsSync(INTEGRATED_SNAPSHOT)) errors.push('missing generated integrated-main dashboard snapshot');
   else {
     const expectedIntegrated = execFileSync('git', ['show', 'HEAD:docs/project/PROJECT_ROADMAP.html'], {
@@ -344,7 +483,9 @@ function main() {
     if (loadUtf8(INTEGRATED_SNAPSHOT) !== expectedIntegrated) errors.push('integrated-main dashboard snapshot is stale');
   }
   if (errors.length) throw new Error(`Local portfolio validation failed:\n- ${errors.join('\n- ')}`);
-  console.log(`Local portfolio check passed: ${context.counts.total} tasks, ${context.trees.length} worktrees, ${context.active.current.length} open task files in ${context.active.currentOwnerWorktrees} control worktrees, ${entry.linkCount} links, SHA-256 ${context.landing.hash}`);
+  const isolatedByState = Object.entries(Object.groupBy(context.isolatedSources.items, (item) => item.lifecycle))
+    .map(([state, items]) => `${state}=${items.length}`).join(', ');
+  console.log(`Local portfolio check passed: ${context.counts.total} tasks, ${context.trees.length} worktrees, ${context.active.current.length} open task files in ${context.active.currentOwnerWorktrees} control worktrees, ${context.isolatedSources.items.length} isolated source tasks (${isolatedByState}), ${entry.linkCount} links, SHA-256 ${context.landing.hash}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -357,4 +498,4 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
 }
 
-export { checkSpecIdentity, discoverCurrentOwnerWorktrees, isUnmaterializedDraft, openTaskSourceErrors, readLanding, readPortfolio, renderLanding };
+export { checkSpecIdentity, discoverCurrentOwnerWorktrees, isUnmaterializedDraft, openTaskSourceErrors, readLanding, readPortfolio, renderLanding, verifyIsolatedSourceIndices };

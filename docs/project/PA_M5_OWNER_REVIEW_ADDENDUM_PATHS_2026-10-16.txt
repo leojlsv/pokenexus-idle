@@ -1,0 +1,20 @@
+# Owner-review ADDENDUM: document-only paths for isolated portability candidate.
+# NOT an approved Git manifest; no technical runtime, secret, SQL or source-worktree files.
+# Each row is a relative file under /pokenexus-idle; exact order is nonauthoritative.
+# TASK-136..140 source implementation approval and historical Git gates remain separate.
+tasks/active/TASK-136-alpha-entry-tester-provisioning-gate.md
+tasks/active/TASK-137-public-brand-naming-benchmark.md
+tasks/active/TASK-138-skadyn-technical-identity-migration-contract.md
+tasks/active/TASK-139-skadyn-workspace-build-namespace-refactor.md
+tasks/backlog/TASK-140-skadyn-durable-security-schema-cutover.md
+docs/specs/SPEC-029-economic-provenance-ledger.md
+docs/specs/SPEC-030-gameplay-balance-telemetry.md
+docs/specs/SPEC-031-skadyn-technical-identity-migration.md
+docs/project/DISCORD_BLUEPRINT_V1.md
+docs/project/DISCORD_BOT_AUTOMATION_PLAN_V1.md
+docs/project/DISCORD_COMMUNITY_OPERATIONS_V1.md
+docs/project/DISCORD_LAUNCH_CHECKLIST_V1.md
+docs/project/DISCORD_RULES_COMMUNITY_GUIDELINES_V1.md
+docs/project/CLOSED_ALPHA_PHASE_01_VALIDATION_RECORD.md
+docs/project/CLOSED_ALPHA_DOCKER_ENVIRONMENT_PLAN.md
+docs/project/PA-M6_1_ALPHA_ENTRY_EXIT_PLAN.md
